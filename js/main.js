@@ -45,7 +45,7 @@ try {
   const ui = createUI(api);
   status('');
   api.start(camera => ui.placeTags(camera));
-  window.__schuylkill = api; // handy for poking at the scene from the console
+  window.__city = api; // handy for poking at the scene from the console
 } catch (e) {
   console.error(e);
   status(location.protocol === 'file:'

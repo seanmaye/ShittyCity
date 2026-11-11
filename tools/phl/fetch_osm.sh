@@ -1,5 +1,5 @@
 #!/bin/sh
-# Re-download the OpenStreetMap transit data that build_transit.py reads (run from the tools/ folder,
+# Re-download the OpenStreetMap transit data that build_transit.py reads (run from the tools/phl/ folder,
 # in Git Bash). Uses the public Overpass API; please don't run it in a loop.
 # Data (c) OpenStreetMap contributors, ODbL.
 set -e

@@ -133,6 +133,7 @@ export function createUI(api) {
     if (!carOn && locked) api.setCreative(true);   // got off with the mouse still captured: back to flying
     syncModeHint();
     if (c) {
+      // Philadelphia's L and trolleys have their own wording; every other car uses its model name
       hint.textContent = c.kind === 'metro'
         ? 'Aboard an L train, inside a SEPTA M-4 car. Drag or click to look around, W A S D or the arrow keys to walk the aisle, Esc or “Get off” to leave. The sign at the front shows the next stop.'
         : c.kind === 'trolley'

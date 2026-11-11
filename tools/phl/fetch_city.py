@@ -1,13 +1,13 @@
 """Download raw data for the citywide build-out (resumable: finished pieces are skipped).
 
-  python -I tools/fetch_city.py [raw_dir] [buildings|boundary|osm|transit ...]
+  python -I tools/phl/fetch_city.py [raw_dir] [buildings|boundary|osm|transit ...]
 
 Default: buildings and boundary. The rest of the OpenStreetMap data normally comes from the
-Geofabrik Pennsylvania extract via tools/extract_osm.py (fast, no Overpass load); `osm` and
+Geofabrik Pennsylvania extract via tools/phl/extract_osm.py (fast, no Overpass load); `osm` and
 `transit` fetch the same data from Overpass instead, tile by tile, which can take hours when
 the public servers are busy.
 
-Writes into raw_dir (default tools/raw/city):
+Writes into raw_dir (default tools/phl/raw/city):
   buildings/page_NNNNN.geojson   City of Philadelphia LI building footprints, 2000 per page
   boundary.json                  OSM relation 188022 (Philadelphia city limits)
   tiles/tile_R_C.json            OSM streets, rail, waterways and land use, 6 x 6 tiles

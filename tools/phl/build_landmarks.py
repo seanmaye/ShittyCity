@@ -1,10 +1,10 @@
 """Landmarks for the citywide build-out: placements for the hand-styled models.
 
-  python -I tools/build_landmarks.py [raw_dir] [out_dir]
+  python -I tools/phl/build_landmarks.py [raw_dir] [out_dir]
 
 Reads raw_dir/landmarks_osm.json (extract_landmarks.py + extract_bridges.py), the city building
-pages (for heights), data/city.json.gz and data/river.json (water, for bridge towers).
-Writes data/city_landmarks.json:
+pages (for heights), data/phl/city.json.gz and data/phl/river.json (water, for bridge towers).
+Writes data/phl/city_landmarks.json:
   stadiums: [{name, type: football | baseball | arena, outline: ring_dm, field: ring_dm | null,
               h: m, plate: [x, z] m, cf: [dx, dz]}]        (plate/cf for the ballpark)
   halls:    [{name, type: independence | memorial, x, z, w, d, ry, outline: ring_dm}]
@@ -23,7 +23,7 @@ from geom import area, centroid, min_rect, point_in_poly, point_in_ring, proj, s
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RAW = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "raw", "city")
-OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "..", "data")
+OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "..", "..", "data", "phl")
 sys.stdout.reconfigure(encoding="utf-8")
 FT = .3048
 

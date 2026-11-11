@@ -17,7 +17,7 @@ def xz(g): return ((g["lon"] - LON0) * MX, -(g["lat"] - LAT0) * MZ)
 
 html = open(PAGE, encoding="utf-8").read()
 def block(name):
-    return re.search(r'(<script type="application/json" id="data-%s">)(.*?)(</script>)' % name, html, re.S)
+    return re.search(r'(<script type="application/json" id="data-phl-%s"[^>]*>)(.*?)(</script>)' % name, html, re.S)
 def load(name): return json.loads(block(name).group(2))
 
 bx0, bz0, bx1, bz1 = [v / 10 for v in load("ground")["bbox"]]
@@ -309,11 +309,11 @@ body = json.dumps(out, separators=(",", ":"), ensure_ascii=False).replace("</", 
 print("block size", len(body))
 
 if WRITE:
-    tag = '<script type="application/json" id="data-transit">'
+    tag = '<script type="application/json" id="data-phl-transit" data-file="phl/transit.json">'
     m = block("transit")
     if m: html = html[:m.start(2)] + body + html[m.end(2):]
     else:
-        anchor = html.index('<script type="module">', html.index('id="data-yardpark"'))
+        anchor = html.index('<script type="module">', html.index('id="data-phl-yardpark"'))
         html = html[:anchor] + tag + body + "</script>\n" + html[anchor:]
     open(PAGE, "w", encoding="utf-8", newline="").write(html)
     print("written")

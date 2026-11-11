@@ -1,12 +1,12 @@
 """Download raw source data for the Schuylkill model.
 
-  python tools/fetch_data.py [raw_dir]
+  python tools/phl/fetch_data.py [raw_dir]
 
-Writes into raw_dir (default: tools/raw):
+Writes into raw_dir (default: tools/phl/raw):
   philly_buildings.geojson  City of Philadelphia LI building footprints (LiDAR heights, feet)
   osm.json                  OpenStreetMap water, waterways, parks, streets, rail, bridges
 
-Then run tools/build_data.py to turn these into the compact files in data/.
+Then run tools/phl/build_data.py to turn these into the compact files in data/phl/.
 """
 import json, os, sys, time, urllib.parse, urllib.request
 

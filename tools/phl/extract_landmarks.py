@@ -1,6 +1,6 @@
 """Pull the outlines of the city's major landmarks out of the Geofabrik extract.
 
-  tools/.venv/Scripts/python -I tools/extract_landmarks.py [pbf] [raw_dir]
+  tools/.venv/Scripts/python -I tools/phl/extract_landmarks.py [pbf] [raw_dir]
 
 Writes raw_dir/landmarks_osm.json: {"areas": [{name, tags, rings: [[[lat, lon], ...]]}],
 "bridges": [{name, tags, line: [[lat, lon], ...]}]} for the names in NAMES (stadiums, arena,

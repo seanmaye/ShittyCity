@@ -1,6 +1,6 @@
-// Underground: the L and the T1-T5 trolleys under Market Street (track positions from OSM, depths
-// estimated offline), trains looping along each route, and the cut-away sections that slice the
-// city along a vertical plane to show them.
+// Rail transit for any city (data/<city>/transit.json): tracks, tunnels, Els, platforms and stations,
+// trains looping along each route, walkable cabins, and the cut-away sections that slice the city
+// along a vertical plane (Philadelphia's under Market Street, New York's under Times Square).
 //
 // How a cut works: every material in the scene (except the ones marked userData.noClip here)
 // is clipped by one shared THREE.Plane. With no cut active the plane sits far away and clips
@@ -14,9 +14,10 @@ import { CITY } from '../cities.js';
 export const SPEC = {
   // hw/h: tunnel half-width and height above the rail; car: length, width, height; cars per train;
   // km: route length per train; speed m/s
+  // Philadelphia: the L (metro) and the trolleys
   metro:   { hw: 2.4, h: 5.2, car: 16.4, w: 2.8, ch: 3.6, cars: 6, km: 1.6, speed: 13, body: '#c9ced3', top: 1.0 },
   trolley: { hw: 2.3, h: 4.8, car: 15.2, w: 2.6, ch: 3.3, cars: 1, km: 2.5, speed: 8, body: '#ece7da', top: 0.3 },
-  // citywide build-out (data/metro.json.gz): Broad Street Line B-IV cars, PATCO, Regional Rail
+  // Philadelphia's citywide network (data/phl/metro.json.gz): Broad Street Line B-IV cars, PATCO, Regional Rail
   // Silverliners (also used for NJ Transit's Atlantic City Line), and PCC cars on the G1
   broad:    { hw: 2.6, h: 5.6, car: 20.4, w: 3.1, ch: 3.7, cars: 6, km: 2.2, speed: 15, body: '#cfd4d8', top: 1.05 },
   patco:    { hw: 2.6, h: 5.6, car: 20.7, w: 3.1, ch: 3.7, cars: 4, km: 3.0, speed: 17, body: '#dfe2e4', top: 1.05 },

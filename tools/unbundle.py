@@ -3,7 +3,7 @@
   python -I tools/unbundle.py [bundled.html] [out_dir]
 
 Defaults: city-models.html -> the repo root. Writes index.html, css/style.css,
-js/**.js, data/*.json, data/<city>/* and docs/EDITING.md, overwriting what is there.
+js/**.js, data/<city>/* and docs/EDITING.md, overwriting what is there.
 Use it when someone has edited the shared HTML directly, then check the result with
 `python -I tools/unbundle.py --check`, which re-bundles and compares.
 """
@@ -26,7 +26,8 @@ EXTERNALS = [  # (import line, how to tell a module uses it), in the order bundl
 GZBLOCK = re.compile(r'^<script type="application/gzip-base64" id="data-([\w-]+)" data-file="([^"]+)">(.*?)</script>\n', re.S | re.M)
 CHUNK = re.compile(r'// ---- (\S+)\n__mods\["\1"\] = await \(async \(\) => \{\n(.*?)\nreturn \{ ?(.*?) ?\};\n\}\)\(\);\n', re.S)
 # a data block starts a line (the editing guide quotes the tag mid-line, which must not match)
-# (another city's blocks also name their file: data-file="nyc/transit.json")
+# (each block names its file, e.g. data-file="nyc/transit.json"; bundles from before the
+# per-city folders had Philadelphia's JSON blocks without it)
 BLOCK = re.compile(r'^<script type="application/json" id="data-([\w-]+)"(?: data-file="([^"]+)")?>(.*?)</script>\n', re.S | re.M)
 LOCAL = re.compile(r'^const \{ (.*?) \} = __mods\["([^"]+)"\];$', re.M)
 

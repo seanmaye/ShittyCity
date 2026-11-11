@@ -1,6 +1,6 @@
 """Second landmark pass: the Delaware suspension bridges (decks and outlines) and Memorial Hall.
 
-  tools/.venv/Scripts/python -I tools/extract_bridges.py [pbf] [raw_dir]
+  tools/.venv/Scripts/python -I tools/phl/extract_bridges.py [pbf] [raw_dir]
 
 Merges into raw_dir/landmarks_osm.json: "bridges": [{name, ways: [{tags, line}]}] for every
 highway/railway way whose name or bridge:name is one of BRIDGES, the man_made=bridge outlines

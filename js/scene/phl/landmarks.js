@@ -1,9 +1,9 @@
 // Hand-styled landmarks (tower crowns, City Hall, 30th Street, the Art Museum, Eastern
 // State, Boathouse Row), each placed, sized and rotated from its real footprint.
 import * as THREE from 'three';
-import { M, winMat, worldWinMat, bx, reps, litMats, WIN_W, WIN_H, addDisplay, DISPLAY_PRESETS } from './materials.js';
-import { Builder, addLoft } from './geometry.js';
-import { aviationLights } from './buildings.js';
+import { M, winMat, worldWinMat, bx, reps, litMats, WIN_W, WIN_H, addDisplay, DISPLAY_PRESETS } from '../materials.js';
+import { Builder, addLoft } from '../geometry.js';
+import { aviationLights } from '../buildings.js';
 /** Bring a box rotation into (-45deg, 45deg], swapping its sides to match. */
 function norm(b) {
   let { w, d, ry } = b;

@@ -1,6 +1,6 @@
-"""Build data/trolley1953.json: Center City streetcar tracks in January 1953 (the "1953 streetcars" layer).
+"""Build data/phl/trolley1953.json: Center City streetcar tracks in January 1953 (the "1953 streetcars" layer).
 
-usage: python -I build_trolley1953.py PTC_MAP3.GIF osm/streets_cc.json osm/oldtram.json data/trolley1953.json [--write] [--overlay out.png]
+usage: python -I build_trolley1953.py PTC_MAP3.GIF osm/streets_cc.json osm/oldtram.json data/phl/trolley1953.json [--write] [--overlay out.png]
 
 Then run tools/bundle.py to refresh city-models.html.
 

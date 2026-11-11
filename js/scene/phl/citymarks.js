@@ -5,9 +5,9 @@
 // outlines were left out of data/city_buildings. Also the frisbee game on the Edgley fields
 // (frisbee.js) and an unlabelled statue on the arena plaza.
 import * as THREE from 'three';
-import { pairs } from '../data.js';
-import { M, litMats, winMat, reps, addDisplay, DISPLAY_PRESETS } from './materials.js';
-import { Builder, addPolygon } from './geometry.js';
+import { pairs } from '../../data.js';
+import { M, litMats, winMat, reps, addDisplay, DISPLAY_PRESETS } from '../materials.js';
+import { Builder, addPolygon } from '../geometry.js';
 import { makeFigure } from './people.js';
 import { buildFrisbee } from './frisbee.js';
 

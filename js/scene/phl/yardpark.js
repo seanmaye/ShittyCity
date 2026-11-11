@@ -2,10 +2,10 @@
 // Outline, paths, trees and the bowl's site come from data/yardpark.json (tools/cap.py).
 import * as THREE from 'three';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { pairs } from '../data.js';
-import { M, litMats } from './materials.js';
-import { Builder, addPolygon, addRibbon } from './geometry.js';
-import { buildTrees } from './nature.js';
+import { pairs } from '../../data.js';
+import { M, litMats } from '../materials.js';
+import { Builder, addPolygon, addRibbon } from '../geometry.js';
+import { buildTrees } from '../nature.js';
 const merge = geos => BufferGeometryUtils.mergeBufferGeometries(geos.map(g => (g.index ? g.toNonIndexed() : g)));
 
 function deck(scene, data) {

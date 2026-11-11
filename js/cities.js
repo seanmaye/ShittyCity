@@ -19,7 +19,7 @@ export const CITIES = {
     blurb: 'All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill.',
     // projection: x metres east, z metres south of (LAT0, LON0); MX is metres per degree of longitude here
     frame: { LAT0: 39.9560, LON0: -75.1760, MX: 85390, MZ: 111000 },
-    dir: 'data', prefix: '',   // data files, and their <script id="data-…"> blocks in the bundle
+    dir: 'data/phl', prefix: 'phl-',   // data files, and their <script id="data-phl-…"> blocks in the bundle
     // [key in the loaded object, file in dir]; .gz files are gzip (JSON or binary)
     files: [
       ['buildings', 'buildings.json'], ['river', 'river.json'], ['ground', 'ground.json'], ['trees', 'trees.json'],

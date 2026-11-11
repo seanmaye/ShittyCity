@@ -1,5 +1,5 @@
-// The Schuylkill: real OSM water polygons, plus a centreline (with true bank-to-bank
-// width) that the monorail, boathouses and rowing shells follow.
+// Water: real OSM water polygons, plus an optional river centreline (with true bank-to-bank
+// width) that Philadelphia's monorail, boathouses and rowing shells follow (the Schuylkill).
 import * as THREE from 'three';
 import { latOf, pairs } from '../data.js';
 import { M } from './materials.js';

@@ -1,6 +1,6 @@
-// The rest of Philadelphia, out to the city limits: ~500k building footprints (City of
-// Philadelphia LI footprints), streets, rail, parks, water and park trees (OpenStreetMap).
-// Everything here lies outside the original Center City extent, which keeps its own data.
+// The city beyond its detailed core (data/<city>/city.json.gz and city_buildings.bin.gz): building
+// footprints, streets, rail, parks, water and park trees, out to the city limits (Philadelphia's
+// ~500k footprints) or the land outlines (New York's outer boroughs).
 //
 // Performance: buildings are instanced boxes (fitted to each footprint) in 1 km tiles, plus
 // real outlines for large irregular ones. Near tiles draw full boxes with window textures;
@@ -15,7 +15,7 @@ import { facadeKind, facadeColor, hash, addRooftop, aviationLights } from './bui
 
 const TILE = 1000, FULL = 5000, TREE_FAR = 7000;
 
-/** Decode city_buildings.bin (see tools/build_city.py). */
+/** Decode city_buildings.bin (PHB1; written by tools/phl/build_city.py and tools/nyc/import_nyc.py). */
 function decode(buf) {
   const dv = new DataView(buf);
   if (String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3)) !== 'PHB1') throw new Error('city buildings: bad header');

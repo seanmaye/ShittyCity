@@ -1,8 +1,8 @@
 """Turn the raw downloads into the compact JSON files the scene loads.
 
-  python -I tools/build_data.py [raw_dir] [out_dir]
+  python -I tools/phl/build_data.py [raw_dir] [out_dir]
 
-raw_dir defaults to tools/raw (see fetch_data.py), out_dir to data/.
+raw_dir defaults to tools/phl/raw (see fetch_data.py), out_dir to data/phl/.
 All coordinates are written as integer decimetres in the scene's local frame
 (x = metres east, z = metres south of 39.9560 N, 75.1760 W).
 """
@@ -14,7 +14,7 @@ from geom import (Grid, area, centroid, clip_line, clip_ring, min_rect, point_in
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RAW = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "raw")
-OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "..", "data")
+OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "..", "..", "data", "phl")
 os.makedirs(OUT, exist_ok=True)
 
 S, W, N, E = 39.936, -75.208, 39.982, -75.152

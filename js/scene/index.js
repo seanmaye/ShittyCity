@@ -7,17 +7,17 @@ import { litMats, setWindowHour, DISPLAY_PRESETS, setDisplayColors } from './mat
 import { buildRiver } from './river.js';
 import { buildGround } from './ground.js';
 import { buildBuildings } from './buildings.js';
-import { buildLandmarks } from './landmarks.js';
-import { buildMonorail } from './monorail.js';
+import { buildLandmarks } from './phl/landmarks.js';
+import { buildMonorail } from './phl/monorail.js';
 import { buildTrees, buildShells } from './nature.js';
-import { buildSports, courtTest } from './sports.js';
-import { buildYardPark } from './yardpark.js';
+import { buildSports, courtTest } from './phl/sports.js';
+import { buildYardPark } from './phl/yardpark.js';
 import { buildSubway, SPEC } from './subway.js';
 import { createSky } from './sky.js';
 import { buildCity } from './city.js';
-import { buildCityMarks } from './citymarks.js';
+import { buildCityMarks } from './phl/citymarks.js';
 import { buildTransitMap } from './transitmap.js';
-import { buildOldTrolleys } from './oldtrolley.js';
+import { buildOldTrolleys } from './phl/oldtrolley.js';
 // New York (ported from the NYC City Model): towers, East River bridges, outer-borough landmarks
 // and the proposed East River monorail
 import { buildLandmarks as buildNycLandmarks } from './nyc/landmarks.js';
@@ -26,7 +26,7 @@ import { buildBoroughMarks } from './nyc/boroughmarks.js';
 import { buildMonorail as buildNycMonorail } from './nyc/monorail.js';
 // let the status line paint between build steps (a timer, so it also works in background tabs)
 const nextFrame = () => new Promise(r => setTimeout(r, 16));
-// what a feature contributes when the city doesn't have it (the Philadelphia proposals, say)
+// what a feature contributes when the city doesn't have it (another city's landmarks, say)
 const none = () => ({ labels: [], views: [], nightOnly: [], duskOnly: [], boatLines: [], curves: [], trains: [], lines: [], slots: [], legend: [], update() {}, setOverlay() {} });
 
 export async function buildScene(canvas, data, status = () => {}) {
@@ -46,7 +46,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   const city = buildCity(scene, data, { waterMat: river.waterMat, status, clear, sea: CITY.sea });
   camera.far = 200000; camera.updateProjectionMatrix(); controls.maxDistance = 45000;
   status('Placing landmarks and the monorail…'); await nextFrame();
-  // stadiums, Independence Hall, Memorial Hall and the Delaware bridges (data/city_landmarks.json)
+  // Philadelphia: stadiums, Independence Hall, Memorial Hall and the Delaware bridges (data/phl/city_landmarks.json)
   const marks = data.cityMarks ? buildCityMarks(scene, data.cityMarks) : none();
   // Philadelphia's styled landmarks, riverfront monorail and rowing shells (they follow the Schuylkill)
   const lm = data.landmarks ? buildLandmarks(scene, data.landmarks, river) : none();
@@ -64,8 +64,8 @@ export async function buildScene(canvas, data, status = () => {}) {
   if (data.sports) { status('Building the sports parks…'); await nextFrame(); sports = buildSports(scene, data.sports, river, ground.bridgeSegs, data.ground.lines); }
   if (data.yardpark) { status('Capping the rail yard…'); await nextFrame(); yard = buildYardPark(scene, data.yardpark, [monorail.curve, ...sports.curves].filter(Boolean)); }
   status('Laying the transit network…'); await nextFrame();
-  // the original L and trolley data (Center City) plus the citywide network; the full-length
-  // runs in data/metro replace the original Center City runs of the lines they extend
+  // the city's transit; Philadelphia also has its citywide network in data/phl/metro.json.gz,
+  // whose full-length runs replace the Center City runs of the lines they extend
   const T = data.transit, Mt = data.metro || { lines: [], tracks: [], runs: [], platforms: [], stations: [] }, replace = new Set(Mt.replaceRuns || []);
   const lineById = new Map(T.lines.map(l => [l.id, { ...l }]));
   for (const l of Mt.lines) {

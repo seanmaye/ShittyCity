@@ -3,9 +3,9 @@
 // Court positions come from data/sports.json (tools/proposal.py).
 import * as THREE from 'three';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { pairs } from '../data.js';
-import { M, litMats } from './materials.js';
-import { Builder } from './geometry.js';
+import { pairs } from '../../data.js';
+import { M, litMats } from '../materials.js';
+import { Builder } from '../geometry.js';
 import { beam, piers, station, train } from './monorail.js';
 export const H2 = 26; // above the riverfront loop (18 m) so the lines can cross
 

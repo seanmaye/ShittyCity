@@ -45,7 +45,7 @@ const LIGHT = [ // [elevation, hemi sky, hemi ground, hemi intensity, water]
   [-18, '#34406a', '#1a1f1a', .3, '#1c2e40'],
   [-4, '#5a5580', '#2c2c28', .38, '#3d5470'],
   [2, '#f6c29a', '#3e4f3a', .55, '#62879a'],
-  [25, '#e3f2ff', '#5b7a4a', .5, '#4a7684'],      // the Schuylkill and Delaware read green-grey from above
+  [25, '#e3f2ff', '#5b7a4a', .5, '#4a7684'],      // rivers read green-grey from above
 ];
 const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const ca = new THREE.Color(), cb = new THREE.Color();

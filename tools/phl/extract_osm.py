@@ -1,12 +1,12 @@
 """Cut the city's OpenStreetMap data out of a Geofabrik extract (no Overpass needed).
 
-  tools/.venv/Scripts/python tools/extract_osm.py [pbf] [raw_dir]
+  tools/.venv/Scripts/python tools/phl/extract_osm.py [pbf] [raw_dir]
 
 Needs pyosmium (`python -m venv tools/.venv` then `tools/.venv/Scripts/pip install osmium`).
-pbf defaults to tools/raw/osm/pennsylvania.osm.pbf
+pbf defaults to tools/phl/raw/osm/pennsylvania.osm.pbf
 (https://download.geofabrik.de/north-america/us/pennsylvania-latest.osm.pbf).
 
-Writes the same Overpass-style JSON that fetch_city.py would, into raw_dir (tools/raw/city):
+Writes the same Overpass-style JSON that fetch_city.py would, into raw_dir (tools/phl/raw/city):
   tiles/tile_all.json   ways: streets, rail, waterways, land use, water (with geometry)
   areas.json            multipolygon relations for parks, water and woods (member geometry)
   transit.json          rail transit route relations + route masters, their member ways (tags +

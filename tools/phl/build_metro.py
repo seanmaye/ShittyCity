@@ -1,10 +1,10 @@
 """Build the citywide rail transit network: every SEPTA Metro line (L, B1-B3, G1, T1-T5), all 13
 Regional Rail lines, PATCO and NJ Transit's Atlantic City Line, inside the city limits.
 
-  python -I tools/build_metro.py [raw_dir] [out_dir]
+  python -I tools/phl/build_metro.py [raw_dir] [out_dir]
 
-raw_dir defaults to tools/raw/city (extract_osm.py output), out_dir to data/.
-Writes data/metro.json.gz, which js/scene/index.js merges into data/transit.json:
+raw_dir defaults to tools/phl/raw/city (extract_osm.py output), out_dir to data/phl/.
+Writes data/phl/metro.json.gz, which js/scene/index.js merges into data/phl/transit.json:
   lines      [{id, name, kind, color, group}]
   tracks     [{k, p: flat [x, z, y] dm}]       new physical track (the L and trolleys only outside the
                                               original extent, which keeps its own; surface Regional
@@ -29,7 +29,7 @@ from citylimits import Limits  # noqa: E402
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.stdout.reconfigure(encoding="utf-8")
 RAW = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "raw", "city")
-OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "..", "data")
+OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "..", "..", "data", "phl")
 
 
 def jload(p):
@@ -215,7 +215,7 @@ def jumps(path):
     return getattr(path, "gaps", 0)
 
 
-# the Delaware bridges are modelled by citymarks.js (data/city_landmarks.json): track on their decks
+# the Delaware bridges are modelled by citymarks.js (data/phl/city_landmarks.json): track on their decks
 # follows the same deck profile, deckY(s) = min(deckH, 1 + .045 * min(s, L - s)), s along the axis
 DECKS = []
 if os.path.exists(os.path.join(OUT, "city_landmarks.json")):

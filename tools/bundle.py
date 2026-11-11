@@ -2,11 +2,10 @@
 
   python -I tools/bundle.py [out.html]
 
-Inlines css/style.css, every module under js/, every data/*.json file as JSON and every
-data/*.gz file (the citywide build-out) as base64. Each other city's folder (data/<city>/, see
-js/cities.js) is inlined the same way, its block ids prefixed with "<city>-" and its files named
-in data-file. three.js still loads from the CDN through the page's import map. The result opens
-straight from disk.
+Inlines css/style.css, every module under js/, and every city's data folder (data/<city>/, see
+js/cities.js): each .json file as JSON and each .gz file as base64, in a block with the id
+"data-<city>-<name>" that names its file in data-file. three.js still loads from the CDN through
+the page's import map. The result opens straight from disk.
 """
 import base64, json, os, re, sys
 
@@ -128,15 +127,14 @@ html = read("index.html")
 css = read("css/style.css")
 html = html.replace('<link rel="stylesheet" href="css/style.css">', f"<style>\n{css}</style>")
 data_tags = ""
-# Philadelphia's files in data/, then each other city's folder data/<city>/ (js/cities.js)
-dirs = [("", "")] + [(d + "/", d + "-") for d in sorted(os.listdir(os.path.join(ROOT, "data"))) if os.path.isdir(os.path.join(ROOT, "data", d))]
+# one folder per city, data/<city>/ (js/cities.js)
+dirs = [(d + "/", d + "-") for d in sorted(os.listdir(os.path.join(ROOT, "data"))) if os.path.isdir(os.path.join(ROOT, "data", d))]
 for sub, prefix in dirs:
     for name in sorted(os.listdir(os.path.join(ROOT, "data", sub))):
         if name.endswith(".json"):
             body = read("data/" + sub + name).replace("</", "<\\/")
-            file_attr = f' data-file="{sub}{name}"' if sub else ""
-            data_tags += f'<script type="application/json" id="data-{prefix}{name[:-5]}"{file_attr}>{body}</script>\n'
-        elif name.endswith(".gz"):   # gzip data (city build-out): base64, decoded by js/data.js
+            data_tags += f'<script type="application/json" id="data-{prefix}{name[:-5]}" data-file="{sub}{name}">{body}</script>\n'
+        elif name.endswith(".gz"):   # gzip data: base64, decoded by js/data.js
             with open(os.path.join(ROOT, "data", sub, name), "rb") as f:
                 b64 = base64.b64encode(f.read()).decode("ascii")
             data_tags += f'<script type="application/gzip-base64" id="data-{prefix}{name.split(".")[0]}" data-file="{sub}{name}">{b64}</script>\n'

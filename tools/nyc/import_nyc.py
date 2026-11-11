@@ -1,6 +1,6 @@
 """Convert the New York model's data into this engine's formats (data/nyc/).
 
-  python -I tools/import_nyc.py <path to the nyc-city-model checkout> [out dir]
+  python -I tools/nyc/import_nyc.py <path to the nyc-city-model checkout> [out dir]
 
 The source is the NYC City Model repository (\\\\192.168.168.72\\tsptemp\\sean\\nyc-city-model,
 imported at commit 676aee9). It reads that checkout's data/map.json.gz, transit.json,
@@ -28,7 +28,7 @@ if len(sys.argv) < 2:
     raise SystemExit(__doc__)
 SRC = sys.argv[1]
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "..", "data", "nyc")
+OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "..", "..", "data", "nyc")
 
 LAT0, LON0 = 40.745, -73.984          # the NYC frame (js/cities.js), x east / z south in metres
 MX, MZ = 111000 * math.cos(math.radians(LAT0)), 111000

@@ -1,11 +1,11 @@
-// Real building footprints (City of Philadelphia LI footprints, LiDAR heights),
+// Real building footprints (each city's footprints and heights: data/<city>/buildings.json),
 // extruded and merged into tiled meshes with lit-window facades.
 import * as THREE from 'three';
 import { pairs } from '../data.js';
 import { worldWinMat, WIN_W, WIN_H, roofColor, M, addDisplay } from './materials.js';
 import { Builder, addPrism, addLoft } from './geometry.js';
 
-// Facade colours by style, weighted toward what Philadelphia is actually made of: red brick
+// Facade colours by style, weighted toward what Philadelphia (where they were tuned) is made of: red brick
 // rowhouses (some painted, stuccoed or Formstone), brick and limestone commercial blocks,
 // concrete and precast mid-rises, and blue-grey or green-grey glass towers.
 export const PALETTE = {

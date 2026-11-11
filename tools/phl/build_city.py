@@ -1,14 +1,14 @@
 """Build the rest of Philadelphia (everything outside the original Center City extent).
 
-  python -I tools/build_city.py [raw_dir] [out_dir]
+  python -I tools/phl/build_city.py [raw_dir] [out_dir]
 
-raw_dir defaults to tools/raw/city (see fetch_city.py), out_dir to data/.
-The original extent (data/ground.json bbox) is left to the existing data: nothing here
+raw_dir defaults to tools/phl/raw/city (see fetch_city.py), out_dir to data/phl/.
+The original extent (data/phl/ground.json bbox) is left to the existing data: nothing here
 overlaps it, so the hand-made changes there stay exactly as they are.
 
 Writes
-  data/city_buildings.bin.gz   every other building footprint in the city limits (binary, below)
-  data/city.json.gz            city limits, streets, rail, paths, parks, water, streams, trees
+  data/phl/city_buildings.bin.gz   every other building footprint in the city limits (binary, below)
+  data/phl/city.json.gz            city limits, streets, rail, paths, parks, water, streams, trees
 
 city_buildings.bin layout (little endian; positions in decimetres, scene frame):
   "PHB1", nBox u32, nPoly u32, nVert u32
@@ -27,7 +27,7 @@ from citylimits import Limits  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RAW = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "raw", "city")
-OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "..", "data")
+OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "..", "..", "data", "phl")
 FT = 0.3048
 random.seed(11)
 

@@ -1,6 +1,6 @@
 // Data loading and the local map projection shared by every scene module.
-// Generated files live in data/ (see tools/build_data.py) and data/<city>/; coordinates there
-// are integer decimetres in the active city's frame (js/cities.js).
+// Each city's generated files live in data/<city>/ (tools/<city>/ makes them); coordinates there
+// are integer decimetres in that city's frame (js/cities.js).
 import * as THREE from 'three';
 import { CITY } from './cities.js';
 

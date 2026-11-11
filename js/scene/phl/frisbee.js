@@ -4,8 +4,8 @@
 // defenders mark them; a catch in the end zone scores, a dropped pass turns it over.
 import * as THREE from 'three';
 import { makeFigure, pose } from './people.js';
-import { pairs } from '../data.js';
-import { Builder, addPolygon } from './geometry.js';
+import { pairs } from '../../data.js';
+import { Builder, addPolygon } from '../geometry.js';
 
 const LEN = 100, WID = 37, EZ = 18;   // regulation field: 64 m playing field plus two 18 m end zones
 

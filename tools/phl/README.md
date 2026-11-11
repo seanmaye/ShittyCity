@@ -11,7 +11,7 @@ and platform rules.
 | `osm/transit.json` | OSM download: tracks, stations, stops and subway entrances in the model area |
 | `osm/routes.json` | OSM download: the route relations (L and T1–T5, both directions) |
 | `fetch_osm.sh` | Re-downloads the OSM files (Overpass API) |
-| `build_trolley1953.py` | Builds `data/trolley1953.json` (the "1953 streetcars" layer) |
+| `build_trolley1953.py` | Builds `data/phl/trolley1953.json` (the "1953 streetcars" layer) |
 | `osm/streets_cc.json` | OSM download: named Center City streets (for tracing the 1953 map) |
 | `osm/oldtram.json` | OSM download: disused and removed tram track in the model area |
 
@@ -22,7 +22,7 @@ Data © OpenStreetMap contributors, ODbL. The page credits it.
 You need Python 3 (no extra packages). From the repository folder:
 
 ```
-python tools/build_transit.py tools/osm/transit.json tools/osm/routes.json city-models.html
+python tools/phl/build_transit.py tools/phl/osm/transit.json tools/phl/osm/routes.json city-models.html
 ```
 
 That is a dry run. It prints what it would build: tracks, platforms, stations, entrances and the
@@ -30,7 +30,7 @@ Market St section plane. Add `--write` at the end to replace the `data-transit` 
 Then open the page and check the subway (the "Cut away Market St" button) before you commit.
 
 The repository also keeps the page as source files (see the main README). After `--write`, run
-`python -I tools/unbundle.py` so `data/transit.json` and the sources match the page.
+`python -I tools/unbundle.py` so `data/phl/transit.json` and the sources match the page.
 
 ## What it does
 
@@ -69,10 +69,10 @@ http://www.phillytrolley.org/ptc-map.html (`IMAGES/PTC_MAP3.GIF`), then, from th
 
 ```
 pip install pillow
-python tools/build_trolley1953.py PTC_MAP3.GIF tools/osm/streets_cc.json tools/osm/oldtram.json data/trolley1953.json --overlay check.png
+python tools/phl/build_trolley1953.py PTC_MAP3.GIF tools/phl/osm/streets_cc.json tools/phl/osm/oldtram.json data/phl/trolley1953.json --overlay check.png
 ```
 
 Look at `check.png` (the traced streets drawn in magenta over the map), then add `--write`
-to write `data/trolley1953.json`, and run `python -I tools/bundle.py` to refresh the page.
+to write `data/phl/trolley1953.json`, and run `python -I tools/bundle.py` to refresh the page.
 The map only covers Vine to South Street, Schuylkill to the Delaware. Bus lines (red) and
 Route 61 on Ridge Ave (an electric trolleybus in 1953) are left out.
