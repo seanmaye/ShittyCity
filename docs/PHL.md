@@ -35,6 +35,7 @@ All of Philadelphia out to the city limits, with every rail transit line and our
   - Lincoln Financial Field, Citizens Bank Park and Xfinity Mobile Arena
   - Independence Hall and Memorial Hall
   - the Ben Franklin and Walt Whitman bridges
+- **Go fishing.** People fish the Schuylkill at its real spots: below the Fairmount Dam, the Schuylkill Banks boardwalk, Kelly and MLK Drives, Bartram's Garden, Grays Ferry, Strawberry Mansion, East Falls and Manayunk. Click one and they ask you to join them. Then cast (farther out is deeper, with rarer catches), wait out the nibbles, strike on the bite (quickly: rarer catches give you less time) and reel, keeping the line tension in the green band while the fish runs, shakes its head and slowly tires. It's hard on purpose. There are 48 things to catch, from bluegill and catfish to striped bass, shad, snakehead and the legendary Atlantic sturgeon, plus trash and treasure, at five levels of rarity. Snap their line and they'll yell at you (with some colourful language) before giving you one more try. Shad run in spring and catfish bite at night. Your catch log is kept in your browser.
 - **Easter eggs.** A pickup ultimate game runs on the Belmont & Edgley cricket ground in West Fairmount Park, and something is waiting on the arena plaza.
 - **Signature towers** are modelled with their real setbacks and crowns.
 - **Skyline lights** colour these for the Birds, the Phillies, the Sixers, the Flyers, the Union, the holidays and more:

@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { formatHour } from './scene/sky.js';
 import { createMinimap } from './minimap.js';
 import { createRidebar } from './ridebar.js';
+import { createFishing } from './fishing.js';
 import { CITY } from './cities.js';
 // remembered per viewer and city (browser storage may be unavailable: then nothing is remembered)
 const store = { get: k => { try { return localStorage.getItem(CITY.storage + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(CITY.storage + k, v); } catch (e) { /* ignore */ } } };
@@ -213,12 +214,14 @@ export function createUI(api) {
     }
     if (e.buttons || e.pointerType !== 'mouse' || hoverPending) return;   // hover cursor over a clickable car
     hoverPending = true;
-    requestAnimationFrame(() => { hoverPending = false; if (!carOn) canvas.style.cursor = api.pickCar(...rel(e)) ? 'pointer' : ''; });
+    requestAnimationFrame(() => { hoverPending = false; if (!carOn) canvas.style.cursor = api.pickCar(...rel(e)) || anglerAt(...rel(e)) != null ? 'pointer' : ''; });
   });
   const endDrag = e => {
     const d = down; down = null;
     if (d && d.lockedClick) {   // mouse captured: click the train under the crosshair
       if (carOn || e.type !== 'pointerup') return;
+      const ai = anglerAt(canvas.clientWidth / 2, canvas.clientHeight / 2);   // someone fishing under the crosshair
+      if (ai != null) { document.exitPointerLock(); fishing.open(ai); return; }
       const hit = api.pickCar(canvas.clientWidth / 2, canvas.clientHeight / 2); if (!hit) return;
       if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; openPicker(false); }
       api.boardCar(hit); syncCar(); syncCut(); return;
@@ -227,10 +230,15 @@ export function createUI(api) {
     if (carOn) { canvas.style.cursor = 'grab'; if (click) lockMouse(); return; }
     if (!click) return;
     if (d.button === 2) { lockMouse(); return; }   // right-click (not a right-drag pan): creative mode
+    const ai = anglerAt(...rel(e));   // someone fishing on the Schuylkill: they ask you to join them
+    if (ai != null) { if (riding) { riding = false; api.setRiding(false, true); rideBtn.textContent = 'Ride a line'; openPicker(false); } fishing.open(ai); return; }
     const hit = api.pickCar(...rel(e)); if (!hit) { if (!riding) lockMouse(); return; }
     if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; openPicker(false); }
     api.boardCar(hit); syncCar(); syncCut();
   };
+  // fishing (Philadelphia): the anglers on the Schuylkill banks, and the minigame
+  const fishing = api.pickAngler ? createFishing(api) : { open() {}, active: () => false };
+  const anglerAt = (x, y) => (api.pickAngler ? api.pickAngler(x, y) : null);
   canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointercancel', endDrag);
   // keys: inside a car W A S D / arrows walk the aisle; otherwise they fly the camera over the
   // city, with Space to rise and Shift to sink
@@ -241,7 +249,7 @@ export function createUI(api) {
   const applyKeys = () => api.moveCar((keys.has('f') ? 1 : 0) - (keys.has('b') ? 1 : 0), (keys.has('r') ? 1 : 0) - (keys.has('l') ? 1 : 0));
   const applyFly = () => api.setFly((flyKeys.has('f') ? 1 : 0) - (flyKeys.has('b') ? 1 : 0), (flyKeys.has('r') ? 1 : 0) - (flyKeys.has('l') ? 1 : 0), (flyKeys.has('u') ? 1 : 0) - (flyKeys.has('d') ? 1 : 0));
   window.addEventListener('keydown', e => {
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.ctrlKey || e.metaKey || e.altKey || fishing.active()) return;   // the fishing dialog has the keys
     const t = e.target, typing = t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'range'));
     if (typing) return;
     if (carOn) {

@@ -360,6 +360,17 @@ js/ui.js         buttons, line picker, floating labels, keys (inside a car KEYMA
 js/minimap.js    top-right map (#minimap): base map of limits, parks, water and rail drawn once
                  from api.mapData; LEVELS = metres across per zoom step; you as a view cone, or
                  the train and its line in bold when riding; a click calls api.flyToPoint(x, z).
+js/fishing.js    the fishing minigame (a dialog over the city): invitation, then cast (power meter),
+                 wait (nibbles that look like bites), bite (strike window, shorter for rarer
+                 catches), reel (hold: tension vs. progress, line gained only in the green band;
+                 the fish runs, shakes its head and tires; snap over the top, slack shakes the
+                 hook), result. HARD holds every difficulty number (tuned by simulation). ITEMS = the catch table
+                 (fish draw params, or a glyph for trash and treasure; lb range, fight, note,
+                 when(ctx) multiplier for season and hour), RARITY weights; rollCatch(ctx) picks
+                 one, favouring rarer ones on long casts. drawCatch() paints a fish or glyph.
+                 The catch log is kept in localStorage (CITY.storage + 'creel'). Snap the line and
+                 the angler yells at you (YELLS, in a speech bubble), then always gives you one
+                 more try (ONE_MORE; the button becomes "One more try").
 js/ridebar.js    line diagram (#ridebar) while riding, from api.rideStrip() (subway.js): stops
                  evenly spaced, the train between them, passed stops greyed, the next in bold.
 
@@ -386,6 +397,11 @@ monorail.js      riverfront LOOP. Settings: H = 18 (height); EAST = 58 and WEST 
                  few hundred metres (setbacks/ease), the spline takes every third point, and
                  each end crosses the river on a rounded turn (turn(): a cubic Bezier along
                  each bank line's heading), so the beam has no kinks or hairpins.
+anglers.js       people fishing the Schuylkill (buildAnglers(scene, river, boats, water)): BANK_SPOTS
+                 on the river centreline and PIER_SPOTS by the boat piers, each stood at the real
+                 water's edge (walked out from the water to the bank); figure, rod, line, bobber,
+                 bucket, cooler. pick() / info(i) (name, hello, spot, view); wired as api.pickAngler,
+                 anglerInfo, viewAngler; ui.js opens js/fishing.js on a click.
 boats.js         river boats from data-phl-boats: piers (deck, pilings, float, shelter), boat
                  models, fleets easing into each stop. Registered with subway.registerFleet as
                  kind 'boat' (CAR_IN.boat is the walkable cabin; aboard, only the model's outer
