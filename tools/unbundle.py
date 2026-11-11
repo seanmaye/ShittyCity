@@ -17,6 +17,8 @@ EXTERNALS = [  # (import line, how to tell a module uses it), in the order bundl
     ("import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';", re.compile(r"\bOrbitControls\b")),
     ("import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';", re.compile(r"\bBufferGeometryUtils\b")),
     ("import { Line2 } from 'three/examples/jsm/lines/Line2.js';", re.compile(r"\bLine2\b")),
+    ("import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';", re.compile(r"\bLineSegments2\b")),
+    ("import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';", re.compile(r"\bLineSegmentsGeometry\b")),
     ("import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';", re.compile(r"\bLineMaterial\b")),
     ("import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';", re.compile(r"\bLineGeometry\b")),
 ]
@@ -44,10 +46,10 @@ def module_source(path, body, exports):
     # external imports were blanked; put them back into the blank lines of the import header
     code = "\n".join(l for l in lines if not l.startswith("import "))
     need = [imp for imp, used in EXTERNALS if used.search(code)]
-    first_local = next((i for i, l in enumerate(lines) if l.startswith("import ")), None)
-    header_end = first_local if first_local is not None else next(
-        (i for i, l in enumerate(lines) if l.strip() and not l.startswith("//")), len(lines))
-    blanks = [i for i in range(0, header_end + 1) if i < len(lines) and lines[i] == ""]
+    # the import block runs from the top to the first line of code (external imports may sit
+    # before, between or after the local ones)
+    header_end = next((i for i, l in enumerate(lines) if l.strip() and not l.startswith(("//", "import "))), len(lines))
+    blanks = [i for i in range(0, header_end) if lines[i] == ""]
     if len(blanks) < len(need):
         raise SystemExit(f"{path}: no room to restore {need[len(blanks):]}")
     for i, imp in zip(blanks, need):  # first blanks after the header comment = original slots

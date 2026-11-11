@@ -7,15 +7,13 @@
 // far tiles draw only their roofs; tiles outside the view or past the fog are hidden.
 import * as THREE from 'three';
 import { pairs } from '../data.js';
-import { M, worldWinMat, litMats, WIN_W, WIN_H } from './materials.js';
+import { M, worldWinMat, instancedWinMat, roofColor, WIN_W, WIN_H } from './materials.js';
 import { Builder, addPolygon, addRibbon, addPrism } from './geometry.js';
-import { drawLines } from './ground.js';
+import { drawLines, GREEN, GROUND, COUNTRY, groundMat } from './ground.js';
 import { buildTrees } from './nature.js';
-import { OFFICE, BRICK } from './buildings.js';
+import { facadeKind, facadeColor, hash, addRooftop, aviationLights } from './buildings.js';
 
 const TILE = 1000, FULL = 5000, TREE_FAR = 7000;
-const GREEN = ['#6c9a52', '#7aa65a', '#5f9a4e', '#557d45', '#6f9256'];
-const hash = i => { let x = (i + 1) * 2654435761 >>> 0; x ^= x >>> 15; x = Math.imul(x, 2246822507) >>> 0; x ^= x >>> 13; return (x >>> 0) / 4294967296; };
 
 /** Decode city_buildings.bin (see tools/build_city.py). */
 function decode(buf) {
@@ -33,24 +31,6 @@ function decode(buf) {
   return { nB, nP, bx, bz, bw, bd, br, bh, bk, vx, vz, pn, ph, pk };
 }
 
-/** Facade material for instanced boxes: window UVs are worked out on the GPU from each
- *  instance's size, so one unit box serves every building. */
-function instancedWinMat(kind) {
-  const m = worldWinMat(kind).clone();
-  m.vertexColors = false; litMats.push(m);
-  m.onBeforeCompile = sh => {
-    sh.vertexShader = sh.vertexShader.replace('#include <uv_vertex>', `
-#ifdef USE_UV
-  vec3 sc = vec3(length(instanceMatrix[0].xyz), length(instanceMatrix[1].xyz), length(instanceMatrix[2].xyz));
-  float along = abs(normal.x) > .5 ? (position.z + .5) * sc.z : (position.x + .5) * sc.x;
-  float jit = fract(instanceMatrix[3].x * .0131 + instanceMatrix[3].z * .0173) * 4.0;
-  vUv = abs(normal.y) > .5 ? vec2(.01, .01) : vec2(along / ${WIN_W.toFixed(1)} + jit, position.y * sc.y / ${WIN_H.toFixed(1)});
-#endif`);
-  };
-  m.customProgramCacheKey = () => 'instWin' + kind;
-  return m;
-}
-
 function unitBox() {   // 1 x 1 x 1 box standing on y = 0, without a bottom face
   const g = new THREE.BoxGeometry(1, 1, 1); g.translate(0, .5, 0);
   const idx = g.index.array, keep = [];
@@ -59,7 +39,8 @@ function unitBox() {   // 1 x 1 x 1 box standing on y = 0, without a bottom face
 }
 function unitRoof() { const g = new THREE.PlaneGeometry(1, 1); g.rotateX(-Math.PI / 2); g.translate(0, 1, 0); return g; }
 
-export function buildCity(scene, data, { waterMat, status = () => {} }) {
+/** clear: rings ([[x, z], ...]) kept free of park trees (playing fields) */
+export function buildCity(scene, data, { waterMat, status = () => {}, clear = [] }) {
   const city = data.city, B = decode(data.cityBuildings);
   const tiles = new Map();   // key -> { cx, cz, r, full: [], roof: [], trees: [] }
   const tileOf = (x, z) => {
@@ -71,10 +52,10 @@ export function buildCity(scene, data, { waterMat, status = () => {} }) {
 
   // ---- ground: paved city limits, a wider countryside plane, parks, water, streams
   const limits = city.limits.map(pairs);
-  const outer = new THREE.Mesh(new THREE.PlaneGeometry(400000, 400000), M('#7d8a6e', { roughness: 1 }));
+  const outer = new THREE.Mesh(new THREE.PlaneGeometry(400000, 400000), M(COUNTRY, { roughness: 1 }));
   outer.rotation.x = -Math.PI / 2; outer.position.y = -.05; outer.receiveShadow = true; scene.add(outer);
-  const pb = new Builder(); limits.forEach(r => addPolygon(pb, [r], 0));
-  const plate = new THREE.Mesh(pb.geometry(), M('#bdb6a8', { roughness: 1, side: THREE.FrontSide }));
+  const pb = new Builder({ uv: true }); limits.forEach(r => addPolygon(pb, [r], 0, (x, z) => [x / 400, z / 400]));
+  const plate = new THREE.Mesh(pb.geometry(), groundMat(GROUND, THREE.FrontSide));
   plate.position.y = .14; plate.receiveShadow = true; scene.add(plate);
   const edge = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(limits[0].map(([x, z]) => new THREE.Vector3(x, .6, z))),
     new THREE.LineBasicMaterial({ color: '#4a5a46', transparent: true, opacity: .7 }));
@@ -105,51 +86,72 @@ export function buildCity(scene, data, { waterMat, status = () => {} }) {
 
   // ---- buildings
   status(`Raising ${(B.nB + B.nP).toLocaleString()} more buildings…`);
-  const per = new Map();   // tile -> [kind0 indices, kind1 indices]
+  // one instanced mesh per facade style per tile up close, one roof-only mesh per tile far away
+  const per = new Map();   // tile -> { style: [indices] }
+  const lights = [];
   for (let i = 0; i < B.nB; i++) {
-    const x = B.bx[i] / 10, z = B.bz[i] / 10, t = tileOf(x, z);
-    let l = per.get(t); if (!l) per.set(t, l = [[], []]);
-    l[B.bk[i]].push(i); t.top = Math.max(t.top, B.bh[i] / 10);
+    const x = B.bx[i] / 10, z = B.bz[i] / 10, t = tileOf(x, z), h = B.bh[i] / 10;
+    let l = per.get(t); if (!l) per.set(t, l = {});
+    const k = facadeKind(B.bk[i] === 0, h, hash(i + 11));
+    (l[k] || (l[k] = [])).push(i); t.top = Math.max(t.top, h);
   }
-  const geoBox = unitBox(), geoRoof = unitRoof(), mats = [instancedWinMat('row'), instancedWinMat('office')];
+  const geoBox = unitBox(), geoRoof = unitRoof(), plantMat = M('#ffffff', { roughness: .85 }), plantVC = M('#ffffff', { roughness: .85, vertexColors: true });
   const col = new THREE.Color();
-  for (const [t, kinds] of per) kinds.forEach((list, kind) => {
-    if (!list.length) return;
-    const n = list.length, mat4 = new Float32Array(n * 16), cols = new Float32Array(n * 3), pal = kind ? OFFICE : BRICK;
-    list.forEach((i, j) => {
-      const a = B.br[i] / 65535 * Math.PI, c = Math.cos(a), s = Math.sin(a), w = B.bw[i] / 10, d = B.bd[i] / 10, h = B.bh[i] / 10;
-      mat4.set([c * w, 0, -s * w, 0, 0, h, 0, 0, s * d, 0, c * d, 0, B.bx[i] / 10, 0, B.bz[i] / 10, 1], j * 16);
-      col.set(pal[Math.floor(hash(i) * pal.length)]); cols.set([col.r, col.g, col.b], j * 3);
-    });
-    const full = new THREE.InstancedMesh(geoBox, mats[kind], n), roof = new THREE.InstancedMesh(geoRoof, mats[kind], n);
-    full.instanceMatrix = new THREE.InstancedBufferAttribute(mat4, 16); roof.instanceMatrix = full.instanceMatrix;
-    full.instanceColor = new THREE.InstancedBufferAttribute(cols, 3); roof.instanceColor = full.instanceColor;
-    for (const m of [full, roof]) { m.frustumCulled = false; m.receiveShadow = true; m.userData.tiled = true; scene.add(m); }
-    full.castShadow = true;
-    t.full.push(full); t.roof.push(roof);
-  });
-  // large irregular buildings: real outlines, merged per tile
+  const place = (mat4, j, i, sx = 1, sy = 1, y0 = 0, hh = B.bh[i] / 10) => {
+    const a = B.br[i] / 65535 * Math.PI, c = Math.cos(a), s = Math.sin(a), w = B.bw[i] / 10 * sx, d = B.bd[i] / 10 * sx;
+    mat4.set([c * w, 0, -s * w, 0, 0, hh * sy, 0, 0, s * d, 0, c * d, 0, B.bx[i] / 10, y0, B.bz[i] / 10, 1], j * 16);
+  };
+  const instanced = (geo, mat, mat4, cols) => {
+    const m = new THREE.InstancedMesh(geo, mat, mat4.length / 16);
+    m.instanceMatrix = new THREE.InstancedBufferAttribute(mat4, 16); m.instanceColor = new THREE.InstancedBufferAttribute(cols, 3);
+    m.frustumCulled = false; m.receiveShadow = true; m.userData.tiled = true; scene.add(m); return m;
+  };
+  for (const [t, kinds] of per) {
+    const all = Object.values(kinds).flat(), rm4 = new Float32Array(all.length * 16), plant = [];
+    all.forEach((i, j) => place(rm4, j, i));
+    t.roof.push(instanced(geoRoof, instancedWinMat('office'), rm4, new Float32Array(all.length * 3).fill(1)));
+    for (const [kind, list] of Object.entries(kinds)) {
+      const mat4 = new Float32Array(list.length * 16), cols = new Float32Array(list.length * 3);
+      list.forEach((i, j) => {
+        place(mat4, j, i); col.set(facadeColor(kind, hash(i))); cols.set([col.r, col.g, col.b], j * 3);
+        if (!kind.startsWith('row') && B.bh[i] > 400) plant.push(i);
+      });
+      const full = instanced(geoBox, instancedWinMat(kind), mat4, cols); full.castShadow = true; t.full.push(full);
+    }
+    if (plant.length) {   // rooftop plant on buildings over 40 m, and aviation lights over 90 m
+      const m4 = new Float32Array(plant.length * 16), cl = new Float32Array(plant.length * 3);
+      plant.forEach((i, j) => {
+        const h = B.bh[i] / 10; place(m4, j, i, .55 + hash(i + 5) * .1, 1, h, 3 + Math.min(6, h * .025));
+        col.set(roofColor(hash(i + 5))).multiplyScalar(.9); cl.set([col.r, col.g, col.b], j * 3);
+        if (h > 90) lights.push(B.bx[i] / 10, h + 5 + Math.min(6, h * .025), B.bz[i] / 10);
+      });
+      const pm = instanced(geoBox, plantMat, m4, cl); pm.castShadow = true; t.full.push(pm);
+    }
+  }
+  // large irregular buildings: real outlines, merged per tile and facade style
   const pBuild = new Map();
   for (let i = 0, v = 0; i < B.nP; i++) {
     const n = B.pn[i], ring = [];
     let x = 0, z = 0;
     for (let k = 0; k < n; k++) { x = k ? x + B.vx[v + k] : B.vx[v + k]; z = k ? z + B.vz[v + k] : B.vz[v + k]; ring.push([x / 10, z / 10]); }
     v += n;
-    const t = tileOf(ring[0][0], ring[0][1]), key = t;
-    let pk = pBuild.get(key); if (!pk) pBuild.set(key, pk = [new Builder({ uv: true, color: true }), new Builder({ uv: true, color: true })]);
-    const kind = B.pk[i], pal = kind ? OFFICE : BRICK;
-    addPrism(pk[kind], [ring], 0, B.ph[i] / 10, hash(i + 7) * 4, WIN_W, WIN_H, new THREE.Color(pal[Math.floor(hash(i + 3) * pal.length)]));
-    t.top = Math.max(t.top, B.ph[i] / 10);
+    const t = tileOf(ring[0][0], ring[0][1]);
+    let pk = pBuild.get(t); if (!pk) pBuild.set(t, pk = {});
+    const h = B.ph[i] / 10, fk = facadeKind(B.pk[i] === 0, h, hash(i + 11)), color = facadeColor(fk, hash(i + 3));
+    addPrism(pk[fk] || (pk[fk] = new Builder({ uv: true, color: true })), [ring], 0, h, hash(i + 7) * 4, WIN_W, WIN_H, new THREE.Color(color), new THREE.Color(roofColor(hash(i + 9))));
+    if (B.pk[i] && h > 40) addRooftop(pk.plant || (pk.plant = new Builder({ color: true })), ring, h, color, hash(i + 5), lights);
+    t.top = Math.max(t.top, h);
   }
-  for (const [t, bs] of pBuild) bs.forEach((b, kind) => {
-    if (!b.count) return;
-    const m = new THREE.Mesh(b.geometry(), worldWinMat(kind ? 'office' : 'row'));
+  for (const [t, bs] of pBuild) for (const [kind, b] of Object.entries(bs)) {
+    if (!b.count) continue;
+    const m = new THREE.Mesh(b.geometry(), kind === 'plant' ? plantVC : worldWinMat(kind));
     m.castShadow = m.receiveShadow = true; scene.add(m); t.always.push(m);
-  });
+  }
 
   // ---- park trees, tiled with a draw distance
   const tt = new Map();
   for (let i = 0; i < city.trees.length; i += 2) {
+    if (clear.some(r => inRing(city.trees[i] / 10, city.trees[i + 1] / 10, r))) continue;
     const t = tileOf(city.trees[i] / 10, city.trees[i + 1] / 10);
     let l = tt.get(t); if (!l) tt.set(t, l = []); l.push(city.trees[i], city.trees[i + 1]);
   }
@@ -176,5 +178,6 @@ export function buildCity(scene, data, { waterMat, status = () => {} }) {
   // the whole city from above, north up
   const [x0, z0, x1, z1] = city.bbox.map(v => v / 10), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
   const view = { id: 'city', name: 'Whole city', pos: new THREE.Vector3(cx, 26000, cz + 16000), target: new THREE.Vector3(cx, 0, cz - 1500) };
-  return { update, view, bridgeSegs, wet, bounds: { x0, z0, x1, z1 }, buildingCount: B.nB + B.nP, boxes: B };
+  const beacons = aviationLights(lights); scene.add(beacons);
+  return { update, view, bridgeSegs, wet, bounds: { x0, z0, x1, z1 }, buildingCount: B.nB + B.nP, nightOnly: [beacons], boxes: B };
 }

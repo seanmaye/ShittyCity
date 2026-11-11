@@ -1,6 +1,10 @@
 // HUD buttons, hint text and the floating landmark labels.
 import * as THREE from 'three';
 import { formatHour } from './scene/sky.js';
+import { createMinimap } from './minimap.js';
+import { createRidebar } from './ridebar.js';
+// remembered per viewer (browser storage may be unavailable: then nothing is remembered)
+const store = { get: k => { try { return localStorage.getItem('phl3d:' + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem('phl3d:' + k, v); } catch (e) { /* ignore */ } } };
 export function createUI(api) {
   const tagsEl = document.getElementById('tags');
   const LABELS = api.labels.map(({ text, pos, section, stn, far, cutHide, layer }) => {
@@ -11,6 +15,7 @@ export function createUI(api) {
 
   function placeTags(camera) {
     if (!!api.getCar() !== carOn) syncCar();
+    const now = performance.now(); minimap.update(camera, now); ridebar.update(now);
     const w = window.innerWidth, h = window.innerHeight, placed = [];
     LABELS.forEach(l => {
       if (!showTags || carOn || (l.section && l.section !== api.getCut()) || l.cutHide.includes(api.getCut()) || (l.layer === 't53' && !api.getTransitMap())) { l.el.style.display = 'none'; return; }
@@ -219,6 +224,45 @@ export function createUI(api) {
     const s = document.createElement('span'), i = document.createElement('i'); i.className = it.kind; i.style.setProperty('--c', it.color); i.setAttribute('aria-hidden', 'true');
     s.append(i, it.name); legendEl.appendChild(s);
   }
+  // fold the panel down to its title (remembered; folded by default on small screens)
+  const card = document.querySelector('.hud .card'), body = document.getElementById('hud-body'), foldBtn = document.getElementById('fold');
+  const fold = on => {
+    body.hidden = on; card.classList.toggle('folded', on); foldBtn.setAttribute('aria-expanded', String(!on));
+    const t = on ? 'Expand the panel' : 'Collapse the panel'; foldBtn.setAttribute('aria-label', t); foldBtn.title = t;
+  };
+  const saved = store.get('folded');
+  fold(saved == null ? window.innerWidth < 640 : saved === '1');
+  foldBtn.addEventListener('click', () => { const on = !body.hidden; fold(on); store.set('folded', on ? '1' : '0'); });
+
+  // skyline display lights: a colour scheme for the towers' crowns, the Cira Centre's LED skin,
+  // the FMC crown and Boathouse Row, as the city does for teams and holidays
+  const swatches = document.getElementById('swatches'), skyName = document.getElementById('sky-name'), skyColor = document.getElementById('sky-color');
+  const customSw = skyColor.closest('.swatch'), swBtns = [];
+  const statusEl = document.getElementById('status'); let skyTimer = 0;
+  function setScheme(id, colors, name, quiet) {
+    api.setDisplayLights(colors); skyName.textContent = name;
+    swBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
+    customSw.classList.toggle('on', id === 'custom');
+    store.set('skyline', id === 'custom' ? 'custom:' + colors[0] : id);
+    if (!quiet && api.getMood() === 'day') {   // the lights only show after dark
+      statusEl.textContent = 'Skyline lights show after dark: slide the time past sunset.';
+      clearTimeout(skyTimer); skyTimer = setTimeout(() => { statusEl.textContent = ''; }, 3200);
+    }
+  }
+  for (const p of api.displayPresets) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'swatch'; b.dataset.id = p.id;
+    b.title = p.name; b.setAttribute('aria-label', p.name + ' skyline lights');
+    const n = p.colors.length;
+    b.style.setProperty('--sw', n === 1 ? p.colors[0] : `conic-gradient(${p.colors.map((c, i) => `${c} ${i / n * 360}deg ${(i + 1) / n * 360}deg`).join(',')})`);
+    b.addEventListener('click', () => setScheme(p.id, p.colors, p.name));
+    swatches.insertBefore(b, customSw); swBtns.push(b);
+  }
+  skyColor.addEventListener('input', () => setScheme('custom', [skyColor.value], 'Your colour'));
+  const sk = store.get('skyline') || 'white', pre = api.displayPresets.find(p => p.id === sk);
+  if (sk.startsWith('custom:')) { skyColor.value = sk.slice(7); setScheme('custom', [skyColor.value], 'Your colour', true); }
+  else setScheme(pre ? pre.id : 'white', (pre || api.displayPresets[0]).colors, (pre || api.displayPresets[0]).name, true);
+
+  const minimap = createMinimap(api), ridebar = createRidebar(api);
   [timeIn, lblBtn, rideBtn, cutBtn, trBtn].forEach(b => b.disabled = false);
 
   return { placeTags };

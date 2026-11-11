@@ -78,8 +78,11 @@ of editing this file. If you only have this file, edit it directly as described 
 data-buildings   45k real footprints (City of Philadelphia LI footprints, LiDAR heights)
   { "styles": [null, {"id","color","kind"}, ...],
     "b": [[height_dm, style_index, outer_ring_dm, hole_ring_dm, ...], ...] }
-  - style 0 = generic: brick rowhouse if under 16 m tall and under 320 m2, else an
-    office palette.
+  - style 0 = generic: a rowhouse if under 16 m tall and under 320 m2, else a commercial
+    building. buildings.js facadeKind() picks the facade (row/row2 terraces; office, office2
+    ribbon windows, glass or stone, glass more often over 55 m) and PALETTE the wall colour;
+    roofs take a roof colour (materials.js ROOFS). Buildings over 40 m get rooftop plant,
+    over 90 m a red aviation light (night only).
   - style > 0 = styles[i]. Its "kind" is "glass", "stone" or "row" (window glow and shine).
   - Footprints replaced by hand-modelled landmarks are already removed. The podiums
     under the styled towers remain, with that tower's style.
@@ -87,6 +90,7 @@ data-buildings   45k real footprints (City of Philadelphia LI footprints, LiDAR 
 data-landmarks   hand-styled landmarks, all in METRES
   towers:     [{x,z,w,d,ry,id,h,color,cap,kind}]. cap is one of liberty | taper | ctc |
               pyramid | stepped | psfs; anything else gives a plain box with windows.
+              landmarks.js LOOK overrides colour (and kind) per id with the real cladding.
   cityhall:   {x,z,w,d,ry}  (the tower is drawn on the north side)
   station:    {x,z,w,d,ry}  (30th Street Station, long side on local z)
   museum:     {x,z}         (Art Museum; it faces City Hall automatically)
@@ -180,6 +184,8 @@ data-city_landmarks  hand-styled models fitted to real outlines (tools/build_lan
   bridges:  [{name, a: [x, z], b: [x, z] (m, deck axis ends, a = Philadelphia end), width,
              deckH, towerH (m), towers: [s1, s2], anchors: [s1, s2] (m along the axis from a),
              color}]. Deck height along the axis: min(deckH, 1 + .045 * min(s, L - s)).
+  fields:   [{name, outline: ring_dm, x, z, w, d, ry}] the Edgley ultimate/cricket fields
+             (frisbee.js plays a game on the best-fit rectangle; park trees are kept off)
   labels:   [{t, x, y, z}] m
   The city footprints whose centroid is inside a stadium/hall outline, and the street-layer
   decks of these bridges, are left out of data-city / data-city_buildings by build_city.py;
@@ -226,22 +232,37 @@ js/scene/oldtrolley.js  1953 streetcars: track (bed + rails) on every 1953 stree
                   The cars are registered with the subway as kind 'pcc53' so they can be boarded.
                   Each loop is also a "Ride a line" entry (group '1953 streetcars', id 'h53:<i>').
 js/scene/materials.js  M(color) quick material; litMats = materials that glow at dusk
-                  (each has userData.lit = its glow intensity); window textures
+                  (each has userData.lit = its glow intensity). Facade textures: facade(style)
+                  draws a day map and a night map per style (row, row2, office, office2, glass,
+                  stone), 32 bays x 64 floors per tile (WIN_W x WIN_H = 112 x 232 m), ground
+                  floor = doors and shops. Night-map alpha = when that light goes off;
+                  setWindowHour(h) sets WIN_CUT (index.js calls it from the time slider).
+                  winMat (0..1 UV boxes), worldWinMat (tile-unit UVs), instancedWinMat (unit
+                  boxes, roof colours from ROOFS). UV x < -0.5 marks a roof face.
+                  Display lights: addDisplay(apply) registers a coloured skyline light (tower
+                  crowns, Liberty Place outlines, the Cira Centre LED skin and FMC crown in
+                  buildings.js, Boathouse Row, the bridges' cable lights); setDisplayColors(colors) deals a scheme's colours
+                  out to them in turn; DISPLAY_PRESETS = the schemes on the panel.
 js/scene/geometry.js   Builder (merged meshes); addPolygon, addRibbon, addPrism (extruded
-                  footprint)
+                  footprint, separate roof colour), addLoft (tapering tower section)
 js/scene/river.js      water, bulkheads, dams, river samples RS plus riverInfo(x,z) and
                   atLat(lat)
-js/scene/ground.js     city plate, green, streets, trails, rail, bridges (GREEN, ROAD,
-                  TRAIL, RAIL colours)
-js/scene/buildings.js  extrudes data-buildings in 700 m tiles (OFFICE and BRICK palettes)
-js/scene/landmarks.js  tower crowns, City Hall, station, museum, Eastern State, boathouses
+js/scene/ground.js     city plate, green, streets, trails, rail, bridges (GREEN, GROUND,
+                  COUNTRY, ROAD, TRAIL, RAIL colours; groundMat = mottled lot-scale texture)
+js/scene/buildings.js  extrudes data-buildings in 700 m tiles (PALETTE, facadeKind, addRooftop,
+                  aviationLights)
+js/scene/landmarks.js  signature towers (setbacks, Liberty Place gables, lit crowns, the PSFS
+                  sign), City Hall, station, museum, Eastern State, boathouses
+js/scene/people.js     makeFigure() jointed standing person, pose() running animation
+js/scene/frisbee.js    ultimate frisbee game on data-city_landmarks fields; "Edgley frisbee" view
 js/scene/citymarks.js  citywide landmark models from data-city_landmarks: football() (bowl, field
                   texture, goalposts, sideline canopies, video boards), ballpark() (bowl with low
                   outfield bleachers, warning track, infield, foul poles, scoreboard), arena(),
                   independenceHall() (with Congress Hall and Old City Hall), memorialHall(),
                   bridge() (deck, towers, cables, suspenders, anchorages, night cable lights).
                   bowl() is the shared stand generator. Adds the Sports Complex, Independence
-                  Hall and Ben Franklin Bridge views.
+                  Hall and Ben Franklin Bridge views. lebron(): an unlabelled bronze statue on
+                  the arena plaza (an easter egg). update(dt) runs the frisbee game.
 js/scene/monorail.js   riverfront LOOP. Settings: H = 18 (height); EAST = 58 and WEST = 65
                   (setback from the water, m); SOUTH_LAT and NORTH_LAT (loop ends);
                   STATIONS = [[lat, side]] where side 1 = east bank, -1 = west bank.
@@ -294,6 +315,14 @@ js/ui.js          buttons, line picker, floating labels, keys (inside a car KEYM
                   then turns the camera (setCreative/creativeLook in index.js, orbit controls off),
                   W A S D fly along the view, the wheel sets the speed, a click boards the train
                   under the #xhair crosshair, Esc lets go. Inside a car the mouse looks around.
+                  The #fold button folds the panel (#hud-body) to its title. "Skyline lights"
+                  swatches come from DISPLAY_PRESETS (materials.js) plus a colour picker; the
+                  choice and the fold are remembered in localStorage (keys 'phl3d:...').
+js/minimap.js     top-right map (#minimap): base map of limits, parks, water and rail drawn once
+                  from api.mapData; LEVELS = metres across per zoom step; you as a view cone, or
+                  the train and its line in bold when riding; a click calls api.flyToPoint(x, z).
+js/ridebar.js     line diagram (#ridebar) while riding, from api.rideStrip() (subway.js): stops
+                  evenly spaced, the train between them, passed stops greyed, the next in bold.
 js/main.js        load data, then buildScene, then createUI, then start.
                   Exposes window.__schuylkill.
 

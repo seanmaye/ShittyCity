@@ -2,11 +2,14 @@
 // the South Philadelphia sports complex (Lincoln Financial Field, Citizens Bank Park, Xfinity
 // Mobile Arena), Independence Hall, Memorial Hall, and the Benjamin Franklin and Walt Whitman
 // suspension bridges. Each is fitted to its real outline; the generic buildings inside those
-// outlines were left out of data/city_buildings.
+// outlines were left out of data/city_buildings. Also the frisbee game on the Edgley fields
+// (frisbee.js) and an unlabelled statue on the arena plaza.
 import * as THREE from 'three';
 import { pairs } from '../data.js';
-import { M, litMats, winMat, reps } from './materials.js';
+import { M, litMats, winMat, reps, addDisplay, DISPLAY_PRESETS } from './materials.js';
 import { Builder, addPolygon } from './geometry.js';
+import { makeFigure } from './people.js';
+import { buildFrisbee } from './frisbee.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const cen = r => { let x = 0, z = 0; for (const p of r) { x += p[0]; z += p[1]; } return [x / r.length, z / r.length]; };
@@ -192,6 +195,40 @@ function arena(scene, st) {
   const roof = new THREE.Mesh(rb.geometry(), M('#dcdfe1')); roof.position.y = H + 7; roof.receiveShadow = true; scene.add(roof);
 }
 
+/**
+ * Easter egg: a bronze of LeBron James rising for a one-handed dunk, on a granite plinth on the
+ * arena plaza, facing away from the building toward (dx, dz). No label: you have to find it.
+ */
+function lebron(scene, ring, dx, dz) {
+  const c = cen(ring), L = Math.hypot(dx, dz); dx /= L; dz /= L;
+  const r = (rayHit(ring, c, dx, dz) || 80) + 45, x = c[0] + dx * r, z = c[1] + dz * r;
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = Math.atan2(dx, dz); scene.add(g);
+  const granite = M('#3c3e42', { roughness: .45, metalness: .1 }), bronze = new THREE.MeshStandardMaterial({ color: '#b08048', roughness: .42, metalness: .3 });
+  const plinth = new THREE.Mesh(new THREE.BoxGeometry(2.8, 2.2, 2.8), granite); plinth.position.y = 1.1; plinth.castShadow = plinth.receiveShadow = true; g.add(plinth);
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(3.1, .2, 3.1), granite); cap.position.y = 2.3; g.add(cap);
+  const step = new THREE.Mesh(new THREE.BoxGeometry(4.4, .25, 4.4), M('#9a968e')); step.position.y = .125; step.receiveShadow = true; g.add(step);
+  // the plaque on the front face, lit at night
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 256;
+  const x2 = cv.getContext('2d'); x2.fillStyle = '#6b4c26'; x2.fillRect(0, 0, 512, 256); x2.strokeStyle = '#d8b878'; x2.lineWidth = 10; x2.strokeRect(14, 14, 484, 228);
+  x2.fillStyle = '#f0d9a0'; x2.textAlign = 'center'; x2.font = 'bold 52px Georgia, serif'; x2.fillText('LEBRON JAMES', 256, 112);
+  x2.font = 'italic 34px Georgia, serif'; x2.fillText('“The King” · 23', 256, 175);
+  const pt = new THREE.CanvasTexture(cv), pm = new THREE.MeshStandardMaterial({ map: pt, emissive: '#ffffff', emissiveMap: pt, emissiveIntensity: 0, roughness: .4, metalness: .5 });
+  pm.userData.lit = .5; litMats.push(pm);
+  const plaque = new THREE.Mesh(new THREE.PlaneGeometry(1.8, .9), pm); plaque.position.set(0, 1.25, 1.41); g.add(plaque);
+  // the figure, twice life size: left knee driving up, right arm stretched up with the ball
+  const F = makeFigure({}, bronze, 1.45);
+  F.pelvis.rotation.x = -.1; F.head.rotation.x = -.45; F.chest.rotation.z = .12;
+  F.hipL.rotation.x = -1.3; F.kneeL.rotation.x = 1.75; F.hipR.rotation.x = .18; F.kneeR.rotation.x = .25;
+  F.shR.rotation.x = -2.95; F.elR.rotation.x = -.15; F.shL.rotation.x = -.5; F.shL.rotation.z = .8; F.elL.rotation.x = -.7;
+  const ball = new THREE.Mesh(new THREE.SphereGeometry(.12, 14, 10), bronze); ball.position.set(0, -.38, .05); F.elR.add(ball);
+  F.root.scale.setScalar(2.05); g.add(F.root);
+  F.root.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(F.root);   // stand him on the right toe on the plinth
+  F.root.position.y = 2.4 - (box.min.y - g.position.y);
+  F.root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  return { x, z };
+}
+
 // ---------------------------------------------------------------- halls
 function frame(scene, h) {
   let { w, d, ry } = h;
@@ -300,9 +337,11 @@ function bridge(scene, b, nightOnly) {
     const y = deckY(s); if (y < 6) continue;
     const [x, , z] = at(s, 0, 0); const m = part(scene, new THREE.BoxGeometry(W * .8, y - 3, 4), conc, x, (y - 3) / 2, z); m.rotation.y = ry;
   }
-  // the necklace of lights along the main cables at night
+  // the necklace of lights along the main cables at night: warm white, or the skyline colour scheme
   const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.Float32BufferAttribute(lights, 3));
-  const pts = new THREE.Points(pg, new THREE.PointsMaterial({ color: '#fff1c8', size: 3, sizeAttenuation: false })); pts.frustumCulled = false; scene.add(pts); nightOnly.push(pts);
+  const pm = new THREE.PointsMaterial({ color: '#fff1c8', size: 3, sizeAttenuation: false });
+  addDisplay(hex => pm.color.set(hex === DISPLAY_PRESETS[0].colors[0] ? '#fff1c8' : hex));
+  const pts = new THREE.Points(pg, pm); pts.frustumCulled = false; scene.add(pts); nightOnly.push(pts);
   return { deckY, a: b.a, d: [dx, dz] };
 }
 
@@ -311,8 +350,15 @@ export function buildCityMarks(scene, data) {
   for (const st of data.stadiums || []) {
     if (st.type === 'football') football(scene, st);
     else if (st.type === 'baseball') ballpark(scene, st);
-    else arena(scene, st);
+    else {
+      arena(scene, st);
+      // the statue stands on the plaza on the side toward the ballpark and the Broad Street Line
+      const ring = pairs(st.outline), c = cen(ring), bp = (data.stadiums || []).find(o => o.type === 'baseball');
+      lebron(scene, ring, bp ? bp.plate[0] - c[0] : 1, bp ? bp.plate[1] - c[1] : -1);
+    }
   }
+  // the frisbee game on the Belmont & Edgley cricket ground
+  const games = (data.fields || []).map(f => buildFrisbee(scene, f));
   for (const h of data.halls || []) (h.type === 'independence' ? independenceHall : memorialHall)(scene, h);
   for (const b of data.bridges || []) bridge(scene, b, nightOnly);
   const labels = (data.labels || []).map(l => ({ text: l.t, pos: V(l.x, l.y, l.z) }));
@@ -331,5 +377,6 @@ export function buildCityMarks(scene, data) {
     const m = [bf.a[0] + (bf.b[0] - bf.a[0]) * s / L, bf.a[1] + (bf.b[1] - bf.a[1]) * s / L];
     views.push({ id: 'bfb', name: 'Ben Franklin Bridge', pos: V(m[0] - 300, 140, m[1] + 750), target: V(m[0] - 150, 40, m[1]) });
   }
-  return { labels, views, nightOnly };
+  views.push(...games.map(gm => gm.view));
+  return { labels, views, nightOnly, update: dt => games.forEach(gm => gm.update(dt)) };
 }

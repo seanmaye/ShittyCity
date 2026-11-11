@@ -10,6 +10,8 @@ Writes data/city_landmarks.json:
   halls:    [{name, type: independence | memorial, x, z, w, d, ry, outline: ring_dm}]
   bridges:  [{name, a: [x, z], b: [x, z] m (deck axis ends), width, deckH, towers: [s, s] m from a,
               towerH, anchors: [s, s], color}]
+  fields:   [{name, outline: ring_dm, x, z, w, d, ry}]   (the Edgley ultimate and cricket fields, from
+            raw_dir/tiles/tile_all.json; the scene puts a frisbee game on them)
   labels:   [{t, x, z, y}]
 build_city.py drops the generic buildings inside these outlines; build_metro.py puts PATCO
 on the Ben Franklin Bridge deck.
@@ -211,7 +213,20 @@ for b in src.get("bridges", []):
     labels.append({"t": b["name"], "x": round(a[0] + d[0] * sa, 1), "z": round(a[1] + d[1] * sa, 1), "y": sp["towerH"] + 10})
     print(f"  {b['name']}: deck {L:.0f} m, main span {sb - sa:.0f} m")
 
-out = {"stadiums": stadiums, "halls": halls, "bridges": bridges, "labels": labels}
+# the Belmont & Edgley cricket ground in West Fairmount Park (OSM: "Edgley Ultimate Fields",
+# sport multi;ultimate;cricket, by the Cricket/Archery Field clubhouse on Edgley Avenue)
+fields = []
+tiles = json.load(open(os.path.join(RAW, "tiles", "tile_all.json"), encoding="utf-8"))
+for e in (tiles["elements"] if isinstance(tiles, dict) else tiles):
+    t = e.get("tags", {})
+    if e.get("type") == "way" and t.get("leisure") == "pitch" and t.get("name") == "Edgley Ultimate Fields":
+        r = ccw([proj(g["lat"], g["lon"]) for g in e["geometry"]])
+        cx, cz, w, d, ry = min_rect(r)
+        fields.append({"name": "Belmont & Edgley Cricket Ground", "outline": flat(r), "x": round(cx, 1), "z": round(cz, 1), "w": round(w, 1), "d": round(d, 1), "ry": round(ry, 4)})
+        labels.append({"t": "Belmont & Edgley Cricket Ground", "x": round(cx, 1), "z": round(cz, 1), "y": 24})
+        print(f"  Edgley fields: {w:.0f} x {d:.0f} m")
+
+out = {"stadiums": stadiums, "halls": halls, "bridges": bridges, "fields": fields, "labels": labels}
 with open(os.path.join(OUT, "city_landmarks.json"), "w", encoding="utf-8") as f:
     json.dump(out, f, separators=(",", ":"))
 print(f"  wrote city_landmarks.json: {os.path.getsize(os.path.join(OUT, 'city_landmarks.json')) // 1024} KB")
