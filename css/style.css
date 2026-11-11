@@ -21,6 +21,8 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .clock label{color:var(--muted);font-size:12px;letter-spacing:.04em;text-transform:uppercase}
 .clock input{flex:1;min-width:0;accent-color:var(--accent);cursor:pointer}
 .clock output{min-width:62px;text-align:right;font-variant-numeric:tabular-nums}
+.clock output.wide{min-width:96px;white-space:nowrap}
+.clock label{min-width:52px}
 .lines{margin-top:10px;padding-top:6px;border-top:1px solid var(--line);max-height:min(46vh,420px);overflow:auto;overscroll-behavior:contain}
 .lines h2{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:8px 0 5px}
 .lines .row{gap:6px}
@@ -51,7 +53,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .tag.sub{border-color:#2d6fc0}
 .tag.stn{font-size:11px;font-weight:500;padding:2px 7px;border-width:1.5px}
-.tag.stn.metro{border-color:#2d6fc0}.tag.stn.broad{border-color:#f2862b}.tag.stn.patco{border-color:#cf3a3d}.tag.stn.regional{border-color:#5c6c96}.tag.stn.pcc{border-color:#e9a920}.tag.stn.trolley,.tag.stn.stop{border-color:#4f9a32}.tag.stn.stop{font-style:italic}
+.tag.stn.boat{border-color:#2a7ab8;border-style:dashed}.tag.stn.metro{border-color:#2d6fc0}.tag.stn.broad{border-color:#f2862b}.tag.stn.patco{border-color:#cf3a3d}.tag.stn.regional{border-color:#5c6c96}.tag.stn.pcc{border-color:#e9a920}.tag.stn.trolley,.tag.stn.stop{border-color:#4f9a32}.tag.stn.stop{font-style:italic}
 .views button[aria-current="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .status{margin:10px 0 0;font-size:13px}
 .status:empty{display:none}

@@ -199,6 +199,12 @@ data-trolley1953 HISTORY: Center City streetcar tracks in January 1953 (track an
   rails:   [{st: 0 disused rails still in the street | 1 removed track, p: polyline_dm}] from OSM
   Rebuilt by tools/build_trolley1953.py (see tools/README.md), then tools/bundle.py.
 
+data-boats       river boat lines (tools/build_boats.py; all but RiverLink are a PROPOSAL)
+  lines: [{id, name, color, proposed, stops: [{t, x, z, sx, sz, s}], p: polyline_dm}]
+         x, z = where the boat ties up (m, in the water); sx, sz = the bank the pier starts
+         from; s = distance along p. p runs mid-channel through the real water; dams are
+         barriers. Boats run out and back (boats.js), one per 6 km, dwelling DWELL s per stop.
+
 data-yardpark    PROPOSAL: deck over the 30th Street rail yard
   h:      deck height (m)
   rings:  [outer_ring_dm, hole_ring_dm, ...]; a hole lets a tall building stand through
@@ -218,6 +224,7 @@ js/scene/core.js  renderer, camera, OrbitControls, sun, fog. HOME_POS and HOME_T
 js/scene/sky.js   the 24-hour clock: sunAt(h) = the real sun position over Philadelphia for
                   today; KEYS = sky colours by sun elevation, LIGHT = ambient light and water
                   colour by elevation; stars; litMats glow by how dark it is.
+                  setDate(d) moves the sun's path to another day (the Season slider: setDay).
 js/scene/city.js  the rest of the city: limits, parks, water, streams, streets (drawLines tiled),
                   instanced buildings in 1 km tiles (FULL = 5000 m: nearer tiles draw full boxes,
                   further ones only roofs), outline buildings, park trees (TREE_FAR); update()
@@ -255,6 +262,12 @@ js/scene/landmarks.js  signature towers (setbacks, Liberty Place gables, lit cro
                   sign), City Hall, station, museum, Eastern State, boathouses
 js/scene/people.js     makeFigure() jointed standing person, pose() running animation
 js/scene/frisbee.js    ultimate frisbee game on data-city_landmarks fields; "Edgley frisbee" view
+js/scene/boats.js      river boats from data-boats: piers (deck, pilings, float, shelter), boat
+                  models, fleets easing into each stop. Registered with subway.registerFleet as
+                  kind 'boat' (CAR_IN.boat in subway.js is the walkable cabin; its deck: {z0, hw}
+                  opens the rear doorway onto the stern deck, where clampEye lets riders walk;
+                  aboard, only the model's outer cabin walls, userData.shell, hide); ride list group
+                  'River boats', line ids 'boat:<id>'; the "River boats" view.
 js/scene/citymarks.js  citywide landmark models from data-city_landmarks: football() (bowl, field
                   texture, goalposts, sideline canopies, video boards), ballpark() (bowl with low
                   outfield bleachers, warning track, infield, foul poles, scoreboard), arena(),
@@ -268,8 +281,19 @@ js/scene/monorail.js   riverfront LOOP. Settings: H = 18 (height); EAST = 58 and
                   STATIONS = [[lat, side]] where side 1 = east bank, -1 = west bank.
                   ROUTED AT LOAD TIME: it moves toward the water wherever a building over
                   15 m or a landmark is in the way, and its piers step off courts.
-                  Building edits re-route it automatically.
-js/scene/nature.js     trees (instanced) and rowing shells
+                  Building edits re-route it automatically. The set-backs are eased over a
+                  few hundred metres (setbacks/ease), the spline takes every third point, and
+                  each end crosses the river on a rounded turn (turn(): a cubic Bezier along
+                  each bank line's heading), so the beam has no kinks or hairpins.
+js/scene/nature.js     trees (instanced) and rowing shells. buildTrees follows the season: crown
+                  colours (SUMMER, FRESH, AUTUMN, BLOSSOM), leaf drop (crowns scaled to zero,
+                  bare-branch planes shown), and flower beds (FLOWERS) near one tree in six.
+                  Returned meshes with userData.season === false stay hidden in city tiles.
+js/scene/season.js     time of year: setSeason(day 0-364) evaluates CURVES (snow, bare, fall, bloom,
+                  flowers, fresh, dormant) and calls every onSeason(fn) listener. addSnow(mat,
+                  amount) whitens up-facing surfaces by the SNOW uniform (index.js applies it to
+                  every mesh once built; userData.noSnow opts out, userData.snowAmt scales it:
+                  roads .3). seasonalGrass(mat) browns grass over winter.
 js/scene/sports.js     courts (SURFACE = line markings, EQUIP = nets, hoops, goals, lights),
                   corridor strips, shuttle monorails (H2 = 26 m, teal livery, a station
                   about every 1.1 km, piers placed between courts at load time)
@@ -304,6 +328,9 @@ js/ui.js          buttons, line picker, floating labels, keys (inside a car KEYM
                   then turns the camera (setCreative/creativeLook in index.js, orbit controls off),
                   W A S D fly along the view, the wheel sets the speed, a click boards the train
                   under the #xhair crosshair, Esc lets go. Inside a car the mouse looks around.
+                  The Speed slider (#speed) runs the clock: 0 = frozen, then MAX_RATE * v^3
+                  hours per second (v = 0..1; MAX_RATE = 6, a day in 4 s), advanced in its own
+                  requestAnimationFrame loop (tick), which moves the Time slider along.
                   The #fold button folds the panel (#hud-body) to its title. "Skyline lights"
                   swatches come from DISPLAY_PRESETS (materials.js) plus a colour picker; the
                   choice and the fold are remembered in localStorage (keys 'phl3d:...').

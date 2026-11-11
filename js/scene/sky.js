@@ -60,7 +60,7 @@ function lerpKeys(keys, e, idx, out) {
  * Returns setTime(h) and helpers.
  */
 export function createSky({ scene, sun, hemi, litMats, nightOnly, onChange }) {
-  const date = new Date();
+  let date = new Date();   // the time-of-year slider moves it (setDate)
   // sky gradient canvas, redrawn when the time changes
   const cv = document.createElement('canvas'); cv.width = 2; cv.height = 256;
   const tex = new THREE.CanvasTexture(cv); scene.background = tex;
@@ -110,7 +110,10 @@ export function createSky({ scene, sun, hemi, litMats, nightOnly, onChange }) {
     onChange && onChange(state);
     return hour;
   }
-  return { setTime, getTime: () => hour, getState: () => state, sunset: sunsetHour(date), date, stars };
+  /** another day of the year: the sun's path (and so day length and sunset) follow it */
+  function setDate(d) { date = d; api.sunset = sunsetHour(date); api.date = date; return setTime(hour); }
+  const api = { setTime, setDate, getTime: () => hour, getState: () => state, sunset: sunsetHour(date), date, stars };
+  return api;
 }
 
 /** "6:30 PM" */

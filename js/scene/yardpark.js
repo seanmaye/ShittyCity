@@ -6,6 +6,7 @@ import { pairs } from '../data.js';
 import { M, litMats } from './materials.js';
 import { Builder, addPolygon, addRibbon } from './geometry.js';
 import { buildTrees } from './nature.js';
+import { seasonalGrass } from './season.js';
 const merge = geos => BufferGeometryUtils.mergeBufferGeometries(geos.map(g => (g.index ? g.toNonIndexed() : g)));
 
 function deck(scene, data) {
@@ -35,7 +36,7 @@ function deck(scene, data) {
   scene.add(new THREE.Mesh(pb.geometry(), new THREE.MeshStandardMaterial({ color: '#cfe3e8', transparent: true, opacity: .35, side: THREE.DoubleSide, depthWrite: false })));
   // lawn
   const lb = new Builder(); addPolygon(lb, rings, 0);
-  const lawn = new THREE.Mesh(lb.geometry(), M('#6fa257', { side: THREE.FrontSide })); lawn.position.y = h; lawn.receiveShadow = true; scene.add(lawn);
+  const lawn = new THREE.Mesh(lb.geometry(), seasonalGrass(M('#6fa257', { side: THREE.FrontSide }))); lawn.position.y = h; lawn.receiveShadow = true; scene.add(lawn);
   // promenade and spokes
   const rb = new Builder();
   for (const p of data.paths) { const pts = pairs(p.p); addRibbon(rb, p.ring ? [...pts, pts[0]] : pts, 4, 0); }
@@ -63,7 +64,7 @@ function bowl(scene, v, h) {
   const mesh = (geos, mat, cast = false) => { const m = new THREE.Mesh(merge(geos), mat); m.receiveShadow = true; m.castShadow = cast; g.add(m); return m; };
   mesh(seats, M('#9a3431', { roughness: .7 }));
   mesh(aisles, M('#7c7468', { side: THREE.FrontSide }));
-  mesh(lawnA, M('#74a85a', { side: THREE.FrontSide })); mesh(lawnB, M('#69a052', { side: THREE.FrontSide }));
+  mesh(lawnA, seasonalGrass(M('#74a85a', { side: THREE.FrontSide }))); mesh(lawnB, seasonalGrass(M('#69a052', { side: THREE.FrontSide })));
   mesh(risers, M('#a79f90'));
   // a fan of light poles round the back of the lawn
   const lamp = new THREE.MeshStandardMaterial({ color: '#e9e4d2', emissive: '#fff1cf', emissiveIntensity: 0 }); lamp.userData.lit = 1.3; litMats.push(lamp);

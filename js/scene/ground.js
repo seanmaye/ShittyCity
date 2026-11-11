@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { pairs } from '../data.js';
 import { M } from './materials.js';
 import { Builder, addPolygon, addRibbon } from './geometry.js';
+import { seasonalGrass } from './season.js';
 // Colours sampled to match summer aerial imagery: mown grass, darker park woodland, asphalt,
 // gravel and dirt trails, rail ballast, the mixed concrete, asphalt and yards between buildings,
 // and the wooded, suburban country beyond the city limits.
@@ -50,7 +51,7 @@ function inRings(x, z, rings) {
 /** capRings: outline of the rail-yard deck; road bridges over it land on the deck instead. */
 export function buildGround(scene, data, river, capRings = []) {
   const cap = capRings.map(pairs);
-  const outer = new THREE.Mesh(new THREE.PlaneGeometry(30000, 30000), M(COUNTRY, { roughness: 1 }));
+  const outer = new THREE.Mesh(new THREE.PlaneGeometry(30000, 30000), seasonalGrass(M(COUNTRY, { roughness: 1 })));
   outer.rotation.x = -Math.PI / 2; outer.receiveShadow = true; scene.add(outer);
 
   // paved city within the mapped extent
@@ -64,7 +65,7 @@ export function buildGround(scene, data, river, capRings = []) {
   for (const [k, ...rings] of data.green) addPolygon(gb[k], rings.map(pairs), 0);
   gb.forEach((b, k) => {
     if (!b.count) return;
-    const m = new THREE.Mesh(b.geometry(), M(GREEN[k], { side: THREE.FrontSide }));
+    const m = new THREE.Mesh(b.geometry(), seasonalGrass(M(GREEN[k], { side: THREE.FrontSide })));
     m.position.y = .3 + k * .02; m.receiveShadow = true; scene.add(m);
   });
 
@@ -98,7 +99,7 @@ export function drawLines(scene, lines, { cap = [], wet = () => false, tile = 0 
 
   // bridges: decks ramp up from the street ends; piers wherever the deck is over water
   const conc = new THREE.MeshStandardMaterial({ color: '#cfc8bb', roughness: .9 }), dark = new THREE.MeshStandardMaterial({ color: '#6b6660', roughness: .8 });
-  const greenDeck = new THREE.MeshStandardMaterial({ color: '#86a96d', roughness: .95 }); // former expressway viaducts, now park bridges
+  const greenDeck = seasonalGrass(new THREE.MeshStandardMaterial({ color: '#86a96d', roughness: .95 })); // former expressway viaducts, now park bridges
   const piers = [];
   const bridgeSegs = [];
   for (const br of bridges) {
@@ -146,7 +147,9 @@ export function drawLines(scene, lines, { cap = [], wet = () => false, tile = 0 
   }
   const meshes = [];
   const add = m => { scene.add(m); meshes.push(m); return m; };
-  const xMat = M('#78a85c', { side: THREE.FrontSide }), lineMat = { [ROAD]: M(ROAD, { side: THREE.FrontSide }), [RAIL]: M(RAIL, { side: THREE.FrontSide }), [TRAIL]: M(TRAIL, { side: THREE.FrontSide }) };
+  const xMat = seasonalGrass(M('#78a85c', { side: THREE.FrontSide })), lineMat = { [ROAD]: M(ROAD, { side: THREE.FrontSide }), [RAIL]: M(RAIL, { side: THREE.FrontSide }), [TRAIL]: M(TRAIL, { side: THREE.FrontSide }) };
+  // in winter the streets are ploughed and the rail beds partly clear (see season.js addSnow)
+  lineMat[ROAD].userData.snowAmt = .3; lineMat[RAIL].userData.snowAmt = .5; dark.userData.snowAmt = conc.userData.snowAmt = .35;
   for (const t of tiles.values()) {
     if (t.xb.count) { const m = add(new THREE.Mesh(t.xb.geometry(), xMat)); m.position.y = .33; m.receiveShadow = true; }
     [[t.rb, ROAD, .8], [t.tb, RAIL, .85], [t.pb, TRAIL, .9]].forEach(([b, c, y]) => {

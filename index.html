@@ -32,6 +32,8 @@
 <button id="getoff" type="button" hidden>Get off</button>
 </div>
 <div class="clock"><label for="time">Time</label><input type="range" id="time" min="0" max="24" step="0.25" value="17" disabled><output id="time-out" for="time">5:00 PM</output></div>
+<div class="clock"><label for="speed">Speed</label><input type="range" id="speed" min="0" max="1000" step="1" value="0" disabled aria-describedby="speed-out"><output id="speed-out" class="wide" for="speed">Frozen</output></div>
+<div class="clock"><label for="day">Season</label><input type="range" id="day" min="0" max="364" step="1" value="0" disabled><output id="day-out" class="wide" for="day"></output></div>
 <div class="skyline" role="group" aria-labelledby="sky-h"><span class="views-h" id="sky-h">Skyline lights <span class="sky-name" id="sky-name">Classic white</span></span><div class="swatches" id="swatches"><label class="swatch custom" title="Your own colour"><input type="color" id="sky-color" value="#7fd0ff" aria-label="Your own colour for the skyline lights"></label></div></div>
 <div class="legend" id="legend" hidden></div>
 <div class="lines" id="lines" role="group" aria-label="Choose a line" hidden></div>

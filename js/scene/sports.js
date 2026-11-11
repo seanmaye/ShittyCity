@@ -7,6 +7,7 @@ import { pairs } from '../data.js';
 import { M, litMats } from './materials.js';
 import { Builder } from './geometry.js';
 import { beam, piers, station, train } from './monorail.js';
+import { seasonalGrass } from './season.js';
 export const H2 = 26; // above the riverfront loop (18 m) so the lines can cross
 
 const PX = 12; // texture pixels per metre
@@ -161,7 +162,7 @@ function corridor(scene, route) {
   };
   strip(gb, () => 0, i => route.a[i] + 8, 0);
   strip(pb, i => route.a[i] / 2 + 1.5, () => 3, 0);
-  const g = new THREE.Mesh(gb.geometry(), M('#78a85c', { side: THREE.FrontSide })); g.position.y = .34; g.receiveShadow = true;
+  const g = new THREE.Mesh(gb.geometry(), seasonalGrass(M('#78a85c', { side: THREE.FrontSide }))); g.position.y = .34; g.receiveShadow = true;
   const p = new THREE.Mesh(pb.geometry(), M('#e2cfa4', { side: THREE.FrontSide })); p.position.y = .9; p.receiveShadow = true;
   scene.add(g, p);
 }

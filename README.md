@@ -12,9 +12,14 @@ and transit come from real map data.
 - **Every rail transit line** is modelled: the L, the B1-B3 Broad Street Line, the G1 and
   T1-T5 trolleys, all 13 Regional Rail lines, PATCO and NJ Transit's Atlantic City Line.
   "Show transit lines" highlights them all.
-- **Ride inside any train.** Pick a line under "Ride a line", or click any train car (or
-  monorail car) to board it. Every car has a walkable cabin (M-4, B-IV, Kawasaki LRV, PCC,
-  Silverliner IV, PATCO, monorail): drag to look, W A S D to walk, Esc to get off.
+- **River boats** cover the whole riverfront: a proposed Delaware River taxi from Glen Foerd
+  to Fort Mifflin (12 piers), Lower Schuylkill boats from Fort Mifflin to the Fairmount Water
+  Works, Upper Schuylkill boats from Boathouse Row to Manayunk (the dams split the river), and
+  the real RiverLink Ferry to Camden. Routes follow the real water, mid-channel.
+- **Ride inside any train or boat.** Pick a line under "Ride a line", or click any train car,
+  monorail car or boat to board it. Every one has a walkable cabin (M-4, B-IV, Kawasaki LRV,
+  PCC, Silverliner IV, PATCO, monorail, river boat): drag to look, W A S D to walk, Esc to get off.
+  On the boats you can walk out of the cabin's back door onto the open stern deck.
 - **Fly around** with W A S D (or the arrow keys), Space to rise and Shift to sink.
 - **Citywide landmarks** are modelled on their real outlines: Lincoln Financial Field,
   Citizens Bank Park, Xfinity Mobile Arena, Independence Hall, Memorial Hall, and the Ben
@@ -24,6 +29,11 @@ and transit come from real map data.
   ribbon windows, glass, stone), roofs in real roofing colours, rooftop plant and aviation
   lights; office lights go off through the night. The signature towers are modelled with
   their real setbacks and crowns.
+- **A time-of-year slider**: snow on the ground and roofs in winter (streets ploughed), cherry
+  and dogwood blossom and flower beds in spring, summer green, red-orange-gold foliage in the
+  fall and bare branches after the leaves drop. The sun's path follows the date.
+- **A speed slider** lets the day run by itself: frozen at the left end, real time near the
+  start, up to a whole day in 4 seconds at the right.
 - **A 24-hour time slider** sets the sun to its real position over Philadelphia for today's
   date, from noon sun to starlit night.
 - **Skyline lights**: colour the towers' crowns, the Cira Centre's LED skin, the FMC crown,
@@ -103,8 +113,10 @@ js/scene/
   citymarks.js        citywide landmarks: stadiums, Independence Hall, Memorial Hall, bridges
   people.js           jointed figures (frisbee players, the statue)
   frisbee.js          the ultimate game on the Edgley fields
+  boats.js            river boats: piers, boats, the fleets (boarded through subway.js)
   monorail.js         guideway, piers, stations, train
-  nature.js           trees, rowing shells
+  nature.js           trees (seasonal), rowing shells
+  season.js           time of year: snow, foliage, blossom, flower beds, grass
   sports.js           proposal: expressway sports parks + shuttle monorails
   yardpark.js         proposal: rail yard deck, park and the Railyard Bowl
   subway.js           every rail line: tracks, tunnels, Els, platforms, trains, line rides,
@@ -113,7 +125,8 @@ data/                 generated (don't edit by hand):
                       *.json by tools/build_data.py, except transit.json (the L and T1-T5,
                       by tools/build_transit.py: see tools/README.md); city.json.gz and city_buildings.bin.gz by
                       tools/build_city.py; metro.json.gz by tools/build_metro.py;
-                      city_landmarks.json by tools/build_landmarks.py
+                      city_landmarks.json by tools/build_landmarks.py; boats.json by
+                      tools/build_boats.py
 tools/
   fetch_data.py       downloads the raw sources
   build_data.py       turns them into data/*.json
@@ -129,6 +142,7 @@ tools/
   extract_landmarks.py  stadium, hall and pitch outlines from the Pennsylvania extract
   extract_bridges.py  the Delaware bridge decks and Memorial Hall (merged into the same file)
   build_landmarks.py  fits the landmark models (writes data/city_landmarks.json)
+  build_boats.py      routes the river boats through the water (writes data/boats.json)
   bundle.py           packs everything into schuylkill-monorail.html
   unbundle.py         the reverse: unpacks schuylkill-monorail.html into the sources
 ```
@@ -190,6 +204,10 @@ tools/.venv/Scripts/python -I tools/extract_bridges.py
 
 ```bash
 python -I tools/build_landmarks.py
+```
+
+```bash
+python -I tools/build_boats.py
 ```
 
 ```bash

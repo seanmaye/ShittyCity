@@ -11,6 +11,7 @@ import { M, worldWinMat, instancedWinMat, roofColor, WIN_W, WIN_H } from './mate
 import { Builder, addPolygon, addRibbon, addPrism } from './geometry.js';
 import { drawLines, GREEN, GROUND, COUNTRY, groundMat } from './ground.js';
 import { buildTrees } from './nature.js';
+import { seasonalGrass } from './season.js';
 import { facadeKind, facadeColor, hash, addRooftop, aviationLights } from './buildings.js';
 
 const TILE = 1000, FULL = 5000, TREE_FAR = 7000;
@@ -52,7 +53,7 @@ export function buildCity(scene, data, { waterMat, status = () => {}, clear = []
 
   // ---- ground: paved city limits, a wider countryside plane, parks, water, streams
   const limits = city.limits.map(pairs);
-  const outer = new THREE.Mesh(new THREE.PlaneGeometry(400000, 400000), M(COUNTRY, { roughness: 1 }));
+  const outer = new THREE.Mesh(new THREE.PlaneGeometry(400000, 400000), seasonalGrass(M(COUNTRY, { roughness: 1 })));
   outer.rotation.x = -Math.PI / 2; outer.position.y = -.05; outer.receiveShadow = true; scene.add(outer);
   const pb = new Builder({ uv: true }); limits.forEach(r => addPolygon(pb, [r], 0, (x, z) => [x / 400, z / 400]));
   const plate = new THREE.Mesh(pb.geometry(), groundMat(GROUND, THREE.FrontSide));
@@ -63,7 +64,7 @@ export function buildCity(scene, data, { waterMat, status = () => {}, clear = []
 
   const gb = GREEN.map(() => new Builder());
   for (const [k, ...rings] of city.green) addPolygon(gb[k], rings.map(pairs), 0);
-  gb.forEach((b, k) => { if (!b.count) return; const m = new THREE.Mesh(b.geometry(), M(GREEN[k], { side: THREE.FrontSide })); m.position.y = .3 + k * .02; m.receiveShadow = true; scene.add(m); });
+  gb.forEach((b, k) => { if (!b.count) return; const m = new THREE.Mesh(b.geometry(), seasonalGrass(M(GREEN[k], { side: THREE.FrontSide }))); m.position.y = .3 + k * .02; m.receiveShadow = true; scene.add(m); });
   const wb = new Builder(), water = city.water.map(p => p.map(pairs));
   water.forEach(p => addPolygon(wb, p, 0));
   for (const s of city.streams) addRibbon(wb, pairs(s.p), s.w, 0);
@@ -171,7 +172,7 @@ export function buildCity(scene, data, { waterMat, status = () => {}, clear = []
       t.full.forEach(m => { m.visible = near; });
       t.roof.forEach(m => { m.visible = vis && !near; });
       t.always.forEach(m => { m.visible = vis; });
-      t.trees.forEach(m => { m.visible = vis && d - t.r < TREE_FAR; });
+      t.trees.forEach(m => { m.visible = vis && d - t.r < TREE_FAR && m.userData.season !== false; });   // bare branches and flower beds only in season
     }
   }
 

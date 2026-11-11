@@ -4,6 +4,7 @@
 // defenders mark them; a catch in the end zone scores, a dropped pass turns it over.
 import * as THREE from 'three';
 import { makeFigure, pose } from './people.js';
+import { seasonalGrass } from './season.js';
 import { pairs } from '../data.js';
 import { Builder, addPolygon } from './geometry.js';
 
@@ -13,7 +14,7 @@ export function buildFrisbee(scene, f) {
   const g = new THREE.Group(); g.position.set(f.x, 0, f.z); g.rotation.y = f.ry; scene.add(g);
   // the mown grass of the whole ground, from its real outline
   const ob = new Builder(); addPolygon(ob, [pairs(f.outline)], .42);
-  const lawn = new THREE.Mesh(ob.geometry(), new THREE.MeshStandardMaterial({ color: '#6aa451', roughness: 1 })); lawn.receiveShadow = true; scene.add(lawn);
+  const lawn = new THREE.Mesh(ob.geometry(), seasonalGrass(new THREE.MeshStandardMaterial({ color: '#6aa451', roughness: 1 }))); lawn.receiveShadow = true; scene.add(lawn);
   // the field: chalk lines on the grass, and the cricket square beside it
   const chalk = new THREE.MeshStandardMaterial({ color: '#f4f4ef', roughness: 1 });
   const line = (x, z, w, d) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), chalk); m.rotation.x = -Math.PI / 2; m.position.set(x, .45, z); g.add(m); };

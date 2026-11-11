@@ -441,6 +441,11 @@ export function buildSubway(scene, data, river) {
       col: { wall: '#eef0f2', ceil: '#f7f8f9', floor: '#3f4447', seat: '#c8432f', steel: '#c9ced2', door: '#d0d4d8', cab: '#e3e6e9', dark: '#26292c' } },
   };
   CAR_IN.pcc53 = { ...CAR_IN.pcc, model: 'PCC car' };   // the 1953 streetcars (oldtrolley.js)
+  // the river boats (boats.js): a wide cabin of 2 + 2 rows, the helm forward, gates aft
+  CAR_IN.boat = { model: 'river boat', layout: 'heavy', F: 1.05, sill: .95, wt: 2.05, c: 2.4, hw: 2.6, z0: -7.4, z1: 5.4, cab: 3.6,
+    doorZ: [-6.3], doorW: 1.4, sides: [1, -1], seats: [1.4, 1.4], spawnZ: -2.8,
+    deck: { z0: -10.6, hw: 2.8 },   // the open stern deck behind the cabin (boats.js), walkable
+    col: { wall: '#eef0ec', ceil: '#f6f5f0', floor: '#6b5a48', seat: '#2f6a8a', steel: '#c3c8cd', door: '#d2d6d9', cab: '#e2e4df', dark: '#2a2c2f' } };
   for (const [k, v] of Object.entries(CAR_IN)) v.layout = v.layout || k;   // metro | trolley | heavy
   const glow = (c, k = .45, o = {}) => mat(new THREE.Color(c).multiplyScalar(.35), Object.assign({ emissive: c, emissiveIntensity: .45 + k * .5, roughness: .8 }, o));
   const flat = c => mat('#000000', { emissive: c, emissiveIntensity: 1 });
@@ -680,9 +685,12 @@ export function buildSubway(scene, data, river) {
       bx(K.dark, 0, F + .5, S.z1 - .35, 2 * HW - .1, 1.0, .45); bx(K.seat, -.55, F + .5, S.z1 - 1.05, .5, .1, .5); bx(K.seat, -.55, F + .85, S.z1 - 1.3, .5, .6, .08);
       bx(K.cab, 0, (F + F + 1.05) / 2, S.z1, 2 * HW, 1.05, .05); bx(K.glass, 0, F + 1.48, S.z1, 2 * HW, .85, .01); bx(K.cab, 0, (F + 1.9 + Y) / 2, S.z1, 2 * HW, Y - F - 1.9, .05);
       bx(K.cab, 0, F + 1.48, S.z1, .12, .85, .06);
-      // rear end: end door with a window, into the next car
-      bx(K.wall, (-HW - .42) / 2, (F + Y) / 2, S.z0, HW - .42, Y - F, .05); bx(K.wall, (HW + .42) / 2, (F + Y) / 2, S.z0, HW - .42, Y - F, .05);
-      bx(K.door, 0, (F + F + 1.05) / 2, S.z0, .84, 1.05, .05); bx(K.glass, 0, F + 1.45, S.z0, .84, .8, .01); bx(K.door, 0, (F + 1.85 + Y) / 2, S.z0, .84, Y - F - 1.85, .05);
+      // rear end: end door with a window, into the next car; on a boat an open doorway out to
+      // the stern deck (S.deck), with a lintel above
+      const dw = S.deck ? 1.1 : .84;
+      bx(K.wall, (-HW - dw / 2) / 2, (F + Y) / 2, S.z0, HW - dw / 2, Y - F, .05); bx(K.wall, (HW + dw / 2) / 2, (F + Y) / 2, S.z0, HW - dw / 2, Y - F, .05);
+      if (S.deck) { bx(K.wall, 0, (F + 2.05 + Y) / 2, S.z0, dw, Y - F - 2.05, .05); bx(K.yellow, 0, F + .003, S.z0, dw, .01, .2); }
+      else { bx(K.door, 0, (F + F + 1.05) / 2, S.z0, .84, 1.05, .05); bx(K.glass, 0, F + 1.45, S.z0, .84, .8, .01); bx(K.door, 0, (F + 1.85 + Y) / 2, S.z0, .84, Y - F - 1.85, .05); }
     }
 
     const group = new THREE.Group(); group.visible = false;
@@ -707,12 +715,20 @@ export function buildSubway(scene, data, river) {
     group.traverse(o => { o.frustumCulled = false; });
     scene.add(group);
     const eyeY = F + 1.62;
-    const spawn = LAY === 'trolley' ? new V3(-.1, eyeY, 2.6) : LAY === 'metro' ? new V3(-.1, eyeY, 2.2) : new V3(-.1, eyeY, Math.min(2.2, S.cab - 1.5));
+    const spawn = LAY === 'trolley' ? new V3(-.1, eyeY, 2.6) : LAY === 'metro' ? new V3(-.1, eyeY, 2.2) : new V3(-.1, eyeY, S.spawnZ ?? Math.min(2.2, S.cab - 1.5));
     // keep the rider inside the passenger area (the trolley's front door area is open to the windscreen on the right)
     const clampEye = e => {
+      if (S.deck && e.z < S.z0 + .4) {
+        // a boat: through the rear doorway (keep within it) and out on the open stern deck
+        if (Math.abs(e.x) > .3) e.z = Math.min(e.z, S.z0 - .35);   // beside the doorway: the cabin's back wall
+        const xm = e.z > S.z0 - .35 ? .3 : S.deck.hw - .3;
+        e.x = Math.max(-xm, Math.min(xm, e.x)); e.z = Math.max(S.deck.z0 + .3, e.z);
+        return;
+      }
       e.x = Math.max(-HW + .3, Math.min(HW - .3, e.x));
       const zMax = LAY === 'trolley' ? (e.x < -.1 ? S.z1 - .35 : S.z1 - 2.15) : S.cab - .3;
-      e.z = Math.max(S.z0 + .45, Math.min(zMax, e.z));
+      // in line with a boat's rear doorway you can keep walking back, out onto the deck
+      e.z = Math.max(S.deck && Math.abs(e.x) < .3 ? S.deck.z0 + .3 : S.z0 + .45, Math.min(zMax, e.z));
     };
     // the passenger: aisle-side place of the forward-facing bench nearest 1.2 m behind the spawn
     // point, preferring the right-hand side (the L's and the trolley's original seats)
@@ -901,7 +917,7 @@ export function buildSubway(scene, data, river) {
       if (!run.stops) run.stops = stopsOn(run, r.sl.line, r.kind);
       const s = ((r.sl.s % run.L) + run.L) % run.L, nx = run.stops.find(o => o.s > s + 15) || run.stops[0];
       const next = nx ? nx.t : null;
-      if (r.first || next !== r.next) { r.next = next; r.int.setLED(`${r.sl.line}  ·  ${next ? 'Next stop: ' + next : CAR_IN[r.kind].model}`); }
+      if (r.first || next !== r.next) { r.next = next; r.int.setLED(`${r.sl.led || r.sl.line}  ·  ${next ? 'Next stop: ' + next : CAR_IN[r.kind].model}`); }
     }
     r.first = false;
   }

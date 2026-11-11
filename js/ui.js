@@ -43,6 +43,36 @@ export function createUI(api) {
   const showTime = h => { timeOut.textContent = formatHour(h); timeIn.setAttribute('aria-valuetext', formatHour(h)); };
   timeIn.value = String(Math.round(api.getTime() * 4) / 4); showTime(api.getTime());
   timeIn.addEventListener('input', () => showTime(api.setTime(+timeIn.value)));
+  // day/night speed: frozen at the left end; to the right the clock runs ever faster, up to a
+  // whole day in 4 seconds (cubic, so the slow end has room: real time sits near 4%)
+  const speedIn = document.getElementById('speed'), speedOut = document.getElementById('speed-out');
+  const MAX_RATE = 24 / 4;   // hours of model time per real second at the right end
+  let rate = 0, clockT = 0, clockUI = 0;
+  const showSpeed = () => {
+    const v = +speedIn.value / 1000; rate = MAX_RATE * v * v * v;
+    const perDay = rate ? 24 / rate : 0, x = rate * 3600;
+    speedOut.textContent = !rate ? 'Frozen' : perDay < 120 ? `1 day = ${perDay < 10 ? perDay.toFixed(1) : Math.round(perDay)} s`
+      : perDay < 7200 ? `1 day = ${Math.round(perDay / 60)} min` : x < 1.5 ? 'real time' : `${Math.round(x)}× real time`;
+    speedIn.setAttribute('aria-valuetext', speedOut.textContent);
+  };
+  speedIn.addEventListener('input', showSpeed); showSpeed();
+  (function tick(now) {
+    const dt = clockT ? Math.min(1, (now - clockT) / 1000) : 0; clockT = now;   // capped: no big leap after a sleeping tab
+    if (rate && dt) {
+      const h = api.setTime((api.getTime() + rate * dt) % 24);
+      if (now - clockUI > 120) { clockUI = now; timeIn.value = String(h); showTime(h); }   // the slider follows, a few times a second
+    }
+    requestAnimationFrame(tick);
+  })(0);
+  // time of year: snow in winter, blossom and flower beds in spring, autumn colour, bare trees
+  const dayIn = document.getElementById('day'), dayOut = document.getElementById('day-out');
+  const showDay = d => { dayOut.textContent = api.formatDay(d); dayIn.setAttribute('aria-valuetext', api.formatDay(d)); };
+  dayIn.value = String(api.getDay()); showDay(api.getDay());
+  let dayPending = false;   // recolouring every tree is a lot of work: once per frame at most
+  dayIn.addEventListener('input', () => {
+    showDay(+dayIn.value); if (dayPending) return; dayPending = true;
+    requestAnimationFrame(() => { dayPending = false; api.setDay(+dayIn.value); });
+  });
   lblBtn.addEventListener('click', () => { showTags = !showTags; lblBtn.textContent = showTags ? 'Hide labels' : 'Show labels'; });
   // ride: the main button opens a picker of lines; picking one starts the ride
   const linesEl = document.getElementById('lines');
@@ -255,7 +285,7 @@ export function createUI(api) {
   else setScheme(pre ? pre.id : 'white', (pre || api.displayPresets[0]).colors, (pre || api.displayPresets[0]).name, true);
 
   const minimap = createMinimap(api), ridebar = createRidebar(api);
-  [timeIn, lblBtn, rideBtn, cutBtn, trBtn].forEach(b => b.disabled = false);
+  [timeIn, speedIn, dayIn, lblBtn, rideBtn, cutBtn, trBtn].forEach(b => b.disabled = false);
 
   return { placeTags };
 }

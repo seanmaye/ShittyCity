@@ -44,7 +44,8 @@ export function obstacles(buildings, lm) {
 }
 
 /** Per-sample set-back: the preferred distance where it's clear, pulled toward the water where a
- *  real building is in the way, then eased so the guideway doesn't zig-zag. */
+ *  real building is in the way, then eased over a few hundred metres so the guideway sweeps
+ *  gently instead of zig-zagging around each building. */
 function setbacks(samples, side, pref, blocked) {
   const raw = samples.map(s => {
     for (let o = pref; o >= -14; o -= 2) { // negative = cantilevered over the water's edge
@@ -53,9 +54,10 @@ function setbacks(samples, side, pref, blocked) {
     }
     return -14;
   });
-  const lo = raw.map((_, i) => Math.min(...raw.slice(Math.max(0, i - 4), i + 5)));
-  return lo.map((_, i) => { const w = lo.slice(Math.max(0, i - 3), i + 4); return w.reduce((a, b) => a + b) / w.length; });
+  const lo = raw.map((_, i) => Math.min(...raw.slice(Math.max(0, i - 10), i + 11)));
+  return ease(lo, 14);
 }
+const ease = (a, r) => a.map((_, i) => { const w = a.slice(Math.max(0, i - r), i + r + 1); return w.reduce((p, q) => p + q) / w.length; });
 
 export function buildMonorail(scene, river, bridgeSegs, buildings, lm, onCourt = () => false) {
   const { RS, NS, atLat } = river;
@@ -78,14 +80,29 @@ export function buildMonorail(scene, river, bridgeSegs, buildings, lm, onCourt =
       if (pts.length && q.clone().sub(pts[pts.length - 1]).dot(s.t) < 6) return;
       pts.push(q); idx.push(i);
     });
-    const sm = pts.map((_, i) => { const w = pts.slice(Math.max(0, i - 2), i + 3); return w.reduce((a, b) => a.add(b), new THREE.Vector3()).divideScalar(w.length); });
+    // ease twice (ends held), so the spline through these points has no small kinks
+    let sm = pts;
+    for (let k = 0; k < 2; k++) sm = sm.map((p, i) => { if (i < 2 || i > sm.length - 3) return p.clone(); const w = sm.slice(Math.max(0, i - 4), i + 5); return w.reduce((a, b) => a.add(b), new THREE.Vector3()).divideScalar(w.length); });
     return { pts: sm, idx };
   }
-  const sN = atLat(NORTH_LAT + .0018), sS = atLat(SOUTH_LAT - .0010);
+  /** A rounded turn across the river from the end of one bank's line to the other's: a cubic
+   *  Bezier leaving and arriving along each line's own heading, so there is no hairpin. */
+  function turn(A, B, out) {
+    const a = A.pts, b = B.pts, n = a.length, m = b.length;
+    const p0 = out ? a[n - 1] : a[0], p3 = out ? b[m - 1] : b[0];
+    const ta = (out ? a[n - 1].clone().sub(a[n - 6]) : a[0].clone().sub(a[5])).setY(0).normalize();
+    const tb = (out ? b[m - 1].clone().sub(b[m - 6]) : b[0].clone().sub(b[5])).setY(0).normalize();
+    const k = p0.distanceTo(p3) * .75, p1 = p0.clone().addScaledVector(ta, k), p2 = p3.clone().addScaledVector(tb, k);
+    const c = new THREE.CubicBezierCurve3(p0, p1, p2, p3), r = [];
+    for (let i = 1; i < 12; i++) r.push(c.getPoint(i / 12).setY(H));
+    return r;
+  }
   let E, W, curve;
   const build = () => {
     E = untangle(1, offE); W = untangle(-1, offW);
-    curve = new THREE.CatmullRomCurve3([...E.pts, sN.p.clone().setY(H), ...[...W.pts].reverse(), sS.p.clone().setY(H)], true, 'centripetal');
+    // control points every ~40 m: the spline then follows the eased line, not its sample noise
+    const thin = P => P.filter((_, i) => i % 3 === 0 || i === P.length - 1);
+    curve = new THREE.CatmullRomCurve3([...thin(E.pts), ...turn(E, W, true), ...thin([...W.pts].reverse()), ...turn(W, E, false)], true, 'centripetal');
   };
   // The spline can still clip a corner between control points: walk it, and wherever it
   // passes through a building pull the nearby set-backs toward the water and rebuild.

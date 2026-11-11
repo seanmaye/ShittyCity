@@ -13,10 +13,12 @@ import { buildSports, courtTest } from './sports.js';
 import { buildYardPark } from './yardpark.js';
 import { buildSubway, SPEC } from './subway.js';
 import { createSky } from './sky.js';
+import { setSeason, addSnow, dayOfYear, dateOfDay, formatDay, getSeason } from './season.js';
 import { buildCity } from './city.js';
 import { buildCityMarks } from './citymarks.js';
 import { buildTransitMap } from './transitmap.js';
 import { buildOldTrolleys } from './oldtrolley.js';
+import { buildBoats } from './boats.js';
 // let the status line paint between build steps (a timer, so it also works in background tabs)
 const nextFrame = () => new Promise(r => setTimeout(r, 16));
 
@@ -63,8 +65,12 @@ export async function buildScene(canvas, data, status = () => {}) {
     runs: [...T.runs.filter(r => !replace.has(r.line)), ...Mt.runs],
     platforms: [...T.platforms, ...Mt.platforms], stations: [...T.stations, ...Mt.stations], entrances: [...(T.entrances || []), ...(Mt.entrances || [])],
   };
+  const before = new Set(scene.children);
   const subway = buildSubway(scene, transit, river);
   const old53 = buildOldTrolleys(scene, data.trolley1953, renderer);   // 1953 streetcar track and cars
+  // no snow on the rail network (tunnels, stations, cars and their insides) or on the rivers
+  scene.children.filter(o => !before.has(o)).forEach(o => o.traverse(m => { if (m.material) [].concat(m.material).forEach(x => { x.userData.noSnow = true; }); }));
+  river.waterMat.userData.noSnow = true;
   // the monorails' cars can be boarded like any transit car (positioned by their own modules)
   const monoSlots = [];
   const addTrain = (cars, line, lineName, color) => cars.forEach((car, c) => monoSlots.push({
@@ -76,8 +82,13 @@ export async function buildScene(canvas, data, status = () => {}) {
   sports.trains.forEach((cars, i) => addTrain(cars, 'mono:shuttle' + i, `${sports.lines[i].name} (proposed)`, '#1f9a8f'));
   monoSlots.forEach(sl => sl.sync());
   subway.registerFleet('monorail', { car: 14 }, monoSlots);
-  subway.registerFleet('pcc53', SPEC.pcc, old53.slots);   // the 1953 streetcars can be boarded too
+  subway.registerFleet('pcc53', SPEC.pcc, old53.slots);
+  // river boats on the Delaware and the Schuylkill, boarded like any train
+  const boats = buildBoats(scene, data.boats);
+  subway.registerFleet('boat', boats.spec, boats.slots);   // the 1953 streetcars can be boarded too
   // cut-aways: clip every material by the section plane, except what the subway marks noClip
+  // winter snow on whatever faces the sky (roofs, ground, parks, decks, conifers): season.js
+  scene.traverse(o => { if (o.isMesh) [].concat(o.material).forEach(m => addSnow(m, m.userData.snowAmt ?? 1)); });
   renderer.localClippingEnabled = true;
   scene.traverse(o => {
     if (!o.material) return;
@@ -89,14 +100,14 @@ export async function buildScene(canvas, data, status = () => {}) {
     if (l.t === 'City Hall') return { text: l.t, pos: lm.cityhall.clone().setY(l.y) };
     if (l.river !== undefined) return { text: l.t, pos: river.atLat(39.9575).p.clone().setY(l.y) };
     return { text: l.t, pos: new THREE.Vector3(l.x, l.y, l.z) };
-  }).concat(sports.labels, yard.labels, subway.labels, marks.labels, old53.labels);
+  }).concat(sports.labels, yard.labels, subway.labels, marks.labels, old53.labels, boats.labels);
   // instanced meshes hold instances far from their own origin: never let three cull them as a whole
   scene.traverse(o => { if (o.isInstancedMesh) o.frustumCulled = false; });
 
   // "Show transit lines": every rail line plus the proposed monorails
   const mono = [{ id: 'loop', color: '#d6452f', P: monorail.curve.getSpacedPoints(1500) },
     ...sports.curves.map((c, i) => ({ id: 'shuttle' + i, color: '#1f9a8f', P: c.getSpacedPoints(800) }))];
-  const tmap = buildTransitMap(scene, renderer, [...subway.routes, ...mono]);
+  const tmap = buildTransitMap(scene, renderer, [...subway.routes, ...mono, ...boats.routes]);
 
   let riding = false;
   // 24-hour clock: the sun's real position over Philadelphia today drives the sky and lighting
@@ -122,6 +133,7 @@ export async function buildScene(canvas, data, status = () => {}) {
       hint: `You’re at the front of a train on the ${l.name}, riding its real route to the end of the line (or the city limits) and back.${under}` });
   }
   // the 1953 streetcars, one entry per loop
+  lines.push(...boats.lines.map(l => ({ ...l, group: 'River boats' })));
   lines.push(...old53.lines.map(l => ({ ...l, group: '1953 streetcars' })));
   /** r: a line id from `lines`, or false for the overview (stay = keep the camera where it is) */
   function setRiding(r, stay = false) {
@@ -154,6 +166,9 @@ export async function buildScene(canvas, data, status = () => {}) {
       pos: V(cx, 0, cz).addScaledVector(n, steep ? 70 : 120).addScaledVector(t, -110).setY(steep ? 190 : 95), target: V(cx, 2, cz).addScaledVector(t, 30) });
   });
   views.push(...subway.views, ...marks.views);
+  // the river boats at Penn's Landing, from over Columbus Boulevard
+  const rsp = data.boats.lines.flatMap(l => l.stops).find(st => st.t === 'Race Street Pier');
+  if (rsp) views.push({ id: 'boats', name: 'River boats', pos: V(rsp.x - 300, 150, rsp.z + 300), target: V(rsp.x + 80, 0, rsp.z - 40) });
   // while a section is cut open the camera may look level into it (normally it stays above the horizon)
   function setCut(id) {
     const r = subway.setCut(id);
@@ -185,7 +200,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   const mapData = {
     bbox: data.city.bbox, limits: data.city.limits,
     water: [...data.city.water, ...data.river.water], green: [...data.city.green.map(g => g.slice(1)), ...data.ground.green.map(g => g.slice(1))],
-    routes: [...subway.routes, ...mono].map(r => ({ id: r.id, color: r.color, P: r.P })),
+    routes: [...subway.routes, ...mono, ...boats.routes].map(r => ({ id: r.id, color: r.color, P: r.P })),
   };
   function stepFly(dt) {
     fly.t = Math.min(1, fly.t + dt / fly.dur);
@@ -270,13 +285,16 @@ export async function buildScene(canvas, data, status = () => {}) {
     controls.target.y = Math.max(0, controls.target.y + mv.y);
   }
   const pickCar = (x, y) => { camera.updateMatrixWorld(); return subway.pick(camera, x, y, canvas.clientWidth, canvas.clientHeight); };
+  // time of year: today's date to begin with; the sun's path follows the date too
+  function setDay(day) { const st = setSeason(day); sky.setDate(dateOfDay(st.day)); return st.day; }
+  setDay(dayOfYear(new Date()));
   setTime(sky.sunset - .35);   // open at dusk, the original look
 
   const clock = new THREE.Clock(), sunOff = new THREE.Vector3();
   function start(onFrame) {
     function frame() {
       const dt = Math.min(clock.getDelta(), .05);
-      monorail.update(dt, riding === 'loop', camera); old53.update(dt); subway.update(dt, camera); updateShells(dt); sports.update(dt, riding, camera); yard.update(dt); marks.update(dt);
+      monorail.update(dt, riding === 'loop', camera); old53.update(dt); boats.update(dt); subway.update(dt, camera); updateShells(dt); sports.update(dt, riding, camera); yard.update(dt); marks.update(dt);
       if (fly) stepFly(dt);
       if ((flyKeys.f || flyKeys.s || flyKeys.u) && riding === false && !subway.getRide()) stepFlyKeys(dt);
       if (riding === false && !subway.getRide() && !creative) controls.update();
@@ -306,6 +324,7 @@ export async function buildScene(canvas, data, status = () => {}) {
     }
   }
   legend.push({ name: 'Proposed monorails', color: '#d6452f' });
+  for (const l of boats.lines) legend.push({ name: l.name, color: l.color });
 
-  return { scene, camera, controls, renderer, labels, lines, views, flyTo, boardLine, setFly, setCreative, getCreative: () => creative, creativeLook, creativeSpeed, setTransitMap: on => { old53.setOverlay(on); return tmap.set(on); }, getTransitMap: tmap.get, legend, oldTrolleyLegend: old53.legend, cityBuildings: city.buildingCount, setTime, getTime: sky.getTime, sunset: sky.sunset, setMood, getMood, setRiding, setCut, getCut: subway.getCut, pickCar, boardCar, leaveCar, getCar: subway.getRide, rideStrip: subway.rideStrip, mapData, flyToPoint, displayPresets: DISPLAY_PRESETS, setDisplayLights: setDisplayColors, lookCar: subway.look, moveCar: subway.move, start, river, monorail };
+  return { scene, camera, controls, renderer, labels, lines, views, flyTo, boardLine, setFly, setCreative, getCreative: () => creative, creativeLook, creativeSpeed, setTransitMap: on => { old53.setOverlay(on); return tmap.set(on); }, getTransitMap: tmap.get, legend, oldTrolleyLegend: old53.legend, cityBuildings: city.buildingCount, setTime, getTime: sky.getTime, get sunset() { return sky.sunset; }, setDay, getDay: () => getSeason().day, formatDay, setMood, getMood, setRiding, setCut, getCut: subway.getCut, pickCar, boardCar, leaveCar, getCar: subway.getRide, rideStrip: subway.rideStrip, mapData, flyToPoint, displayPresets: DISPLAY_PRESETS, setDisplayLights: setDisplayColors, lookCar: subway.look, moveCar: subway.move, start, river, monorail };
 }
