@@ -168,7 +168,7 @@ data-metro       (gzip JSON) every rail transit line in the city, merged into da
   replaceRuns: ["L","T1",...]: data-transit runs these replace. Inside the original extent
            their runs are the original geometry, unchanged.
   columns: flat [x, z, h] dm, El and viaduct columns
-  Built from OSM route relations by tools/build_transit.py; tunnel layer -1/-2/-3/-4 ->
+  Built from OSM route relations by tools/build_metro.py; tunnel layer -1/-2/-3/-4 ->
   7/9/13/17 m deep, Els 9.5 m up, Regional Rail on bridges follows the street-layer decks.
 
 data-city_landmarks  hand-styled models fitted to real outlines (tools/build_landmarks.py)
@@ -183,7 +183,7 @@ data-city_landmarks  hand-styled models fitted to real outlines (tools/build_lan
   labels:   [{t, x, y, z}] m
   The city footprints whose centroid is inside a stadium/hall outline, and the street-layer
   decks of these bridges, are left out of data-city / data-city_buildings by build_city.py;
-  PATCO's track on the Ben Franklin Bridge follows the deck profile (build_transit.py). If you
+  PATCO's track on the Ben Franklin Bridge follows the deck profile (build_metro.py). If you
   move an outline in this file only, those buildings stay out until the build is rerun.
 
 data-yardpark    PROPOSAL: deck over the 30th Street rail yard

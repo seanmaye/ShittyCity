@@ -1,7 +1,7 @@
 """Build the citywide rail transit network: every SEPTA Metro line (L, B1-B3, G1, T1-T5), all 13
 Regional Rail lines, PATCO and NJ Transit's Atlantic City Line, inside the city limits.
 
-  python -I tools/build_transit.py [raw_dir] [out_dir]
+  python -I tools/build_metro.py [raw_dir] [out_dir]
 
 raw_dir defaults to tools/raw/city (extract_osm.py output), out_dir to data/.
 Writes data/metro.json.gz, which js/scene/index.js merges into data/transit.json:

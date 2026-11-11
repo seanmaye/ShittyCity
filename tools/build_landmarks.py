@@ -11,7 +11,7 @@ Writes data/city_landmarks.json:
   bridges:  [{name, a: [x, z], b: [x, z] m (deck axis ends), width, deckH, towers: [s, s] m from a,
               towerH, anchors: [s, s], color}]
   labels:   [{t, x, z, y}]
-build_city.py drops the generic buildings inside these outlines; build_transit.py puts PATCO
+build_city.py drops the generic buildings inside these outlines; build_metro.py puts PATCO
 on the Ben Franklin Bridge deck.
 """
 import glob, gzip, json, math, os, sys

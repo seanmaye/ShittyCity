@@ -96,9 +96,9 @@ js/scene/
   subway.js           every rail line: tracks, tunnels, Els, platforms, trains, line rides,
                       the Market St cut-away and the walkable cabins of every car
 data/                 generated (don't edit by hand):
-                      *.json by tools/build_data.py, except transit.json (an offline script,
-                      not in this repo); city.json.gz and city_buildings.bin.gz by
-                      tools/build_city.py; metro.json.gz by tools/build_transit.py;
+                      *.json by tools/build_data.py, except transit.json (the L and T1-T5,
+                      by tools/build_transit.py: see tools/README.md); city.json.gz and city_buildings.bin.gz by
+                      tools/build_city.py; metro.json.gz by tools/build_metro.py;
                       city_landmarks.json by tools/build_landmarks.py
 tools/
   fetch_data.py       downloads the raw sources
@@ -110,7 +110,8 @@ tools/
   extract_osm.py      cuts the city's OSM data out of the Geofabrik Pennsylvania extract
   citylimits.py       the city boundary and a fast point-inside test
   build_city.py       the rest of the city (writes data/city*.gz)
-  build_transit.py    the citywide rail network (writes data/metro.json.gz)
+  build_metro.py      the citywide rail network (writes data/metro.json.gz)
+  build_transit.py    the original L and trolley data (data-transit; see tools/README.md)
   extract_landmarks.py  stadium, hall and pitch outlines from the Pennsylvania extract
   extract_bridges.py  the Delaware bridge decks and Memorial Hall (merged into the same file)
   build_landmarks.py  fits the landmark models (writes data/city_landmarks.json)
@@ -182,15 +183,15 @@ python -I tools/build_city.py
 ```
 
 ```bash
-python -I tools/build_transit.py
+python -I tools/build_metro.py
 ```
 
 `fetch_city.py` downloads the 546k building footprints (about 210 MB, resumable) and the city
 boundary. `build_city.py` keeps everything outside the original extent and inside the city
 limits, so the original area's data is never touched; it takes about 5 minutes. Run
 `build_landmarks.py` first: `build_city.py` leaves out the footprints inside the landmark
-outlines and the bridge decks, and `build_transit.py` lays PATCO on the Ben Franklin deck.
-`build_transit.py` builds every line's track, stations and out-and-back route. It reuses the
+outlines and the bridge decks, and `build_metro.py` lays PATCO on the Ben Franklin deck.
+`build_metro.py` builds every line's track, stations and out-and-back route. It reuses the
 original Center City L and trolley geometry exactly, and blends the new track into it at the
 edge of the original area.
 
