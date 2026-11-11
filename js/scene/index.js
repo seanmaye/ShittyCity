@@ -28,6 +28,10 @@ import { buildMonorail as buildNycMonorail } from './nyc/monorail.js';
 import { buildPromenade } from './phl/promenade.js';
 import { buildPedestrians } from './phl/pedestrians.js';
 import { buildBoats } from './phl/boats.js';
+// a city in hilly country (Jersey Shore): its elevation grid, and everything laid onto it
+import { loadTerrain, buildTerrain, drape } from './terrain.js';
+import { buildPlaces } from './jsh/places.js';
+import { buildFarms } from './jsh/farms.js';
 // let the status line paint between build steps (a timer, so it also works in background tabs)
 const nextFrame = () => new Promise(r => setTimeout(r, 16));
 // what a feature contributes when the city doesn't have it (another city's landmarks, say)
@@ -36,6 +40,8 @@ const none = () => ({ labels: [], views: [], nightOnly: [], duskOnly: [], boatLi
 export async function buildScene(canvas, data, status = () => {}) {
   const core = createCore(canvas);
   const { scene, camera, controls, renderer, sun, hemi } = core;
+  if (data.terrain) loadTerrain(data.terrain);   // before anything is built: buildings and trees stand on it
+  const flatStart = new Set(scene.children);
 
   status('Shaping the river…'); await nextFrame();
   const river = buildRiver(scene, data.river);
@@ -63,6 +69,11 @@ export async function buildScene(canvas, data, status = () => {}) {
   if (data.nycLandmarks) buildBoroughMarks(scene);
   const nycMono = data.monorailRoutes ? buildNycMonorail(scene, data.monorailRoutes) : { routes: [], labels: [], update() {} };
   buildTrees(scene, data.trees);
+  // Jersey Shore's crop fields, barns and silos (data/jsh/farms.json.gz)
+  if (data.farms) { status('Planting the fields…'); await nextFrame(); buildFarms(scene, data.farms); }
+  // the ground, parks, water and streets were built flat: lay them onto the hills
+  if (data.terrain) { status('Laying the town onto the hills…'); await nextFrame(); buildTerrain(scene); drape(scene.children.filter(o => !flatStart.has(o))); }
+  const places = data.places ? buildPlaces(data.places) : { labels: [], views: [] };
   // PROPOSAL (Philadelphia only): Walnut St, 22nd to Front, as a brick-paved shopping street, with people
   const isPhl = CITY.id === 'phl';
   const walnut = isPhl ? buildPromenade(scene, { buildings: data.buildings, cityB: city.boxes, roads: [data.ground.lines, data.city.lines], trees: data.trees })
@@ -125,7 +136,7 @@ export async function buildScene(canvas, data, status = () => {}) {
     if (l.t === 'City Hall') return { text: l.t, pos: lm.cityhall.clone().setY(l.y) };
     if (l.river !== undefined) return { text: l.t, pos: river.atLat(39.9575).p.clone().setY(l.y) };
     return { text: l.t, pos: new THREE.Vector3(l.x, l.y, l.z) };
-  }).concat(sports.labels, yard.labels, subway.labels, marks.labels, old53.labels, boats.labels, nyc.labels.filter(l => !nycBridges.some(b => b.id === l.text)), nycMono.labels,
+  }).concat(sports.labels, yard.labels, subway.labels, marks.labels, old53.labels, boats.labels, nyc.labels.filter(l => !nycBridges.some(b => b.id === l.text)), nycMono.labels, places.labels,
     nycBridges.map(b => ({ text: b.id, far: 3700, pos: new THREE.Vector3((b.a[0] + b.b[0]) / 2, b.labelHeight, (b.a[1] + b.b[1]) / 2) })));
   // instanced meshes hold instances far from their own origin: never let three cull them as a whole,
   // except those that carry the bounds of their instances (geometry.js withBounds)
@@ -203,7 +214,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   // New York's named views (data/nyc/landmarks.json; its overview is the home view) and the bridges
   for (const v of (data.nycLandmarks || {}).views || []) if (v.id !== 'overview') views.push({ id: v.id, name: v.name, pos: V(...v.pos), target: V(...v.target) });
   if (nycBridges.length) views.push({ id: 'bridges', name: 'East River bridges', pos: V(1260, 475, 5070), target: V(-460, 70, 4030) });
-  views.push(...subway.views, ...marks.views);
+  views.push(...places.views, ...subway.views, ...marks.views);
   // the river boats at Penn's Landing, from over Columbus Boulevard
   const rsp = data.boats && data.boats.lines.flatMap(l => l.stops).find(st => st.t === 'Race Street Pier');
   if (rsp) views.push({ id: 'boats', name: 'River boats', pos: V(rsp.x - 300, 150, rsp.z + 300), target: V(rsp.x + 80, 0, rsp.z - 40) });

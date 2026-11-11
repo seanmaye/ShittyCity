@@ -117,6 +117,7 @@ export function createUI(api) {
     });
     groupRow.appendChild(b);
   });
+  rideBtn.hidden = !api.lines.length;   // a city without rail transit
   rideBtn.addEventListener('click', () => {
     if (riding) {
       riding = false; api.setRiding(false); markView('home');
@@ -267,6 +268,7 @@ export function createUI(api) {
   offBtn.addEventListener('click', () => { api.leaveCar(); syncCar(); });
   // "Show transit lines": highlight every line in its colour, with a legend
   const trBtn = document.getElementById('transit'), legendEl = document.getElementById('legend');
+  trBtn.hidden = !api.legend.length && !api.oldTrolleyLegend.length;
   for (const it of api.legend) {
     const s = document.createElement('span'), i = document.createElement('i'); i.style.background = it.color; i.setAttribute('aria-hidden', 'true');
     s.append(i, it.name); legendEl.appendChild(s);
@@ -316,7 +318,9 @@ export function createUI(api) {
   }
   skyColor.addEventListener('input', () => setScheme('custom', [skyColor.value], 'Your colour'));
   const sk = store.get('skyline') || 'white', pre = api.displayPresets.find(p => p.id === sk);
-  if (sk.startsWith('custom:')) { skyColor.value = sk.slice(7); setScheme('custom', [skyColor.value], 'Your colour', true); }
+  swatches.closest('.skyline').hidden = !api.displayPresets.length;   // a city with no lit skyline (CITY.presets [])
+  if (!api.displayPresets.length) { /* nothing to light */ }
+  else if (sk.startsWith('custom:')) { skyColor.value = sk.slice(7); setScheme('custom', [skyColor.value], 'Your colour', true); }
   else setScheme(pre ? pre.id : 'white', (pre || api.displayPresets[0]).colors, (pre || api.displayPresets[0]).name, true);
 
   const minimap = createMinimap(api), ridebar = createRidebar(api);

@@ -13,6 +13,7 @@ import { drawLines, GREEN, GROUND, COUNTRY, groundMat } from './ground.js';
 import { buildTrees } from './nature.js';
 import { seasonalGrass } from './season.js';
 import { facadeKind, facadeColor, hash, addRooftop, aviationLights } from './buildings.js';
+import { CITY } from '../cities.js';
 
 const TILE = 1000, FULL = 5000, TREE_FAR = 7000;
 
@@ -75,7 +76,7 @@ export function buildCity(scene, data, { waterMat, status = () => {}, clear = []
   if (sea) {
     const outer = new THREE.Mesh(new THREE.PlaneGeometry(400000, 400000), waterMat);
     outer.rotation.x = -Math.PI / 2; outer.position.y = -.05; outer.receiveShadow = true; scene.add(outer);
-  } else {
+  } else if (!CITY.terrain) {   // a city with terrain has its own country (terrain.js)
     const FAR = 200000, HOLE = 14500;   // buildGround's countryside plane (30 km square, y = 0) covers the middle
     const ob = new Builder(), ub = new Builder();
     const quad = (b, x0, z0, x1, z1, up) => {

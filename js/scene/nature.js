@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { onSeason } from './season.js';
 import { withBounds } from './geometry.js';
+import { groundAt } from './terrain.js';
 
 const C = h => new THREE.Color(h);
 const SUMMER = ['#4f7d45', '#5d8c4c', '#3f6b3c', '#6b9a4e', '#628f4a'].map(C), FRESH = C('#93c45a');
@@ -61,9 +62,14 @@ export function buildTrees(scene, flat, y = 0) {
   const wm = () => new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .95, flatShading: true });
   // the sphere around all of these trees and their flower beds (a tree reaches 24 m up and 7 m
   // out at the largest scale, a bed sits up to 8 m from its tree)
-  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
-  for (let i = 0; i < n; i++) { const x = flat[i * 2] / 10, z = flat[i * 2 + 1] / 10; x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
-  const centre = n ? new THREE.Vector3((x0 + x1) / 2, y + 12, (z0 + z1) / 2) : new THREE.Vector3(0, y, 0), reach = n ? Math.hypot(x1 - x0, z1 - z0) / 2 + 30 : 0;
+  // each tree stands on the terrain where the city has one (terrain.js; 0 elsewhere)
+  const gy = new Float32Array(n);
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity, g0 = Infinity, g1 = -Infinity;
+  for (let i = 0; i < n; i++) {
+    const x = flat[i * 2] / 10, z = flat[i * 2 + 1] / 10; x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
+    gy[i] = groundAt(x, z); g0 = Math.min(g0, gy[i]); g1 = Math.max(g1, gy[i]);
+  }
+  const centre = n ? new THREE.Vector3((x0 + x1) / 2, y + 12 + (g0 + g1) / 2, (z0 + z1) / 2) : new THREE.Vector3(0, y, 0), reach = n ? Math.hypot(x1 - x0, z1 - z0, g1 - g0) / 2 + 30 : 0;
   const mesh = (g, m, count) => { const im = new THREE.InstancedMesh(withBounds(g, centre, reach), m, count); im.userData.bounded = true; return im; };
   const it = mesh(trunk, bark, n), ir = mesh(round, wm(), nR), icn = mesh(cone, wm(), nC);
   const twigMat = new THREE.MeshStandardMaterial({ color: '#9c8774', map: twigTex, alphaTest: .4, side: THREE.DoubleSide, roughness: 1 });
@@ -75,20 +81,20 @@ export function buildTrees(scene, flat, y = 0) {
   let a = 0, b = 0;
   for (let i = 0; i < n; i++) {
     const sc = .8 + Math.random() * .6;
-    dm.position.set(flat[i * 2] / 10, y, flat[i * 2 + 1] / 10); dm.rotation.set(0, Math.random() * 6.28, 0); dm.scale.set(sc, sc, sc); dm.updateMatrix();
+    dm.position.set(flat[i * 2] / 10, y + gy[i], flat[i * 2 + 1] / 10); dm.rotation.set(0, Math.random() * 6.28, 0); dm.scale.set(sc, sc, sc); dm.updateMatrix();
     it.setMatrixAt(i, dm.matrix);
     if (kinds[i] === 0) {
       ir.setMatrixAt(a, dm.matrix); ib.setMatrixAt(a, dm.matrix); dm.matrix.toArray(mats, a * 16);
       rnd.set([Math.random(), Math.random(), Math.random(), Math.random()], a * 4); a++;
     } else { icn.setMatrixAt(b, dm.matrix); icn.setColorAt(b, col.copy(SUMMER[Math.floor(Math.random() * 5)]).multiplyScalar(.85)); b++; }
     // a flower bed near about one tree in six
-    if (Math.random() < .17) { const ang = Math.random() * 6.28, r = 4 + Math.random() * 4; beds.push(flat[i * 2] / 10 + Math.cos(ang) * r, flat[i * 2 + 1] / 10 + Math.sin(ang) * r); }
+    if (Math.random() < .17) { const ang = Math.random() * 6.28, r = 4 + Math.random() * 4, bx = flat[i * 2] / 10 + Math.cos(ang) * r, bz = flat[i * 2 + 1] / 10 + Math.sin(ang) * r; beds.push(bx, bz, groundAt(bx, bz)); }
   }
   ir.setColorAt(0, col); ib.setColorAt(0, col);   // allocate instance colours
-  const fb = mesh(bed, new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .9 }), Math.max(1, beds.length / 2));
+  const fb = mesh(bed, new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .9 }), Math.max(1, beds.length / 3));
   if (!beds.length) fb.setMatrixAt(0, new THREE.Matrix4().makeScale(0, 0, 0));
-  for (let k = 0; k < beds.length / 2; k++) {
-    dm.position.set(beds[k * 2], y + .5, beds[k * 2 + 1]); dm.rotation.set(0, Math.random() * 6.28, 0); dm.scale.setScalar(.7 + Math.random() * .7); dm.updateMatrix();
+  for (let k = 0; k < beds.length / 3; k++) {
+    dm.position.set(beds[k * 3], y + .5 + beds[k * 3 + 2], beds[k * 3 + 1]); dm.rotation.set(0, Math.random() * 6.28, 0); dm.scale.setScalar(.7 + Math.random() * .7); dm.updateMatrix();
     fb.setMatrixAt(k, dm.matrix); fb.setColorAt(k, FLOWERS[Math.floor(Math.random() * FLOWERS.length)]);
   }
   fb.material.userData.noSnow = true;
@@ -111,6 +117,7 @@ export function buildTrees(scene, flat, y = 0) {
     ib.userData.season = s.bare > .05; fb.userData.season = s.flowers > .05;
     ib.visible = ib.userData.season; fb.visible = fb.userData.season;
   });
+  [it, ir, icn, ib, fb].forEach(m => { m.userData.grounded = true; });   // already on the terrain: drape() leaves them
   [it, ir, icn].forEach(m => { m.castShadow = true; m.receiveShadow = true; scene.add(m); });
   // the branch planes cast their shadows through the twig cut-outs, not as solid rectangles
   ib.customDepthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: twigTex, alphaTest: .4 });

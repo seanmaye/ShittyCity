@@ -99,10 +99,11 @@ function countryside(cover, size = 30000, cell = 250) {
  */
 export function buildGround(scene, data, river, capRings = [], { sea = false, paved = [] } = {}) {
   const cap = capRings.map(pairs);
-  if (!sea) {
+  if (!sea && !CITY.terrain) {   // a city with terrain has its own country (terrain.js)
     const outer = new THREE.Mesh(countryside(paved.map(pairs)), seasonalGrass(M(COUNTRY, { roughness: 1, side: THREE.FrontSide })));
     outer.receiveShadow = true; scene.add(outer);
-
+  }
+  if (!sea) {
     // paved city within the mapped extent
     const [x0, z0, x1, z1] = data.bbox.map(v => v / 10);
     const cb = new Builder({ uv: true }); addPolygon(cb, [[[x0, z0], [x1, z0], [x1, z1], [x0, z1]]], 0, (x, z) => [x / 400, z / 400]);

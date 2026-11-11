@@ -68,6 +68,33 @@ export const CITIES = {
     stationLines: s => (s.lines || []).join(' '),
     presets: ['white', 'holiday', 'pride'],
   },
+  jsh: {
+    id: 'jsh', name: 'Jersey Shore, PA',
+    blurb: 'A Lycoming County river town on the West Branch of the Susquehanna, with Pine Creek, Bald Eagle Mountain and the hills around it.',
+    frame: { LAT0: 41.2025, LON0: -77.2536, MX: 83877.23, MZ: 111000 },   // Allegheny & Main; tools/jsh/extent.py
+    dir: 'data/jsh', prefix: 'jsh-',
+    files: [
+      ['buildings', 'buildings.json'], ['river', 'river.json'], ['ground', 'ground.json'], ['trees', 'trees.json'],
+      ['transit', 'transit.json'], ['city', 'city.json.gz'], ['cityBuildings', 'city_buildings.bin.gz'],
+      ['terrain', 'terrain.bin.gz'], ['places', 'places.json'], ['farms', 'farms.json.gz'],
+    ],
+    // from the hill above town, looking south over Allegheny St and the river to Bald Eagle Mountain
+    home: { pos: [41.2190, -77.2640, 520], target: [41.1965, -77.2560, 20] },
+    sunTarget: [41.2025, -77.2560], sun: { lat: 41.2025, lon: -77.2536 },
+    sea: false,
+    terrain: true,   // data/jsh/terrain.bin.gz: everything is laid onto the hills (js/scene/terrain.js)
+    storage: 'jsh3d:',
+    title: 'Jersey Shore, PA: a river town on the West Branch',
+    heading: 'Jersey Shore, on the West Branch',
+    canvasLabel: '3D model of Jersey Shore, Pennsylvania, on the West Branch Susquehanna River, with the surrounding hills',
+    hint: 'Jersey Shore borough and its neighbours on the West Branch of the Susquehanna, with Pine Creek and Bald Eagle Mountain, on real terrain. Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom.',
+    cutButton: '', cutHint: '',
+    credit: 'Buildings: Overture Maps (Microsoft ML Buildings, OpenStreetMap) · Streets, parks, water: © OpenStreetMap contributors · Terrain: AWS Terrain Tiles (USGS 3DEP) · Crops: USDA NASS Cropland Data Layer',
+    building: 'Spreading out along the river…',
+    groups: [],
+    stationLines: s => (s.lines || []).join(' '),
+    presets: [],   // no lit skyline: the panel leaves out Skyline lights
+  },
 };
 
 /** the active city (filled in place by setCity, so every importer sees the same object) */

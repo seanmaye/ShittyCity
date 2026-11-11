@@ -5,9 +5,9 @@ This guide is for an AI assistant (or a person) who has only this HTML file and 
 change a city. Everything the page needs is inside the file: styles, all scripts, and
 all map data. three.js r128 loads from the jsDelivr CDN.
 
-The page holds several cities on one engine: today Philadelphia (id "phl") and New York
-(id "nyc"). It opens on a start menu (#menu) to pick one, or goes straight to one with
-?city=phl or ?city=nyc; "Change city" (#switch-city) reloads to the menu. Each city has its
+The page holds several cities on one engine: today Philadelphia (id "phl"), New York
+(id "nyc") and Jersey Shore, PA (id "jsh"). It opens on a start menu (#menu) to pick one, or
+goes straight to one with ?city=phl, ?city=nyc or ?city=jsh; "Change city" (#switch-city) reloads to the menu. Each city has its
 own data blocks (data-<city>-NAME), its own settings in the js/cities.js chunk, and its own
 hand-built scene code (js/scene/<city>/); everything else is shared.
 
@@ -58,6 +58,7 @@ instead of editing this file. If you only have this file, edit it directly as de
   City           LAT0      LON0       MX         origin
   Philadelphia   39.9560   -75.1760   85390      near 22nd and Arch Streets
   New York       40.745    -73.984    84096.04   Midtown, near Herald Square
+  Jersey Shore   41.2025   -77.2536   83877.23   Allegheny & Main Streets
 
   Mixed units:
   - Most data arrays are FLAT INTEGER DECIMETRES: [x0, z0, x1, z1, ...] with value =
@@ -88,6 +89,10 @@ instead of editing this file. If you only have this file, edit it directly as de
         and DUMBO, Park Slope, Williamsburg and Greenpoint, Coney Island, Long Island City and
         Astoria, Flushing, Jamaica); outside the land outlines is water (the city's `sea` flag).
   Philadelphia's street grid is rotated about -9.3 degrees from true north (-0.162 rad).
+  Jersey Shore has no separate core: every footprint is in data-jsh-buildings and
+  data-jsh-city_buildings is empty. It is the one city on terrain (data-jsh-terrain): y = 0 is
+  the river by town, and everything is laid onto the hills at load time (section 4, terrain.js),
+  so its data stays flat like any other city's.
 
 
 3. Data blocks (schemas)
@@ -265,6 +270,28 @@ data-nyc-monorail       PROPOSAL: the East River Loop
    routes: [{id, name, color, closed, supportInterval, trainSpacing, cars,
              path: [[x, z] at the guideway height | [x, y, z]], stations: [{name, position: [x, z], length}]}]}
 
+Jersey Shore only:
+
+data-jsh-terrain        (gzip binary "TER1") the elevation grid
+  "TER1", n u32, half f32, cell f32, base f32, then (little endian) heights i16[n*n] in dm above
+  base, row-major from the north-west corner (row = z, column = x; vertex (i, j) is at
+  x = -half + i*cell, z = -half + j*cell), then cover u8[n*n]: 0 open, 1 forest, 2 river bed,
+  3 cropland.
+  Today n = 501, cell = 40 m, half = 10 km; base = 156.8 m above sea level. Each cell is split
+  into two triangles from its north-west to its south-east corner; groundAt(x, z) in terrain.js
+  interpolates on those triangles.
+data-jsh-places         labels [{t, x, z, y (m above the ground there), far?}] and views
+                        [{id, name, pos: [x, y, z], target: [x, y, z]}] (y already includes the ground)
+
+data-jsh-farms          (gzip JSON) {year, fields, barns, silos} (js/scene/jsh/farms.js)
+  fields: [{k: "corn" | "soy" | "grain" | "hay" | "veg", a: row direction (rad, in x-z), s: 0..1
+          (which of three planting groups), p: [outer_ring_dm, hole_ring_dm...]}]
+  barns:  [{x, z, w (long side), d, ry, t: "gambrel" | "gable" | "pole", c: wall colour, r: roof colour}] METRES
+  silos:  [{x, z, r, h, c}] METRES
+  The footprints these barns and silos came from are left out of data-jsh-buildings.
+
+All of Jersey Shore's blocks are written by tools/jsh/build_jsh.py; rerun it rather than editing them.
+
 
 4. Code map (chunk, then what you would change there)
 -----------------------------------------------------
@@ -301,6 +328,15 @@ js/scene/materials.js  M(color) quick material; litMats = materials that glow at
                  Display lights: addDisplay(apply) registers a coloured skyline light;
                  setDisplayColors(colors) deals a scheme's colours out to them in turn;
                  DISPLAY_PRESETS = every scheme (a city shows the ids in CITY.presets).
+js/scene/terrain.js    a city's elevation grid (data-<city>-terrain; only Jersey Shore has one):
+                 loadTerrain, groundAt(x, z) and groundBase(ring) (the lowest ground under a
+                 footprint, where buildings.js stands it; nature.js stands trees on groundAt),
+                 buildTerrain (the surface in 2 km tiles, coloured by cover, plus flat country
+                 beyond) and drape(objects): every flat mesh built before it (paving, parks, water,
+                 streets, bridges) is cut along the grid's triangle edges and lifted, so it lies
+                 exactly on the terrain; instanced meshes are lifted per instance. Objects with
+                 userData.draped or userData.grounded are left alone. With CITY.terrain, ground.js
+                 and city.js draw no countryside of their own.
 js/scene/geometry.js   Builder (merged meshes); addPolygon, addRibbon, addPrism (extruded
                  footprint, separate roof colour), addLoft (tapering tower section)
 js/scene/river.js      water, bulkheads, dams, river samples RS plus riverInfo(x,z) and
@@ -452,6 +488,14 @@ boroughmarks.js  the Wonder Wheel, the Unisphere and Citi Field (positions in th
 monorail.js      the East River Loop from data-nyc-monorail: guideway, supports, stations,
                  trains; its cars board through subway.registerFleet like Philadelphia's
 
+Jersey Shore (js/scene/jsh/):
+
+places.js        labels and "Go to" views from data-jsh-places, label heights above the ground
+farms.js         crop fields from data-jsh-farms through the farming year (stage(kind, day):
+                 ground colour, canopy height and colour, hay bales), in three planting groups a week
+                 apart; the canopy is a slab raised by position.y; barns (gambrel, gable, pole) and
+                 silos standing on the terrain
+
 Debug handle in the browser console: window.__city
   { scene, camera, controls, renderer, labels, lines, views, flyTo(viewId),
     setTime(hours 0-24), getTime(), sunset, setMood('day'|'dusk'), getMood(),
@@ -472,7 +516,8 @@ Debug handle in the browser console: window.__city
     html = open(PATH, encoding="utf-8").read()
 
     CITY = "phl"                         # or "nyc": the blocks below are data-<CITY>-<name>
-    FRAMES = {"phl": (39.9560, -75.1760, 85390), "nyc": (40.745, -73.984, 84096.04)}
+    FRAMES = {"phl": (39.9560, -75.1760, 85390), "nyc": (40.745, -73.984, 84096.04),
+              "jsh": (41.2025, -77.2536, 83877.23)}
 
     def _block(name):
         return re.search(r'(<script type="application/json" id="data-%s-%s"[^>]*>)(.*?)(</script>)'
@@ -690,7 +735,9 @@ Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, hei
 - Keep each city's attribution line (CITY.credit). Philadelphia: map data (c) OpenStreetMap
   contributors, ODbL; building data (c) City of Philadelphia. New York: buildings NYC Open
   Data; shorelines NYC Open Data and NJDEP; map data (c) OpenStreetMap contributors, ODbL;
-  subway routes MTA GTFS.
+  subway routes MTA GTFS. Jersey Shore: buildings Overture Maps (Microsoft ML Buildings,
+  OpenStreetMap); map data (c) OpenStreetMap contributors, ODbL; terrain AWS Terrain Tiles;
+  crops USDA NASS Cropland Data Layer.
 - After a change, open the file in a browser (double-click works) and check the console.
   Without a browser, at least check the syntax: copy the module script to x.mjs and run
   `node --check x.mjs`.
@@ -700,7 +747,7 @@ Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, hei
 8. Cities
 ---------
 
-js/cities.js lists the cities (CITIES.phl, CITIES.nyc). main.js picks one and calls
+js/cities.js lists the cities (CITIES.phl, CITIES.nyc, CITIES.jsh). main.js picks one and calls
 setCity(id) before anything loads; every module then reads the active city from CITY inside
 its functions (never at module top level: the bundle runs every chunk before main does).
 A city entry holds:
@@ -712,11 +759,14 @@ A city entry holds:
                                where the sun is computed for (sky.js)
   sea                          true: everything outside data-<city>-city `limits` is water;
                                false: it is countryside
+  terrain                      true: the city has data-<city>-terrain and everything is laid onto
+                               it (terrain.js); its countryside is the terrain surface
   storage                      localStorage prefix (folded panel, skyline lights)
   title, heading, hint, canvasLabel, cutButton, cutHint, credit, building   page text
   groups                       the "Ride a line" networks in order (a line without `group` is
                                in the first); stationLines(s, LINES) = a station tag's line text
-  presets                      skyline-light preset ids from materials.js (null = all)
+  presets                      skyline-light preset ids from materials.js (null = all; [] = no
+                               Skyline lights section, for a city with nothing lit)
 
 index.js builds whatever the city's blocks contain: each city's own parts (js/scene/<city>/)
 only when their blocks are there.

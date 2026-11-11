@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { pairs } from '../data.js';
 import { worldWinMat, WIN_W, WIN_H, roofColor, M, addDisplay } from './materials.js';
 import { Builder, addPrism, addLoft, colorOf } from './geometry.js';
+import { groundBase } from './terrain.js';
 
 // Facade colours by style, weighted toward what Philadelphia (where they were tuned) is made of: red brick
 // rowhouses (some painted, stuccoed or Formstone), brick and limestone commercial blocks,
@@ -105,13 +106,14 @@ export function buildBuildings(scene, data) {
     const b = new Builder({ uv: true, color: true });
     for (const [i, color] of t.items) {
       const [hdm, , ...flat] = data.b[i];
-      addPrism(b, flat.map(pairs), 0, hdm / 10, hash(i + 7) * 4, WIN_W, WIN_H, colorOf(color), colorOf(roofColor(hash(i + 3))));
+      const rings = flat.map(pairs), y0 = groundBase(rings[0]);   // on the terrain where a city has one
+      addPrism(b, rings, y0, y0 + hdm / 10, hash(i + 7) * 4, WIN_W, WIN_H, colorOf(color), colorOf(roofColor(hash(i + 3))));
     }
     const m = new THREE.Mesh(b.geometry(), worldWinMat(t.kind));
-    m.castShadow = m.receiveShadow = true; scene.add(m); meshes.push(m);
+    m.castShadow = m.receiveShadow = true; m.userData.draped = true; scene.add(m); meshes.push(m);
   });
   const roofs = new THREE.Mesh(top.geometry(), M('#ffffff', { vertexColors: true, roughness: .85 }));
-  roofs.castShadow = roofs.receiveShadow = true; scene.add(roofs);
+  roofs.castShadow = roofs.receiveShadow = true; roofs.userData.draped = true; scene.add(roofs);
   const beacons = aviationLights(lights); scene.add(beacons);
   shells.forEach(m => scene.add(m));
   return { meshes, count: data.b.length, nightOnly: [beacons, ...shells] };
