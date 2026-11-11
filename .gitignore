@@ -1,0 +1,3 @@
+tools/raw/
+__pycache__/
+tools/.venv/

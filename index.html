@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Philadelphia: Schuylkill riverfront and monorail</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js",
+               "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/" } }
+</script>
+</head>
+<body>
+<canvas id="c" aria-label="3D model of Philadelphia to the city limits, with its rail transit network and a proposed monorail loop along the Schuylkill"></canvas>
+<div id="tags" aria-hidden="true"></div>
+<div class="hud"><div class="card">
+<h1><span aria-hidden="true"></span>Philadelphia’s Schuylkill, reimagined</h1>
+<p id="hint">All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill. Drag to look around, scroll or pinch to zoom, W A S D to fly, Space and Shift to rise and sink. Click any train to ride inside it.</p>
+<div class="row">
+<button id="ride" type="button" disabled aria-expanded="false" aria-controls="lines">Ride a line</button>
+<button id="transit" type="button" class="ghost" disabled aria-pressed="false" aria-controls="legend">Show transit lines</button>
+<button id="lbl" type="button" class="ghost" disabled>Hide labels</button>
+<button id="cut" type="button" class="ghost" disabled aria-pressed="false">Cut away Market St</button>
+<button id="getoff" type="button" hidden>Get off</button>
+</div>
+<div class="clock"><label for="time">Time</label><input type="range" id="time" min="0" max="24" step="0.25" value="17" disabled><output id="time-out" for="time">5:00 PM</output></div>
+<div class="legend" id="legend" hidden></div>
+<div class="lines" id="lines" role="group" aria-label="Choose a line" hidden></div>
+<div class="views" id="views" role="group" aria-labelledby="views-h"><span class="views-h" id="views-h">Go to</span><div class="row" id="view-btns"></div></div>
+<p class="status" id="status" role="status">Loading map data…</p>
+</div></div>
+<p class="credit">Buildings: City of Philadelphia LI footprints · River, parks, streets, transit: © OpenStreetMap contributors</p>
+<div class="err" id="err">The 3D scene couldn’t load. Check your connection and reload the page.</div>
+<script type="module">
+import('./js/main.js').catch(e => { console.error(e); document.getElementById('err').style.display = 'flex'; });
+</script>
+</body>
+</html>
