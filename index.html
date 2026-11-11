@@ -17,9 +17,11 @@
 <body>
 <canvas id="c" aria-label="3D model of Philadelphia to the city limits, with its rail transit network and a proposed monorail loop along the Schuylkill"></canvas>
 <div id="tags" aria-hidden="true"></div>
+<div id="xhair" aria-hidden="true" hidden></div>
+<div id="modehint" class="modehint" role="status"></div>
 <div class="hud"><div class="card">
 <h1><span aria-hidden="true"></span>Philadelphia’s Schuylkill, reimagined</h1>
-<p id="hint">All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill. Drag to look around, scroll or pinch to zoom, W A S D to fly, Space and Shift to rise and sink. Click any train to ride inside it.</p>
+<p id="hint">All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill. Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom. Click any train to ride inside it.</p>
 <div class="row">
 <button id="ride" type="button" disabled aria-expanded="false" aria-controls="lines">Ride a line</button>
 <button id="transit" type="button" class="ghost" disabled aria-pressed="false" aria-controls="legend">Show transit lines</button>

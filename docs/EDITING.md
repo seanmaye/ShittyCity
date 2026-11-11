@@ -14,7 +14,7 @@ Python helper below.
 --------------------------------------
 
   <head>      <style> (HUD, labels) and an import map that maps "three" to three@0.128.0
-  <body>      HUD markup: #ride, #transit, #lbl, #cut, #getoff buttons, #time slider (+ #time-out),
+  <body>      HUD markup: #ride, #transit, #lbl, #cut, #getoff buttons, #xhair (creative-mode crosshair), #modehint, #time slider (+ #time-out),
               #legend, #lines picker, #view-btns (Go to), #hint, #status, #tags
   10 JSON data blocks, each <script type="application/json" id="data-NAME">...</script>,
               where NAME is buildings, ground, landmarks, river, sports, trees, yardpark, transit,
@@ -278,6 +278,11 @@ js/scene/index.js      builds everything in order; merges data-transit + data-me
                   draw distance and the sun's shadow area follow the camera)
 js/ui.js          buttons, line picker, floating labels, keys (inside a car KEYMAP walks; otherwise
                   FLYMAP flies the camera; Space up, Shift down)
+                  Creative mode: a right-click (or a click off any train) on the view captures the
+                  mouse (pointer lock), and the #modehint pill at the bottom says so; the mouse
+                  then turns the camera (setCreative/creativeLook in index.js, orbit controls off),
+                  W A S D fly along the view, the wheel sets the speed, a click boards the train
+                  under the #xhair crosshair, Esc lets go. Inside a car the mouse looks around.
 js/main.js        load data, then buildScene, then createUI, then start.
                   Exposes window.__schuylkill.
 
@@ -285,7 +290,8 @@ Debug handle in the browser console: window.__schuylkill
   { scene, camera, controls, renderer, labels, lines, views, flyTo(viewId),
     setTime(hours 0-24), getTime(), sunset, setMood('day'|'dusk'), getMood(),
     boardLine('loop' | 0 | 1 | 'm:L' | 'm:B1' | 'm:AIR' ...), setFly(forward, strafe, up),
-    setRiding(false), setTransitMap(on),
+    setRiding(false), setCreative(on), getCreative(), creativeLook(dx, dy), creativeSpeed(dir),
+    setTransitMap(on),
     getTransitMap(), legend, oldTrolleyLegend,
     setCut('market' | false), getCut(), pickCar(x, y), boardCar(hit), leaveCar(), getCar(),
     lookCar(dx, dy), moveCar(forward, strafe), river, monorail }

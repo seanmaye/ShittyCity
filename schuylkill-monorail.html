@@ -16,7 +16,7 @@ Python helper below.
 --------------------------------------
 
   <head>      <style> (HUD, labels) and an import map that maps "three" to three@0.128.0
-  <body>      HUD markup: #ride, #transit, #lbl, #cut, #getoff buttons, #time slider (+ #time-out),
+  <body>      HUD markup: #ride, #transit, #lbl, #cut, #getoff buttons, #xhair (creative-mode crosshair), #modehint, #time slider (+ #time-out),
               #legend, #lines picker, #view-btns (Go to), #hint, #status, #tags
   10 JSON data blocks, each <script type="application/json" id="data-NAME">...</script>,
               where NAME is buildings, ground, landmarks, river, sports, trees, yardpark, transit,
@@ -280,6 +280,11 @@ js/scene/index.js      builds everything in order; merges data-transit + data-me
                   draw distance and the sun's shadow area follow the camera)
 js/ui.js          buttons, line picker, floating labels, keys (inside a car KEYMAP walks; otherwise
                   FLYMAP flies the camera; Space up, Shift down)
+                  Creative mode: a right-click (or a click off any train) on the view captures the
+                  mouse (pointer lock), and the #modehint pill at the bottom says so; the mouse
+                  then turns the camera (setCreative/creativeLook in index.js, orbit controls off),
+                  W A S D fly along the view, the wheel sets the speed, a click boards the train
+                  under the #xhair crosshair, Esc lets go. Inside a car the mouse looks around.
 js/main.js        load data, then buildScene, then createUI, then start.
                   Exposes window.__schuylkill.
 
@@ -287,7 +292,8 @@ Debug handle in the browser console: window.__schuylkill
   { scene, camera, controls, renderer, labels, lines, views, flyTo(viewId),
     setTime(hours 0-24), getTime(), sunset, setMood('day'|'dusk'), getMood(),
     boardLine('loop' | 0 | 1 | 'm:L' | 'm:B1' | 'm:AIR' ...), setFly(forward, strafe, up),
-    setRiding(false), setTransitMap(on),
+    setRiding(false), setCreative(on), getCreative(), creativeLook(dx, dy), creativeSpeed(dir),
+    setTransitMap(on),
     getTransitMap(), legend, oldTrolleyLegend,
     setCut('market' | false), getCut(), pickCar(x, y), boardCar(hit), leaveCar(), getCar(),
     lookCar(dx, dy), moveCar(forward, strafe), river, monorail }
@@ -552,6 +558,15 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .legend i{width:16px;height:4px;border-radius:2px;display:inline-block}
 .legend i.band{background:var(--c)}
 .legend i.casing{height:8px;border-top:2px solid var(--c);border-bottom:2px solid var(--c);box-sizing:border-box;border-radius:0}
+#modehint{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 34px);transform:translateX(-50%);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600;white-space:nowrap;pointer-events:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);max-width:calc(100vw - 32px);overflow:hidden;text-overflow:ellipsis}
+#modehint:empty{display:none}
+#modehint kbd{font:inherit;border:1px solid var(--line);border-radius:4px;padding:0 5px}
+@media (pointer:coarse){#modehint{display:none}}
+#xhair{position:fixed;left:50%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;pointer-events:none;z-index:5}
+#xhair[hidden]{display:none}
+#xhair::before,#xhair::after{content:"";position:absolute;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.45)}
+#xhair::before{left:10px;top:0;width:2px;height:22px}
+#xhair::after{top:10px;left:0;height:2px;width:22px}
 .legend .legend-h{flex-basis:100%;font-weight:600;margin-top:4px;color:var(--muted)}
 .tag.t53{font-size:11px;padding:2px 7px;border-color:#a3243f}
 .lines[hidden]{display:none}
@@ -580,9 +595,11 @@ button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 
 <body>
 <canvas id="c" aria-label="3D model of Philadelphia to the city limits, with its rail transit network and a proposed monorail loop along the Schuylkill"></canvas>
 <div id="tags" aria-hidden="true"></div>
+<div id="xhair" aria-hidden="true" hidden></div>
+<div id="modehint" class="modehint" role="status"></div>
 <div class="hud"><div class="card">
 <h1><span aria-hidden="true"></span>Philadelphia’s Schuylkill, reimagined</h1>
-<p id="hint">All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill. Drag to look around, scroll or pinch to zoom, W A S D to fly, Space and Shift to rise and sink. Click any train to ride inside it.</p>
+<p id="hint">All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill. Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom. Click any train to ride inside it.</p>
 <div class="row">
 <button id="ride" type="button" disabled aria-expanded="false" aria-controls="lines">Ride a line</button>
 <button id="transit" type="button" class="ghost" disabled aria-pressed="false" aria-controls="legend">Show transit lines</button>
@@ -3936,6 +3953,7 @@ async function buildScene(canvas, data, status = () => {}) {
   controls.addEventListener('start', () => { fly = null; });
   function flyTo(id) {
     const v = views.find(w => w.id === id); if (!v) return;
+    setCreative(false);
     if (riding !== false) setRiding(false, true);
     if (subway.getRide()) leaveCar(true);
     if (v.cut) setCut(v.cut);
@@ -3951,6 +3969,7 @@ async function buildScene(canvas, data, status = () => {}) {
   }
   // first person inside an L car or a trolley: click a car (pickCar -> boardCar), Esc to leave
   function boardCar(h) {
+    setCreative(false);
     if (riding !== false) setRiding(false, true);
     fly = null; if (subway.getCut()) setCut(false);
     const r = subway.board(h); if (!r) return null;
@@ -3969,6 +3988,7 @@ async function buildScene(canvas, data, status = () => {}) {
   }
   /** "Ride a line": board the lead car of that line's first train (monorail ids 'loop', 0, 1; transit 'm:ID') */
   function boardLine(id) {
+    setCreative(false);
     const key = id === 'loop' ? 'mono:loop' : typeof id === 'number' ? 'mono:shuttle' + id : String(id).replace(/^m:/, '');
     if (riding !== false) setRiding(false, true);
     fly = null; if (subway.getCut()) setCut(false);
@@ -3980,14 +4000,46 @@ async function buildScene(canvas, data, status = () => {}) {
   // with how far out the camera is. Camera and orbit target move together.
   const flyKeys = { f: 0, s: 0, u: 0 }, fwd = new THREE.Vector3(), side = new THREE.Vector3(), mv = new THREE.Vector3();
   function setFly(f, s_, u) { flyKeys.f = f; flyKeys.s = s_; flyKeys.u = u; if (f || s_ || u) fly = null; }
+  // creative mode (the UI turns it on while the mouse is captured): the mouse turns the camera
+  // directly, like Minecraft's creative flight; W A S D fly along the view, Space/Shift up and down,
+  // the scroll wheel sets the speed. Orbit controls are off meanwhile.
+  let creative = false, yaw = 0, pitch = 0, speedMul = 1;
+  const eul = new THREE.Euler(0, 0, 0, 'YXZ');
+  function setCreative(on) {
+    on = !!on && riding === false && !subway.getRide();
+    if (on === creative) return creative;
+    creative = on;
+    if (on) {
+      fly = null; controls.enabled = false;
+      eul.setFromQuaternion(camera.quaternion, 'YXZ'); yaw = eul.y; pitch = eul.x;
+    } else {
+      // hand back to the orbit controls: put their target ahead of the camera, a little downhill
+      // (they never look above the horizon)
+      camera.getWorldDirection(fwd); fwd.y = Math.min(fwd.y, -.2); fwd.normalize();
+      const D = Math.max(60, Math.min(3000, camera.position.y * 1.4));
+      controls.target.copy(camera.position).addScaledVector(fwd, D); controls.target.y = Math.max(0, controls.target.y);
+      controls.enabled = true; controls.update();
+    }
+    return creative;
+  }
+  function creativeLook(dx, dy) {
+    if (!creative) return;
+    yaw -= dx * .0022; pitch = Math.max(-1.55, Math.min(1.55, pitch - dy * .0022));
+    camera.rotation.set(pitch, yaw, 0, 'YXZ');
+  }
+  /** scroll wheel in creative mode: faster (dir < 0) or slower (dir > 0) */
+  const creativeSpeed = dir => { speedMul = Math.max(.1, Math.min(10, speedMul * (dir < 0 ? 1.25 : .8))); return speedMul; };
   function stepFlyKeys(dt) {
-    const dist = camera.position.distanceTo(controls.target), speed = Math.max(25, Math.min(4000, dist * .9));
+    const dist = creative ? Math.max(camera.position.y, 20) : camera.position.distanceTo(controls.target);
+    const speed = Math.max(creative ? 15 : 25, Math.min(4000, dist * .9)) * (creative ? speedMul : 1);
     camera.getWorldDirection(fwd); fwd.y = 0; if (fwd.lengthSq() < 1e-6) fwd.set(0, 0, -1); fwd.normalize();
     side.set(-fwd.z, 0, fwd.x);
     mv.set(0, 0, 0).addScaledVector(fwd, flyKeys.f).addScaledVector(side, flyKeys.s); if (mv.lengthSq() > 1) mv.normalize();
     mv.y = flyKeys.u; mv.multiplyScalar(speed * dt);
     if (camera.position.y + mv.y < 3) mv.y = 3 - camera.position.y;
-    camera.position.add(mv); controls.target.x += mv.x; controls.target.z += mv.z;
+    camera.position.add(mv);
+    if (creative) return;
+    controls.target.x += mv.x; controls.target.z += mv.z;
     controls.target.y = Math.max(0, controls.target.y + mv.y);
   }
   const pickCar = (x, y) => { camera.updateMatrixWorld(); return subway.pick(camera, x, y, canvas.clientWidth, canvas.clientHeight); };
@@ -4000,10 +4052,10 @@ async function buildScene(canvas, data, status = () => {}) {
       monorail.update(dt, riding === 'loop', camera); old53.update(dt); subway.update(dt, camera); updateShells(dt); sports.update(dt, riding, camera); yard.update(dt);
       if (fly) stepFly(dt);
       if ((flyKeys.f || flyKeys.s || flyKeys.u) && riding === false && !subway.getRide()) stepFlyKeys(dt);
-      if (riding === false && !subway.getRide()) controls.update();
+      if (riding === false && !subway.getRide() && !creative) controls.update();
       // fog, draw distance and the shadowed area follow the camera, so the whole city reads from above
-      const free = riding === false && !subway.getRide();
-      const focus = free ? controls.target : camera.position, d = free ? camera.position.distanceTo(controls.target) : 300;
+      const free = riding === false && !subway.getRide() && !creative;
+      const focus = free ? controls.target : camera.position, d = free ? camera.position.distanceTo(controls.target) : creative ? Math.max(300, camera.position.y * 1.6) : 300;
       scene.fog.near = Math.max(2200, d * .8); scene.fog.far = Math.max(9000, d * 3.2);
       if (Math.hypot(sun.target.position.x - focus.x, sun.target.position.z - focus.z) > 150) {
         sunOff.subVectors(sun.position, sun.target.position);
@@ -4028,7 +4080,7 @@ async function buildScene(canvas, data, status = () => {}) {
   }
   legend.push({ name: 'Proposed monorails', color: '#d6452f' });
 
-  return { scene, camera, controls, renderer, labels, lines, views, flyTo, boardLine, setFly, setTransitMap: on => { old53.setOverlay(on); return tmap.set(on); }, getTransitMap: tmap.get, legend, oldTrolleyLegend: old53.legend, cityBuildings: city.buildingCount, setTime, getTime: sky.getTime, sunset: sky.sunset, setMood, getMood, setRiding, setCut, getCut: subway.getCut, pickCar, boardCar, leaveCar, getCar: subway.getRide, lookCar: subway.look, moveCar: subway.move, start, river, monorail };
+  return { scene, camera, controls, renderer, labels, lines, views, flyTo, boardLine, setFly, setCreative, getCreative: () => creative, creativeLook, creativeSpeed, setTransitMap: on => { old53.setOverlay(on); return tmap.set(on); }, getTransitMap: tmap.get, legend, oldTrolleyLegend: old53.legend, cityBuildings: city.buildingCount, setTime, getTime: sky.getTime, sunset: sky.sunset, setMood, getMood, setRiding, setCut, getCut: subway.getCut, pickCar, boardCar, leaveCar, getCar: subway.getRide, lookCar: subway.look, moveCar: subway.move, start, river, monorail };
 }
 
 return { buildScene };
@@ -4127,23 +4179,57 @@ function createUI(api) {
   // click any train car (or a monorail car) to ride inside it; underground cars only inside an open cut
   const canvas = api.renderer.domElement, offBtn = document.getElementById('getoff');
   let down = null, carOn = false, hoverPending = false;
+  // creative mode: clicking the view captures the mouse (pointer lock); the mouse then turns the
+  // camera directly (or looks around inside a car), a crosshair marks the centre, Esc lets go
+  const xhair = document.getElementById('xhair');
+  let locked = false, speedTimer = 0;
+  const lockMouse = () => { if (!locked && canvas.requestPointerLock) { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } };
+  // the pill at the bottom says how to get in and out of creative mode
+  const modeHint = document.getElementById('modehint');
+  const syncModeHint = () => {
+    modeHint.innerHTML = carOn ? ''
+      : locked ? 'Flying · <kbd>W A S D</kbd> move · <kbd>Space</kbd> / <kbd>Shift</kbd> up and down · scroll for speed · click a train to board · <kbd>Esc</kbd> to let go'
+      : '<kbd>Right-click</kbd> to fly with the mouse (creative mode)';
+  };
+  canvas.addEventListener('contextmenu', e => e.preventDefault());   // right-click enters creative mode instead
+  syncModeHint();
+  document.addEventListener('pointerlockchange', () => {
+    locked = document.pointerLockElement === canvas; xhair.hidden = !locked; syncModeHint();
+    if (locked) { if (!carOn) { api.setCreative(true); markView(null); } }
+    else api.setCreative(false);
+  });
+  document.addEventListener('mousemove', e => {
+    if (!locked) return;
+    if (carOn) api.lookCar(e.movementX, e.movementY); else api.creativeLook(e.movementX, e.movementY);
+  });
+  canvas.addEventListener('wheel', e => {
+    if (!api.getCreative()) return;
+    e.preventDefault();
+    const m = api.creativeSpeed(e.deltaY);
+    const st = document.getElementById('status'); st.textContent = `Flying speed ×${m.toFixed(m < 1 ? 2 : 1)}`;
+    clearTimeout(speedTimer); speedTimer = setTimeout(() => { st.textContent = ''; }, 1200);
+  }, { passive: false });
   const rel = e => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   function syncCar() {
     const c = api.getCar(); carOn = !!c; offBtn.hidden = !carOn; canvas.style.cursor = carOn ? 'grab' : '';
+    if (!carOn && locked) api.setCreative(true);   // got off with the mouse still captured: back to flying
+    syncModeHint();
     if (c) {
       hint.textContent = c.kind === 'metro'
-        ? 'Aboard an L train, inside a SEPTA M-4 car. Drag to look around, W A S D or the arrow keys to walk the aisle, Esc or “Get off” to leave. The sign at the front shows the next stop.'
+        ? 'Aboard an L train, inside a SEPTA M-4 car. Drag or click to look around, W A S D or the arrow keys to walk the aisle, Esc or “Get off” to leave. The sign at the front shows the next stop.'
         : c.kind === 'trolley'
-          ? `Aboard a ${c.line} trolley, inside a Kawasaki LRV. Walk up to the front for the view through the windscreen. Drag to look around, W A S D or the arrow keys to walk, Esc or “Get off” to leave.`
-          : `Aboard the ${c.lineName}, inside a ${c.model}. Drag to look around, W A S D or the arrow keys to walk the aisle (the cab window is at the front), Esc or “Get off” to leave.`;
+          ? `Aboard a ${c.line} trolley, inside a Kawasaki LRV. Walk up to the front for the view through the windscreen. Drag or click to look around, W A S D or the arrow keys to walk, Esc or “Get off” to leave.`
+          : `Aboard the ${c.lineName}, inside a ${c.model}. Drag or click to look around, W A S D or the arrow keys to walk the aisle (the cab window is at the front), Esc or “Get off” to leave.`;
       markView(null);
     } else if (!riding) hint.textContent = baseHint();
   }
   canvas.addEventListener('pointerdown', e => {
-    down = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, t: performance.now(), id: e.pointerId };
+    if (locked) { down = { lockedClick: true }; return; }
+    down = { button: e.button, x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, t: performance.now(), id: e.pointerId };
     if (carOn) { canvas.setPointerCapture(e.pointerId); canvas.style.cursor = 'grabbing'; }
   });
   canvas.addEventListener('pointermove', e => {
+    if (locked) return;   // handled by the mousemove listener above
     if (carOn) {
       if (down && down.id === e.pointerId) { api.lookCar(e.clientX - down.lx, e.clientY - down.ly); down.lx = e.clientX; down.ly = e.clientY; }
       return;
@@ -4154,9 +4240,17 @@ function createUI(api) {
   });
   const endDrag = e => {
     const d = down; down = null;
-    if (carOn) { canvas.style.cursor = 'grab'; return; }
-    if (!d || e.type !== 'pointerup' || Math.hypot(e.clientX - d.x, e.clientY - d.y) > 6 || performance.now() - d.t > 600) return;
-    const hit = api.pickCar(...rel(e)); if (!hit) return;
+    if (d && d.lockedClick) {   // mouse captured: click the train under the crosshair
+      if (carOn || e.type !== 'pointerup') return;
+      const hit = api.pickCar(canvas.clientWidth / 2, canvas.clientHeight / 2); if (!hit) return;
+      if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; openPicker(false); }
+      api.boardCar(hit); syncCar(); syncCut(); return;
+    }
+    const click = d && e.type === 'pointerup' && Math.hypot(e.clientX - d.x, e.clientY - d.y) <= 6 && performance.now() - d.t <= 600;
+    if (carOn) { canvas.style.cursor = 'grab'; if (click) lockMouse(); return; }
+    if (!click) return;
+    if (d.button === 2) { lockMouse(); return; }   // right-click (not a right-drag pan): creative mode
+    const hit = api.pickCar(...rel(e)); if (!hit) { if (!riding) lockMouse(); return; }
     if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; openPicker(false); }
     api.boardCar(hit); syncCar(); syncCut();
   };

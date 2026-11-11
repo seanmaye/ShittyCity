@@ -162,6 +162,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   controls.addEventListener('start', () => { fly = null; });
   function flyTo(id) {
     const v = views.find(w => w.id === id); if (!v) return;
+    setCreative(false);
     if (riding !== false) setRiding(false, true);
     if (subway.getRide()) leaveCar(true);
     if (v.cut) setCut(v.cut);
@@ -177,6 +178,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   }
   // first person inside an L car or a trolley: click a car (pickCar -> boardCar), Esc to leave
   function boardCar(h) {
+    setCreative(false);
     if (riding !== false) setRiding(false, true);
     fly = null; if (subway.getCut()) setCut(false);
     const r = subway.board(h); if (!r) return null;
@@ -195,6 +197,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   }
   /** "Ride a line": board the lead car of that line's first train (monorail ids 'loop', 0, 1; transit 'm:ID') */
   function boardLine(id) {
+    setCreative(false);
     const key = id === 'loop' ? 'mono:loop' : typeof id === 'number' ? 'mono:shuttle' + id : String(id).replace(/^m:/, '');
     if (riding !== false) setRiding(false, true);
     fly = null; if (subway.getCut()) setCut(false);
@@ -206,14 +209,46 @@ export async function buildScene(canvas, data, status = () => {}) {
   // with how far out the camera is. Camera and orbit target move together.
   const flyKeys = { f: 0, s: 0, u: 0 }, fwd = new THREE.Vector3(), side = new THREE.Vector3(), mv = new THREE.Vector3();
   function setFly(f, s_, u) { flyKeys.f = f; flyKeys.s = s_; flyKeys.u = u; if (f || s_ || u) fly = null; }
+  // creative mode (the UI turns it on while the mouse is captured): the mouse turns the camera
+  // directly, like Minecraft's creative flight; W A S D fly along the view, Space/Shift up and down,
+  // the scroll wheel sets the speed. Orbit controls are off meanwhile.
+  let creative = false, yaw = 0, pitch = 0, speedMul = 1;
+  const eul = new THREE.Euler(0, 0, 0, 'YXZ');
+  function setCreative(on) {
+    on = !!on && riding === false && !subway.getRide();
+    if (on === creative) return creative;
+    creative = on;
+    if (on) {
+      fly = null; controls.enabled = false;
+      eul.setFromQuaternion(camera.quaternion, 'YXZ'); yaw = eul.y; pitch = eul.x;
+    } else {
+      // hand back to the orbit controls: put their target ahead of the camera, a little downhill
+      // (they never look above the horizon)
+      camera.getWorldDirection(fwd); fwd.y = Math.min(fwd.y, -.2); fwd.normalize();
+      const D = Math.max(60, Math.min(3000, camera.position.y * 1.4));
+      controls.target.copy(camera.position).addScaledVector(fwd, D); controls.target.y = Math.max(0, controls.target.y);
+      controls.enabled = true; controls.update();
+    }
+    return creative;
+  }
+  function creativeLook(dx, dy) {
+    if (!creative) return;
+    yaw -= dx * .0022; pitch = Math.max(-1.55, Math.min(1.55, pitch - dy * .0022));
+    camera.rotation.set(pitch, yaw, 0, 'YXZ');
+  }
+  /** scroll wheel in creative mode: faster (dir < 0) or slower (dir > 0) */
+  const creativeSpeed = dir => { speedMul = Math.max(.1, Math.min(10, speedMul * (dir < 0 ? 1.25 : .8))); return speedMul; };
   function stepFlyKeys(dt) {
-    const dist = camera.position.distanceTo(controls.target), speed = Math.max(25, Math.min(4000, dist * .9));
+    const dist = creative ? Math.max(camera.position.y, 20) : camera.position.distanceTo(controls.target);
+    const speed = Math.max(creative ? 15 : 25, Math.min(4000, dist * .9)) * (creative ? speedMul : 1);
     camera.getWorldDirection(fwd); fwd.y = 0; if (fwd.lengthSq() < 1e-6) fwd.set(0, 0, -1); fwd.normalize();
     side.set(-fwd.z, 0, fwd.x);
     mv.set(0, 0, 0).addScaledVector(fwd, flyKeys.f).addScaledVector(side, flyKeys.s); if (mv.lengthSq() > 1) mv.normalize();
     mv.y = flyKeys.u; mv.multiplyScalar(speed * dt);
     if (camera.position.y + mv.y < 3) mv.y = 3 - camera.position.y;
-    camera.position.add(mv); controls.target.x += mv.x; controls.target.z += mv.z;
+    camera.position.add(mv);
+    if (creative) return;
+    controls.target.x += mv.x; controls.target.z += mv.z;
     controls.target.y = Math.max(0, controls.target.y + mv.y);
   }
   const pickCar = (x, y) => { camera.updateMatrixWorld(); return subway.pick(camera, x, y, canvas.clientWidth, canvas.clientHeight); };
@@ -226,10 +261,10 @@ export async function buildScene(canvas, data, status = () => {}) {
       monorail.update(dt, riding === 'loop', camera); old53.update(dt); subway.update(dt, camera); updateShells(dt); sports.update(dt, riding, camera); yard.update(dt);
       if (fly) stepFly(dt);
       if ((flyKeys.f || flyKeys.s || flyKeys.u) && riding === false && !subway.getRide()) stepFlyKeys(dt);
-      if (riding === false && !subway.getRide()) controls.update();
+      if (riding === false && !subway.getRide() && !creative) controls.update();
       // fog, draw distance and the shadowed area follow the camera, so the whole city reads from above
-      const free = riding === false && !subway.getRide();
-      const focus = free ? controls.target : camera.position, d = free ? camera.position.distanceTo(controls.target) : 300;
+      const free = riding === false && !subway.getRide() && !creative;
+      const focus = free ? controls.target : camera.position, d = free ? camera.position.distanceTo(controls.target) : creative ? Math.max(300, camera.position.y * 1.6) : 300;
       scene.fog.near = Math.max(2200, d * .8); scene.fog.far = Math.max(9000, d * 3.2);
       if (Math.hypot(sun.target.position.x - focus.x, sun.target.position.z - focus.z) > 150) {
         sunOff.subVectors(sun.position, sun.target.position);
@@ -254,5 +289,5 @@ export async function buildScene(canvas, data, status = () => {}) {
   }
   legend.push({ name: 'Proposed monorails', color: '#d6452f' });
 
-  return { scene, camera, controls, renderer, labels, lines, views, flyTo, boardLine, setFly, setTransitMap: on => { old53.setOverlay(on); return tmap.set(on); }, getTransitMap: tmap.get, legend, oldTrolleyLegend: old53.legend, cityBuildings: city.buildingCount, setTime, getTime: sky.getTime, sunset: sky.sunset, setMood, getMood, setRiding, setCut, getCut: subway.getCut, pickCar, boardCar, leaveCar, getCar: subway.getRide, lookCar: subway.look, moveCar: subway.move, start, river, monorail };
+  return { scene, camera, controls, renderer, labels, lines, views, flyTo, boardLine, setFly, setCreative, getCreative: () => creative, creativeLook, creativeSpeed, setTransitMap: on => { old53.setOverlay(on); return tmap.set(on); }, getTransitMap: tmap.get, legend, oldTrolleyLegend: old53.legend, cityBuildings: city.buildingCount, setTime, getTime: sky.getTime, sunset: sky.sunset, setMood, getMood, setRiding, setCut, getCut: subway.getCut, pickCar, boardCar, leaveCar, getCar: subway.getRide, lookCar: subway.look, moveCar: subway.move, start, river, monorail };
 }

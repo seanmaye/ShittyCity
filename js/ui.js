@@ -90,23 +90,57 @@ export function createUI(api) {
   // click any train car (or a monorail car) to ride inside it; underground cars only inside an open cut
   const canvas = api.renderer.domElement, offBtn = document.getElementById('getoff');
   let down = null, carOn = false, hoverPending = false;
+  // creative mode: clicking the view captures the mouse (pointer lock); the mouse then turns the
+  // camera directly (or looks around inside a car), a crosshair marks the centre, Esc lets go
+  const xhair = document.getElementById('xhair');
+  let locked = false, speedTimer = 0;
+  const lockMouse = () => { if (!locked && canvas.requestPointerLock) { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } };
+  // the pill at the bottom says how to get in and out of creative mode
+  const modeHint = document.getElementById('modehint');
+  const syncModeHint = () => {
+    modeHint.innerHTML = carOn ? ''
+      : locked ? 'Flying · <kbd>W A S D</kbd> move · <kbd>Space</kbd> / <kbd>Shift</kbd> up and down · scroll for speed · click a train to board · <kbd>Esc</kbd> to let go'
+      : '<kbd>Right-click</kbd> to fly with the mouse (creative mode)';
+  };
+  canvas.addEventListener('contextmenu', e => e.preventDefault());   // right-click enters creative mode instead
+  syncModeHint();
+  document.addEventListener('pointerlockchange', () => {
+    locked = document.pointerLockElement === canvas; xhair.hidden = !locked; syncModeHint();
+    if (locked) { if (!carOn) { api.setCreative(true); markView(null); } }
+    else api.setCreative(false);
+  });
+  document.addEventListener('mousemove', e => {
+    if (!locked) return;
+    if (carOn) api.lookCar(e.movementX, e.movementY); else api.creativeLook(e.movementX, e.movementY);
+  });
+  canvas.addEventListener('wheel', e => {
+    if (!api.getCreative()) return;
+    e.preventDefault();
+    const m = api.creativeSpeed(e.deltaY);
+    const st = document.getElementById('status'); st.textContent = `Flying speed ×${m.toFixed(m < 1 ? 2 : 1)}`;
+    clearTimeout(speedTimer); speedTimer = setTimeout(() => { st.textContent = ''; }, 1200);
+  }, { passive: false });
   const rel = e => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   function syncCar() {
     const c = api.getCar(); carOn = !!c; offBtn.hidden = !carOn; canvas.style.cursor = carOn ? 'grab' : '';
+    if (!carOn && locked) api.setCreative(true);   // got off with the mouse still captured: back to flying
+    syncModeHint();
     if (c) {
       hint.textContent = c.kind === 'metro'
-        ? 'Aboard an L train, inside a SEPTA M-4 car. Drag to look around, W A S D or the arrow keys to walk the aisle, Esc or “Get off” to leave. The sign at the front shows the next stop.'
+        ? 'Aboard an L train, inside a SEPTA M-4 car. Drag or click to look around, W A S D or the arrow keys to walk the aisle, Esc or “Get off” to leave. The sign at the front shows the next stop.'
         : c.kind === 'trolley'
-          ? `Aboard a ${c.line} trolley, inside a Kawasaki LRV. Walk up to the front for the view through the windscreen. Drag to look around, W A S D or the arrow keys to walk, Esc or “Get off” to leave.`
-          : `Aboard the ${c.lineName}, inside a ${c.model}. Drag to look around, W A S D or the arrow keys to walk the aisle (the cab window is at the front), Esc or “Get off” to leave.`;
+          ? `Aboard a ${c.line} trolley, inside a Kawasaki LRV. Walk up to the front for the view through the windscreen. Drag or click to look around, W A S D or the arrow keys to walk, Esc or “Get off” to leave.`
+          : `Aboard the ${c.lineName}, inside a ${c.model}. Drag or click to look around, W A S D or the arrow keys to walk the aisle (the cab window is at the front), Esc or “Get off” to leave.`;
       markView(null);
     } else if (!riding) hint.textContent = baseHint();
   }
   canvas.addEventListener('pointerdown', e => {
-    down = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, t: performance.now(), id: e.pointerId };
+    if (locked) { down = { lockedClick: true }; return; }
+    down = { button: e.button, x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, t: performance.now(), id: e.pointerId };
     if (carOn) { canvas.setPointerCapture(e.pointerId); canvas.style.cursor = 'grabbing'; }
   });
   canvas.addEventListener('pointermove', e => {
+    if (locked) return;   // handled by the mousemove listener above
     if (carOn) {
       if (down && down.id === e.pointerId) { api.lookCar(e.clientX - down.lx, e.clientY - down.ly); down.lx = e.clientX; down.ly = e.clientY; }
       return;
@@ -117,9 +151,17 @@ export function createUI(api) {
   });
   const endDrag = e => {
     const d = down; down = null;
-    if (carOn) { canvas.style.cursor = 'grab'; return; }
-    if (!d || e.type !== 'pointerup' || Math.hypot(e.clientX - d.x, e.clientY - d.y) > 6 || performance.now() - d.t > 600) return;
-    const hit = api.pickCar(...rel(e)); if (!hit) return;
+    if (d && d.lockedClick) {   // mouse captured: click the train under the crosshair
+      if (carOn || e.type !== 'pointerup') return;
+      const hit = api.pickCar(canvas.clientWidth / 2, canvas.clientHeight / 2); if (!hit) return;
+      if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; openPicker(false); }
+      api.boardCar(hit); syncCar(); syncCut(); return;
+    }
+    const click = d && e.type === 'pointerup' && Math.hypot(e.clientX - d.x, e.clientY - d.y) <= 6 && performance.now() - d.t <= 600;
+    if (carOn) { canvas.style.cursor = 'grab'; if (click) lockMouse(); return; }
+    if (!click) return;
+    if (d.button === 2) { lockMouse(); return; }   // right-click (not a right-drag pan): creative mode
+    const hit = api.pickCar(...rel(e)); if (!hit) { if (!riding) lockMouse(); return; }
     if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; openPicker(false); }
     api.boardCar(hit); syncCar(); syncCut();
   };
