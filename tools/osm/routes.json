@@ -1,0 +1,6559 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-11-10T21:43:58Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "relation",
+  "id": 951958,
+  "members": [
+    {
+      "type": "node",
+      "ref": 3277547385,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558307121,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 5383674556,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558307123,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213131,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558356484,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213130,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558356477,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213128,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 534850249,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213125,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558356457,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213124,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558356453,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213122,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558356451,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213119,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558356439,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213118,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558356434,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213116,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558356428,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 765739058,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 61292949,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1015357524,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770532920,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1015357522,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770532923,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 5372039293,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770532924,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1118188486,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770532927,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1015357519,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447392,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 2644228571,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447394,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 651019636,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447412,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 5374404773,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770540565,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 650404848,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770540567,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 5372113679,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 743205239,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 5372118374,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 743202618,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213175,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 743201924,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 5376474420,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 743200397,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213177,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 741781638,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 5372122655,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 742245700,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 5372104211,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 374471745,
+      "role": "platform"
+    },
+    {
+      "type": "way",
+      "ref": 770532930,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532933,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540584,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540582,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540579,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 158974458,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540578,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532934,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 158974457,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532937,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540572,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 63571947,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532940,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540574,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532941,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540575,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532944,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532945,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770533842,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 63572000,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 63571996,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 63571982,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 63572022,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 63572012,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 60421577,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532950,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 61292864,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532949,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 61292823,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 61292975,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 61293013,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 61292990,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 387422120,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540569,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532953,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532952,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532959,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532958,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447407,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532965,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532964,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532971,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532970,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447410,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 51047672,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540563,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532982,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540564,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532978,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532979,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532983,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 51048112,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540560,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 51060235,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532988,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532989,
+      "role": ""
+    }
+  ],
+  "tags": {
+    "colour": "#0097d6",
+    "fixme": "there's some confusion about the voltage",
+    "from": "Frankford Transportation Center",
+    "name": "SEPTA Market-Frankford Line: Frankford → 69th Street",
+    "network": "SEPTA",
+    "network:wikidata": "Q2037863",
+    "operator": "Southeastern Pennsylvania Transportation Authority",
+    "operator:wikidata": "Q2037863",
+    "public_transport:version": "2",
+    "ref": "L",
+    "route": "subway",
+    "to": "69th Street Transportation Center",
+    "type": "route",
+    "via": "all stops",
+    "wheelchair": "yes",
+    "wikidata": "Q823251",
+    "wikipedia": "en:L (SEPTA Metro)"
+  }
+},
+{
+  "type": "relation",
+  "id": 1808454,
+  "members": [
+    {
+      "type": "node",
+      "ref": 774489632,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 762541606,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6620644150,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7204646233,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6620712983,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7204646231,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6620712980,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7204646229,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6620713290,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7204646227,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6620712978,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7204646225,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6620713285,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7204646223,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6620712979,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7204646221,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6620712981,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7204646219,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706115,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706129,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706117,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706127,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706118,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706125,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706120,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706122,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706112,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706113,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706106,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706107,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706102,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706103,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706099,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706100,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706110,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706111,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706093,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706095,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732691172,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732691175,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706086,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706087,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732691184,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706085,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732691182,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732691183,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706089,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706090,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206807126,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206807119,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206807124,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206807118,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206807128,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206807121,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206807130,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206807120,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206807135,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206807134,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206807138,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206807136,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192046178,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514577,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 651013877,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447420,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6549549352,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447414,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191834356,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514582,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191834359,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514580,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6549549375,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447396,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843607,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447403,
+      "role": "platform"
+    },
+    {
+      "type": "way",
+      "ref": 770514565,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713580,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713577,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 32121260,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547275875,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 320470337,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 316988880,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770514570,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770514571,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770514575,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472474,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 697625761,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472466,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447417,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472467,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447402,
+      "role": ""
+    }
+  ],
+  "tags": {
+    "colour": "#6EA516",
+    "from": "Malvern Avenue & 63rd Street",
+    "name": "SEPTA T1: Malvern Loop → Center City",
+    "network": "SEPTA",
+    "network:wikidata": "Q2037863",
+    "network:wikipedia": "en:SEPTA",
+    "old_ref": "10",
+    "operator": "Southeastern Pennsylvania Transportation Authority",
+    "operator:wikidata": "Q2037863",
+    "public_transport:version": "2",
+    "ref": "T1",
+    "route": "tram",
+    "to": "13th Street",
+    "type": "route",
+    "wikidata": "Q7389780"
+  }
+},
+{
+  "type": "relation",
+  "id": 1809435,
+  "members": [
+    {
+      "type": "node",
+      "ref": 7191834363,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447398,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843601,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447397,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1118188501,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514579,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1118188488,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514581,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843649,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447413,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843644,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447419,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191845687,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447421,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6551564187,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447423,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191845699,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447426,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871363,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871360,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871351,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871344,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871354,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871343,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 3216665326,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871345,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871349,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871341,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871346,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871342,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022416,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022530,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022414,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022529,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022412,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022526,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022410,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022525,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022408,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022523,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022406,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022521,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022404,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022518,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022401,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022516,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022399,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022515,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022397,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022512,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022395,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022511,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022393,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022509,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022391,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022507,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022389,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022505,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022387,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022503,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022385,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022501,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991983,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022499,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991981,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022496,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991979,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022495,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991977,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022493,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991975,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022491,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991973,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022489,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991970,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022487,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991968,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022485,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991966,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734989983,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991964,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734989981,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991962,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734989979,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991960,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734989977,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991958,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734989975,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991955,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022418,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6917392388,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 738709414,
+      "role": "platform"
+    },
+    {
+      "type": "way",
+      "ref": 770447404,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472468,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447411,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447406,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447434,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472472,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472470,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472464,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472465,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 697625759,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472461,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472460,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 627619207,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 146434009,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315551561,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713548,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315551560,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315551559,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315551557,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 627619198,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713535,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315421347,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713529,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713528,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315414096,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315414079,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713510,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713513,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315400511,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315400518,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315408282,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713516,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 62106041,
+      "role": ""
+    }
+  ],
+  "tags": {
+    "colour": "#6EA516",
+    "from": "13th Street",
+    "name": "SEPTA T4: Center City → Darby",
+    "network": "SEPTA",
+    "network:wikidata": "Q2037863",
+    "network:wikipedia": "en:SEPTA",
+    "old_ref": "11",
+    "operator": "Southeastern Pennsylvania Transportation Authority",
+    "operator:wikidata": "Q2037863",
+    "public_transport:version": "2",
+    "ref": "T4",
+    "route": "tram",
+    "to": "Darby Transportation Center",
+    "type": "route",
+    "wikidata": "Q7389783"
+  }
+},
+{
+  "type": "relation",
+  "id": 1809444,
+  "members": [
+    {
+      "type": "node",
+      "ref": 7191834363,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447398,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843601,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447397,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1118188501,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514579,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1118188488,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514581,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843649,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447413,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843644,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447419,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191845687,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447421,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6551564187,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447423,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191845699,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447426,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871364,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871359,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158247,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158248,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158245,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158250,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158243,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158252,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158241,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158254,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158239,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158256,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158237,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158258,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158235,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158260,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158233,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158262,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158231,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158264,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158229,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158269,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158227,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158270,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158225,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158272,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158223,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158274,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158221,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735110279,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158219,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735110281,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 3216665329,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189587,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158216,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189590,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158214,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189586,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158211,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735110284,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206995477,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206995474,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735189606,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189607,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735189604,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189609,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735189602,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189612,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735189600,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189618,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735189598,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189596,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189621,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735189594,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189623,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735189592,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189625,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206724859,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206724858,
+      "role": "platform"
+    },
+    {
+      "type": "way",
+      "ref": 770447404,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472468,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447411,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447406,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447434,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472472,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472470,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472464,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472465,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 697625759,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472461,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472460,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 627619207,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 146434009,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315551561,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713550,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315543498,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 627619197,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713544,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315543500,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713523,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713522,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713518,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315543502,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315422759,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 828607223,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 828607221,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315421325,
+      "role": ""
+    }
+  ],
+  "tags": {
+    "colour": "#6EA516",
+    "from": "13th Street",
+    "name": "SEPTA T3: Center City → Yeadon Loop",
+    "network": "SEPTA",
+    "network:wikidata": "Q2037863",
+    "old_ref": "13",
+    "operator": "Southeastern Pennsylvania Transportation Authority",
+    "operator:wikidata": "Q2037863",
+    "public_transport:version": "2",
+    "ref": "T3",
+    "route": "tram",
+    "to": "Chester Avenue & Callahan Avenue",
+    "type": "route",
+    "wikidata": "Q7389784"
+  }
+},
+{
+  "type": "relation",
+  "id": 2717636,
+  "members": [
+    {
+      "type": "node",
+      "ref": 7191843606,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447399,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843601,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447397,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1118188501,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514579,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1118188488,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514581,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843649,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447413,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843644,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447419,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191845687,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447421,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6551564187,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447423,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191845700,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447425,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871367,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871357,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592442,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592443,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592440,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592445,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592447,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592436,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592450,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592434,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592451,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734599632,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734599633,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592432,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592453,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592430,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592455,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592428,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592457,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734599637,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734599638,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592426,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592459,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592424,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592461,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592422,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592463,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592420,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592465,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592417,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592468,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592416,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592469,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592414,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592471,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592412,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592473,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 4775505814,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514558,
+      "role": "platform"
+    },
+    {
+      "type": "way",
+      "ref": 770447400,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447404,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472468,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447411,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447406,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447434,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472472,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472470,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472464,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472465,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 697625759,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472461,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472460,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 627619207,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 62105580,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447433,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713552,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713547,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315606724,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770514557,
+      "role": ""
+    }
+  ],
+  "tags": {
+    "colour": "#6EA516",
+    "from": "13th Street",
+    "name": "SEPTA T2: Center City → Angora Loop",
+    "network": "SEPTA",
+    "network:wikidata": "Q2037863",
+    "network:wikipedia": "en:SEPTA",
+    "old_ref": "34",
+    "operator": "Southeastern Pennsylvania Transportation Authority",
+    "operator:wikidata": "Q2037863",
+    "public_transport:version": "2",
+    "ref": "T2",
+    "route": "tram",
+    "to": "Baltimore Avenue & 61st Street",
+    "type": "route",
+    "wikidata": "Q7389786"
+  }
+},
+{
+  "type": "relation",
+  "id": 2723998,
+  "members": [
+    {
+      "type": "node",
+      "ref": 7191843606,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447399,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843601,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447397,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1118188501,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514579,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1118188488,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514581,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843649,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447413,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843644,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447419,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191845687,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447421,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6551564187,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447423,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191845699,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447426,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871363,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871360,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871351,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871344,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871354,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871343,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 3216665326,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871345,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871349,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871341,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735015162,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735015165,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735015156,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735015157,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735015154,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735015160,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735015149,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735015152,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022732,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735015148,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022727,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022730,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022719,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022722,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022715,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022718,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022711,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022714,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022723,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022726,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022707,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022710,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022704,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022706,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735014282,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022702,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735014280,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022700,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735014278,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022698,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735014276,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022696,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735014274,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022694,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735014272,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022692,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735014270,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022690,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022537,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022688,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022535,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022686,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022533,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735014284,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7207041033,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7207041032,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022788,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022791,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1178032064,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 828590592,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1178031095,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 828590589,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1178033202,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 828590586,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1178031519,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 828590587,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 774500766,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 698739485,
+      "role": "platform"
+    },
+    {
+      "type": "way",
+      "ref": 770447400,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447404,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472468,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447411,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447406,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447434,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472472,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472470,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472464,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472465,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 697625759,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472461,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472460,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 627619207,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 146434009,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315551561,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713548,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315551560,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315551559,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315551557,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315421338,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 627619185,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315421323,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315421328,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315421339,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315421337,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315421346,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713505,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713503,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 62106208,
+      "role": ""
+    }
+  ],
+  "tags": {
+    "colour": "#6EA516",
+    "from": "13th Street",
+    "name": "SEPTA T5: Center City → Eastwick Loop",
+    "network": "SEPTA",
+    "network:wikidata": "Q2037863",
+    "network:wikipedia": "en:SEPTA",
+    "old_ref": "36",
+    "operator": "Southeastern Pennsylvania Transportation Authority",
+    "operator:wikidata": "Q2037863",
+    "public_transport:version": "2",
+    "ref": "T5",
+    "route": "tram",
+    "to": "Island Avenue & Suffolk Avenue",
+    "type": "route",
+    "wikidata": "Q7389789"
+  }
+},
+{
+  "type": "relation",
+  "id": 7953595,
+  "members": [
+    {
+      "type": "node",
+      "ref": 5372104212,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 374471747,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 5372122657,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 742245698,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213176,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 741781645,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 5376474419,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 743200409,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213174,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 743201936,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 5372118373,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 743202633,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 5372113678,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 743205237,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6549549349,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770540566,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6549549350,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770540565,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6549549351,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447412,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6549549374,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447395,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6549549378,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447393,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6549549379,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 6549549382,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770532925,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6549549384,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770532922,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6549551196,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770532921,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 752180425,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 61292949,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213115,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558356422,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213117,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558356435,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213120,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558356441,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213121,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558356449,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213123,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558356455,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213126,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558356458,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213127,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558356464,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7192213129,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558356479,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 752180522,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558356486,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 5383674555,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558307122,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 3277547384,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 558307121,
+      "role": "platform"
+    },
+    {
+      "type": "way",
+      "ref": 770532999,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532991,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532990,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 51048110,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540559,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 51048114,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532985,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532977,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532976,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540562,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532984,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540561,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 51047705,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447409,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532972,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532973,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532966,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532967,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447408,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532960,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532961,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532955,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540568,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 51049105,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 61292989,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 61293012,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 61292967,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 61292843,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532948,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 61292874,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540570,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532951,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 63572013,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 63572020,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 63572016,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 63571986,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 63571992,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 63571939,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770533843,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532942,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532943,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540576,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532938,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540573,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532939,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 158974455,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540571,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532936,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 158974456,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532935,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540577,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 321041854,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540580,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540581,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770540583,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532931,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770532932,
+      "role": ""
+    }
+  ],
+  "tags": {
+    "colour": "#0097d6",
+    "fixme": "there's some confusion about the voltage",
+    "from": "69th Street Transportation Center",
+    "name": "SEPTA Market-Frankford Line: 69th Street → Frankford",
+    "network": "SEPTA",
+    "network:wikidata": "Q2037863",
+    "operator": "Southeastern Pennsylvania Transportation Authority",
+    "operator:wikidata": "Q2037863",
+    "public_transport:version": "2",
+    "ref": "L",
+    "route": "subway",
+    "to": "Frankford Transportation Center",
+    "type": "route",
+    "via": "all stops",
+    "wheelchair": "yes",
+    "wikidata": "Q823251",
+    "wikipedia": "en:L (SEPTA Metro)"
+  }
+},
+{
+  "type": "relation",
+  "id": 10702992,
+  "members": [
+    {
+      "type": "node",
+      "ref": 7191834363,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447398,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843601,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447397,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1118188501,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514579,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1118188488,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514581,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843649,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447413,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843644,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447419,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6551564227,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514578,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206807139,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206807137,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206807133,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206807132,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206807125,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206807115,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206807131,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206807113,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206807129,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206807117,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206807123,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206807114,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206807122,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206807116,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206807127,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206807112,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706088,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706091,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732691180,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732691181,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732691178,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732691179,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732691176,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732691177,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732691173,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732691174,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706096,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706097,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706098,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706101,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706104,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706105,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706108,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706109,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706121,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706123,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706119,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706124,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706116,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706126,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7732706114,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7732706128,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6620713288,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7204646218,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6620713289,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7204646220,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6620712984,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7204646222,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6620712977,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7204646224,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6620713286,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7204646226,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6620713287,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7204646228,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6620712982,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7204646230,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6620644148,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7204646232,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 3233337137,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 762541606,
+      "role": "platform"
+    },
+    {
+      "type": "way",
+      "ref": 770447404,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472468,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447411,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447406,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447434,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472472,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 697625760,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472473,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 316988870,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770514572,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770514569,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770514568,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 316988875,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 320470348,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547275876,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770514567,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713578,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713579,
+      "role": ""
+    }
+  ],
+  "tags": {
+    "colour": "#6EA516",
+    "from": "13th Street",
+    "name": "SEPTA T1: Center City → Malvern Loop",
+    "network": "SEPTA",
+    "network:wikidata": "Q2037863",
+    "network:wikipedia": "en:SEPTA",
+    "old_ref": "10",
+    "operator": "Southeastern Pennsylvania Transportation Authority",
+    "operator:wikidata": "Q2037863",
+    "public_transport:version": "2",
+    "ref": "T1",
+    "route": "tram",
+    "to": "Malvern Avenue & 63rd Street",
+    "type": "route",
+    "wikidata": "Q7389780"
+  }
+},
+{
+  "type": "relation",
+  "id": 10703187,
+  "members": [
+    {
+      "type": "node",
+      "ref": 4775505814,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514558,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592411,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592474,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592413,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592472,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592415,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592470,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592418,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592467,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592419,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592466,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592421,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592464,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592423,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592462,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592425,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592460,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734599636,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734599639,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592427,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592458,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592429,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592456,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592431,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592454,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734599634,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734599635,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592433,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592452,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592435,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592449,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592437,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592448,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592439,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592446,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734592441,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734592444,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871366,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871356,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 360505781,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447427,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 651009681,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447424,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 5365236476,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447422,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 651013877,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447420,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6549549352,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447414,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191834356,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514582,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191834359,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514580,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6549549375,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447396,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843607,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447403,
+      "role": "platform"
+    },
+    {
+      "type": "way",
+      "ref": 770514559,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770514560,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713546,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713553,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447432,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447431,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 32121203,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447429,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 202429421,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472471,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 531500276,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472459,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472458,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472463,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472462,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472469,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472466,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447417,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472467,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447402,
+      "role": ""
+    }
+  ],
+  "tags": {
+    "colour": "#6EA516",
+    "from": "Baltimore Avenue & 61st Street",
+    "name": "SEPTA T2: Angora Loop → Center City",
+    "network": "SEPTA",
+    "network:wikidata": "Q2037863",
+    "old_ref": "34",
+    "operator": "Southeastern Pennsylvania Transportation Authority",
+    "operator:wikidata": "Q2037863",
+    "public_transport:version": "2",
+    "ref": "T2",
+    "route": "tram",
+    "to": "13th Street",
+    "type": "route",
+    "wikidata": "Q7389786"
+  }
+},
+{
+  "type": "relation",
+  "id": 10703675,
+  "members": [
+    {
+      "type": "node",
+      "ref": 1178031756,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 698739486,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1178031923,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 828590588,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1178033011,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 828590585,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1178031524,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 828590590,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 1178031748,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 828590591,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022789,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022790,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7207041034,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7207041031,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022532,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735014283,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022534,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022685,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022536,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022687,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735014269,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022689,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735014271,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022691,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735014273,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022693,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735014275,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022695,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735014277,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022697,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735014279,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022699,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735014281,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022701,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022703,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022705,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022708,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022709,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022724,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022725,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022712,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022713,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022716,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022717,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022720,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022721,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022728,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022729,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022731,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735015147,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735015150,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735015151,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735015153,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735015159,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735015155,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735015158,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 3215363190,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735015161,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735015163,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735015164,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871348,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871335,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871352,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871340,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871353,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871338,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871350,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871339,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871362,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871361,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 360505781,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447427,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 651009681,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447424,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 5365236476,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447422,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 651013877,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447420,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6549549352,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447414,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191834356,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514582,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191834359,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514580,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6549549375,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447396,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843607,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447403,
+      "role": "platform"
+    },
+    {
+      "type": "way",
+      "ref": 770514561,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713504,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713506,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315421331,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315421349,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315421335,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315421342,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315421334,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 627619184,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315421329,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713532,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315551555,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315551556,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315543504,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713549,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 51050766,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447429,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 202429421,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472471,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 531500276,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472459,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472458,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472463,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472462,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472469,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472466,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447417,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472467,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447402,
+      "role": ""
+    }
+  ],
+  "tags": {
+    "colour": "#6EA516",
+    "from": "Island Avenue & Suffolk Avenue",
+    "name": "SEPTA T5: Eastwick Loop → Center City",
+    "network": "SEPTA",
+    "network:wikidata": "Q2037863",
+    "network:wikipedia": "en:SEPTA",
+    "old_ref": "36",
+    "operator": "Southeastern Pennsylvania Transportation Authority",
+    "operator:wikidata": "Q2037863",
+    "public_transport:version": "2",
+    "ref": "T5",
+    "route": "tram",
+    "to": "13th Street",
+    "type": "route",
+    "wikidata": "Q7389789"
+  }
+},
+{
+  "type": "relation",
+  "id": 10705414,
+  "members": [
+    {
+      "type": "node",
+      "ref": 6917392388,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 738709414,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991956,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022417,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991957,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734989974,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991959,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734989976,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991961,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734989978,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991963,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734989980,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991965,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734989982,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991967,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7734989984,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991969,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022486,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991972,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022488,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991974,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022490,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991976,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022492,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991978,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022494,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991980,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022497,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991982,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022498,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7734991984,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022500,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022386,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022502,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022388,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022504,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022390,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022506,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022392,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022508,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022394,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022510,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022396,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022513,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022398,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022514,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022402,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022517,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022403,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022519,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022405,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022520,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022407,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022522,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022409,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022524,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022411,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022527,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022413,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022528,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735022415,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735022531,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871347,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871336,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 3215363199,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871337,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871352,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871340,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871353,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871338,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871350,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871339,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871362,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871361,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 360505781,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447427,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 651009681,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447424,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 5365236476,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447422,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 651013877,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447420,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6549549352,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447414,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191834356,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514582,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191834359,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514580,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6549549375,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447396,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843607,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447403,
+      "role": "platform"
+    },
+    {
+      "type": "way",
+      "ref": 770514555,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713515,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315400522,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315400523,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713512,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713511,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315400514,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315414107,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713531,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713530,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315414089,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 627619193,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713532,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315551555,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315551556,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315543504,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713549,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 51050766,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447429,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 202429421,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472471,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 531500276,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472459,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472458,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472463,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472462,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472469,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472466,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447417,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472467,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447402,
+      "role": ""
+    }
+  ],
+  "tags": {
+    "colour": "#6EA516",
+    "from": "Darby Transportation Center",
+    "name": "SEPTA T4: Darby → Center City",
+    "network": "SEPTA",
+    "network:wikidata": "Q2037863",
+    "network:wikipedia": "en:SEPTA",
+    "old_ref": "11",
+    "operator": "Southeastern Pennsylvania Transportation Authority",
+    "operator:wikidata": "Q2037863",
+    "public_transport:version": "2",
+    "ref": "T4",
+    "route": "tram",
+    "to": "13th Street",
+    "type": "route",
+    "wikidata": "Q7389783"
+  }
+},
+{
+  "type": "relation",
+  "id": 10705524,
+  "members": [
+    {
+      "type": "node",
+      "ref": 7192046143,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514553,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735189591,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189626,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735189593,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189624,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735189595,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189622,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735189597,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189620,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735189599,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189617,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735189601,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189611,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735189603,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189610,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735189605,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189608,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206995476,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206995475,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158212,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735110283,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158213,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189585,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158215,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189589,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158217,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735189588,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158218,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735110282,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158220,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735110280,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158222,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735110278,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158224,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158273,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158226,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158271,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158228,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158266,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158230,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158265,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158232,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158263,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158234,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158261,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7204248603,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158259,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158238,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158257,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158240,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158255,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158242,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158253,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158244,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158251,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7735158246,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7735158249,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7206871365,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 7206871358,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 360505781,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447427,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 651009681,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447424,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 5365236476,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447422,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 651013877,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447420,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6549549352,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447414,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191834356,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514582,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191834359,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770514580,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 6549549375,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447396,
+      "role": "platform"
+    },
+    {
+      "type": "node",
+      "ref": 7191843607,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 770447403,
+      "role": "platform"
+    },
+    {
+      "type": "way",
+      "ref": 770514546,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770514548,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315402431,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 828607220,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 828607222,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315422760,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315543506,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713519,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713525,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713524,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315543503,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713545,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 627619196,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 315543501,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 771713551,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 51050766,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447429,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 202429421,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472471,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 531500276,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472459,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472458,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472463,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472462,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472469,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472466,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447417,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 1547472467,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 770447402,
+      "role": ""
+    }
+  ],
+  "tags": {
+    "colour": "#6EA516",
+    "from": "Yeadon Loop",
+    "name": "SEPTA T3: Yeadon Loop → Center City",
+    "network": "SEPTA",
+    "network:wikidata": "Q2037863",
+    "old_ref": "13",
+    "operator": "Southeastern Pennsylvania Transportation Authority",
+    "operator:wikidata": "Q2037863",
+    "public_transport:version": "2",
+    "ref": "T3",
+    "route": "tram",
+    "to": "13th Street",
+    "type": "route",
+    "wikidata": "Q7389784"
+  }
+}
+
+  ]
+}
