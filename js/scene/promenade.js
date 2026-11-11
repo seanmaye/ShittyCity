@@ -273,6 +273,14 @@ export function buildPromenade(scene, { buildings, cityB, roads, trees }) {
   return { group, view, nav, count: Object.fromEntries([...kinds].map(([n, k]) => [n, k.m.length])), ...seating(seats) };
 }
 
+/** where the camera goes when you get up (or step out of someone): 40 m back along the street the
+ *  way you were facing, 24 m above its middle, so it never lands inside a building */
+export function pullBack(x, z, heading) {
+  const p = project(x, z), dir = Math.sign(Math.sin(heading) * p.tx + Math.cos(heading) * p.tz) || 1;
+  const q = at(Math.max(0, Math.min(WALNUT_LENGTH, p.s - dir * 40)), 0);
+  return new THREE.Vector3(q.x, 24, q.z);
+}
+
 // ---- sitting down: click a cafe chair or a bench, drag to look around, Space or Esc to stand up
 const SEAT_Y = .45, EYE = 1.2;   // seat height; eye height above the paving when seated
 function seating(seats) {
@@ -302,7 +310,7 @@ function seating(seats) {
   function stand() {
     if (!seat) return null;
     const st = seats[seat.i]; st.user = false; if (seats.onUserStand) seats.onUserStand(seat.i); seat = null;
-    return { p: new THREE.Vector3(st.x, PAVE_Y, st.z), dir: new THREE.Vector3(Math.sin(st.ry), 0, Math.cos(st.ry)) };
+    return { p: new THREE.Vector3(st.x, PAVE_Y, st.z), dir: new THREE.Vector3(Math.sin(st.ry), 0, Math.cos(st.ry)), cam: pullBack(st.x, st.z, st.ry) };
   }
   const getSeat = () => seat && { kind: 'seat', seat: seats[seat.i].kind };
   const lookSeat = (dx, dy) => { if (!seat) return; seat.yaw = Math.max(-2.6, Math.min(2.6, seat.yaw - dx * .0045)); seat.pitch = Math.max(-1.2, Math.min(1.2, seat.pitch - dy * .0045)); };

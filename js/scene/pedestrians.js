@@ -13,6 +13,8 @@
 // a seat or a door whose walk-up path isn't clear is never used.
 import * as THREE from 'three';
 import { geo, pose } from './people.js';
+import { makeProfile, SHOPS } from './profiles.js';
+import { pullBack } from './promenade.js';
 
 const LANE = [2.4, 3.5];          // walking lanes (|o|): clear of the streetcar and of the kerb furniture
 const SPEED = [1.05, 1.5];        // walking speeds, m/s
@@ -100,7 +102,7 @@ export function buildPedestrians(scene, nav, count = 200) {
   for (const d of doors) {
     d.ox = d.x + d.nx * .5; d.oz = d.z + d.nz * .5;      // just outside the door
     d.ix = d.x - d.nx * 1.6; d.iz = d.z - d.nz * 1.6;    // inside the shop
-    d.e = entry(d.ox, d.oz);
+    d.e = entry(d.ox, d.oz); d.shop = SHOPS[Math.floor(Math.abs(Math.sin(d.x * 12.9898 + d.z * 78.233) * 43758.5453) % 1 * SHOPS.length)];
     d.ok = d.e.s > 3 && d.e.s < L - 3 && clear(d.e.x, d.e.z, d.ox, d.oz);
   }
   const okSeats = seats.map((st, i) => i).filter(i => seats[i].ok), okDoors = doors.filter(d => d.ok);
@@ -140,13 +142,14 @@ export function buildPedestrians(scene, nav, count = 200) {
   const people = [];
   for (let i = 0; i < count; i++) {
     const long = Math.random() < .7, sleeves = Math.random() < .4;
-    const c = { shirt: pick(SHIRT), pants: pick(PANTS), skin: pick(SKIN), hair: pick(HAIR), shoe: pick(SHOE) };
+    const prof = makeProfile(i);   // a made-up life: name, age, sex, height, weight, biography (profiles.js)
+    const c = { shirt: pick(SHIRT), pants: pick(PANTS), skin: pick(SKIN), hair: prof.grey ? pick(['#9a9a96', '#c8c8c4', '#e2e0da']) : pick(HAIR), shoe: pick(SHOE) };
     c.leg = long ? c.pants : c.skin; c.arm = sleeves ? c.shirt : c.skin;
     parts.forEach(p => p.joints.forEach((j, k) => p.im.setColorAt(i * p.joints.length + k, col.set(c[p.col]))));
     books.setColorAt(i, col.set(pick(BOOK)));
     const P = { i, F: rig(), x: 0, z: 0, h: 0, sp: rnd(SPEED[0], SPEED[1]), path: [], then: null, state: 'walk', t: 0, k: 0,
       seat: null, slot: 0, act: 'rest', sipT: rnd(0, 6), ph: rnd(0, 6), hidden: false, lod: i % 8, dirty: true };
-    P.F.root.scale.setScalar(rnd(.9, 1.07));
+    P.prof = prof; P.F.root.scale.setScalar(prof.scale);
     people.push(P);
   }
   parts.forEach(p => { p.im.instanceColor.needsUpdate = true; });
@@ -286,7 +289,7 @@ export function buildPedestrians(scene, nav, count = 200) {
     if (P.exiting) { const d = P.door; const out = (P.x - d.x) * d.nx + (P.z - d.z) * d.nz; P.hiddenOut = out < -.35; if (out > .3) P.exiting = false; } else P.hiddenOut = false;
   }
 
-  let frame = 0, enabled = true;
+  let frame = 0, enabled = true, inside = null;
   const swinging = new Set();
   function update(dt, camera) {
     frame++; clock += dt;
@@ -295,10 +298,10 @@ export function buildPedestrians(scene, nav, count = 200) {
       step(P, dt);
       // re-pose near people every frame, further ones every 3rd or 10th; someone sitting still
       // (not sipping a coffee) is posed once
-      const d = Math.hypot(P.x - cp.x, P.z - cp.z), every = d < 120 ? 1 : d < 350 ? 3 : 10;
-      if (far || (frame + P.lod) % every) continue;
+      const me = P === inside, d = Math.hypot(P.x - cp.x, P.z - cp.z), every = me || d < 120 ? 1 : d < 350 ? 3 : 10;
+      if ((far && !me) || (frame + P.lod) % every) continue;
       const hide = P.hidden || P.hiddenOut, F = P.F;
-      const still = P.state === 'sit' && P.act !== 'coffee';
+      const still = P.state === 'sit' && P.act !== 'coffee' && !me;
       if (still && P.posed) continue;
       P.posed = still;
       if (!hide) {
@@ -314,7 +317,8 @@ export function buildPedestrians(scene, nav, count = 200) {
         if (P.k > 0 && P.seat != null) { const st = seats[P.seat]; x -= Math.sin(st.ry) * .1 * P.k; z -= Math.cos(st.ry) * .1 * P.k; }
         F.root.position.set(x, pave, z); F.root.rotation.y = P.h; F.root.updateMatrixWorld(true);
       }
-      for (const p of parts) p.joints.forEach((j, k) => p.im.setMatrixAt(P.i * p.joints.length + k, hide ? ZERO : F[j].matrixWorld));
+      // the person being inhabited has no head (the camera is in it)
+      for (const p of parts) p.joints.forEach((j, k) => p.im.setMatrixAt(P.i * p.joints.length + k, hide || (me && (j === 'head' || j === 'hair')) ? ZERO : F[j].matrixWorld));
       // props: a coffee cup in the right hand, or a book held in both
       const seated = !hide && P.k > .9;
       if (seated && P.act === 'coffee') { F.handR.getWorldPosition(v); dummy.position.copy(v); dummy.rotation.set(0, P.h, 0); dummy.scale.setScalar(1); dummy.updateMatrix(); cups.setMatrixAt(P.i, dummy.matrix); }
@@ -341,6 +345,63 @@ export function buildPedestrians(scene, nav, count = 200) {
     const n = {}; people.forEach(P => { const k = P.state === 'walk' ? (P.then === 'enter' ? 'toShop' : P.then === 'sit' ? 'toSeat' : 'walk') : P.state; n[k] = (n[k] || 0) + 1; });
     return { ...n, seats: okSeats.length + '/' + seats.length, doors: okDoors.length + '/' + doors.length };
   };
-  const setVisible = on => { group.visible = on; enabled = on; };
-  return { update: (dt, camera) => { if (enabled) update(dt, camera); }, people, stats, setVisible };
+  // ---- inhabiting someone: click a person to see through their eyes (you can look around, not steer)
+  const pv = new THREE.Vector3();
+  /** the person under screen point (x, y), within 300 m */
+  function pickPerson(camera, x, y, w, h) {
+    if (!enabled) return null;
+    const f = h / (2 * Math.tan(camera.fov * Math.PI / 360)), cp = camera.position; let best = null;
+    for (const P of people) {
+      if (P.hidden || P.hiddenOut || P === inside) continue;
+      const cy = pave + (P.k > .5 ? .95 : 1.25) * P.prof.scale, dist = Math.hypot(P.x - cp.x, cy - cp.y, P.z - cp.z); if (dist > 300) continue;
+      pv.set(P.x, cy, P.z).project(camera); if (pv.z > 1) continue;
+      const d = Math.hypot((pv.x + 1) / 2 * w - x, (1 - pv.y) / 2 * h - y), tol = Math.max(8, f * .45 / dist);
+      if (d < tol && (!best || d / tol < best.r)) best = { person: P.i, r: d / tol };
+    }
+    return best && { person: best.person };
+  }
+  const look = { yaw: 0, pitch: 0 };
+  function inhabit(i) { inside = people[i] || null; look.yaw = 0; look.pitch = 0; if (inside) inside.posed = false; return getInhabited(); }
+  function leave() {
+    if (!inside) return null;
+    const P = inside; inside = null; P.posed = false;
+    return { p: new THREE.Vector3(P.x, pave, P.z), dir: new THREE.Vector3(Math.sin(P.h), 0, Math.cos(P.h)), cam: pullBack(P.x, P.z, P.h) };
+  }
+  /** what they're doing right now, in words */
+  function activity(P) {
+    const st = P.seat != null ? seats[P.seat] : null, shop = P.door && P.door.shop;
+    if (P.state === 'inside') return `Browsing in the ${shop}`;
+    if (P.exiting) return `Leaving the ${shop}`;
+    if (P.state === 'walk') return P.then === 'sit' ? (st && st.kind === 'cafe' ? 'Walking to a café table' : 'Looking for a bench') : P.then === 'enter' ? `Heading into the ${shop}` : 'Strolling down Walnut Street';
+    if (P.state === 'pause') return 'Window shopping';
+    if (P.state === 'sitting') return 'Sitting down';
+    if (P.state === 'standing') return 'Getting up';
+    if (P.state === 'sit') return P.act === 'coffee' ? `Drinking ${P.prof.drink}` : P.act === 'book' ? `Reading ${P.prof.book}` : 'Resting on a bench, people-watching';
+    return '';
+  }
+  function getInhabited() {
+    if (!inside) return null;
+    const p = inside.prof;
+    return { kind: 'person', id: inside.i, name: p.name, sex: p.sex, age: p.age, height: p.height, kg: p.kg, lb: p.lb, bio: p.bio, now: activity(inside) };
+  }
+  const lookAt = (dx, dy) => { look.yaw = Math.max(-2.2, Math.min(2.2, look.yaw - dx * .0045)); look.pitch = Math.max(-1.1, Math.min(1.1, look.pitch - dy * .0045)); };
+  const eye = new THREE.Vector3(), fwd = new THREE.Vector3();
+  /** put the camera behind their eyes (after update has posed them this frame) */
+  function inhabitFrame(camera) {
+    const P = inside; if (!P) return;
+    if (P.hidden || P.hiddenOut) {   // in the shop: just inside the (held open) door, looking out through the shopfront
+      const d = P.door; openDoor(d); eye.set(d.x - d.nx * .9, pave + 1.6 * P.prof.scale, d.z - d.nz * .9);
+      const a = Math.atan2(d.nx, d.nz) + Math.max(-1, Math.min(1, look.yaw)); fwd.set(Math.sin(a), Math.sin(look.pitch - .05), Math.cos(a));
+    } else {
+      P.F.head.getWorldPosition(eye); eye.y += .04;
+      // at a cafe table, look past the umbrella pole, half towards the street (as when the viewer sits)
+      const st = P.seat != null ? seats[P.seat] : null, past = st && st.kind === 'cafe' ? (st.yaw0 || 0) * P.k : 0;
+      const a = P.h + look.yaw + past, down = P.state === 'sit' && P.act === 'book' ? -.55 : P.k > .5 ? -.12 : -.06;
+      eye.x += Math.sin(P.h) * .1; eye.z += Math.cos(P.h) * .1;
+      const pt = look.pitch + down; fwd.set(Math.sin(a) * Math.cos(pt), Math.sin(pt), Math.cos(a) * Math.cos(pt));
+    }
+    camera.position.copy(eye); camera.up.set(0, 1, 0); camera.lookAt(eye.x + fwd.x, eye.y + fwd.y, eye.z + fwd.z);
+  }
+  const setVisible = on => { group.visible = on; enabled = on; if (!on) inside = null; };
+  return { update: (dt, camera) => { if (enabled) update(dt, camera); }, people, stats, setVisible, pickPerson, inhabit, leave, getInhabited, lookAt, inhabitFrame };
 }

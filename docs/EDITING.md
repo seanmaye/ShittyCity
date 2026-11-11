@@ -297,6 +297,15 @@ js/scene/pedestrians.js  PROPOSAL: about 200 people on Walnut St (buildPedestria
                   checked against the obstacles at load; blocked ones are never used. Re-posing:
                   every frame within 120 m, every 3rd within 350 m, else every 10th; still sitters
                   once. When the viewer sits, they take a free place or move someone on.
+                  Click a person to inhabit them (pickPerson/inhabit/inhabitFrame, wired like a
+                  train ride in index.js): the camera is in their head and goes where they go; drag
+                  looks around; in a shop it stands just inside the held-open door. The #persona
+                  card (ui.js showPersona) shows their profile and what they're doing now.
+js/scene/profiles.js  made-up lives for the Walnut St people: makeProfile(i) gives a name, sex,
+                  age, height, weight (BMI 19-32), coffee order, book and a short biography from
+                  seeded word lists ({he} {is} {s}... fill in the grammar, including "they").
+                  Height sets the figure's size, and most people over 62 have grey hair. SHOPS
+                  names what each door's shop sells. All fictional.
 js/scene/subway.js     every rail line (data-transit + data-metro): rails, platforms, El decks and
                   columns, looping instanced trains (SPEC: car
                   sizes, cars per train, train spacing, speeds), and the cut-away sections:

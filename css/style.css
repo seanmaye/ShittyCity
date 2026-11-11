@@ -95,3 +95,14 @@ button.fold svg{transition:transform .2s}
 #rb-svg text.next{fill:var(--ink);font-weight:600}
 #rb-svg text.done{opacity:.55}
 @media (max-width:640px){.minimap{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 30px);width:130px;height:130px}.ridebar{left:14px;transform:none;width:calc(100vw - 172px)}.rb-next{display:none}}
+/* someone you're inhabiting on Walnut St: who they are and what they're doing */
+.persona{position:fixed;top:calc(env(safe-area-inset-top,0px) + 228px);right:calc(env(safe-area-inset-right,0px) + 14px);width:min(300px,calc(100vw - 28px));box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px 4px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--ink)}
+.persona[hidden]{display:none}
+.persona h2{font-size:17px;line-height:1.25;margin:0 0 8px}
+.pe-facts{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;gap:2px 14px;margin:0 0 10px}
+.pe-facts dt{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.pe-facts dd{margin:0;font-size:14px;font-weight:600;white-space:nowrap}
+.pe-now{margin:0 0 8px;padding:6px 9px;border-radius:8px;background:var(--line);color:var(--ink);font-size:13px}
+.pe-now span{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+.pe-bio{font-size:13px;margin:0 0 10px}
+@media (max-width:640px){.persona{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);left:16px;right:16px;width:auto;max-height:40vh;overflow:auto}.pe-facts{grid-template-columns:repeat(2,auto)}}

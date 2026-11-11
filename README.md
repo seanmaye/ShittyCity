@@ -17,6 +17,9 @@ and transit come from real map data.
 - **Ride inside any train.** Pick a line under "Ride a line", or click any train car (or
   monorail car) to board it. Every car has a walkable cabin (M-4, B-IV, Kawasaki LRV, PCC,
   Silverliner IV, PATCO, monorail): drag to look, W A S D to walk, Esc to get off.
+- **See through someone’s eyes** on Walnut Street: click any of the people there to inhabit
+  them. You go where they go (you can look around, not steer), with a card showing their
+  age, sex, height, weight and a short biography. Esc or Space steps out.
 - **Fly around** with W A S D (or the arrow keys), Space to rise and Shift to sink.
 - **Citywide landmarks** are modelled on their real outlines: Lincoln Financial Field,
   Citizens Bank Park, Xfinity Mobile Arena, Independence Hall, Memorial Hall, and the Ben
@@ -111,6 +114,7 @@ js/scene/
   yardpark.js         proposal: rail yard deck, park and the Railyard Bowl
   promenade.js        proposal: Walnut St (22nd to Front) as a brick-paved shopping street
   pedestrians.js      proposal: ~200 people on Walnut St who shop, stroll and sit for a coffee or a book
+  profiles.js         made-up name, age, sex, height, weight and biography for each of them
   subway.js           every rail line: tracks, tunnels, Els, platforms, trains, line rides,
                       the Market St cut-away and the walkable cabins of every car
 data/                 generated (don't edit by hand):

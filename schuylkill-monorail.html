@@ -299,6 +299,15 @@ js/scene/pedestrians.js  PROPOSAL: about 200 people on Walnut St (buildPedestria
                   checked against the obstacles at load; blocked ones are never used. Re-posing:
                   every frame within 120 m, every 3rd within 350 m, else every 10th; still sitters
                   once. When the viewer sits, they take a free place or move someone on.
+                  Click a person to inhabit them (pickPerson/inhabit/inhabitFrame, wired like a
+                  train ride in index.js): the camera is in their head and goes where they go; drag
+                  looks around; in a shop it stands just inside the held-open door. The #persona
+                  card (ui.js showPersona) shows their profile and what they're doing now.
+js/scene/profiles.js  made-up lives for the Walnut St people: makeProfile(i) gives a name, sex,
+                  age, height, weight (BMI 19-32), coffee order, book and a short biography from
+                  seeded word lists ({he} {is} {s}... fill in the grammar, including "they").
+                  Height sets the figure's size, and most people over 62 have grey hair. SHOPS
+                  names what each door's shop sells. All fictional.
 js/scene/subway.js     every rail line (data-transit + data-metro): rails, platforms, El decks and
                   columns, looping instanced trains (SPEC: car
                   sizes, cars per train, train spacing, speeds), and the cut-away sections:
@@ -674,6 +683,17 @@ button.fold svg{transition:transform .2s}
 #rb-svg text.next{fill:var(--ink);font-weight:600}
 #rb-svg text.done{opacity:.55}
 @media (max-width:640px){.minimap{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 30px);width:130px;height:130px}.ridebar{left:14px;transform:none;width:calc(100vw - 172px)}.rb-next{display:none}}
+/* someone you're inhabiting on Walnut St: who they are and what they're doing */
+.persona{position:fixed;top:calc(env(safe-area-inset-top,0px) + 228px);right:calc(env(safe-area-inset-right,0px) + 14px);width:min(300px,calc(100vw - 28px));box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px 4px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--ink)}
+.persona[hidden]{display:none}
+.persona h2{font-size:17px;line-height:1.25;margin:0 0 8px}
+.pe-facts{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;gap:2px 14px;margin:0 0 10px}
+.pe-facts dt{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.pe-facts dd{margin:0;font-size:14px;font-weight:600;white-space:nowrap}
+.pe-now{margin:0 0 8px;padding:6px 9px;border-radius:8px;background:var(--line);color:var(--ink);font-size:13px}
+.pe-now span{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+.pe-bio{font-size:13px;margin:0 0 10px}
+@media (max-width:640px){.persona{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);left:16px;right:16px;width:auto;max-height:40vh;overflow:auto}.pe-facts{grid-template-columns:repeat(2,auto)}}
 </style>
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js",
@@ -708,6 +728,7 @@ button.fold svg{transition:transform .2s}
 <div class="minimap" id="minimap" hidden><canvas id="mm" aria-label="Map of Philadelphia showing where you are. Click to fly there."></canvas>
 <div class="mm-ctl"><button type="button" id="mm-in" aria-label="Zoom the map in" title="Zoom in">+</button><button type="button" id="mm-out" aria-label="Zoom the map out" title="Zoom out">−</button></div>
 <span class="mm-scale" id="mm-scale" aria-hidden="true"></span></div>
+<aside class="persona" id="persona" aria-live="polite" hidden><h2 id="pe-name"></h2><dl class="pe-facts"><div><dt>Age</dt><dd id="pe-age"></dd></div><div><dt>Sex</dt><dd id="pe-sex"></dd></div><div><dt>Height</dt><dd id="pe-h"></dd></div><div><dt>Weight</dt><dd id="pe-w"></dd></div></dl><p class="pe-now"><span>Now</span> <b id="pe-now"></b></p><p class="pe-bio" id="pe-bio"></p></aside>
 <div class="ridebar" id="ridebar" role="status" aria-live="off" hidden><div class="rb-h"><span class="rb-dot" id="rb-dot" aria-hidden="true"></span><b id="rb-name"></b><span class="rb-to" id="rb-to"></span><span class="rb-next" id="rb-next"></span></div><svg id="rb-svg" viewBox="0 0 1000 120" preserveAspectRatio="xMidYMax meet" aria-hidden="true"></svg></div>
 <p class="credit">Buildings: City of Philadelphia LI footprints · River, parks, streets, transit: © OpenStreetMap contributors</p>
 <div class="err" id="err">The 3D scene couldn’t load. Check your connection and reload the page.</div>
@@ -1560,6 +1581,14 @@ function buildPromenade(scene, { buildings, cityB, roads, trees }) {
   return { group, view, nav, count: Object.fromEntries([...kinds].map(([n, k]) => [n, k.m.length])), ...seating(seats) };
 }
 
+/** where the camera goes when you get up (or step out of someone): 40 m back along the street the
+ *  way you were facing, 24 m above its middle, so it never lands inside a building */
+function pullBack(x, z, heading) {
+  const p = project(x, z), dir = Math.sign(Math.sin(heading) * p.tx + Math.cos(heading) * p.tz) || 1;
+  const q = at(Math.max(0, Math.min(WALNUT_LENGTH, p.s - dir * 40)), 0);
+  return new THREE.Vector3(q.x, 24, q.z);
+}
+
 // ---- sitting down: click a cafe chair or a bench, drag to look around, Space or Esc to stand up
 const SEAT_Y = .45, EYE = 1.2;   // seat height; eye height above the paving when seated
 function seating(seats) {
@@ -1589,7 +1618,7 @@ function seating(seats) {
   function stand() {
     if (!seat) return null;
     const st = seats[seat.i]; st.user = false; if (seats.onUserStand) seats.onUserStand(seat.i); seat = null;
-    return { p: new THREE.Vector3(st.x, PAVE_Y, st.z), dir: new THREE.Vector3(Math.sin(st.ry), 0, Math.cos(st.ry)) };
+    return { p: new THREE.Vector3(st.x, PAVE_Y, st.z), dir: new THREE.Vector3(Math.sin(st.ry), 0, Math.cos(st.ry)), cam: pullBack(st.x, st.z, st.ry) };
   }
   const getSeat = () => seat && { kind: 'seat', seat: seats[seat.i].kind };
   const lookSeat = (dx, dy) => { if (!seat) return; seat.yaw = Math.max(-2.6, Math.min(2.6, seat.yaw - dx * .0045)); seat.pitch = Math.max(-1.2, Math.min(1.2, seat.pitch - dy * .0045)); };
@@ -1618,7 +1647,7 @@ function merge(gs) {
   return m;
 }
 
-return { onWalnut, onPromenade, buildPromenade, WALNUT, WALNUT_LENGTH };
+return { onWalnut, onPromenade, buildPromenade, pullBack, WALNUT, WALNUT_LENGTH };
 })();
 // ---- js/scene/ground.js
 __mods["js/scene/ground.js"] = await (async () => {
@@ -4971,6 +5000,65 @@ function buildOldTrolleys(scene, data, renderer) {
 
 return { buildOldTrolleys };
 })();
+// ---- js/scene/profiles.js
+__mods["js/scene/profiles.js"] = await (async () => {
+// Made-up lives for the people on the Walnut St promenade (pedestrians.js): a name, sex, age,
+// height, weight and a short biography, generated from a seed so each person keeps theirs.
+// Everyone here is fictional.
+
+const FEMALE = ['Maria', 'Aaliyah', 'Grace', 'Keisha', 'Mei', 'Sofia', 'Erin', 'Fatima', 'Rosa', 'Danielle', 'Priya', 'Colleen', 'Tamika', 'Anh', 'Joanna', 'Bridget', 'Imani', 'Lucia', 'Hannah', 'Yolanda', 'Nadia', 'Shannon', 'Gloria', 'Sun-hee', 'Theresa', 'Jasmine', 'Ruth', 'Carmen', 'Emily', 'Denise'];
+const MALE = ['James', 'Malik', 'Anthony', 'Wei', 'Carlos', 'Patrick', 'Darnell', 'Omar', 'Joseph', 'Tuan', 'Kevin', 'Andre', 'Sean', 'Raj', 'Vincent', 'Marcus', 'Luis', 'Michael', 'Kwame', 'Dominic', 'Hector', 'Brian', 'Jamal', 'Frank', 'Min-jun', 'Terrence', 'Samuel', 'Giovanni', 'Eli', 'Reggie'];
+const NEUTRAL = ['Alex', 'Jordan', 'Riley', 'Sam', 'Quinn', 'Avery', 'Rowan', 'Casey'];
+const LAST = ['Rivera', 'Johnson', 'Nguyen', 'DiNardo', 'Williams', 'Kowalski', 'Chen', 'O’Brien', 'Washington', 'Patel', 'Santiago', 'McGinley', 'Brown', 'Kim', 'Russo', 'Okafor', 'Jackson', 'Murphy', 'Lopez', 'Tran', 'Greenberg', 'Harris', 'Morales', 'Sullivan', 'Mitchell', 'Ortiz', 'Castellano', 'Robinson', 'Ali', 'Fitzpatrick', 'Lee', 'Coleman', 'Petrakis', 'Diaz', 'Walsh'];
+const HOODS = ['Fishtown', 'South Philly', 'Germantown', 'Manayunk', 'Fairmount', 'Graduate Hospital', 'Kensington', 'Point Breeze', 'West Philly', 'Mt. Airy', 'Northern Liberties', 'Queen Village', 'Chestnut Hill', 'Roxborough', 'Port Richmond', 'Overbrook', 'Passyunk Square', 'Brewerytown', 'East Falls', 'Olney', 'Mayfair', 'Society Hill', 'Spring Garden', 'Bella Vista', 'Cobbs Creek'];
+const FROM = ['Pittsburgh', 'Puerto Rico', 'Lagos', 'Ho Chi Minh City', 'Baltimore', 'Boston', 'Mumbai', 'Atlanta', 'Dublin', 'the Dominican Republic', 'Scranton', 'Seoul', 'Naples', 'Ohio', 'Jamaica', 'Guangzhou', 'New Jersey', 'Kyiv', 'Mexico City', 'Cleveland'];
+const STUDY = ['studying nursing at Temple', 'in {his} second year of engineering at Drexel', 'finishing a history degree at Penn', 'taking accounting classes at the Community College of Philadelphia', 'studying physical therapy at Jefferson', 'studying illustration at Moore College of Art & Design'];
+const SIDE = ['at a bubble-tea shop', 'shelving books at the Free Library', 'delivering for a food app', 'at a climbing gym'];
+const JOBS = ['a nurse at Pennsylvania Hospital', 'a SEPTA bus operator on the 42', 'a line cook at a BYOB in East Passyunk', 'a software developer at a Center City startup', 'a union electrician (IBEW Local 98)', 'a fourth-grade teacher in the School District', 'a paralegal on Market Street', 'a barista two blocks from here', 'an architect restoring old rowhouses', 'an accountant who dreads April', 'a physical therapist', 'a Wawa shift manager', 'a session bassist', 'a social worker', 'a real estate agent', 'a graphic designer', 'a firefighter at Engine 43', 'a mail carrier in Rittenhouse', 'a pharmacist at CHOP', 'a hairdresser with a chair on Sansom Street', 'a tour guide at Independence Hall', 'a sous-chef at a hotel on Broad', 'a court stenographer at City Hall', 'a bike courier', 'a museum educator at the Art Museum'];
+const RETIRED = ['a retired schoolteacher', 'a retired Navy Yard machinist', 'a retired nurse', 'a retired Philadelphia police sergeant', 'a retired pharmacist', 'a retired PECO lineman', 'a retired bookkeeper', 'a retired jazz pianist', 'a retired city planner'];
+// {he} {his} {is} {has} {was} and {s} (a verb ending) are filled in for each person
+const HOBBY = ['{has} had Eagles season tickets since 2004', 'row{s} at dawn on the Schuylkill with a Boathouse Row club', 'march{es} with a Mummers string band every New Year’s Day', 'keep{s} a plot in a community garden', 'go{es} salsa dancing on Thursdays', 'play{s} speed chess in Rittenhouse Square', 'collect{s} soul records from the Philly International era', 'run{s} the Broad Street Run every May', 'bake{s} sourdough and give{s} most of it away', 'volunteer{s} at the Free Library on Saturdays', 'paint{s} watercolors of the Wissahickon', 'coach{es} a Little League team', '{is} learning Italian before a trip to Abruzzo', 'never miss{es} a First Friday in Old City', 'do{es} the Sunday crossword in pen', '{is} restoring a 1972 Schwinn', 'sing{s} in a church choir in Germantown', 'birdwatch{es} at the John Heinz refuge', 'know{s} every food truck at Love Park by name'];
+const FAMILY = {
+  young: ['share{s} a rowhouse with two roommates and a very loud cat', 'live{s} with a partner and a rescue greyhound', 'still {has} dinner at {his} parents’ every Sunday', 'just signed a lease on {his} first apartment', 'live{s} alone above a corner store'],
+  mid: ['{is} married with two kids in middle school', '{is} raising a daughter alone', 'live{s} with a partner of twelve years', '{is} recently divorced and enjoying the quiet', '{has} three kids and a minivan named Gus', 'live{s} with {his} elderly mother'],
+  old: ['{has} five grandchildren and photos of all of them', '{was} married for 41 years and still wear{s} the ring', 'live{s} with a sister in the house they grew up in', 'moved into a Center City condo after the kids left', 'walk{s} a dachshund named Frank twice a day'],
+};
+const DRINKS = ['an oat-milk latte', 'a double espresso', 'a cappuccino', 'black drip coffee', 'an iced coffee', 'a cortado', 'a chai latte'];
+const BOOKS = ['Moby-Dick', 'Pride and Prejudice', 'The Autobiography of Benjamin Franklin', 'Little Women', 'The Great Gatsby', 'Middlemarch', 'Invisible Man', 'The Age of Innocence', 'Leaves of Grass', 'Frankenstein', 'Walden', 'Their Eyes Were Watching God', 'Beloved', 'The Count of Monte Cristo', 'One Hundred Years of Solitude', 'a dog-eared paperback thriller', 'a guidebook to Italy', 'a book of New Yorker cartoons'];
+const SHOPS = ['bakery', 'bookshop', 'florist', 'boutique', 'record store', 'cheese shop', 'gelateria', 'shoe store', 'pharmacy', 'wine bar', 'stationery shop', 'chocolatier', 'barber', 'gallery', 'bike shop', 'tea room', 'hat shop', 'jeweler'];
+
+/** small seeded random (mulberry32) so a person's life is the same every time */
+function rng(seed) {
+  let a = seed >>> 0;
+  return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+
+function makeProfile(i) {
+  const r = rng(i * 7919 + 17), pick = a => a[Math.floor(r() * a.length)], between = (a, b) => a + r() * (b - a);
+  const x = r(), sex = x < .485 ? 'Female' : x < .97 ? 'Male' : 'Non-binary';
+  const one = sex !== 'Non-binary';   // they: plural verbs
+  const fill = t => t.replace(/\{he\}/g, one ? (sex === 'Female' ? 'she' : 'he') : 'they').replace(/\{his\}/g, one ? (sex === 'Female' ? 'her' : 'his') : 'their')
+    .replace(/\{is\}/g, one ? 'is' : 'are').replace(/\{has\}/g, one ? 'has' : 'have').replace(/\{was\}/g, one ? 'was' : 'were')
+    .replace(/\{es\}/g, one ? 'es' : '').replace(/\{s\}/g, one ? 's' : '');
+  const first = pick(sex === 'Female' ? FEMALE : sex === 'Male' ? MALE : NEUTRAL), name = first + ' ' + pick(LAST);
+  // ages: mostly working age, some students and retirees
+  const u = r(), age = Math.round(u < .18 ? between(18, 25) : u < .82 ? between(26, 64) : between(65, 86));
+  const height = Math.round((sex === 'Female' ? 163 : sex === 'Male' ? 176 : 170) + (r() + r() + r() - 1.5) * 9 - (age > 70 ? 2 : 0));
+  const bmi = between(19, 32), kg = Math.round(bmi * (height / 100) ** 2), lb = Math.round(kg * 2.2046);
+  const hood = pick(HOODS), He = fill('{he}').replace(/^./, c => c.toUpperCase());
+  const origin = r() < .55 ? `Born and raised in ${hood}.` : `Moved to Philly from ${pick(FROM)} in ${2026 - Math.round(between(2, Math.min(50, age - 16)))} and settled in ${hood}.`;
+  const work = age < 25 ? fill(`${He} {is} ${pick(STUDY)}, and work{s} weekends ${pick(SIDE)}.`)
+    : fill(`${He} {is} ${pick(age < 66 ? JOBS : RETIRED)}.`);
+  const bio = `${origin} ${work} ${He} ${fill(pick(age < 30 ? FAMILY.young : age < 62 ? FAMILY.mid : FAMILY.old))}, and ${fill(pick(HOBBY))}.`;
+  return {
+    name, sex, age, height, kg, lb, bio,
+    drink: pick(DRINKS), book: pick(BOOKS),
+    grey: age > 62 && r() < .8, scale: height / 180,
+  };
+}
+
+return { makeProfile, SHOPS };
+})();
 // ---- js/scene/pedestrians.js
 __mods["js/scene/pedestrians.js"] = await (async () => {
 // PROPOSAL: people on the Walnut St promenade (promenade.js). About 200 of them stroll up and
@@ -4988,6 +5076,8 @@ __mods["js/scene/pedestrians.js"] = await (async () => {
 // a seat or a door whose walk-up path isn't clear is never used.
 
 const { geo, pose } = __mods["js/scene/people.js"];
+const { makeProfile, SHOPS } = __mods["js/scene/profiles.js"];
+const { pullBack } = __mods["js/scene/promenade.js"];
 const LANE = [2.4, 3.5];          // walking lanes (|o|): clear of the streetcar and of the kerb furniture
 const SPEED = [1.05, 1.5];        // walking speeds, m/s
 const NEAR = 250;                 // pick seats and shops within this distance along the street
@@ -5074,7 +5164,7 @@ function buildPedestrians(scene, nav, count = 200) {
   for (const d of doors) {
     d.ox = d.x + d.nx * .5; d.oz = d.z + d.nz * .5;      // just outside the door
     d.ix = d.x - d.nx * 1.6; d.iz = d.z - d.nz * 1.6;    // inside the shop
-    d.e = entry(d.ox, d.oz);
+    d.e = entry(d.ox, d.oz); d.shop = SHOPS[Math.floor(Math.abs(Math.sin(d.x * 12.9898 + d.z * 78.233) * 43758.5453) % 1 * SHOPS.length)];
     d.ok = d.e.s > 3 && d.e.s < L - 3 && clear(d.e.x, d.e.z, d.ox, d.oz);
   }
   const okSeats = seats.map((st, i) => i).filter(i => seats[i].ok), okDoors = doors.filter(d => d.ok);
@@ -5114,13 +5204,14 @@ function buildPedestrians(scene, nav, count = 200) {
   const people = [];
   for (let i = 0; i < count; i++) {
     const long = Math.random() < .7, sleeves = Math.random() < .4;
-    const c = { shirt: pick(SHIRT), pants: pick(PANTS), skin: pick(SKIN), hair: pick(HAIR), shoe: pick(SHOE) };
+    const prof = makeProfile(i);   // a made-up life: name, age, sex, height, weight, biography (profiles.js)
+    const c = { shirt: pick(SHIRT), pants: pick(PANTS), skin: pick(SKIN), hair: prof.grey ? pick(['#9a9a96', '#c8c8c4', '#e2e0da']) : pick(HAIR), shoe: pick(SHOE) };
     c.leg = long ? c.pants : c.skin; c.arm = sleeves ? c.shirt : c.skin;
     parts.forEach(p => p.joints.forEach((j, k) => p.im.setColorAt(i * p.joints.length + k, col.set(c[p.col]))));
     books.setColorAt(i, col.set(pick(BOOK)));
     const P = { i, F: rig(), x: 0, z: 0, h: 0, sp: rnd(SPEED[0], SPEED[1]), path: [], then: null, state: 'walk', t: 0, k: 0,
       seat: null, slot: 0, act: 'rest', sipT: rnd(0, 6), ph: rnd(0, 6), hidden: false, lod: i % 8, dirty: true };
-    P.F.root.scale.setScalar(rnd(.9, 1.07));
+    P.prof = prof; P.F.root.scale.setScalar(prof.scale);
     people.push(P);
   }
   parts.forEach(p => { p.im.instanceColor.needsUpdate = true; });
@@ -5260,7 +5351,7 @@ function buildPedestrians(scene, nav, count = 200) {
     if (P.exiting) { const d = P.door; const out = (P.x - d.x) * d.nx + (P.z - d.z) * d.nz; P.hiddenOut = out < -.35; if (out > .3) P.exiting = false; } else P.hiddenOut = false;
   }
 
-  let frame = 0, enabled = true;
+  let frame = 0, enabled = true, inside = null;
   const swinging = new Set();
   function update(dt, camera) {
     frame++; clock += dt;
@@ -5269,10 +5360,10 @@ function buildPedestrians(scene, nav, count = 200) {
       step(P, dt);
       // re-pose near people every frame, further ones every 3rd or 10th; someone sitting still
       // (not sipping a coffee) is posed once
-      const d = Math.hypot(P.x - cp.x, P.z - cp.z), every = d < 120 ? 1 : d < 350 ? 3 : 10;
-      if (far || (frame + P.lod) % every) continue;
+      const me = P === inside, d = Math.hypot(P.x - cp.x, P.z - cp.z), every = me || d < 120 ? 1 : d < 350 ? 3 : 10;
+      if ((far && !me) || (frame + P.lod) % every) continue;
       const hide = P.hidden || P.hiddenOut, F = P.F;
-      const still = P.state === 'sit' && P.act !== 'coffee';
+      const still = P.state === 'sit' && P.act !== 'coffee' && !me;
       if (still && P.posed) continue;
       P.posed = still;
       if (!hide) {
@@ -5288,7 +5379,8 @@ function buildPedestrians(scene, nav, count = 200) {
         if (P.k > 0 && P.seat != null) { const st = seats[P.seat]; x -= Math.sin(st.ry) * .1 * P.k; z -= Math.cos(st.ry) * .1 * P.k; }
         F.root.position.set(x, pave, z); F.root.rotation.y = P.h; F.root.updateMatrixWorld(true);
       }
-      for (const p of parts) p.joints.forEach((j, k) => p.im.setMatrixAt(P.i * p.joints.length + k, hide ? ZERO : F[j].matrixWorld));
+      // the person being inhabited has no head (the camera is in it)
+      for (const p of parts) p.joints.forEach((j, k) => p.im.setMatrixAt(P.i * p.joints.length + k, hide || (me && (j === 'head' || j === 'hair')) ? ZERO : F[j].matrixWorld));
       // props: a coffee cup in the right hand, or a book held in both
       const seated = !hide && P.k > .9;
       if (seated && P.act === 'coffee') { F.handR.getWorldPosition(v); dummy.position.copy(v); dummy.rotation.set(0, P.h, 0); dummy.scale.setScalar(1); dummy.updateMatrix(); cups.setMatrixAt(P.i, dummy.matrix); }
@@ -5315,8 +5407,65 @@ function buildPedestrians(scene, nav, count = 200) {
     const n = {}; people.forEach(P => { const k = P.state === 'walk' ? (P.then === 'enter' ? 'toShop' : P.then === 'sit' ? 'toSeat' : 'walk') : P.state; n[k] = (n[k] || 0) + 1; });
     return { ...n, seats: okSeats.length + '/' + seats.length, doors: okDoors.length + '/' + doors.length };
   };
-  const setVisible = on => { group.visible = on; enabled = on; };
-  return { update: (dt, camera) => { if (enabled) update(dt, camera); }, people, stats, setVisible };
+  // ---- inhabiting someone: click a person to see through their eyes (you can look around, not steer)
+  const pv = new THREE.Vector3();
+  /** the person under screen point (x, y), within 300 m */
+  function pickPerson(camera, x, y, w, h) {
+    if (!enabled) return null;
+    const f = h / (2 * Math.tan(camera.fov * Math.PI / 360)), cp = camera.position; let best = null;
+    for (const P of people) {
+      if (P.hidden || P.hiddenOut || P === inside) continue;
+      const cy = pave + (P.k > .5 ? .95 : 1.25) * P.prof.scale, dist = Math.hypot(P.x - cp.x, cy - cp.y, P.z - cp.z); if (dist > 300) continue;
+      pv.set(P.x, cy, P.z).project(camera); if (pv.z > 1) continue;
+      const d = Math.hypot((pv.x + 1) / 2 * w - x, (1 - pv.y) / 2 * h - y), tol = Math.max(8, f * .45 / dist);
+      if (d < tol && (!best || d / tol < best.r)) best = { person: P.i, r: d / tol };
+    }
+    return best && { person: best.person };
+  }
+  const look = { yaw: 0, pitch: 0 };
+  function inhabit(i) { inside = people[i] || null; look.yaw = 0; look.pitch = 0; if (inside) inside.posed = false; return getInhabited(); }
+  function leave() {
+    if (!inside) return null;
+    const P = inside; inside = null; P.posed = false;
+    return { p: new THREE.Vector3(P.x, pave, P.z), dir: new THREE.Vector3(Math.sin(P.h), 0, Math.cos(P.h)), cam: pullBack(P.x, P.z, P.h) };
+  }
+  /** what they're doing right now, in words */
+  function activity(P) {
+    const st = P.seat != null ? seats[P.seat] : null, shop = P.door && P.door.shop;
+    if (P.state === 'inside') return `Browsing in the ${shop}`;
+    if (P.exiting) return `Leaving the ${shop}`;
+    if (P.state === 'walk') return P.then === 'sit' ? (st && st.kind === 'cafe' ? 'Walking to a café table' : 'Looking for a bench') : P.then === 'enter' ? `Heading into the ${shop}` : 'Strolling down Walnut Street';
+    if (P.state === 'pause') return 'Window shopping';
+    if (P.state === 'sitting') return 'Sitting down';
+    if (P.state === 'standing') return 'Getting up';
+    if (P.state === 'sit') return P.act === 'coffee' ? `Drinking ${P.prof.drink}` : P.act === 'book' ? `Reading ${P.prof.book}` : 'Resting on a bench, people-watching';
+    return '';
+  }
+  function getInhabited() {
+    if (!inside) return null;
+    const p = inside.prof;
+    return { kind: 'person', id: inside.i, name: p.name, sex: p.sex, age: p.age, height: p.height, kg: p.kg, lb: p.lb, bio: p.bio, now: activity(inside) };
+  }
+  const lookAt = (dx, dy) => { look.yaw = Math.max(-2.2, Math.min(2.2, look.yaw - dx * .0045)); look.pitch = Math.max(-1.1, Math.min(1.1, look.pitch - dy * .0045)); };
+  const eye = new THREE.Vector3(), fwd = new THREE.Vector3();
+  /** put the camera behind their eyes (after update has posed them this frame) */
+  function inhabitFrame(camera) {
+    const P = inside; if (!P) return;
+    if (P.hidden || P.hiddenOut) {   // in the shop: just inside the (held open) door, looking out through the shopfront
+      const d = P.door; openDoor(d); eye.set(d.x - d.nx * .9, pave + 1.6 * P.prof.scale, d.z - d.nz * .9);
+      const a = Math.atan2(d.nx, d.nz) + Math.max(-1, Math.min(1, look.yaw)); fwd.set(Math.sin(a), Math.sin(look.pitch - .05), Math.cos(a));
+    } else {
+      P.F.head.getWorldPosition(eye); eye.y += .04;
+      // at a cafe table, look past the umbrella pole, half towards the street (as when the viewer sits)
+      const st = P.seat != null ? seats[P.seat] : null, past = st && st.kind === 'cafe' ? (st.yaw0 || 0) * P.k : 0;
+      const a = P.h + look.yaw + past, down = P.state === 'sit' && P.act === 'book' ? -.55 : P.k > .5 ? -.12 : -.06;
+      eye.x += Math.sin(P.h) * .1; eye.z += Math.cos(P.h) * .1;
+      const pt = look.pitch + down; fwd.set(Math.sin(a) * Math.cos(pt), Math.sin(pt), Math.cos(a) * Math.cos(pt));
+    }
+    camera.position.copy(eye); camera.up.set(0, 1, 0); camera.lookAt(eye.x + fwd.x, eye.y + fwd.y, eye.z + fwd.z);
+  }
+  const setVisible = on => { group.visible = on; enabled = on; if (!on) inside = null; };
+  return { update: (dt, camera) => { if (enabled) update(dt, camera); }, people, stats, setVisible, pickPerson, inhabit, leave, getInhabited, lookAt, inhabitFrame };
 }
 
 return { buildPedestrians };
@@ -5530,24 +5679,30 @@ async function buildScene(canvas, data, status = () => {}) {
     setCreative(false);
     if (riding !== false) setRiding(false, true);
     fly = null; if (subway.getCut()) setCut(false);
-    if (h && h.seat !== undefined) {   // a cafe chair or bench on Walnut St: sit down
-      subway.leave(); const r = walnut.sit(h.seat); if (!r) return null;
+    if (h && h.person !== undefined) {   // someone on Walnut St: see through their eyes
+      subway.leave(); walnut.stand(); const r = peds.inhabit(h.person); if (!r) return null;
       controls.enabled = false; camera.near = .05; camera.updateProjectionMatrix();
       return r;
     }
-    walnut.stand();
+    if (h && h.seat !== undefined) {   // a cafe chair or bench on Walnut St: sit down
+      subway.leave(); peds.leave(); const r = walnut.sit(h.seat); if (!r) return null;
+      controls.enabled = false; camera.near = .05; camera.updateProjectionMatrix();
+      return r;
+    }
+    walnut.stand(); peds.leave();
     const r = subway.board(h); if (!r) return null;
     controls.enabled = false; camera.near = .05; camera.updateProjectionMatrix();   // the car is only 2.6 m wide
     return r;
   }
   /** stay: leave the camera where it is (another view is about to take over) */
   function leaveCar(stay = false) {
-    const o = subway.leave() || walnut.stand(); if (!o) return;
+    const o = subway.leave() || walnut.stand() || peds.leave(); if (!o) return;
     camera.near = 2; camera.updateProjectionMatrix(); camera.up.set(0, 1, 0); controls.enabled = riding === false;
     if (stay) return;
     const t = o.p.clone(); t.y = Math.max(t.y, 0) + 2;   // underground: look down on the street above the car
     controls.target.copy(t);
-    camera.position.copy(t).addScaledVector(o.dir, -75).add(new THREE.Vector3(o.dir.z * 30, 55, -o.dir.x * 30));
+    if (o.cam) camera.position.copy(o.cam);   // Walnut St: back along the street, above its middle
+    else camera.position.copy(t).addScaledVector(o.dir, -75).add(new THREE.Vector3(o.dir.z * 30, 55, -o.dir.x * 30));
     controls.update();
   }
   /** "Ride a line": board the lead car of that line's first train (monorail ids 'loop', 0, 1; transit 'm:ID') */
@@ -5556,7 +5711,7 @@ async function buildScene(canvas, data, status = () => {}) {
     const key = id === 'loop' ? 'mono:loop' : typeof id === 'number' ? 'mono:shuttle' + id : String(id).replace(/^m:/, '');
     if (riding !== false) setRiding(false, true);
     fly = null; if (subway.getCut()) setCut(false);
-    walnut.stand();
+    walnut.stand(); peds.leave();
     const r = subway.boardLine(key); if (!r) return null;
     controls.enabled = false; camera.near = .05; camera.updateProjectionMatrix();
     return r;
@@ -5608,8 +5763,8 @@ async function buildScene(canvas, data, status = () => {}) {
     controls.target.y = Math.max(0, controls.target.y + mv.y);
   }
   // click a train car to board it, or a cafe chair or bench on Walnut St to sit down
-  const pickCar = (x, y) => { camera.updateMatrixWorld(); const w = canvas.clientWidth, h = canvas.clientHeight; return subway.pick(camera, x, y, w, h) || walnut.pickSeat(camera, x, y, w, h); };
-  const aboard = () => subway.getRide() || walnut.getSeat();
+  const pickCar = (x, y) => { camera.updateMatrixWorld(); const w = canvas.clientWidth, h = canvas.clientHeight; return subway.pick(camera, x, y, w, h) || peds.pickPerson(camera, x, y, w, h) || walnut.pickSeat(camera, x, y, w, h); };
+  const aboard = () => subway.getRide() || walnut.getSeat() || peds.getInhabited();
   setTime(sky.sunset - .35);   // open at dusk, the original look
 
   const clock = new THREE.Clock(), sunOff = new THREE.Vector3();
@@ -5618,7 +5773,7 @@ async function buildScene(canvas, data, status = () => {}) {
       const dt = Math.min(clock.getDelta(), .05);
       monorail.update(dt, riding === 'loop', camera); old53.update(dt); subway.update(dt, camera); updateShells(dt); sports.update(dt, riding, camera); yard.update(dt); marks.update(dt);
       if (fly) stepFly(dt);
-      peds.update(dt, camera); walnut.seatFrame(camera);
+      peds.update(dt, camera); walnut.seatFrame(camera); peds.inhabitFrame(camera);
       if ((flyKeys.f || flyKeys.s || flyKeys.u) && riding === false && !aboard()) stepFlyKeys(dt);
       if (riding === false && !aboard() && !creative) controls.update();
       // fog, draw distance and the shadowed area follow the camera, so the whole city reads from above
@@ -5648,7 +5803,7 @@ async function buildScene(canvas, data, status = () => {}) {
   }
   legend.push({ name: 'Proposed monorails', color: '#d6452f' });
 
-  return { scene, camera, controls, renderer, labels, lines, views, flyTo, boardLine, setFly, setCreative, getCreative: () => creative, creativeLook, creativeSpeed, setTransitMap: on => { old53.setOverlay(on); return tmap.set(on); }, getTransitMap: tmap.get, legend, oldTrolleyLegend: old53.legend, cityBuildings: city.buildingCount, setTime, getTime: sky.getTime, sunset: sky.sunset, setMood, getMood, setRiding, setCut, getCut: subway.getCut, pickCar, boardCar, leaveCar, getCar: aboard, rideStrip: subway.rideStrip, mapData, flyToPoint, displayPresets: DISPLAY_PRESETS, setDisplayLights: setDisplayColors, lookCar: (dx, dy) => (walnut.getSeat() ? walnut.lookSeat(dx, dy) : subway.look(dx, dy)), moveCar: subway.move, start, river, monorail, peds };
+  return { scene, camera, controls, renderer, labels, lines, views, flyTo, boardLine, setFly, setCreative, getCreative: () => creative, creativeLook, creativeSpeed, setTransitMap: on => { old53.setOverlay(on); return tmap.set(on); }, getTransitMap: tmap.get, legend, oldTrolleyLegend: old53.legend, cityBuildings: city.buildingCount, setTime, getTime: sky.getTime, sunset: sky.sunset, setMood, getMood, setRiding, setCut, getCut: subway.getCut, pickCar, boardCar, leaveCar, getCar: aboard, rideStrip: subway.rideStrip, mapData, flyToPoint, displayPresets: DISPLAY_PRESETS, setDisplayLights: setDisplayColors, lookCar: (dx, dy) => (walnut.getSeat() ? walnut.lookSeat(dx, dy) : peds.getInhabited() ? peds.lookAt(dx, dy) : subway.look(dx, dy)), moveCar: subway.move, start, river, monorail, peds };
 }
 
 return { buildScene };
@@ -5839,9 +5994,25 @@ function createUI(api) {
     return { el, v: pos, section, layer, far: far || 6500, cutHide: cutHide || [] };
   });
   let showTags = true; const pv = new THREE.Vector3();
+  // the card for someone you're inhabiting on Walnut St
+  const persona = document.getElementById('persona'), peNow = document.getElementById('pe-now');
+  let personaOn = null;
+  function showPersona(c) {
+    persona.hidden = !c; personaOn = c ? c.id : null; if (!c) return;
+    document.getElementById('pe-name').textContent = c.name;
+    document.getElementById('pe-age').textContent = c.age;
+    document.getElementById('pe-sex').textContent = c.sex;
+    const tin = Math.round(c.height / 2.54), ft = Math.floor(tin / 12), inch = tin % 12;
+    document.getElementById('pe-h').textContent = `${ft}′${inch}″`;
+    document.getElementById('pe-h').title = `${c.height} cm`;
+    document.getElementById('pe-w').textContent = `${c.lb} lb`;
+    document.getElementById('pe-w').title = `${c.kg} kg`;
+    peNow.textContent = c.now; document.getElementById('pe-bio').textContent = c.bio;
+  }
 
   function placeTags(camera) {
     if (!!api.getCar() !== carOn) syncCar();
+    if (carOn && personaOn) { const c = api.getCar(); if (c && c.kind === 'person') { if (c.id !== personaOn) syncCar(); else if (c.now !== peNow.textContent) peNow.textContent = c.now; } }
     const now = performance.now(); minimap.update(camera, now); ridebar.update(now);
     const w = window.innerWidth, h = window.innerHeight, placed = [];
     LABELS.forEach(l => {
@@ -5932,7 +6103,7 @@ function createUI(api) {
   const modeHint = document.getElementById('modehint');
   const syncModeHint = () => {
     modeHint.innerHTML = carOn ? ''
-      : locked ? 'Flying · <kbd>W A S D</kbd> move · <kbd>Space</kbd> / <kbd>Shift</kbd> up and down · scroll for speed · click a train to board or a chair to sit · <kbd>Esc</kbd> to let go'
+      : locked ? 'Flying · <kbd>W A S D</kbd> move · <kbd>Space</kbd> / <kbd>Shift</kbd> up and down · scroll for speed · click a train to board, a chair to sit or a person to see through their eyes · <kbd>Esc</kbd> to let go'
       : '<kbd>Right-click</kbd> to fly with the mouse (creative mode)';
   };
   canvas.addEventListener('contextmenu', e => e.preventDefault());   // right-click enters creative mode instead
@@ -5958,9 +6129,12 @@ function createUI(api) {
     const c = api.getCar(); carOn = !!c; offBtn.hidden = !carOn; canvas.style.cursor = carOn ? 'grab' : '';
     if (!carOn && locked) api.setCreative(true);   // got off with the mouse still captured: back to flying
     syncModeHint();
-    offBtn.textContent = c && c.kind === 'seat' ? 'Stand up' : 'Get off';
+    offBtn.textContent = c && c.kind === 'seat' ? 'Stand up' : c && c.kind === 'person' ? 'Leave' : 'Get off';
+    showPersona(c && c.kind === 'person' ? c : null);
     if (c) {
-      hint.textContent = c.kind === 'seat'
+      hint.textContent = c.kind === 'person'
+        ? `Seeing Walnut Street through ${c.name}’s eyes. You can’t steer; you go where they go. Drag or click to look around, Space, Esc or “Leave” to step out.`
+        : c.kind === 'seat'
         ? (c.seat === 'cafe' ? 'Sitting at a café table on Walnut Street.' : 'Sitting on a bench on Walnut Street.') + ' Drag or click to look around, Space, Esc or “Stand up” to get up.'
         : c.kind === 'metro'
         ? 'Aboard an L train, inside a SEPTA M-4 car. Drag or click to look around, W A S D or the arrow keys to walk the aisle, Esc or “Get off” to leave. The sign at the front shows the next stop.'
@@ -6016,7 +6190,7 @@ function createUI(api) {
     if (typing) return;
     if (carOn) {
       // Esc gets off any train or stands up from a seat; Space also stands up from a seat
-      if (e.key === 'Escape' || (e.key === ' ' && api.getCar().kind === 'seat')) { e.preventDefault(); if (e.key === ' ') holdSpace = true; api.leaveCar(); syncCar(); return; }
+      if (e.key === 'Escape' || (e.key === ' ' && ['seat', 'person'].includes(api.getCar().kind))) { e.preventDefault(); if (e.key === ' ') holdSpace = true; api.leaveCar(); syncCar(); return; }
       const k = KEYMAP[e.key.toLowerCase()]; if (!k) return;
       e.preventDefault(); keys.add(k); applyKeys();
       return;
