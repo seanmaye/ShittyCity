@@ -1,5 +1,5 @@
 // A pickup ultimate frisbee game on the Belmont & Edgley cricket ground in West Fairmount Park
-// (OSM "Edgley Ultimate Fields", data/city_landmarks.json -> fields). Seven a side, light
+// (OSM "Edgley Ultimate Fields", data/phl/city_landmarks.json -> fields). Seven a side, light
 // shirts against dark: the offence works the disc up the field, cutters break for open space,
 // defenders mark them; a catch in the end zone scores, a dropped pass turns it over.
 import * as THREE from 'three';

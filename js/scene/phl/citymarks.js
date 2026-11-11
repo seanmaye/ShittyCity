@@ -1,4 +1,4 @@
-// Landmark models for the citywide build-out (data/city_landmarks.json, tools/build_landmarks.py):
+// Landmark models for the citywide build-out (data/phl/city_landmarks.json, tools/phl/build_landmarks.py):
 // the South Philadelphia sports complex (Lincoln Financial Field, Citizens Bank Park, Xfinity
 // Mobile Arena), Independence Hall, Memorial Hall, and the Benjamin Franklin and Walt Whitman
 // suspension bridges. Each is fitted to its real outline; the generic buildings inside those

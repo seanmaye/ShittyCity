@@ -1,6 +1,6 @@
 // Proposal: the Schuylkill and Vine Street expressways become linear sports parks
 // (tennis, basketball, five-a-side, volleyball) with a shuttle monorail overhead.
-// Court positions come from data/sports.json (tools/proposal.py).
+// Court positions come from data/phl/sports.json (tools/phl/proposal.py).
 import * as THREE from 'three';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { pairs } from '../../data.js';
@@ -129,7 +129,7 @@ function buildCourts(scene, data) {
   return boxes;
 }
 
-/** Court footprints from data/sports.json, and a point test against them. */
+/** Court footprints from data/phl/sports.json, and a point test against them. */
 export function courtTest(data) {
   const boxes = data.courts.map(([ti, x, z, r]) => ({ x: x / 10, z: z / 10, ry: r / 1000, w: data.types[ti].w, d: data.types[ti].d }));
   return (x, z, pad = 1.5) => boxes.some(b => Math.abs(x - b.x) < 45 && Math.abs(z - b.z) < 45 && inBox(x, z, b, pad));

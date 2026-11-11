@@ -1,7 +1,7 @@
 // New York's East River bridges, hand-built: Brooklyn (stone towers, cables and suspenders),
 // Manhattan and Williamsburg (steel towers; the Williamsburg's stiffening truss) and the
 // Queensboro cantilever. Ported from the NYC City Model (js/scene/bridges.js). The OSM decks of
-// these four are left out of the street data (tools/import_nyc.py), so nothing is drawn twice.
+// these four are left out of the street data (tools/nyc/import_nyc.py), so nothing is drawn twice.
 import * as THREE from 'three';
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 // Bridge centrelines in the NYC frame (metres), anchored to the mapped approaches and shorelines.

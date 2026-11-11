@@ -1,13 +1,19 @@
-# tools: rebuilding the subway data
+# tools/phl: Philadelphia's data tools
 
-The page does not need anything in this folder to run. These files are only for regenerating
-the underground transit data (the `data-transit` block inside `city-models.html`).
+The page does not need anything in this folder to run. [docs/PHL.md](../../docs/PHL.md) covers
+rebuilding all of Philadelphia's data; this file covers the two builders that work differently:
+the Center City subway and the 1953 streetcars.
+
+## The subway (L and T1–T5)
+
+These files regenerate the underground transit data (the `data-phl-transit` block inside
+`city-models.html`, from `data/phl/transit.json`).
 Use them to add a line (the B, Regional Rail), refresh from OpenStreetMap, or change the depth
 and platform rules.
 
 | File | What it is |
 |---|---|
-| `build_transit.py` | Builds the `data-transit` block from the OSM files and writes it into the page |
+| `build_transit.py` | Builds the `data-phl-transit` block from the OSM files and writes it into the page |
 | `osm/transit.json` | OSM download: tracks, stations, stops and subway entrances in the model area |
 | `osm/routes.json` | OSM download: the route relations (L and T1–T5, both directions) |
 | `fetch_osm.sh` | Re-downloads the OSM files (Overpass API) |
@@ -17,7 +23,7 @@ and platform rules.
 
 Data © OpenStreetMap contributors, ODbL. The page credits it.
 
-## Run it
+### Run it
 
 You need Python 3 (no extra packages). From the repository folder:
 
@@ -26,13 +32,13 @@ python tools/phl/build_transit.py tools/phl/osm/transit.json tools/phl/osm/route
 ```
 
 That is a dry run. It prints what it would build: tracks, platforms, stations, entrances and the
-Market St section plane. Add `--write` at the end to replace the `data-transit` block in the page.
+Market St section plane. Add `--write` at the end to replace the `data-phl-transit` block in the page.
 Then open the page and check the subway (the "Cut away Market St" button) before you commit.
 
 The repository also keeps the page as source files (see the main README). After `--write`, run
 `python -I tools/unbundle.py` so `data/phl/transit.json` and the sources match the page.
 
-## What it does
+### What it does
 
 1. Takes the ways of the routes listed in `ROUTE_IDS` and splits them into points every 5 m.
 2. **Estimates depths.** OSM only says which tunnel is above which (`layer`), not how deep.
@@ -45,7 +51,7 @@ The repository also keeps the page as source files (see the main README). After 
 4. Picks **subway entrances** near the underground stations.
 5. Fits the **Market St cut-away plane** to the L's straight run through Center City.
 
-## Adding a line (e.g. the B)
+### Adding a line (e.g. the B)
 
 1. Find the line's route relation ids (one per direction) on openstreetmap.org, and add them to
    the `rel(id:...)` list in `fetch_osm.sh` and to `ROUTE_IDS` in `build_transit.py`. Note that

@@ -17,7 +17,7 @@ Writes into raw_dir (default tools/phl/raw/city):
 import json, os, sys, time, urllib.parse, urllib.request
 
 S, W, N, E = 39.8660, -75.2810, 40.1390, -74.9550   # city limits bbox, slightly padded
-UA = {"User-Agent": "schuylkill-monorail-model/1.0 (data prep script)"}
+UA = {"User-Agent": "city-models/1.0 (data prep script)"}
 PHL = ("https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/"
        "LI_BUILDING_FOOTPRINTS/FeatureServer/0/query")
 OVERPASS = ["https://overpass-api.de/api/interpreter",

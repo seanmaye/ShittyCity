@@ -9,10 +9,10 @@ landmarks.json and monorail.json, and writes data/nyc/ in the same formats as Ph
 
   buildings.json.gz      Manhattan's footprints (outside the outer-borough detail windows), like
                          data/buildings.json; footprints a modelled landmark replaces are left out
-  city_buildings.bin.gz  the outer-borough detail windows as PHB1 (like data/city_buildings.bin.gz):
+  city_buildings.bin.gz  the outer-borough detail windows as PHB1 (like data/phl/city_buildings.bin.gz):
                          clean low-rise rectangles as boxes, every other footprint as an outline
   city.json.gz           land outlines (the "limits": borough shorelines and the New Jersey
-                         waterfront), parks, streets, paths, water and trees, like data/city.json.gz
+                         waterfront), parks, streets, paths, water and trees, like data/phl/city.json.gz
   ground.json            the Manhattan extent only (everything it would hold is in city.json.gz)
   river.json, trees.json empty: New York's water and trees are in city.json.gz
   transit.json           the MTA lines, as kind "nycsub", with each stop's lines merged into one station
@@ -208,7 +208,7 @@ for f in M["buildings"]:
 write_json("buildings.json.gz", {"styles": [None], "b": core_b})
 print(f"  {len(core_b)} Manhattan footprints, {len(boxes)} boxes, {len(outlines)} outlines")
 
-# PHB1, as tools/build_city.py writes it: sorted by 1 km tile so the delta coding stays small
+# PHB1, as tools/phl/build_city.py writes it: sorted by 1 km tile so the delta coding stays small
 dm = lambda v: int(round(v * 10))  # noqa: E731
 u16 = lambda v: max(0, min(65535, int(round(v))))  # noqa: E731
 boxes.sort(key=lambda b: (int(b[1] // 1000), int(b[0] // 1000), b[0]))

@@ -1,4 +1,4 @@
-// The Center City streetcar network of January 1953 (data/trolley1953.json), always shown.
+// The Center City streetcar network of January 1953 (data/phl/trolley1953.json), always shown.
 // Every street with track gets real track (a dark bed with two steel rails), and PCC cars run on it:
 // up one street of each one-way pair and back down the other, out and back on two-way Arch and
 // Market. With "Show transit lines" on, each street is also drawn as a bright line on top of

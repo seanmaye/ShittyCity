@@ -11,7 +11,7 @@ Then run tools/phl/build_data.py to turn these into the compact files in data/ph
 import json, os, sys, time, urllib.parse, urllib.request
 
 BBOX = (39.936, -75.208, 39.982, -75.152)  # S, W, N, E
-UA = {"User-Agent": "schuylkill-monorail-model/1.0 (data prep script)"}
+UA = {"User-Agent": "city-models/1.0 (data prep script)"}
 
 PHL = ("https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/"
        "LI_BUILDING_FOOTPRINTS/FeatureServer/0/query")

@@ -1,0 +1,192 @@
+# Philadelphia
+
+All of Philadelphia out to the city limits, with every rail transit line and our proposals: a monorail loop along both banks of the Schuylkill, sports parks on two expressways, and a park over the 30th Street rail yard. The buildings, rivers, parks, streets and transit all come from real map data.
+
+- City id: `phl`. Open it with `?city=phl`.
+- Data: `data/phl/`.
+- Hand-built scene parts: `js/scene/phl/`.
+- Data tools: `tools/phl/`.
+
+## What's in it
+
+- **Center City, University City and Fairmount** form the detailed core. It holds the hand-made proposals:
+  - styled landmarks
+  - the riverfront monorail loop
+  - the expressway sports parks
+  - the rail yard park
+  - the Market Street subway cut-away
+- **The rest of the city** surrounds the core without changing anything in it: about 500k more buildings, plus streets, parks, creeks and park trees.
+- **Every rail transit line** is modelled, and "Show transit lines" highlights them all:
+  - the L and the B1-B3 Broad Street Line
+  - the G1 and T1-T5 trolleys
+  - all 13 Regional Rail lines
+  - PATCO and NJ Transit's Atlantic City Line
+- **Every car has a walkable cabin:** the M-4, B-IV, Kawasaki LRV, PCC, Silverliner IV, PATCO car and the monorail.
+- **The 1953 streetcars.** The Center City streetcar network of January 1953 is drawn as track with running PCC cars. You can ride any loop.
+- **Citywide landmarks** are modelled on their real outlines:
+  - Lincoln Financial Field, Citizens Bank Park and Xfinity Mobile Arena
+  - Independence Hall and Memorial Hall
+  - the Ben Franklin and Walt Whitman bridges
+- **Easter eggs.** A pickup ultimate game runs on the Belmont & Edgley cricket ground in West Fairmount Park, and something is waiting on the arena plaza.
+- **Signature towers** are modelled with their real setbacks and crowns.
+- **Skyline lights** colour these for the Birds, the Phillies, the Sixers, the Flyers, the Union, the holidays and more:
+  - the towers' crowns
+  - the Cira Centre's LED skin and the FMC crown
+  - Boathouse Row
+  - the bridges' cable lights
+
+## How the real data is used
+
+- **Buildings.**
+  - Every footprint in the area is extruded to its LiDAR height.
+  - Signature towers keep their hand-modelled crowns: the Liberty Place spires, the Comcast Center taper, the BNY Mellon and Commerce Square pyramids, Three Logan's steps and the PSFS sign.
+  - Each crown is centred on the real footprint, rotated to match it, and sized to the tower's floor plate. The rest of that lot stays as a low base.
+  - Flat-topped towers (FMC, Cira, IBX, the Laurel and others) use their real footprint and height, in their original colours.
+- **River.**
+  - The water is the OSM polygon.
+  - A 700-point centreline is the shortest path through OSM's river-line network, which splits the river around the dam and the Water Works.
+  - The centreline is re-centred between the real banks, and the bank-to-bank width is measured at each point.
+  - The monorail, its stations and the rowing shells follow this centreline.
+- **Monorail.**
+  - The guideway is set back 58 m from the water on the east bank and 65 m on the west bank.
+  - Where a real building over 15 m tall is in the way, the guideway moves toward the water, up to a short cantilever over the bulkhead.
+  - It is then checked against every footprint until it clears.
+- **Landmark details.**
+  - The Eastern State cell blocks and the Art Museum are still stylised.
+  - The city layer stores Eastern State as one 185 m block, so the model is fitted to that site and turned −9.3° to match the street grid.
+- **Citywide landmarks.**
+  - The stadiums use their OSM outlines and pitches with LiDAR heights. The stands rise from the pitch edge to the outline.
+  - The football markings are the real 109.7 × 48.8 m, placed inside OSM's pitch (which includes the apron).
+  - Citizens Bank Park's home plate is the pitch corner whose foul corners sit about 110 m away at a right angle. Its outfield faces north-northeast, toward the skyline, as in the real park.
+  - The bridges follow the OSM deck ways. Their real main spans (533 m and 610 m) are centred on the river crossing.
+
+## Proposal: expressways to sports parks
+
+I-76 (Schuylkill Expressway) and I-676 (Vine Street Expressway), with all their ramps, are taken out of the street layer:
+
+- Carriageways become a green corridor. Ramps become greenway trails. Elevated sections become park bridges.
+- `tools/phl/proposal.py` finds each expressway's centreline, midway between its two carriageways. It then lays courts end to end wherever they fit: tennis, basketball, five-a-side soccer and volleyball. No pickleball.
+- Courts stay off bridges, the Logan Square tunnel, buildings, water, rail and remaining streets. They switch to a narrower court type where the corridor tightens. There are currently 134 courts.
+- A shuttle monorail (teal livery) runs at 26 m above each corridor. That is above the 18 m riverfront loop, so the two can cross. Piers stand between courts, and trains run end to end and back.
+- Each corridor also gets a promenade path along one edge. The courts have floodlights that switch on at dusk.
+- The "Proposed monorails" group under **Ride a line** has all three lines: the riverfront loop, the Schuylkill line and the Vine Street line. On the shuttle lines, the camera turns around at each terminus while the train waits.
+
+Full-size soccer pitches (68 x 44 m) are supported, but none ever fits the corridor's width.
+
+## Proposal: Rail Yard Park and the Railyard Bowl
+
+The rail yard north of 30th Street Station is covered by a deck at 10.5 m, just above the street bridges that already cross it. On top is a 33 ha park.
+
+- **Outline.**
+  - `tools/phl/cap.py` draws the outline from the yard itself. It builds a raster mask around the tracks, closes the gaps between them, and fills in the yard's interior.
+  - It then trims the deck to stay off the station, the I-76 sports park, through streets, the river, and any building taller than the deck.
+  - Any such building stands up through a cut-out in the park.
+- **The park.**
+  - A promenade runs just inside the edge, with paths leading out from the bowl, scattered trees and open lawns.
+  - Trees keep clear of the monorail guideways.
+  - Street bridges over the yard now meet the deck instead of crossing above it. The real rail viaducts are kept.
+- **The Railyard Bowl.** The site search picks the largest fan-shaped lawn that fits (125 m radius). The stage faces the audience, so they look past it toward the Center City skyline. It sits at least 80 m from the monorail corridors, so the shell stays clear of the guideways. The bowl has:
+  - red fixed seats in front, with grass terraces stepping up behind;
+  - a bandshell of nested arches whose steps glow at dusk;
+  - a stage with an apron and a backstage building;
+  - video screens, speaker towers and delay towers;
+  - a ring of light poles, and moving light beams at dusk.
+
+## Rebuilding the data
+
+All of these write to `data/phl/`. Raw downloads go to `tools/phl/raw/`, which is kept out of git.
+
+### The core
+
+```bash
+python tools/phl/fetch_data.py tools/phl/raw
+```
+
+```bash
+python -I tools/phl/build_data.py tools/phl/raw data/phl
+```
+
+`fetch_data.py` retries across Overpass mirrors because the public servers are often busy. The raw downloads are about 45 MB, and the core's data files come to about 5.5 MB. `build_data.py` does not touch `data/phl/transit.json` or the citywide files.
+
+The L and trolley data (`data/phl/transit.json`) and the 1953 streetcars have their own builders: see [tools/phl/README.md](../tools/phl/README.md).
+
+### The rest of the city and the transit network
+
+The OpenStreetMap data comes from Geofabrik's Pennsylvania extract (about 350 MB), read with pyosmium in a local virtual environment. That's much faster and more reliable than querying Overpass for an area this size.
+
+```bash
+python -I tools/phl/fetch_city.py
+```
+
+```bash
+curl -L -o tools/phl/raw/osm/pennsylvania.osm.pbf https://download.geofabrik.de/north-america/us/pennsylvania-latest.osm.pbf
+```
+
+```bash
+python -m venv tools/.venv && tools/.venv/Scripts/pip install osmium
+```
+
+```bash
+tools/.venv/Scripts/python -I tools/phl/extract_osm.py
+```
+
+```bash
+tools/.venv/Scripts/python -I tools/phl/extract_landmarks.py
+```
+
+```bash
+tools/.venv/Scripts/python -I tools/phl/extract_bridges.py
+```
+
+```bash
+python -I tools/phl/build_landmarks.py
+```
+
+```bash
+python -I tools/phl/build_city.py
+```
+
+```bash
+python -I tools/phl/build_metro.py
+```
+
+What each step does:
+- `fetch_city.py` downloads the 546k building footprints (about 210 MB, resumable) and the city boundary.
+- `build_city.py` keeps everything outside the core and inside the city limits, so the core's data is never touched. It takes about 5 minutes.
+- Run `build_landmarks.py` before the other two builds:
+  - `build_city.py` leaves out the footprints inside the landmark outlines and the bridge decks.
+  - `build_metro.py` lays PATCO on the Ben Franklin Bridge deck.
+- `build_metro.py` builds every line's track, stations and out-and-back route. It reuses the Center City L and trolley geometry exactly, and blends the new track into it at the edge of the core.
+
+| Tool | What it does |
+| --- | --- |
+| `fetch_data.py` | downloads the raw sources for the core |
+| `build_data.py` | turns them into the core's files in `data/phl/` |
+| `geom.py` | small geometry helpers (no dependencies) |
+| `proposal.py` | lays out the expressway sports parks (`sports.json`) |
+| `cap.py` | shapes the rail yard deck and sites the bowl (`yardpark.json`) |
+| `fetch_city.py` | downloads the citywide building footprints and the city boundary |
+| `extract_osm.py` | cuts the city's OSM data out of the Geofabrik Pennsylvania extract |
+| `citylimits.py` | the city boundary and a fast point-inside test |
+| `build_city.py` | the rest of the city (`city.json.gz`, `city_buildings.bin.gz`) |
+| `build_metro.py` | the citywide rail network (`metro.json.gz`) |
+| `build_transit.py` | the Center City L and trolley data (`transit.json`) |
+| `build_trolley1953.py` | the 1953 streetcars (`trolley1953.json`) |
+| `extract_landmarks.py` | stadium, hall and pitch outlines from the Pennsylvania extract |
+| `extract_bridges.py` | the Delaware bridge decks and Memorial Hall (merged into the same file) |
+| `build_landmarks.py` | fits the landmark models (`city_landmarks.json`) |
+
+## Sources
+
+| What | Source |
+| --- | --- |
+| Building footprints and heights | City of Philadelphia, *LI Building Footprints* (OpenDataPhilly). Heights are the LiDAR `approx_hgt` field. |
+| 30th Street Station, the Murano | OpenStreetMap outlines (both are missing from the city layer) |
+| River, shoreline, Fairmount Dam | OpenStreetMap water polygons and `waterway` lines |
+| Parks, grass, woods | OpenStreetMap `leisure` / `landuse` / `natural` areas |
+| Streets, trails, rail, bridges | OpenStreetMap `highway` / `railway` ways |
+| Rail transit: tracks, stations, platforms, entrances | OpenStreetMap route relations; tunnel depths and El heights are estimates |
+| City limits | OpenStreetMap relation 188022 |
+| 1953 streetcars | The Philadelphia Transportation Company map of January 1953, and Harold E. Cox, *Surface Cars of Philadelphia 1911-1965* |
+
+Map data © OpenStreetMap contributors, ODbL. Building data © City of Philadelphia.
