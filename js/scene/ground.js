@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { pairs } from '../data.js';
 import { M } from './materials.js';
 import { Builder, addPolygon, addRibbon } from './geometry.js';
+import { onPromenade } from './phl/promenade.js';
+import { CITY } from '../cities.js';
 // Colours sampled to match summer aerial imagery: mown grass, darker park woodland, asphalt,
 // gravel and dirt trails, rail ballast, the mixed concrete, asphalt and yards between buildings,
 // and the wooded, suburban country beyond the city limits.
@@ -92,6 +94,7 @@ export function drawLines(scene, lines, { cap = [], wet = () => false, tile = 0 
   for (const l of lines) {
     const pts = pairs(l.p);
     if (l.b) { bridges.push({ ...l, pts }); continue; }
+    if (l.k === 0 && CITY.id === 'phl' && onPromenade(pts)) continue;   // Walnut St is paved as a promenade (promenade.js)
     const { rb, pb, tb, xb } = T(keyOf(pts));
     if (l.x) {
       // proposal: expressway carriageways become park, ramps become greenway trails

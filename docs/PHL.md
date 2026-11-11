@@ -1,6 +1,6 @@
 # Philadelphia
 
-All of Philadelphia out to the city limits, with every rail transit line and our proposals: a monorail loop along both banks of the Schuylkill, sports parks on two expressways, and a park over the 30th Street rail yard. The buildings, rivers, parks, streets and transit all come from real map data.
+All of Philadelphia out to the city limits, with every rail transit line and our proposals: a monorail loop along both banks of the Schuylkill, sports parks on two expressways, a park over the 30th Street rail yard, and Walnut Street as a brick promenade. The buildings, rivers, parks, streets and transit all come from real map data.
 
 - City id: `phl`. Open it with `?city=phl`.
 - Data: `data/phl/`.
@@ -14,6 +14,7 @@ All of Philadelphia out to the city limits, with every rail transit line and our
   - the riverfront monorail loop
   - the expressway sports parks
   - the rail yard park
+  - Walnut Street as a car-free brick shopping street, from 22nd to Front, busy with people who stroll, shop and sit for a coffee
   - the Market Street subway cut-away
 - **The rest of the city** surrounds the core without changing anything in it: about 500k more buildings, plus streets, parks, creeks and park trees.
 - **Every rail transit line** is modelled, and "Show transit lines" highlights them all:
@@ -22,6 +23,7 @@ All of Philadelphia out to the city limits, with every rail transit line and our
   - all 13 Regional Rail lines
   - PATCO and NJ Transit's Atlantic City Line
 - **Every car has a walkable cabin:** the M-4, B-IV, Kawasaki LRV, PCC, Silverliner IV, PATCO car and the monorail.
+- **See through someone's eyes** on Walnut Street. Click any of the people there to inhabit them. You go where they go: you can look around but not steer. A card shows their age, sex, height, weight and a short biography. Esc or Space steps out. You can also click any café chair or bench to sit down.
 - **The 1953 streetcars.** The Center City streetcar network of January 1953 is drawn as track with running PCC cars. You can ride any loop.
 - **Citywide landmarks** are modelled on their real outlines:
   - Lincoln Financial Field, Citizens Bank Park and Xfinity Mobile Arena
@@ -91,6 +93,24 @@ The rail yard north of 30th Street Station is covered by a deck at 10.5 m, just 
   - a stage with an apron and a backstage building;
   - video screens, speaker towers and delay towers;
   - a ring of light poles, and moving light beams at dusk.
+
+## Proposal: the Walnut Street promenade
+
+Walnut Street from 22nd to Front becomes a car-free shopping street.
+
+- **The street.**
+  - The road surface is replaced by herringbone brick, 9 m each side of the centreline, with granite gutters either side of the streetcar track. The 1953 rails stay, set in the paving.
+  - Along each kerb line, a 24 m rhythm of lamp, bench, planter tree and bench repeats.
+- **The shops.**
+  - Building faces that front the street get an awning and a lit shop window about every 6.5 m.
+  - Each shop bay has a door, and about half the shops have café tables outside.
+- **The people.** About 200 people stroll both sides, go into shops through doors that swing open, and sit on benches or at café tables with a coffee or a book.
+  - Their figures are Kyle's jointed people, drawn instanced.
+  - Each has a made-up name, age, height, weight and biography (`js/scene/phl/profiles.js`). All of them are fictional.
+- **Sit or inhabit.** Every café chair and bench is a seat you can click to sit on. Click a person to see the street through their eyes.
+- **The view.** "Go to" has a "Walnut St promenade" view.
+
+The whole proposal is code: `js/scene/phl/promenade.js` (the street and shops) and `js/scene/phl/pedestrians.js` (the people). It needs no data files of its own.
 
 ## Rebuilding the data
 

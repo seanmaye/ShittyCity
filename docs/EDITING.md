@@ -23,6 +23,7 @@ Python helper below.
   <body>      HUD markup: #ride, #transit, #lbl, #cut, #getoff, #switch-city buttons, #xhair
               (creative-mode crosshair), #modehint, #time slider (+ #time-out), #legend,
               #lines picker, #view-btns (Go to), #heading, #hint, #status, #tags, #credit;
+              the #persona card (someone inhabited on Philadelphia's Walnut St);
               the start menu #menu with #cities
   data blocks, city by city, one per file in the city's data folder:
               <script type="application/json" id="data-<city>-NAME" data-file="<city>/FILE">...</script>
@@ -77,7 +78,7 @@ instead of editing this file. If you only have this file, edit it directly as de
     data-<city>-buildings, one extruded outline each.
       Philadelphia: Center City, University City and Fairmount, x -2733..2049 m,
         z -2886..2220 m; all the hand-made proposals (landmarks, sports parks, yard park,
-        the Market St subway) live here, in the JSON blocks.
+        the Walnut St promenade, the Market St subway) live here.
       New York: Manhattan up to Central Park.
   - The rest of the city (data-<city>-city `bbox`), in the gzip blocks, never overlapping
     the core's buildings.
@@ -345,7 +346,7 @@ Philadelphia (js/scene/phl/):
 
 landmarks.js     signature towers (setbacks, Liberty Place gables, lit crowns, the PSFS sign),
                  City Hall, station, museum, Eastern State, boathouses
-people.js        makeFigure() jointed standing person, pose() running animation
+people.js        makeFigure() jointed standing person, pose() running animation, geo() shared limbs
 frisbee.js       ultimate frisbee game on data-phl-city_landmarks fields; "Edgley frisbee" view
 citymarks.js     citywide landmark models from data-phl-city_landmarks: football() (bowl, field
                  texture, goalposts, sideline canopies, video boards), ballpark() (bowl with low
@@ -366,6 +367,40 @@ sports.js        courts (SURFACE = line markings, EQUIP = nets, hoops, goals, li
                  about every 1.1 km, piers placed between courts at load time)
 yardpark.js      rail yard deck, park, and the Railyard Bowl (bandshell, seats,
                  screens, light beams)
+promenade.js     PROPOSAL: Walnut St, 22nd to Front, as a car-free shopping street.
+                 WALNUT = the centreline (metres). drawLines() skips every road piece on it
+                 (onPromenade) and oldtrolley.js leaves out the 1953 track bed there (onWalnut),
+                 so the rails sit in the paving. Herringbone brick HALF = 9 m each side, granite
+                 gutters either side of the streetcar track (CLEAR), and on the KERB lines
+                 (4.4 m out) a 24 m rhythm of lamp, bench, planter tree, bench. Facades parallel
+                 to the street and facing it get an awning and a shop window (lit at dusk) per
+                 ~6.5 m bay, cafe tables in front of about half. Adds the "Walnut St promenade"
+                 view. Every cafe chair and bench is a seat: click to sit (pickSeat/sit, wired
+                 into index.js pickCar/boardCar/leaveCar), drag to look, Space or Esc to stand.
+                 To pedestrianise another street, give it its own polyline the same way.
+                 Each shop bay also gets a door (frame here; the leaf swings in pedestrians.js),
+                 and nav = {at, project, seats, doors, obst, ...} is what the crowd walks by.
+pedestrians.js   PROPOSAL: about 200 people on Walnut St (buildPedestrians(scene, nav, count)).
+                 Kyle's figures (people.js geo() and pose()), drawn instanced: one InstancedMesh per
+                 body part for everyone, posed on CPU skeletons. They stroll the lanes either side
+                 of the streetcar track (LANE, by direction), go into shops through the doors
+                 (which swing open) and come back out, and sit on benches (two a bench) and at
+                 cafe chairs with a coffee (sipping) or a book. Routes to every seat and door are
+                 checked against the obstacles at load; blocked ones are never used. Re-posing:
+                 every frame within 120 m, every 3rd within 350 m, else every 10th; still sitters
+                 once. When the viewer sits, they take a free place or move someone on.
+                 Click a person to inhabit them (pickPerson/inhabit/inhabitFrame, wired like a
+                 train ride in index.js): the camera is in their head and goes where they go; drag
+                 looks around; in a shop it stands just inside the held-open door. The #persona
+                 card (ui.js showPersona) shows their profile and what they're doing now, with a
+                 head-and-shoulders portrait (portrait(i): a small renderer of its own drawing the
+                 same parts and colours, facing forward). crowdGeometry() adds the face (eyes,
+                 brows, nose, mouth), lifts the hair cap off the forehead and gives some long hair.
+profiles.js      made-up lives for the Walnut St people: makeProfile(i) gives a name, sex,
+                 age, height, weight (BMI 19-32), coffee order, book and a short biography from
+                 seeded word lists ({he} {is} {s}... fill in the grammar, including "they").
+                 Height sets the figure's size, and most people over 62 have grey hair. SHOPS
+                 names what each door's shop sells. All fictional.
 oldtrolley.js    1953 streetcars: track (bed + rails) on every 1953 street and PCC cars on loops,
                  always shown. With "Show transit lines" (setTransitMap) an overlay adds fat lines
                  like transitmap.js (LINE_W px, LIFT m up) coloured by abandonment year (ERAS),

@@ -180,5 +180,5 @@ export function buildCity(scene, data, { waterMat, status = () => {}, clear = []
   const [x0, z0, x1, z1] = city.bbox.map(v => v / 10), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
   const view = { id: 'city', name: 'Whole city', pos: new THREE.Vector3(cx, 26000, cz + 16000), target: new THREE.Vector3(cx, 0, cz - 1500) };
   const beacons = aviationLights(lights); scene.add(beacons);
-  return { update, view, bridgeSegs, wet, bounds: { x0, z0, x1, z1 }, buildingCount: B.nB + B.nP, nightOnly: [beacons] };
+  return { update, view, bridgeSegs, wet, bounds: { x0, z0, x1, z1 }, buildingCount: B.nB + B.nP, nightOnly: [beacons], boxes: B };
 }

@@ -5,7 +5,7 @@ import * as THREE from 'three';
 
 const GEO = new Map();
 /** shared limb geometry; bulk thickens limbs and torso (an athlete's statue) */
-function geo(bulk = 1) {
+export function geo(bulk = 1) {
   if (GEO.has(bulk)) return GEO.get(bulk);
   const b = bulk, seg = b > 1 ? 12 : 7, G = {};
   const cyl = (r0, r1, len) => { const g = new THREE.CylinderGeometry(r0 * b, r1 * b, len, seg); g.translate(0, -len / 2, 0); return g; };
