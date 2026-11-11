@@ -1,8 +1,9 @@
-// Time of day: the real sun position over Philadelphia for today's date, and everything that
+// Time of day: the real sun position over the city (CITY.sun) for today's date, and everything that
 // follows from it (sky gradient, fog, sun/moon light, ambient light, stars, lit windows).
 import * as THREE from 'three';
+import { CITY } from '../cities.js';
 
-const LAT = 39.952, LON = -75.164, RAD = Math.PI / 180;
+const RAD = Math.PI / 180;
 
 /** US daylight saving: second Sunday of March to first Sunday of November. */
 function isDST(d) {
@@ -17,7 +18,8 @@ export function sunAt(h, date = new Date()) {
   const g = 2 * Math.PI / 365 * (doy - 1 + (h - 12) / 24);
   const eqt = 229.18 * (.000075 + .001868 * Math.cos(g) - .032077 * Math.sin(g) - .014615 * Math.cos(2 * g) - .040849 * Math.sin(2 * g));
   const dec = .006918 - .399912 * Math.cos(g) + .070257 * Math.sin(g) - .006758 * Math.cos(2 * g) + .000907 * Math.sin(2 * g) - .002697 * Math.cos(3 * g) + .00148 * Math.sin(3 * g);
-  const tz = isDST(date) ? -4 : -5;
+  const tz = isDST(date) ? -4 : -5;   // US Eastern time (both cities)
+  const LAT = CITY.sun.lat, LON = CITY.sun.lon;
   const tst = h * 60 + eqt + 4 * LON - 60 * tz, ha = (tst / 4 - 180) * RAD, phi = LAT * RAD;
   const el = Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(ha));
   const az = Math.atan2(Math.sin(ha), Math.cos(ha) * Math.sin(phi) - Math.tan(dec) * Math.cos(phi)) + Math.PI;

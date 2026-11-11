@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { createCore } from './core.js';
 import { pairs } from '../data.js';
+import { CITY } from '../cities.js';
 import { litMats, setWindowHour, DISPLAY_PRESETS, setDisplayColors } from './materials.js';
 import { buildRiver } from './river.js';
 import { buildGround } from './ground.js';
@@ -19,6 +20,8 @@ import { buildTransitMap } from './transitmap.js';
 import { buildOldTrolleys } from './oldtrolley.js';
 // let the status line paint between build steps (a timer, so it also works in background tabs)
 const nextFrame = () => new Promise(r => setTimeout(r, 16));
+// what a feature contributes when the city doesn't have it (the Philadelphia proposals, say)
+const none = () => ({ labels: [], views: [], nightOnly: [], duskOnly: [], boatLines: [], curves: [], trains: [], lines: [], slots: [], legend: [], update() {}, setOverlay() {} });
 
 export async function buildScene(canvas, data, status = () => {}) {
   const core = createCore(canvas);
@@ -27,30 +30,32 @@ export async function buildScene(canvas, data, status = () => {}) {
   status('Shaping the river…'); await nextFrame();
   const river = buildRiver(scene, data.river);
   status('Laying out parks and streets…'); await nextFrame();
-  const ground = buildGround(scene, data.ground, river, data.yardpark.rings);
+  const ground = buildGround(scene, data.ground, river, data.yardpark ? data.yardpark.rings : [], { sea: CITY.sea });
   status(`Raising ${data.buildings.b.length.toLocaleString()} buildings…`); await nextFrame();
   const blds = buildBuildings(scene, data.buildings);
   // the rest of the city out to the city limits (outside the original extent, its own data)
-  status('Building out the rest of Philadelphia…'); await nextFrame();
+  status(CITY.building); await nextFrame();
   // playing fields that the park trees must keep off (the Edgley frisbee and cricket ground)
-  const clear = (data.cityMarks.fields || []).map(f => pairs(f.outline));
-  const city = buildCity(scene, data, { waterMat: river.waterMat, status, clear });
+  const clear = ((data.cityMarks || {}).fields || []).map(f => pairs(f.outline));
+  const city = buildCity(scene, data, { waterMat: river.waterMat, status, clear, sea: CITY.sea });
   camera.far = 200000; camera.updateProjectionMatrix(); controls.maxDistance = 45000;
   status('Placing landmarks and the monorail…'); await nextFrame();
   // stadiums, Independence Hall, Memorial Hall and the Delaware bridges (data/city_landmarks.json)
-  const marks = buildCityMarks(scene, data.cityMarks);
-  const lm = buildLandmarks(scene, data.landmarks, river);
-  const monorail = buildMonorail(scene, river, ground.bridgeSegs, data.buildings, data.landmarks, courtTest(data.sports));
+  const marks = data.cityMarks ? buildCityMarks(scene, data.cityMarks) : none();
+  // Philadelphia's styled landmarks, riverfront monorail and rowing shells (they follow the Schuylkill)
+  const lm = data.landmarks ? buildLandmarks(scene, data.landmarks, river) : none();
+  const monorail = data.landmarks
+    ? buildMonorail(scene, river, ground.bridgeSegs, data.buildings, data.landmarks, data.sports ? courtTest(data.sports) : undefined)
+    : { curve: null, cars: [], trainWinMat: { emissiveIntensity: 0 }, update() {} };
   buildTrees(scene, data.trees);
-  const updateShells = buildShells(scene, river);
-  status('Building the sports parks…'); await nextFrame();
-  const sports = buildSports(scene, data.sports, river, ground.bridgeSegs, data.ground.lines);
-  status('Capping the rail yard…'); await nextFrame();
-  const yard = buildYardPark(scene, data.yardpark, [monorail.curve, ...sports.curves]);
+  const updateShells = data.landmarks ? buildShells(scene, river) : () => {};
+  let sports = none(), yard = none();
+  if (data.sports) { status('Building the sports parks…'); await nextFrame(); sports = buildSports(scene, data.sports, river, ground.bridgeSegs, data.ground.lines); }
+  if (data.yardpark) { status('Capping the rail yard…'); await nextFrame(); yard = buildYardPark(scene, data.yardpark, [monorail.curve, ...sports.curves].filter(Boolean)); }
   status('Laying the transit network…'); await nextFrame();
   // the original L and trolley data (Center City) plus the citywide network; the full-length
   // runs in data/metro replace the original Center City runs of the lines they extend
-  const T = data.transit, Mt = data.metro, replace = new Set(Mt.replaceRuns || []);
+  const T = data.transit, Mt = data.metro || { lines: [], tracks: [], runs: [], platforms: [], stations: [] }, replace = new Set(Mt.replaceRuns || []);
   const lineById = new Map(T.lines.map(l => [l.id, { ...l }]));
   for (const l of Mt.lines) {
     const had = lineById.get(l.id);
@@ -64,7 +69,7 @@ export async function buildScene(canvas, data, status = () => {}) {
     platforms: [...T.platforms, ...Mt.platforms], stations: [...T.stations, ...Mt.stations], entrances: [...(T.entrances || []), ...(Mt.entrances || [])],
   };
   const subway = buildSubway(scene, transit, river);
-  const old53 = buildOldTrolleys(scene, data.trolley1953, renderer);   // 1953 streetcar track and cars
+  const old53 = data.trolley1953 ? buildOldTrolleys(scene, data.trolley1953, renderer) : none();   // 1953 streetcar track and cars
   // the monorails' cars can be boarded like any transit car (positioned by their own modules)
   const monoSlots = [];
   const addTrain = (cars, line, lineName, color) => cars.forEach((car, c) => monoSlots.push({
@@ -75,8 +80,8 @@ export async function buildScene(canvas, data, status = () => {}) {
   addTrain(monorail.cars, 'mono:loop', 'Riverfront loop monorail (proposed)', '#d6452f');
   sports.trains.forEach((cars, i) => addTrain(cars, 'mono:shuttle' + i, `${sports.lines[i].name} (proposed)`, '#1f9a8f'));
   monoSlots.forEach(sl => sl.sync());
-  subway.registerFleet('monorail', { car: 14 }, monoSlots);
-  subway.registerFleet('pcc53', SPEC.pcc, old53.slots);   // the 1953 streetcars can be boarded too
+  if (monoSlots.length) subway.registerFleet('monorail', { car: 14 }, monoSlots);
+  if (old53.slots.length) subway.registerFleet('pcc53', SPEC.pcc, old53.slots);   // the 1953 streetcars can be boarded too
   // cut-aways: clip every material by the section plane, except what the subway marks noClip
   renderer.localClippingEnabled = true;
   scene.traverse(o => {
@@ -85,7 +90,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   });
 
   // label anchors
-  const labels = data.landmarks.labels.map(l => {
+  const labels = (data.landmarks ? data.landmarks.labels : []).map(l => {
     if (l.t === 'City Hall') return { text: l.t, pos: lm.cityhall.clone().setY(l.y) };
     if (l.river !== undefined) return { text: l.t, pos: river.atLat(39.9575).p.clone().setY(l.y) };
     return { text: l.t, pos: new THREE.Vector3(l.x, l.y, l.z) };
@@ -94,12 +99,12 @@ export async function buildScene(canvas, data, status = () => {}) {
   scene.traverse(o => { if (o.isInstancedMesh) o.frustumCulled = false; });
 
   // "Show transit lines": every rail line plus the proposed monorails
-  const mono = [{ id: 'loop', color: '#d6452f', P: monorail.curve.getSpacedPoints(1500) },
+  const mono = [...(monorail.curve ? [{ id: 'loop', color: '#d6452f', P: monorail.curve.getSpacedPoints(1500) }] : []),
     ...sports.curves.map((c, i) => ({ id: 'shuttle' + i, color: '#1f9a8f', P: c.getSpacedPoints(800) }))];
   const tmap = buildTransitMap(scene, renderer, [...subway.routes, ...mono]);
 
   let riding = false;
-  // 24-hour clock: the sun's real position over Philadelphia today drives the sky and lighting
+  // 24-hour clock: the sun's real position over the city today drives the sky and lighting
   const sky = createSky({
     scene, sun, hemi, litMats, nightOnly: [...lm.boatLines, ...yard.duskOnly, ...marks.nightOnly, ...lm.nightOnly, ...blds.nightOnly, ...city.nightOnly],
     onChange: st => { setWindowHour(sky.getTime()); monorail.trainWinMat.emissiveIntensity = .05 + .75 * st.night; river.waterMat.color.set(st.water); },
@@ -111,13 +116,14 @@ export async function buildScene(canvas, data, status = () => {}) {
   // rideable lines: the proposed monorails (riverfront loop, one shuttle per former expressway),
   // then every real rail line, grouped by network
   const PROPOSED = 'Monorails (proposed)';
-  const lines = [{ id: 'loop', name: 'Riverfront loop', group: PROPOSED, color: '#d6452f', hint: 'You’re in the lead car. The loop runs along the east bank past the Art Museum and Boathouse Row, then back down the west bank past 30th Street.' }]
+  const lines = (monorail.curve ? [{ id: 'loop', name: 'Riverfront loop', group: PROPOSED, color: '#d6452f', hint: 'You’re in the lead car. The loop runs along the east bank past the Art Museum and Boathouse Row, then back down the west bank past 30th Street.' }] : [])
     .concat(sports.lines.map((l, i) => ({ id: i, group: PROPOSED, color: '#1f9a8f', ...l })));
-  const GROUPS = ['SEPTA Metro', 'Regional Rail', 'PATCO', 'NJ Transit'];
+  // the city's networks in order (js/cities.js); a line without a group belongs to the first
+  const GROUPS = CITY.groups, groupOf = l => l.group || GROUPS[0];
   const rideable = new Set(subway.routes.map(r => r.id));
   for (const g of GROUPS) for (const l of transit.lines) {
-    if ((l.group || 'SEPTA Metro') !== g || !rideable.has(l.id)) continue;
-    const under = ['metro', 'broad', 'patco'].includes(l.kind) || /^(AIR|ACL)$/.test(l.id) ? ' Underground stretches show the tunnel around you.' : '';
+    if (groupOf(l) !== g || !rideable.has(l.id)) continue;
+    const under = ['metro', 'broad', 'patco', 'nycsub'].includes(l.kind) || /^(AIR|ACL)$/.test(l.id) ? ' Underground stretches show the tunnel around you.' : '';
     lines.push({ id: 'm:' + l.id, name: l.name, group: g, color: l.color,
       hint: `You’re at the front of a train on the ${l.name}, riding its real route to the end of the line (or the city limits) and back.${under}` });
   }
@@ -132,17 +138,20 @@ export async function buildScene(canvas, data, status = () => {}) {
 
   // camera presets for the "Go to" buttons: the overview plus the proposals
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
-  const yp = data.yardpark, vn = yp.venue, [vx, vz] = vn.dir;
   const views = [
     { id: 'home', name: 'Overview', pos: core.HOME_POS.clone(), target: core.HOME_TGT.clone() },
     city.view,
-    // from behind the lawn, looking over the audience at the bandshell
-    { id: 'bowl', name: 'Railyard Bowl', pos: V(vn.x + vx * (vn.r + 70), yp.h + 75, vn.z + vz * (vn.r + 70)), target: V(vn.x, yp.h + 12, vn.z) },
-    { id: 'yard', name: 'Rail Yard Park', pos: V(yp.label[0] - 420, 330, yp.label[1] + 520), target: V(yp.label[0] + 40, yp.h, yp.label[1] + 120) },
   ];
+  if (data.yardpark) {
+    const yp = data.yardpark, vn = yp.venue, [vx, vz] = vn.dir;
+    views.push(
+      // from behind the lawn, looking over the audience at the bandshell
+      { id: 'bowl', name: 'Railyard Bowl', pos: V(vn.x + vx * (vn.r + 70), yp.h + 75, vn.z + vz * (vn.r + 70)), target: V(vn.x, yp.h + 12, vn.z) },
+      { id: 'yard', name: 'Rail Yard Park', pos: V(yp.label[0] - 420, 330, yp.label[1] + 520), target: V(yp.label[0] + 40, yp.h, yp.label[1] + 120) });
+  }
   // each corridor view centres on its densest cluster of courts, looking down along the corridor
-  const courts = data.sports.courts.map(c => [c[1] / 10, c[2] / 10]);
-  data.sports.routes.forEach((r, i) => {
+  const courts = data.sports ? data.sports.courts.map(c => [c[1] / 10, c[2] / 10]) : [];
+  (data.sports ? data.sports.routes : []).forEach((r, i) => {
     const pts = []; for (let k = 0; k < r.p.length; k += 2) pts.push([r.p[k] / 10, r.p[k + 1] / 10]);
     const nearest = (x, z) => { let bi = 0, bd = 1e18; pts.forEach(([px, pz], k) => { const d = (px - x) ** 2 + (pz - z) ** 2; if (d < bd) { bd = d; bi = k; } }); return [bi, bd]; };
     const mine = courts.filter(([x, z]) => data.sports.routes.every((o, j) => j === i || nearest(x, z)[1] <= (() => { let bd = 1e18; for (let k = 0; k < o.p.length; k += 2) bd = Math.min(bd, (o.p[k] / 10 - x) ** 2 + (o.p[k + 1] / 10 - z) ** 2); return bd; })()));
@@ -298,14 +307,14 @@ export async function buildScene(canvas, data, status = () => {}) {
   // legend for the transit highlight: one entry per service (the trolleys and B lines grouped)
   const legend = [];
   for (const g of GROUPS) {
-    const ls = transit.lines.filter(l => (l.group || 'SEPTA Metro') === g && rideable.has(l.id));
+    const ls = transit.lines.filter(l => groupOf(l) === g && rideable.has(l.id));
     if (g === 'Regional Rail') { if (ls.length) legend.push({ name: `Regional Rail (${ls.length} lines)`, color: ls[0].color }); continue; }
     for (const l of ls) {
       if (/^T[2-5]$|^B[23]$/.test(l.id)) continue;
       legend.push({ name: l.id === 'T1' ? 'T1–T5 trolleys' : l.id === 'B1' ? 'B1–B3 Broad Street Line' : l.name, color: l.color });
     }
   }
-  legend.push({ name: 'Proposed monorails', color: '#d6452f' });
+  if (mono.length) legend.push({ name: 'Proposed monorails', color: '#d6452f' });
 
-  return { scene, camera, controls, renderer, labels, lines, views, flyTo, boardLine, setFly, setCreative, getCreative: () => creative, creativeLook, creativeSpeed, setTransitMap: on => { old53.setOverlay(on); return tmap.set(on); }, getTransitMap: tmap.get, legend, oldTrolleyLegend: old53.legend, cityBuildings: city.buildingCount, setTime, getTime: sky.getTime, sunset: sky.sunset, setMood, getMood, setRiding, setCut, getCut: subway.getCut, pickCar, boardCar, leaveCar, getCar: subway.getRide, rideStrip: subway.rideStrip, mapData, flyToPoint, displayPresets: DISPLAY_PRESETS, setDisplayLights: setDisplayColors, lookCar: subway.look, moveCar: subway.move, start, river, monorail };
+  return { scene, camera, controls, renderer, labels, lines, views, flyTo, boardLine, setFly, setCreative, getCreative: () => creative, creativeLook, creativeSpeed, setTransitMap: on => { old53.setOverlay(on); return tmap.set(on); }, getTransitMap: tmap.get, legend, oldTrolleyLegend: old53.legend, cityBuildings: city.buildingCount, setTime, getTime: sky.getTime, sunset: sky.sunset, setMood, getMood, setRiding, setCut, getCut: subway.getCut, pickCar, boardCar, leaveCar, getCar: subway.getRide, rideStrip: subway.rideStrip, mapData, flyToPoint, displayPresets: CITY.presets ? DISPLAY_PRESETS.filter(p => CITY.presets.includes(p.id)) : DISPLAY_PRESETS, setDisplayLights: setDisplayColors, lookCar: subway.look, moveCar: subway.move, start, river, monorail };
 }

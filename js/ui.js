@@ -3,8 +3,9 @@ import * as THREE from 'three';
 import { formatHour } from './scene/sky.js';
 import { createMinimap } from './minimap.js';
 import { createRidebar } from './ridebar.js';
-// remembered per viewer (browser storage may be unavailable: then nothing is remembered)
-const store = { get: k => { try { return localStorage.getItem('phl3d:' + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem('phl3d:' + k, v); } catch (e) { /* ignore */ } } };
+import { CITY } from './cities.js';
+// remembered per viewer and city (browser storage may be unavailable: then nothing is remembered)
+const store = { get: k => { try { return localStorage.getItem(CITY.storage + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(CITY.storage + k, v); } catch (e) { /* ignore */ } } };
 export function createUI(api) {
   const tagsEl = document.getElementById('tags');
   const LABELS = api.labels.map(({ text, pos, section, stn, far, cutHide, layer }) => {
@@ -30,15 +31,16 @@ export function createUI(api) {
 
   const lblBtn = document.getElementById('lbl'), rideBtn = document.getElementById('ride'), hint = document.getElementById('hint');
   const HINT0 = hint.textContent;
-  const CUT_HINT = 'Market Street cut open: the L (blue) and the T1–T5 trolleys (green) in the subway below. Tunnels that turn away from Market are drawn see-through. Track positions are from OpenStreetMap; depths are estimates.';
+  const CUT_HINT = CITY.cutHint;
   const baseHint = () => (api.getCut() ? CUT_HINT : HINT0);
   const cutBtn = document.getElementById('cut'), CUT_VIEW = api.views.find(v => v.cut);
+  cutBtn.hidden = !CUT_VIEW;   // a city without a cut-away section
   const syncCut = () => {
     const on = !!api.getCut(); cutBtn.setAttribute('aria-pressed', String(on));
-    cutBtn.textContent = on ? 'Close the cut' : 'Cut away Market St';
+    cutBtn.textContent = on ? 'Close the cut' : CITY.cutButton;
     if (!riding && !api.getCar()) hint.textContent = baseHint();
   };
-  // 24-hour clock slider (sun position for today's date in Philadelphia)
+  // 24-hour clock slider (sun position for today's date in the city)
   const timeIn = document.getElementById('time'), timeOut = document.getElementById('time-out');
   const showTime = h => { timeOut.textContent = formatHour(h); timeIn.setAttribute('aria-valuetext', formatHour(h)); };
   timeIn.value = String(Math.round(api.getTime() * 4) / 4); showTime(api.getTime());
@@ -211,7 +213,7 @@ export function createUI(api) {
     trBtn.setAttribute('aria-pressed', String(on)); trBtn.textContent = on ? 'Hide transit lines' : 'Show transit lines'; legendEl.hidden = !on;
   });
   // the 1953 streetcar stripes share the transit legend, under their own heading
-  const h53 = document.createElement('b'); h53.className = 'legend-h'; h53.textContent = 'Former streetcar lines (1953 map)'; legendEl.appendChild(h53);
+  if (api.oldTrolleyLegend.length) { const h53 = document.createElement('b'); h53.className = 'legend-h'; h53.textContent = 'Former streetcar lines (1953 map)'; legendEl.appendChild(h53); }
   for (const it of api.oldTrolleyLegend) {
     const s = document.createElement('span'), i = document.createElement('i'); i.className = it.kind; i.style.setProperty('--c', it.color); i.setAttribute('aria-hidden', 'true');
     s.append(i, it.name); legendEl.appendChild(s);

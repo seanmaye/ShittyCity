@@ -47,17 +47,23 @@ function inRings(x, z, rings) {
   return inside;
 }
 
-/** capRings: outline of the rail-yard deck; road bridges over it land on the deck instead. */
-export function buildGround(scene, data, river, capRings = []) {
+/**
+ * capRings: outline of the rail-yard deck; road bridges over it land on the deck instead.
+ * sea: a waterfront city (New York): the land is only what city.js paves from the land outlines,
+ * so neither the countryside nor a paved rectangle is drawn here.
+ */
+export function buildGround(scene, data, river, capRings = [], { sea = false } = {}) {
   const cap = capRings.map(pairs);
-  const outer = new THREE.Mesh(new THREE.PlaneGeometry(30000, 30000), M(COUNTRY, { roughness: 1 }));
-  outer.rotation.x = -Math.PI / 2; outer.receiveShadow = true; scene.add(outer);
+  if (!sea) {
+    const outer = new THREE.Mesh(new THREE.PlaneGeometry(30000, 30000), M(COUNTRY, { roughness: 1 }));
+    outer.rotation.x = -Math.PI / 2; outer.receiveShadow = true; scene.add(outer);
 
-  // paved city within the mapped extent
-  const [x0, z0, x1, z1] = data.bbox.map(v => v / 10);
-  const cb = new Builder({ uv: true }); addPolygon(cb, [[[x0, z0], [x1, z0], [x1, z1], [x0, z1]]], 0, (x, z) => [x / 400, z / 400]);
-  const city = new THREE.Mesh(cb.geometry(), groundMat(GROUND));
-  city.position.y = .15; city.receiveShadow = true; scene.add(city);
+    // paved city within the mapped extent
+    const [x0, z0, x1, z1] = data.bbox.map(v => v / 10);
+    const cb = new Builder({ uv: true }); addPolygon(cb, [[[x0, z0], [x1, z0], [x1, z1], [x0, z1]]], 0, (x, z) => [x / 400, z / 400]);
+    const city = new THREE.Mesh(cb.geometry(), groundMat(GROUND));
+    city.position.y = .15; city.receiveShadow = true; scene.add(city);
+  }
 
   // green space, one mesh per kind
   const gb = GREEN.map(() => new Builder());

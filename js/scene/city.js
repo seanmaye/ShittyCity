@@ -39,8 +39,9 @@ function unitBox() {   // 1 x 1 x 1 box standing on y = 0, without a bottom face
 }
 function unitRoof() { const g = new THREE.PlaneGeometry(1, 1); g.rotateX(-Math.PI / 2); g.translate(0, 1, 0); return g; }
 
-/** clear: rings ([[x, z], ...]) kept free of park trees (playing fields) */
-export function buildCity(scene, data, { waterMat, status = () => {}, clear = [] }) {
+/** clear: rings ([[x, z], ...]) kept free of park trees (playing fields);
+ *  sea: everything outside the land outlines (city.limits) is water, not countryside */
+export function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea = false }) {
   const city = data.city, B = decode(data.cityBuildings);
   const tiles = new Map();   // key -> { cx, cz, r, full: [], roof: [], trees: [] }
   const tileOf = (x, z) => {
@@ -52,14 +53,14 @@ export function buildCity(scene, data, { waterMat, status = () => {}, clear = []
 
   // ---- ground: paved city limits, a wider countryside plane, parks, water, streams
   const limits = city.limits.map(pairs);
-  const outer = new THREE.Mesh(new THREE.PlaneGeometry(400000, 400000), M(COUNTRY, { roughness: 1 }));
+  const outer = new THREE.Mesh(new THREE.PlaneGeometry(400000, 400000), sea ? waterMat : M(COUNTRY, { roughness: 1 }));
   outer.rotation.x = -Math.PI / 2; outer.position.y = -.05; outer.receiveShadow = true; scene.add(outer);
   const pb = new Builder({ uv: true }); limits.forEach(r => addPolygon(pb, [r], 0, (x, z) => [x / 400, z / 400]));
   const plate = new THREE.Mesh(pb.geometry(), groundMat(GROUND, THREE.FrontSide));
   plate.position.y = .14; plate.receiveShadow = true; scene.add(plate);
   const edge = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(limits[0].map(([x, z]) => new THREE.Vector3(x, .6, z))),
     new THREE.LineBasicMaterial({ color: '#4a5a46', transparent: true, opacity: .7 }));
-  scene.add(edge);
+  if (!sea) scene.add(edge);   // the city limits (a waterfront city's land outlines are its shoreline)
 
   const gb = GREEN.map(() => new Builder());
   for (const [k, ...rings] of city.green) addPolygon(gb[k], rings.map(pairs), 0);
