@@ -3,8 +3,40 @@ import * as THREE from 'three';
 import { pairs } from '../data.js';
 import { M } from './materials.js';
 import { Builder, addPolygon, addRibbon } from './geometry.js';
-const GREEN = ['#6c9a52', '#7aa65a', '#5f9a4e', '#557d45', '#6f9256']; // park, grass, pitch, wood, cemetery
-const ROAD = '#5c5f63', TRAIL = '#e2cfa4', RAIL = '#6f665e';
+// Colours sampled to match summer aerial imagery: mown grass, darker park woodland, asphalt,
+// gravel and dirt trails, rail ballast, the mixed concrete, asphalt and yards between buildings,
+// and the wooded, suburban country beyond the city limits.
+export const GREEN = ['#5f8746', '#6f9a4f', '#5a9446', '#43663a', '#678a50']; // park, grass, pitch, wood, cemetery
+export const GROUND = '#a7a39a', COUNTRY = '#69775a';
+const ROAD = '#55585c', TRAIL = '#cbbd9c', RAIL = '#6b625a';
+
+/** Ground between buildings: the base colour mottled at lot scale (parking, yards, paving).
+ *  UVs are world metres / 400, so one texture tile spans 400 m. */
+let groundTex = null;
+export function groundMat(color, side = THREE.DoubleSide) {
+  if (!groundTex) {
+    const N = 256, c = document.createElement('canvas'); c.width = c.height = N;
+    const g = c.getContext('2d'), img = g.createImageData(N, N);
+    let seed = 5; const rnd = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+    // value noise over three octaves, wrapping so the tile repeats seamlessly
+    const oct = [8, 24, 64].map(n => ({ n, v: Array.from({ length: n * n }, rnd) }));
+    const at = (o, x, y) => {
+      const fx = x / N * o.n, fy = y / N * o.n, x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0;
+      const v = (i, j) => o.v[((j % o.n) * o.n) + (i % o.n)], s = t => t * t * (3 - 2 * t);
+      const a = v(x0, y0) + (v(x0 + 1, y0) - v(x0, y0)) * s(tx), b = v(x0, y0 + 1) + (v(x0 + 1, y0 + 1) - v(x0, y0 + 1)) * s(tx);
+      return a + (b - a) * s(ty);
+    };
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const n = at(oct[0], x, y) * .5 + at(oct[1], x, y) * .3 + at(oct[2], x, y) * .2, i = (y * N + x) * 4;
+      const yard = Math.max(0, at(oct[1], x + 97, y + 31) - .62) * 2.2;   // patches of yard and street trees
+      const k = 205 + n * 50 + (rnd() - .5) * 10;
+      img.data[i] = k * (1 - yard * .25); img.data[i + 1] = k * (1 - yard * .08); img.data[i + 2] = k * (1 - yard * .3); img.data[i + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+    groundTex = new THREE.CanvasTexture(c); groundTex.wrapS = groundTex.wrapT = THREE.RepeatWrapping; groundTex.anisotropy = 8;
+  }
+  return new THREE.MeshStandardMaterial({ color, map: groundTex, roughness: 1, side });
+}
 
 function inRings(x, z, rings) {
   let inside = false;
@@ -18,13 +50,14 @@ function inRings(x, z, rings) {
 /** capRings: outline of the rail-yard deck; road bridges over it land on the deck instead. */
 export function buildGround(scene, data, river, capRings = []) {
   const cap = capRings.map(pairs);
-  const outer = new THREE.Mesh(new THREE.PlaneGeometry(30000, 30000), M('#7d8a6e', { roughness: 1 }));
+  const outer = new THREE.Mesh(new THREE.PlaneGeometry(30000, 30000), M(COUNTRY, { roughness: 1 }));
   outer.rotation.x = -Math.PI / 2; outer.receiveShadow = true; scene.add(outer);
 
   // paved city within the mapped extent
   const [x0, z0, x1, z1] = data.bbox.map(v => v / 10);
-  const city = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, z1 - z0), M('#bdb6a8', { roughness: 1 }));
-  city.rotation.x = -Math.PI / 2; city.position.set((x0 + x1) / 2, .15, (z0 + z1) / 2); city.receiveShadow = true; scene.add(city);
+  const cb = new Builder({ uv: true }); addPolygon(cb, [[[x0, z0], [x1, z0], [x1, z1], [x0, z1]]], 0, (x, z) => [x / 400, z / 400]);
+  const city = new THREE.Mesh(cb.geometry(), groundMat(GROUND));
+  city.position.y = .15; city.receiveShadow = true; scene.add(city);
 
   // green space, one mesh per kind
   const gb = GREEN.map(() => new Builder());

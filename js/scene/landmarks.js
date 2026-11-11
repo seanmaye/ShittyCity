@@ -1,7 +1,9 @@
 // Hand-styled landmarks (tower crowns, City Hall, 30th Street, the Art Museum, Eastern
 // State, Boathouse Row), each placed, sized and rotated from its real footprint.
 import * as THREE from 'three';
-import { M, winMat, bx, reps, litMats } from './materials.js';
+import { M, winMat, worldWinMat, bx, reps, litMats, WIN_W, WIN_H, addDisplay, DISPLAY_PRESETS } from './materials.js';
+import { Builder, addLoft } from './geometry.js';
+import { aviationLights } from './buildings.js';
 /** Bring a box rotation into (-45deg, 45deg], swapping its sides to match. */
 function norm(b) {
   let { w, d, ry } = b;
@@ -13,27 +15,152 @@ function norm(b) {
 function group(scene, x, z, ry) { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = ry; scene.add(g); return g; }
 function part(g, geo, mat, x, y, z, cast = true) { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = cast; m.receiveShadow = true; g.add(m); return m; }
 
-function tower(scene, t) {
-  const { w, d, h, color, cap, kind } = t;
-  const g = group(scene, t.x, t.z, t.ry);
-  const plain = new THREE.MeshStandardMaterial({ color, roughness: kind === 'glass' ? .3 : .8, metalness: kind === 'glass' ? .4 : .05 });
-  const seg = (sw, sd, y0, y1) => { const hh = y1 - y0; const r = reps(sw, hh); part(g, bx(sw, hh, sd), winMat(color, r[0], r[1], Math.floor(Math.random() * 3), kind), 0, y0 + hh / 2, 0); };
-  const pyr = (side, y0, y1) => { const geo = new THREE.ConeGeometry(side / Math.SQRT2, y1 - y0, 4); geo.rotateY(Math.PI / 4); part(g, geo, plain, 0, (y0 + y1) / 2, 0); };
-  if (cap === 'liberty') { seg(w, d, 0, .70 * h); seg(.82 * w, .82 * d, .70 * h, .80 * h); seg(.64 * w, .64 * d, .80 * h, .87 * h); pyr(.5 * Math.min(w, d), .87 * h, .965 * h); part(g, new THREE.CylinderGeometry(.25, .9, .035 * h, 6), plain, 0, .9825 * h, 0); }
-  else if (cap === 'taper') { const s = Math.min(w, d); const geo = new THREE.CylinderGeometry(s * .86 / Math.SQRT2, s / Math.SQRT2, h, 4, 1); geo.rotateY(Math.PI / 4); const r = reps(s * 4, h); part(g, geo, winMat(color, r[0], r[1], 0, kind), 0, h / 2, 0); }
-  else if (cap === 'ctc') {
-    seg(w, d, 0, .93 * h); const fh = .07 * h;
-    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => part(g, new THREE.BoxGeometry(3, fh, 3), plain, a * (w / 2 - 1.5), .93 * h + fh / 2, b * (d / 2 - 1.5)));
-    [-1, 1].forEach(b => part(g, new THREE.BoxGeometry(w, 2, 2), plain, 0, h - 1, b * (d / 2 - 1)));
+// ---- signature towers, each built from its real footprint and height, with the shapes and
+// cladding of the real building: setbacks, notched or chamfered corners, crowns that light up
+// at night, and an aviation light on top
+const rect = (w, d) => [[w / 2, -d / 2], [w / 2, d / 2], [-w / 2, d / 2], [-w / 2, -d / 2]];
+const notched = (w, d, n) => [[w / 2, -d / 2 + n], [w / 2, d / 2 - n], [w / 2 - n, d / 2 - n], [w / 2 - n, d / 2], [-w / 2 + n, d / 2], [-w / 2 + n, d / 2 - n],
+  [-w / 2, d / 2 - n], [-w / 2, -d / 2 + n], [-w / 2 + n, -d / 2 + n], [-w / 2 + n, -d / 2], [w / 2 - n, -d / 2], [w / 2 - n, -d / 2 + n]];
+const chamfer = (w, d, c) => [[w / 2, -d / 2 + c], [w / 2, d / 2 - c], [w / 2 - c, d / 2], [-w / 2 + c, d / 2], [-w / 2, d / 2 - c], [-w / 2, -d / 2 + c], [-w / 2 + c, -d / 2], [w / 2 - c, -d / 2]];
+// cladding as built (the data file keeps the original colours; these follow the real towers)
+const LOOK = {
+  ctc: { color: '#a9bccb', trim: '#c9d3da' },        // clear low-iron glass
+  comcast: { color: '#8ea5b6', trim: '#b7c4cc' },    // pale blue-grey glass
+  lib1: { color: '#4f7194', trim: '#a9b3bb' },       // blue glass, silver-grey granite and steel crown
+  lib2: { color: '#557797', trim: '#a9b3bb' },
+  mellon: { color: '#b49c86', trim: '#9b8b7c' },     // rose-beige granite
+  logan3: { color: '#8a594c', trim: '#6c4a40' },     // red granite
+  comm1: { color: '#c9bca6', trim: '#a99c88' },      // buff granite
+  comm2: { color: '#c9bca6', trim: '#a99c88' },
+  psfs: { color: '#a3a4a1', trim: '#2c2f33', kind: 'office2' },   // grey limestone ribbons, black granite
+};
+const v3 = (x, y, z) => new THREE.Vector3(x, y, z);
+/** A flat face (3 or 4 points) into a vertex-coloured builder, wound to face away from `inside`. */
+function face(b, P, col, inside) {
+  const n = new THREE.Vector3().subVectors(P[1], P[0]).cross(new THREE.Vector3().subVectors(P[2], P[0])).normalize();
+  const c = P.reduce((s, p) => s.add(p), new THREE.Vector3()).divideScalar(P.length);
+  if (n.dot(c.sub(inside)) < 0) { P = P.slice().reverse(); n.negate(); }
+  const i = P.map(p => b.v(p.x, p.y, p.z, n.x, n.y, n.z, 0, 0, col));
+  b.tri(i[0], i[1], i[2]); if (i.length === 4) b.tri(i[0], i[2], i[3]);
+}
+
+function tower(scene, t, beacons) {
+  const { w, d, h } = t, g = group(scene, t.x, t.z, t.ry), L = LOOK[t.id] || {};
+  const color = new THREE.Color(L.color || t.color), trim = new THREE.Color(L.trim || '#9aa3ab'), kind = L.kind || t.kind;
+  const fac = new Builder({ uv: true, color: true }), plain = new Builder({ color: true }), glow = new Builder({ color: true });
+  const lines = [], white = new THREE.Color('#e9eef2');
+  const sec = (ring, y0, y1, s0 = 1, s1 = 1) => addLoft(fac, ring, y0, y1, s0, s1, WIN_W, WIN_H, color, true, (t.x * .0131) % 1);
+  const solid = (ring, y0, y1, s0 = 1, s1 = 1, col = trim, b = plain, cap = true) => addLoft(b, ring, y0, y1, s0, s1, 1, 1, col, cap);
+  // a gable on the face of a crown: front triangle at distance r out along n, roofs running back
+  const gable = (nx, nz, r, y0, gw, gh, depth) => {
+    const tx = -nz, tz = nx, f = v3(nx * r, y0, nz * r), inside = v3(0, y0, 0);
+    const Lp = f.clone().add(v3(tx * gw / 2, 0, tz * gw / 2)), Rp = f.clone().add(v3(-tx * gw / 2, 0, -tz * gw / 2)), T = f.clone().setY(y0 + gh);
+    const back = p => p.clone().add(v3(-nx * depth, 0, -nz * depth));
+    face(plain, [Lp, Rp, T], trim, inside); face(plain, [Lp, T, back(T), back(Lp)], trim, inside); face(plain, [T, Rp, back(Rp), back(T)], trim, inside);
+    lines.push(Lp, T, T, Rp);
+  };
+  const hips = (half, y0, y1, top = 0) => { for (const [a, b] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) lines.push(v3(a * half, y0, b * half), v3(a * top, y1, b * top)); };
+  let peak = h;
+  switch (t.cap) {
+    case 'ctc': {   // a slim glass shaft with a folded face; the top floors open into a lit glass lantern
+      const fold = [[w / 2, -d / 2], [w / 2, d / 2], [0, d / 2 - 1.8], [-w / 2, d / 2], [-w / 2, -d / 2], [0, -d / 2 + 1.8]];
+      sec(fold, 0, .89 * h);
+      solid(fold, .89 * h, h, 1, 1, white, glow, false);
+      solid(rect(w * .5, d * .45), .89 * h, .975 * h, 1, 1, new THREE.Color('#4b5258'));
+      break;
+    }
+    case 'taper': {   // Comcast Center: a tapering glass obelisk with notched corners and a glowing top
+      const s = Math.min(w, d), ring = notched(s, s, s * .06);
+      sec(ring, 0, .93 * h, 1, .9);
+      solid(ring, .93 * h, h, .9, .8, white, glow);
+      break;
+    }
+    case 'liberty': {   // One and Two Liberty Place: setbacks up to a gabled crown (One has the spire)
+      const one = t.id === 'lib1', s = Math.min(w, d);
+      sec(notched(w, d, .1 * s), 0, .68 * h);
+      sec(notched(.86 * w, .86 * d, .085 * s), .68 * h, .76 * h);
+      sec(notched(.72 * w, .72 * d, .07 * s), .76 * h, .82 * h);
+      const c = .6 * s, y0 = .85 * h, y1 = one ? .95 * h : .935 * h, sTop = one ? 0 : .3;
+      solid(rect(c, c), .82 * h, y0);
+      solid(rect(c, c), y0, y1, 1, sTop);
+      const half = y => c / 2 * (1 - (1 - sTop) * (y - y0) / (y1 - y0));
+      for (const [nx, nz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        gable(nx, nz, c / 2 + .3, y0, c * .78, .075 * h, c * .3);
+        const y2 = y0 + .045 * h; gable(nx, nz, half(y2) + .3, y2, half(y2) * 1.5, .055 * h, c * .2);
+      }
+      hips(c / 2, y0, y1, c / 2 * sTop);
+      if (one) { solid(rect(2.6, 2.6), y1, h, 1, 0); lines.push(v3(0, y1, 0), v3(0, h, 0)); }
+      else { peak = y1 + 9; solid(rect(1, 1), y1, peak, 1, .5); }
+      break;
+    }
+    case 'pyramid':
+      if (t.id === 'mellon') {   // BNY Mellon Center: notched granite shaft, stepped base to a lit glass pyramid
+        const s = Math.min(w, d);
+        sec(notched(w, d, .12 * s), 0, .85 * h);
+        sec(notched(.84 * w, .84 * d, .1 * s), .85 * h, .89 * h);
+        solid(rect(.74 * s, .74 * s), .89 * h, .985 * h, 1, .1, new THREE.Color('#c8d4dc'), glow);
+        hips(.37 * s, .89 * h, .985 * h, .037 * s);
+        solid(rect(1.2, 1.2), .985 * h, h, 1, .3);
+      } else {   // Commerce Square: chamfered granite towers, stepped octagonal crowns and a lantern
+        const s = Math.min(w, d);
+        sec(chamfer(w, d, .2 * s), 0, .84 * h);
+        sec(chamfer(.84 * w, .84 * d, .17 * s), .84 * h, .89 * h);
+        solid(chamfer(.66 * s, .66 * s, .13 * s), .89 * h, .93 * h);
+        solid(chamfer(.66 * s, .66 * s, .13 * s), .93 * h, .975 * h, 1, .25, new THREE.Color('#7f8f86'));
+        solid(chamfer(.16 * s, .16 * s, .04 * s), .975 * h, .995 * h, 1, .6, new THREE.Color('#fff4d8'), glow);
+        lines.push(v3(0, .995 * h, 0), v3(0, h + 4, 0)); peak = h + 4;
+      }
+      break;
+    case 'stepped': {   // Three Logan Square: red granite, three setbacks and a pyramid roof
+      sec(notched(w, d, .08 * Math.min(w, d)), 0, .78 * h);
+      sec(notched(.86 * w, .86 * d, .07 * Math.min(w, d)), .78 * h, .86 * h);
+      sec(rect(.7 * w, .7 * d), .86 * h, .91 * h);
+      solid(rect(.7 * w, .7 * d), .91 * h, h, 1, 0, new THREE.Color('#5a4741'));
+      hips(.35 * Math.min(w, d), .91 * h, h);
+      break;
+    }
+    case 'psfs': {   // PSFS: grey limestone office slab with ribbon windows, black granite spine and base, the red sign
+      sec([[w / 2, -d / 2], [w / 2, d * .3], [-w / 2, d * .3], [-w / 2, -d / 2]], 10, .9 * h);
+      solid([[w * .2, d * .3], [w * .2, d / 2 + 2], [-w * .2, d / 2 + 2], [-w * .2, d * .3]], 0, .93 * h);
+      solid(rect(w + 2, d + 2), 0, 10);
+      solid(rect(w * .5, d * .4), .9 * h, .93 * h);
+      peak = h + 6; psfsSign(g, w, d, .93 * h, peak - .93 * h);
+      break;
+    }
+    default: sec(rect(w, d), 0, h);
   }
-  else if (cap === 'pyramid') { seg(w, d, 0, .86 * h); pyr(.95 * Math.min(w, d), .86 * h, h); }
-  else if (cap === 'stepped') { seg(w, d, 0, .86 * h); seg(.78 * w, .78 * d, .86 * h, .93 * h); seg(.52 * w, .52 * d, .93 * h, .98 * h); pyr(.42 * Math.min(w, d), .98 * h, h); }
-  else if (cap === 'psfs') {
-    seg(w, d, 0, .9 * h);
-    const sm = new THREE.MeshStandardMaterial({ color: '#b8322a', emissive: '#ff3b2f', emissiveIntensity: 0 }); sm.userData.lit = 1; litMats.push(sm);
-    part(g, new THREE.BoxGeometry(w * .8, .08 * h, 2), sm, 0, .95 * h, d / 2 + 1); part(g, new THREE.BoxGeometry(2, .08 * h, d * .8), sm, w / 2 + 1, .95 * h, 0);
+  part(g, fac.geometry(), worldWinMat(kind), 0, 0, 0);
+  part(g, plain.geometry(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .55, metalness: .25, side: THREE.DoubleSide }), 0, 0, 0);
+  // the crown's display lights (glowing glass and lit outlines) take the skyline colour scheme
+  let gm = null, lm = null;
+  if (glow.count) {
+    gm = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .35, metalness: .3, emissive: '#eef4ff', emissiveIntensity: 0, side: THREE.DoubleSide });
+    gm.userData.lit = .55; litMats.push(gm); part(g, glow.geometry(), gm, 0, 0, 0);
   }
-  else seg(w, d, 0, h);
+  g.updateMatrixWorld();
+  beacons.push(v3(0, peak + 1, 0).applyMatrix4(g.matrixWorld));
+  let ls = null;
+  if (lines.length) {
+    lm = new THREE.LineBasicMaterial({ color: '#f4f8ff' });
+    ls = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(lines), lm); ls.visible = false; g.add(ls);
+  }
+  if (gm || lm) addDisplay(hex => { if (gm) gm.emissive.set(hex); if (lm) lm.color.set(hex); });
+  return ls;
+}
+
+/** The PSFS sign: red letters on a steel frame, both street faces, neon at night. */
+function psfsSign(g, w, d, y, hh) {
+  const c = document.createElement('canvas'); c.width = 512; c.height = 160;
+  const x = c.getContext('2d'); x.fillStyle = '#d42a1e'; x.font = 'bold 150px Arial, Helvetica, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText('PSFS', 256, 86);
+  const tex = new THREE.CanvasTexture(c);
+  const m = new THREE.MeshStandardMaterial({ map: tex, emissive: '#ff3322', emissiveMap: tex, emissiveIntensity: 0, transparent: true, alphaTest: .3, side: THREE.DoubleSide });
+  m.userData.lit = 1.4; litMats.push(m);
+  const frame = new THREE.MeshStandardMaterial({ color: '#3b3f44', roughness: .6, metalness: .5 });
+  const W = w * .8;
+  part(g, new THREE.PlaneGeometry(W, hh), m, 0, y + hh / 2, -d * .2 - 1).rotation.y = Math.PI;
+  const side = part(g, new THREE.PlaneGeometry(d * .8, hh), m, w * .25 + 1, y + hh / 2, 0); side.rotation.y = Math.PI / 2;
+  part(g, new THREE.BoxGeometry(W, .6, .6), frame, 0, y + .3, -d * .2);
 }
 
 function cityHall(scene, b) {
@@ -91,7 +218,7 @@ function easternState(scene, b) {
 
 function boathouses(scene, list, river) {
   const walls = ['#c4583f', '#8e6a4e', '#e3d9c4', '#a7463a', '#d8cdb4', '#6f5a4a', '#b9a37c'];
-  const roofM = new THREE.MeshStandardMaterial({ color: '#3c4a52', roughness: .8 }), lineMat = new THREE.LineBasicMaterial({ color: '#fff1c8' });
+  const roofM = new THREE.MeshStandardMaterial({ color: '#3c4a52', roughness: .8 });
   const lines = [];
   list.forEach((b, i) => {
     // gable ridge runs away from the water, as on the real Boathouse Row
@@ -105,6 +232,9 @@ function boathouses(scene, list, river) {
     const rg = new THREE.ExtrudeGeometry(tri, { depth: w, bevelEnabled: false }); rg.translate(0, 0, -w / 2); rg.rotateY(Math.PI / 2);
     const body = part(g, bg, new THREE.MeshStandardMaterial({ color: walls[i % walls.length], roughness: .85 }), 0, wallH / 2, 0);
     part(g, rg, roofM, 0, wallH, 0);
+    // the outline lights: warm white normally, the skyline colour scheme otherwise (as the real row does)
+    const lineMat = new THREE.LineBasicMaterial({ color: '#fff1c8' });
+    addDisplay(hex => lineMat.color.set(hex === DISPLAY_PRESETS[0].colors[0] ? '#fff1c8' : hex));
     const l1 = new THREE.LineSegments(new THREE.EdgesGeometry(bg), lineMat); l1.position.y = wallH / 2;
     const l2 = new THREE.LineSegments(new THREE.EdgesGeometry(rg), lineMat); l2.position.y = wallH;
     g.add(l1, l2); lines.push(l1, l2); body.castShadow = true;
@@ -113,11 +243,12 @@ function boathouses(scene, list, river) {
 }
 
 export function buildLandmarks(scene, lm, river) {
-  lm.towers.forEach(t => tower(scene, norm(t)));
+  const beacons = [], crownLights = lm.towers.map(t => tower(scene, norm(t), beacons)).filter(Boolean);
+  const av = aviationLights(beacons.flatMap(p => [p.x, p.y, p.z])); scene.add(av);
   const cityhall = cityHall(scene, norm(lm.cityhall));
   const st = station(scene, lm.station);
   const mus = museum(scene, new THREE.Vector3(lm.museum.x, 0, lm.museum.z), cityhall);
   const esp = easternState(scene, lm.esp);
   const boatLines = boathouses(scene, lm.boathouses, river);
-  return { cityhall, station: st, museum: mus, esp, boatLines };
+  return { cityhall, station: st, museum: mus, esp, boatLines, nightOnly: [...crownLights, av] };
 }

@@ -62,8 +62,9 @@ export function addRibbon(b, pts, w, y) {
   }
 }
 
-/** Extrude a footprint (outer ring CCW-positive-area + holes) from y0 to y1 with window UVs. */
-export function addPrism(b, rings, y0, y1, uOff, tileW, tileH, color) {
+/** Extrude a footprint (outer ring CCW-positive-area + holes) from y0 to y1 with window UVs.
+ *  The roof gets roofColor and UV (-1, -1), which facade materials map to a blank patch. */
+export function addPrism(b, rings, y0, y1, uOff, tileW, tileH, color, roofColor = color) {
   for (const r of rings) {
     let u = uOff;
     for (let i = 0; i < r.length; i++) {
@@ -77,6 +78,29 @@ export function addPrism(b, rings, y0, y1, uOff, tileW, tileH, color) {
       u = u1;
     }
   }
-  b.c = color;
-  addPolygon(b, rings, y1, () => [.01, .01]);
+  b.c = roofColor;
+  addPolygon(b, rings, y1, () => [-1, -1]);
+}
+
+/**
+ * A tower section: walls between a ring scaled by s0 at y0 and by s1 at y1 (scaled about the
+ * local origin, so it can taper), with window UVs in texture-tile units, and a flat top
+ * (roof UV) unless cap is false. ring: [[x, z], ...] with positive area, like addPrism.
+ */
+export function addLoft(b, ring, y0, y1, s0, s1, tileW, tileH, color, cap = true, uOff = 0) {
+  const n = ring.length; let u = uOff;
+  const e = new THREE.Vector3(), up = new THREE.Vector3(), nn = new THREE.Vector3();
+  for (let i = 0; i < n; i++) {
+    const [ax, az] = ring[i], [bx, bz] = ring[(i + 1) % n];
+    const L = Math.hypot(bx - ax, bz - az) * s0; if (L < .05) continue;
+    // face normal from the bottom edge and the slanted side
+    e.set((bx - ax) * s0, 0, (bz - az) * s0); up.set(ax * (s1 - s0), y1 - y0, az * (s1 - s0));
+    nn.crossVectors(up, e).normalize();
+    const u1 = u + L / tileW;
+    const a0 = b.v(ax * s0, y0, az * s0, nn.x, nn.y, nn.z, u, y0 / tileH, color), b0 = b.v(bx * s0, y0, bz * s0, nn.x, nn.y, nn.z, u1, y0 / tileH, color);
+    const b1 = b.v(bx * s1, y1, bz * s1, nn.x, nn.y, nn.z, u1, y1 / tileH, color), a1 = b.v(ax * s1, y1, az * s1, nn.x, nn.y, nn.z, u, y1 / tileH, color);
+    b.tri(a0, b1, b0); b.tri(a0, a1, b1);
+    u = u1;
+  }
+  if (cap && s1 > 0) { b.c = color; addPolygon(b, [ring.map(([x, z]) => [x * s1, z * s1])], y1, () => [-1, -1]); }
 }

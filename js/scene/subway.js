@@ -846,6 +846,36 @@ export function buildSubway(scene, data, river) {
     const l = LINES[ride.sl.line];
     return { line: ride.sl.line, lineName: ride.sl.lineName || (l && l.name) || ride.sl.line, kind: ride.kind, model: CAR_IN[ride.kind].model, next: ride.next, under: ride.sl.pos.y < -1 };
   }
+  /**
+   * Where the ride is along its line, for the line diagram: { name, color, x, z, dx, dz,
+   * stops: [{t, f}] | null, f (0..1 along the line), dir (1 out, -1 back), loop, next }.
+   * Runs are out-and-back loops (A -> B -> A): stops come from the outbound half.
+   */
+  const _a = new V3(), _b = new V3();
+  function rideStrip() {
+    if (!ride) return null;
+    const sl = ride.sl, l = LINES[sl.line], run = sl.run || sl.path;
+    const out = { name: sl.lineName || (l && l.name) || sl.line, color: sl.color || (l && l.color) || '#8a96a0',
+      x: sl.pos.x, z: sl.pos.z, dx: sl.dir.x, dz: sl.dir.z, stops: null, f: null, dir: 1, loop: true, next: ride.next };
+    if (!run || !run.L || typeof sl.s !== 'number' || !run.at) return out;
+    if (!run.strip) {
+      if (sl.run && !run.stops) run.stops = stopsOn(run, sl.line, ride.kind);
+      // every run goes out to one terminus and back (some Regional Rail lines take other tracks
+      // on the way back). A run needn't start at a terminus: the farthest point from anywhere
+      // on it is one terminus (B), the farthest from B the other (A); A -> B is the way out.
+      const far = from => { run.at(from, _a); let best = 0, at = 0; for (let k = 0; k < 400; k++) { const s = run.L * k / 400, d = run.at(s, _b).distanceTo(_a); if (d > best) { best = d; at = s; } } return [at, best]; };
+      const [sB] = far(0), [sA, len] = far(sB), out_ = ((sB - sA) % run.L + run.L) % run.L;
+      const u = s => ((s - sA) % run.L + run.L) % run.L;   // distance along the run from A
+      const back = len > 300 && out_ > 1 && out_ < run.L - 1, seen = new Set(), stops = [];
+      const fold = s => (back ? (u(s) <= out_ ? u(s) / out_ : (run.L - u(s)) / (run.L - out_)) : s / run.L);
+      // a stop matched on the way back folds onto the way out
+      for (const o of run.stops || []) { if (seen.has(o.t)) continue; seen.add(o.t); stops.push({ t: o.t, f: Math.min(1, fold(o.s)) }); }
+      stops.sort((p, q) => p.f - q.f);
+      run.strip = { back, out: out_, fold, u, stops };
+    }
+    const st = run.strip, s = ((sl.s % run.L) + run.L) % run.L, outb = !st.back || st.u(s) <= st.out;
+    return Object.assign(out, { stops: st.stops, loop: !st.back, dir: outb ? 1 : -1, f: st.fold(s) });
+  }
   const look_ = (dx, dy) => { if (!ride) return; ride.yaw -= dx * .0045; ride.pitch = Math.max(-1.2, Math.min(1.2, ride.pitch - dy * .0045)); };
   const move = (f, s) => { if (ride) { ride.mf = f; ride.ms = s; } };
   function rideFrame(dt, camera) {
@@ -943,6 +973,6 @@ export function buildSubway(scene, data, river) {
   update(0);
 
   return { planes: [plane], setCut, getCut: () => (active ? active.id : false), update, labels, views: sections.map(s => s.view),
-           pick, board, leave, getRide, look: look_, move,
+           pick, board, leave, getRide, rideStrip, look: look_, move,
            boardLine, registerFleet, routes, lines: data.lines };
 }

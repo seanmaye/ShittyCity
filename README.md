@@ -18,9 +18,19 @@ and transit come from real map data.
 - **Fly around** with W A S D (or the arrow keys), Space to rise and Shift to sink.
 - **Citywide landmarks** are modelled on their real outlines: Lincoln Financial Field,
   Citizens Bank Park, Xfinity Mobile Arena, Independence Hall, Memorial Hall, and the Ben
-  Franklin and Walt Whitman bridges.
+  Franklin and Walt Whitman bridges. A pickup ultimate game runs on the Belmont & Edgley
+  cricket ground in West Fairmount Park, and something is waiting on the arena plaza.
+- **Buildings** have day and night facades in six styles (rowhouse terraces, offices,
+  ribbon windows, glass, stone), roofs in real roofing colours, rooftop plant and aviation
+  lights; office lights go off through the night. The signature towers are modelled with
+  their real setbacks and crowns.
 - **A 24-hour time slider** sets the sun to its real position over Philadelphia for today's
   date, from noon sun to starlit night.
+- **Skyline lights**: colour the towers' crowns, the Cira Centre's LED skin, the FMC crown,
+  Boathouse Row and the bridges' cable lights for the Birds, the Phillies, the holidays and more, or any colour you pick.
+- **A minimap** in the top right shows where you are (click it to fly there), and while you
+  ride a line diagram shows every stop, the next one and where the train is.
+- **The panel folds** down to its title with the arrow in its corner.
 
 ## Run it
 
@@ -75,7 +85,9 @@ index.html            page shell, HUD markup, import map for three.js 0.128
 css/style.css         HUD and label styles
 js/main.js            entry point: load data -> build scene -> start UI
 js/data.js            data loader + lat/lon -> scene projection
-js/ui.js              buttons, hint text, floating labels
+js/ui.js              buttons, hint text, floating labels, panel fold, skyline lights
+js/minimap.js         the top-right map
+js/ridebar.js         the line diagram shown while riding
 js/scene/
   index.js            assembles the scene; time of day, ride mode, transit merge, views
   core.js             renderer, camera, orbit controls, lights
@@ -89,6 +101,8 @@ js/scene/
   buildings.js        45k real footprints, extruded and tiled
   landmarks.js        styled towers, City Hall, 30th St, Art Museum, ESP, Boathouse Row
   citymarks.js        citywide landmarks: stadiums, Independence Hall, Memorial Hall, bridges
+  people.js           jointed figures (frisbee players, the statue)
+  frisbee.js          the ultimate game on the Edgley fields
   monorail.js         guideway, piers, stations, train
   nature.js           trees, rowing shells
   sports.js           proposal: expressway sports parks + shuttle monorails

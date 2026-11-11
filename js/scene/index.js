@@ -1,7 +1,8 @@
 // Assembles the whole scene from the loaded data and exposes what the UI needs.
 import * as THREE from 'three';
 import { createCore } from './core.js';
-import { litMats } from './materials.js';
+import { pairs } from '../data.js';
+import { litMats, setWindowHour, DISPLAY_PRESETS, setDisplayColors } from './materials.js';
 import { buildRiver } from './river.js';
 import { buildGround } from './ground.js';
 import { buildBuildings } from './buildings.js';
@@ -28,10 +29,12 @@ export async function buildScene(canvas, data, status = () => {}) {
   status('Laying out parks and streets…'); await nextFrame();
   const ground = buildGround(scene, data.ground, river, data.yardpark.rings);
   status(`Raising ${data.buildings.b.length.toLocaleString()} buildings…`); await nextFrame();
-  buildBuildings(scene, data.buildings);
+  const blds = buildBuildings(scene, data.buildings);
   // the rest of the city out to the city limits (outside the original extent, its own data)
   status('Building out the rest of Philadelphia…'); await nextFrame();
-  const city = buildCity(scene, data, { waterMat: river.waterMat, status });
+  // playing fields that the park trees must keep off (the Edgley frisbee and cricket ground)
+  const clear = (data.cityMarks.fields || []).map(f => pairs(f.outline));
+  const city = buildCity(scene, data, { waterMat: river.waterMat, status, clear });
   camera.far = 200000; camera.updateProjectionMatrix(); controls.maxDistance = 45000;
   status('Placing landmarks and the monorail…'); await nextFrame();
   // stadiums, Independence Hall, Memorial Hall and the Delaware bridges (data/city_landmarks.json)
@@ -98,8 +101,8 @@ export async function buildScene(canvas, data, status = () => {}) {
   let riding = false;
   // 24-hour clock: the sun's real position over Philadelphia today drives the sky and lighting
   const sky = createSky({
-    scene, sun, hemi, litMats, nightOnly: [...lm.boatLines, ...yard.duskOnly, ...marks.nightOnly],
-    onChange: st => { monorail.trainWinMat.emissiveIntensity = .05 + .75 * st.night; river.waterMat.color.set(st.water); },
+    scene, sun, hemi, litMats, nightOnly: [...lm.boatLines, ...yard.duskOnly, ...marks.nightOnly, ...lm.nightOnly, ...blds.nightOnly, ...city.nightOnly],
+    onChange: st => { setWindowHour(sky.getTime()); monorail.trainWinMat.emissiveIntensity = .05 + .75 * st.night; river.waterMat.color.set(st.water); },
   });
   const setTime = h => sky.setTime(h);
   // the old two-way switch, kept for anything that still calls it
@@ -169,6 +172,21 @@ export async function buildScene(canvas, data, status = () => {}) {
     fly = { t: 0, dur: 2.2, p0: camera.position.clone(), t0: controls.target.clone(), p1: v.pos, t1: v.target,
             lift: Math.min(450, camera.position.distanceTo(v.pos) * .22) };
   }
+  /** fly over a map point (minimap click), keeping the current viewing angle and distance */
+  function flyToPoint(x, z) {
+    setCreative(false);
+    if (riding !== false) setRiding(false, true);
+    if (subway.getRide()) leaveCar(true);
+    const off = camera.position.clone().sub(controls.target), t1 = new THREE.Vector3(x, 0, z);
+    if (off.y < 150) off.multiplyScalar(150 / Math.max(1, off.y));
+    fly = { t: 0, dur: 1.8, p0: camera.position.clone(), t0: controls.target.clone(), p1: t1.clone().add(off), t1, lift: Math.min(450, camera.position.distanceTo(t1) * .12) };
+  }
+  // for the minimap: the outline layers (flat dm arrays, see data.js pairs) and every rail route
+  const mapData = {
+    bbox: data.city.bbox, limits: data.city.limits,
+    water: [...data.city.water, ...data.river.water], green: [...data.city.green.map(g => g.slice(1)), ...data.ground.green.map(g => g.slice(1))],
+    routes: [...subway.routes, ...mono].map(r => ({ id: r.id, color: r.color, P: r.P })),
+  };
   function stepFly(dt) {
     fly.t = Math.min(1, fly.t + dt / fly.dur);
     const e = fly.t < .5 ? 4 * fly.t ** 3 : 1 - (-2 * fly.t + 2) ** 3 / 2; // ease in-out
@@ -258,7 +276,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   function start(onFrame) {
     function frame() {
       const dt = Math.min(clock.getDelta(), .05);
-      monorail.update(dt, riding === 'loop', camera); old53.update(dt); subway.update(dt, camera); updateShells(dt); sports.update(dt, riding, camera); yard.update(dt);
+      monorail.update(dt, riding === 'loop', camera); old53.update(dt); subway.update(dt, camera); updateShells(dt); sports.update(dt, riding, camera); yard.update(dt); marks.update(dt);
       if (fly) stepFly(dt);
       if ((flyKeys.f || flyKeys.s || flyKeys.u) && riding === false && !subway.getRide()) stepFlyKeys(dt);
       if (riding === false && !subway.getRide() && !creative) controls.update();
@@ -289,5 +307,5 @@ export async function buildScene(canvas, data, status = () => {}) {
   }
   legend.push({ name: 'Proposed monorails', color: '#d6452f' });
 
-  return { scene, camera, controls, renderer, labels, lines, views, flyTo, boardLine, setFly, setCreative, getCreative: () => creative, creativeLook, creativeSpeed, setTransitMap: on => { old53.setOverlay(on); return tmap.set(on); }, getTransitMap: tmap.get, legend, oldTrolleyLegend: old53.legend, cityBuildings: city.buildingCount, setTime, getTime: sky.getTime, sunset: sky.sunset, setMood, getMood, setRiding, setCut, getCut: subway.getCut, pickCar, boardCar, leaveCar, getCar: subway.getRide, lookCar: subway.look, moveCar: subway.move, start, river, monorail };
+  return { scene, camera, controls, renderer, labels, lines, views, flyTo, boardLine, setFly, setCreative, getCreative: () => creative, creativeLook, creativeSpeed, setTransitMap: on => { old53.setOverlay(on); return tmap.set(on); }, getTransitMap: tmap.get, legend, oldTrolleyLegend: old53.legend, cityBuildings: city.buildingCount, setTime, getTime: sky.getTime, sunset: sky.sunset, setMood, getMood, setRiding, setCut, getCut: subway.getCut, pickCar, boardCar, leaveCar, getCar: subway.getRide, rideStrip: subway.rideStrip, mapData, flyToPoint, displayPresets: DISPLAY_PRESETS, setDisplayLights: setDisplayColors, lookCar: subway.look, moveCar: subway.move, start, river, monorail };
 }
