@@ -10,7 +10,10 @@ and platform rules.
 | `build_transit.py` | Builds the `data-transit` block from the OSM files and writes it into the page |
 | `osm/transit.json` | OSM download: tracks, stations, stops and subway entrances in the model area |
 | `osm/routes.json` | OSM download: the route relations (L and T1–T5, both directions) |
-| `fetch_osm.sh` | Re-downloads the two OSM files (Overpass API) |
+| `fetch_osm.sh` | Re-downloads the OSM files (Overpass API) |
+| `build_trolley1953.py` | Builds `data/trolley1953.json` (the "1953 streetcars" layer) |
+| `osm/streets_cc.json` | OSM download: named Center City streets (for tracing the 1953 map) |
+| `osm/oldtram.json` | OSM download: disused and removed tram track in the model area |
 
 Data © OpenStreetMap contributors, ODbL. The page credits it.
 
@@ -52,3 +55,24 @@ The repository also keeps the page as source files (see the main README). After 
 3. In the page, give the new kind car sizes and speed in `SPEC` (subway.js chunk), and, for a
    north–south line, add a section (see "Add another underground line" in the EDITING GUIDE at the
    top of the HTML file).
+
+## The 1953 streetcar layer
+
+`build_trolley1953.py` traces the streetcar (blue) lines on the Center City panel of the
+Philadelphia Transportation Company map of January 1953 onto the OSM streets, labels each
+street with the routes printed beside it, and colours it by the year those routes were
+abandoned (the route table from Harold E. Cox, *Surface Cars of Philadelphia 1911-1965*). It
+also adds tram track still mapped in OSM (the old Route 23 on 11th and 12th Streets).
+
+The map image is not in the repository. Download it from
+http://www.phillytrolley.org/ptc-map.html (`IMAGES/PTC_MAP3.GIF`), then, from the repository folder:
+
+```
+pip install pillow
+python tools/build_trolley1953.py PTC_MAP3.GIF tools/osm/streets_cc.json tools/osm/oldtram.json data/trolley1953.json --overlay check.png
+```
+
+Look at `check.png` (the traced streets drawn in magenta over the map), then add `--write`
+to write `data/trolley1953.json`, and run `python -I tools/bundle.py` to refresh the page.
+The map only covers Vine to South Street, Schuylkill to the Delaware. Bus lines (red) and
+Route 61 on Ridge Ave (an electric trolleybus in 1953) are left out.

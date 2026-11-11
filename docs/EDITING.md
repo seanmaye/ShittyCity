@@ -16,9 +16,9 @@ Python helper below.
   <head>      <style> (HUD, labels) and an import map that maps "three" to three@0.128.0
   <body>      HUD markup: #ride, #transit, #lbl, #cut, #getoff buttons, #time slider (+ #time-out),
               #legend, #lines picker, #view-btns (Go to), #hint, #status, #tags
-  9 JSON data blocks, each <script type="application/json" id="data-NAME">...</script>,
-              where NAME is buildings, ground, landmarks, river, sports, trees, yardpark, transit
-              or city_landmarks
+  10 JSON data blocks, each <script type="application/json" id="data-NAME">...</script>,
+              where NAME is buildings, ground, landmarks, river, sports, trees, yardpark, transit,
+              trolley1953 or city_landmarks
   3 gzip data blocks (the citywide build-out), each
               <script type="application/gzip-base64" id="data-NAME" data-file="FILE">base64</script>
               for city (city.json.gz), city_buildings (city_buildings.bin.gz), metro (metro.json.gz)
@@ -186,6 +186,13 @@ data-city_landmarks  hand-styled models fitted to real outlines (tools/build_lan
   PATCO's track on the Ben Franklin Bridge follows the deck profile (build_metro.py). If you
   move an outline in this file only, those buildings stay out until the build is rerun.
 
+data-trolley1953 HISTORY: Center City streetcar tracks in January 1953 (track and cars always shown)
+  routes:  [{n, name, gone: year abandoned | null, now?}]   from Harold E. Cox's route table
+  streets: [{s: street, r: [route numbers], p: polyline_dm}]  traced from the 1953 PTC map
+           (Vine to South St, Schuylkill to Delaware). Line colour (only with "Show transit lines") = latest `gone` of its routes.
+  rails:   [{st: 0 disused rails still in the street | 1 removed track, p: polyline_dm}] from OSM
+  Rebuilt by tools/build_trolley1953.py (see tools/README.md), then tools/bundle.py.
+
 data-yardpark    PROPOSAL: deck over the 30th Street rail yard
   h:      deck height (m)
   rings:  [outer_ring_dm, hole_ring_dm, ...]; a hole lets a tall building stand through
@@ -210,6 +217,14 @@ js/scene/city.js  the rest of the city: limits, parks, water, streams, streets (
                   further ones only roofs), outline buildings, park trees (TREE_FAR); update()
                   culls tiles each frame. Its "Whole city" view.
 js/scene/transitmap.js  "Show transit lines": Line2 fat lines per route, drawn on top
+js/scene/oldtrolley.js  1953 streetcars: track (bed + rails) on every 1953 street and PCC cars on loops,
+                  always shown. With "Show transit lines" (setTransitMap) an overlay adds fat lines
+                  like transitmap.js (LINE_W px, LIFT m up) coloured by abandonment year (ERAS),
+                  wider outlines for track OSM still maps (CASING), and route-number labels
+                  (layer 't53'). Loops: PAIRS (one-way couplets, out on one
+                  street and back on the other) and TWO_WAY (double track). SPEED, HEADWAY.
+                  The cars are registered with the subway as kind 'pcc53' so they can be boarded.
+                  Each loop is also a "Ride a line" entry (group '1953 streetcars', id 'h53:<i>').
 js/scene/materials.js  M(color) quick material; litMats = materials that glow at dusk
                   (each has userData.lit = its glow intensity); window textures
 js/scene/geometry.js   Builder (merged meshes); addPolygon, addRibbon, addPrism (extruded
@@ -271,7 +286,7 @@ Debug handle in the browser console: window.__schuylkill
     setTime(hours 0-24), getTime(), sunset, setMood('day'|'dusk'), getMood(),
     boardLine('loop' | 0 | 1 | 'm:L' | 'm:B1' | 'm:AIR' ...), setFly(forward, strafe, up),
     setRiding(false), setTransitMap(on),
-    getTransitMap(), legend,
+    getTransitMap(), legend, oldTrolleyLegend,
     setCut('market' | false), getCut(), pickCar(x, y), boardCar(hit), leaveCar(), getCar(),
     lookCar(dx, dy), moveCar(forward, strafe), river, monorail }
 

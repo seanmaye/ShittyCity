@@ -1,0 +1,2224 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-11-11T15:34:41Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "way",
+  "id": 12112698,
+  "bounds": {
+    "minlat": 39.9781786,
+    "minlon": -75.1541549,
+    "maxlat": 39.9858065,
+    "maxlon": -75.1524867
+  },
+  "geometry": [
+    { "lat": 39.9858065, "lon": -75.1524867 },
+    { "lat": 39.9857471, "lon": -75.1524995 },
+    { "lat": 39.9849984, "lon": -75.1526623 },
+    { "lat": 39.9842735, "lon": -75.1528172 },
+    { "lat": 39.9841952, "lon": -75.1528341 },
+    { "lat": 39.9841106, "lon": -75.1528528 },
+    { "lat": 39.9827863, "lon": -75.1531471 },
+    { "lat": 39.9827246, "lon": -75.1531594 },
+    { "lat": 39.9826721, "lon": -75.1531705 },
+    { "lat": 39.9812435, "lon": -75.1534827 },
+    { "lat": 39.9812204, "lon": -75.1534878 },
+    { "lat": 39.9804318, "lon": -75.1536599 },
+    { "lat": 39.9803928, "lon": -75.1536684 },
+    { "lat": 39.9798035, "lon": -75.1537971 },
+    { "lat": 39.9797435, "lon": -75.1538123 },
+    { "lat": 39.9796906, "lon": -75.1538244 },
+    { "lat": 39.9793834, "lon": -75.1538945 },
+    { "lat": 39.9791742, "lon": -75.1539336 },
+    { "lat": 39.9782752, "lon": -75.1541336 },
+    { "lat": 39.9781786, "lon": -75.1541549 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "lane_markings": "no",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:zip_left": "19133",
+    "tiger:zip_right": "19133"
+  }
+},
+{
+  "type": "way",
+  "id": 12150381,
+  "bounds": {
+    "minlat": 39.9174799,
+    "minlon": -75.1657960,
+    "maxlat": 39.9302310,
+    "maxlon": -75.1630149
+  },
+  "geometry": [
+    { "lat": 39.9174799, "lon": -75.1657960 },
+    { "lat": 39.9175551, "lon": -75.1657795 },
+    { "lat": 39.9187164, "lon": -75.1655250 },
+    { "lat": 39.9193435, "lon": -75.1653876 },
+    { "lat": 39.9194004, "lon": -75.1653751 },
+    { "lat": 39.9194878, "lon": -75.1653559 },
+    { "lat": 39.9199741, "lon": -75.1652494 },
+    { "lat": 39.9204025, "lon": -75.1651555 },
+    { "lat": 39.9207801, "lon": -75.1650727 },
+    { "lat": 39.9211634, "lon": -75.1649887 },
+    { "lat": 39.9212257, "lon": -75.1649751 },
+    { "lat": 39.9212869, "lon": -75.1649619 },
+    { "lat": 39.9216657, "lon": -75.1648786 },
+    { "lat": 39.9220314, "lon": -75.1647985 },
+    { "lat": 39.9224540, "lon": -75.1647059 },
+    { "lat": 39.9229036, "lon": -75.1646073 },
+    { "lat": 39.9232587, "lon": -75.1645295 },
+    { "lat": 39.9236971, "lon": -75.1644334 },
+    { "lat": 39.9241404, "lon": -75.1643363 },
+    { "lat": 39.9244821, "lon": -75.1642614 },
+    { "lat": 39.9249098, "lon": -75.1641676 },
+    { "lat": 39.9261278, "lon": -75.1639007 },
+    { "lat": 39.9265563, "lon": -75.1638068 },
+    { "lat": 39.9269147, "lon": -75.1637282 },
+    { "lat": 39.9272905, "lon": -75.1636459 },
+    { "lat": 39.9273470, "lon": -75.1636335 },
+    { "lat": 39.9274017, "lon": -75.1636207 },
+    { "lat": 39.9274156, "lon": -75.1636177 },
+    { "lat": 39.9277688, "lon": -75.1635410 },
+    { "lat": 39.9281716, "lon": -75.1634527 },
+    { "lat": 39.9285256, "lon": -75.1633751 },
+    { "lat": 39.9285754, "lon": -75.1633642 },
+    { "lat": 39.9286378, "lon": -75.1633505 },
+    { "lat": 39.9289958, "lon": -75.1632721 },
+    { "lat": 39.9293643, "lon": -75.1631913 },
+    { "lat": 39.9296910, "lon": -75.1631248 },
+    { "lat": 39.9297481, "lon": -75.1631134 },
+    { "lat": 39.9297880, "lon": -75.1631050 },
+    { "lat": 39.9298654, "lon": -75.1630941 },
+    { "lat": 39.9300816, "lon": -75.1630447 },
+    { "lat": 39.9301166, "lon": -75.1630373 },
+    { "lat": 39.9302310, "lon": -75.1630149 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "residential",
+    "name": "South 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "both",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "11th",
+    "tiger:name_direction_prefix": "S",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19148",
+    "tiger:zip_right": "19148"
+  }
+},
+{
+  "type": "way",
+  "id": 30908182,
+  "bounds": {
+    "minlat": 39.9570668,
+    "minlon": -75.1571564,
+    "maxlat": 39.9573319,
+    "maxlon": -75.1570940
+  },
+  "geometry": [
+    { "lat": 39.9570668, "lon": -75.1571564 },
+    { "lat": 39.9573010, "lon": -75.1571013 },
+    { "lat": 39.9573319, "lon": -75.1570940 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "bridge": "yes",
+    "highway": "secondary",
+    "lane_markings": "yes",
+    "lanes": "2",
+    "layer": "1",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "parking:both": "no",
+    "ref:penndot": "SR2161",
+    "service": "disused_tram",
+    "sidewalk:both": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "11th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no"
+  }
+},
+{
+  "type": "way",
+  "id": 30908183,
+  "bounds": {
+    "minlat": 39.9572724,
+    "minlon": -75.1587134,
+    "maxlat": 39.9575274,
+    "maxlon": -75.1586584
+  },
+  "geometry": [
+    { "lat": 39.9575274, "lon": -75.1586584 },
+    { "lat": 39.9572836, "lon": -75.1587110 },
+    { "lat": 39.9572724, "lon": -75.1587134 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "bridge": "yes",
+    "highway": "secondary",
+    "lane_markings": "yes",
+    "lanes": "2",
+    "layer": "1",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "parking:both": "no",
+    "ref:penndot": "SR2159",
+    "service": "disused_tram",
+    "sidewalk": "separate",
+    "surface": "concrete",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no"
+  }
+},
+{
+  "type": "way",
+  "id": 30908184,
+  "bounds": {
+    "minlat": 39.9572010,
+    "minlon": -75.1587233,
+    "maxlat": 39.9572724,
+    "maxlon": -75.1587134
+  },
+  "geometry": [
+    { "lat": 39.9572724, "lon": -75.1587134 },
+    { "lat": 39.9572010, "lon": -75.1587233 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "lane_markings": "yes",
+    "lanes": "2",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "parking:both": "no",
+    "ref:penndot": "SR2159",
+    "service": "disused_tram",
+    "sidewalk": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no"
+  }
+},
+{
+  "type": "way",
+  "id": 62141898,
+  "bounds": {
+    "minlat": 39.9615904,
+    "minlon": -75.1561563,
+    "maxlat": 39.9617070,
+    "maxlon": -75.1559655
+  },
+  "geometry": [
+    { "lat": 39.9615904, "lon": -75.1561563 },
+    { "lat": 39.9616279, "lon": -75.1561371 },
+    { "lat": 39.9616762, "lon": -75.1560741 },
+    { "lat": 39.9616879, "lon": -75.1560436 },
+    { "lat": 39.9616957, "lon": -75.1560231 },
+    { "lat": 39.9617070, "lon": -75.1559655 }
+  ],
+  "tags": {
+    "disused:railway": "tram",
+    "railway": "disused"
+  }
+},
+{
+  "type": "way",
+  "id": 62142093,
+  "bounds": {
+    "minlat": 39.9320162,
+    "minlon": -75.1623271,
+    "maxlat": 39.9329920,
+    "maxlon": -75.1609828
+  },
+  "geometry": [
+    { "lat": 39.9320162, "lon": -75.1609828 },
+    { "lat": 39.9320737, "lon": -75.1610811 },
+    { "lat": 39.9323415, "lon": -75.1614474 },
+    { "lat": 39.9324711, "lon": -75.1616132 },
+    { "lat": 39.9326363, "lon": -75.1618445 },
+    { "lat": 39.9329568, "lon": -75.1623007 },
+    { "lat": 39.9329920, "lon": -75.1623271 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "cycleway:left": "shared_lane",
+    "highway": "residential",
+    "lane_markings": "no",
+    "name": "Reed Street",
+    "service": "disused_tram",
+    "sidewalk": "both",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 63060593,
+  "bounds": {
+    "minlat": 39.9575274,
+    "minlon": -75.1586584,
+    "maxlat": 39.9576067,
+    "maxlon": -75.1586364
+  },
+  "geometry": [
+    { "lat": 39.9576067, "lon": -75.1586364 },
+    { "lat": 39.9575274, "lon": -75.1586584 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "lane_markings": "yes",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "parking:both": "no",
+    "ref:penndot": "SR2159",
+    "service": "disused_tram",
+    "sidewalk": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19133",
+    "tiger:zip_right": "19133"
+  }
+},
+{
+  "type": "way",
+  "id": 63060594,
+  "bounds": {
+    "minlat": 39.9569965,
+    "minlon": -75.1571693,
+    "maxlat": 39.9570668,
+    "maxlon": -75.1571564
+  },
+  "geometry": [
+    { "lat": 39.9569965, "lon": -75.1571693 },
+    { "lat": 39.9570668, "lon": -75.1571564 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "lane_markings": "yes",
+    "lanes": "2",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "parking:both": "no",
+    "ref:penndot": "SR2161",
+    "service": "disused_tram",
+    "sidewalk:both": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "11th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no"
+  }
+},
+{
+  "type": "way",
+  "id": 135211084,
+  "bounds": {
+    "minlat": 39.9318614,
+    "minlon": -75.1610320,
+    "maxlat": 39.9320162,
+    "maxlon": -75.1609828
+  },
+  "geometry": [
+    { "lat": 39.9318614, "lon": -75.1610320 },
+    { "lat": 39.9320162, "lon": -75.1609828 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "cycleway": "no",
+    "highway": "residential",
+    "name": "South 10th Street",
+    "oneway": "no",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "10th",
+    "tiger:name_direction_prefix": "S",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no"
+  }
+},
+{
+  "type": "way",
+  "id": 170020467,
+  "bounds": {
+    "minlat": 39.9573319,
+    "minlon": -75.1570940,
+    "maxlat": 39.9574061,
+    "maxlon": -75.1570746
+  },
+  "geometry": [
+    { "lat": 39.9573319, "lon": -75.1570940 },
+    { "lat": 39.9574061, "lon": -75.1570746 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "lane_markings": "yes",
+    "lanes": "2",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "parking:both": "no",
+    "ref:penndot": "SR2161",
+    "service": "disused_tram",
+    "sidewalk:both": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "11th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19133",
+    "tiger:zip_right": "19133"
+  }
+},
+{
+  "type": "way",
+  "id": 170020472,
+  "bounds": {
+    "minlat": 39.9638216,
+    "minlon": -75.1556758,
+    "maxlat": 39.9689338,
+    "maxlon": -75.1545591
+  },
+  "geometry": [
+    { "lat": 39.9638216, "lon": -75.1556758 },
+    { "lat": 39.9638861, "lon": -75.1556610 },
+    { "lat": 39.9642230, "lon": -75.1555840 },
+    { "lat": 39.9642771, "lon": -75.1555745 },
+    { "lat": 39.9643350, "lon": -75.1555618 },
+    { "lat": 39.9646741, "lon": -75.1554850 },
+    { "lat": 39.9650663, "lon": -75.1554022 },
+    { "lat": 39.9653455, "lon": -75.1553413 },
+    { "lat": 39.9656516, "lon": -75.1552762 },
+    { "lat": 39.9657157, "lon": -75.1552626 },
+    { "lat": 39.9657735, "lon": -75.1552496 },
+    { "lat": 39.9666362, "lon": -75.1550547 },
+    { "lat": 39.9666820, "lon": -75.1550443 },
+    { "lat": 39.9667309, "lon": -75.1550343 },
+    { "lat": 39.9676853, "lon": -75.1548260 },
+    { "lat": 39.9677212, "lon": -75.1548174 },
+    { "lat": 39.9677788, "lon": -75.1548059 },
+    { "lat": 39.9681988, "lon": -75.1547159 },
+    { "lat": 39.9683295, "lon": -75.1546881 },
+    { "lat": 39.9683497, "lon": -75.1546838 },
+    { "lat": 39.9689338, "lon": -75.1545591 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "disused:cycleway:right": "lane",
+    "highway": "secondary",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk:both": "separate"
+  }
+},
+{
+  "type": "way",
+  "id": 170020479,
+  "bounds": {
+    "minlat": 39.9540679,
+    "minlon": -75.1594158,
+    "maxlat": 39.9557188,
+    "maxlon": -75.1590517
+  },
+  "geometry": [
+    { "lat": 39.9557188, "lon": -75.1590517 },
+    { "lat": 39.9540679, "lon": -75.1594158 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "covered": "no",
+    "highway": "secondary",
+    "lane_markings": "yes",
+    "lanes": "2",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tunnel": "building_passage"
+  }
+},
+{
+  "type": "way",
+  "id": 170020485,
+  "bounds": {
+    "minlat": 39.9524372,
+    "minlon": -75.1597791,
+    "maxlat": 39.9540679,
+    "maxlon": -75.1594158
+  },
+  "geometry": [
+    { "lat": 39.9540679, "lon": -75.1594158 },
+    { "lat": 39.9540306, "lon": -75.1594240 },
+    { "lat": 39.9539522, "lon": -75.1594419 },
+    { "lat": 39.9538794, "lon": -75.1594586 },
+    { "lat": 39.9533552, "lon": -75.1595757 },
+    { "lat": 39.9530126, "lon": -75.1596517 },
+    { "lat": 39.9529468, "lon": -75.1596671 },
+    { "lat": 39.9528838, "lon": -75.1596798 },
+    { "lat": 39.9524372, "lon": -75.1597791 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "cycleway:both": "no",
+    "highway": "secondary",
+    "lanes": "2",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St"
+  }
+},
+{
+  "type": "way",
+  "id": 170020486,
+  "bounds": {
+    "minlat": 39.9557188,
+    "minlon": -75.1590517,
+    "maxlat": 39.9572010,
+    "maxlon": -75.1587233
+  },
+  "geometry": [
+    { "lat": 39.9572010, "lon": -75.1587233 },
+    { "lat": 39.9571313, "lon": -75.1587352 },
+    { "lat": 39.9570627, "lon": -75.1587514 },
+    { "lat": 39.9569571, "lon": -75.1587728 },
+    { "lat": 39.9563717, "lon": -75.1589073 },
+    { "lat": 39.9562167, "lon": -75.1589425 },
+    { "lat": 39.9561446, "lon": -75.1589589 },
+    { "lat": 39.9558401, "lon": -75.1590270 },
+    { "lat": 39.9557874, "lon": -75.1590377 },
+    { "lat": 39.9557188, "lon": -75.1590517 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "lanes": "2",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk:both": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no"
+  }
+},
+{
+  "type": "way",
+  "id": 170020500,
+  "bounds": {
+    "minlat": 39.9429962,
+    "minlon": -75.1602111,
+    "maxlat": 39.9475553,
+    "maxlon": -75.1592231
+  },
+  "geometry": [
+    { "lat": 39.9429962, "lon": -75.1602111 },
+    { "lat": 39.9430564, "lon": -75.1601995 },
+    { "lat": 39.9433113, "lon": -75.1601527 },
+    { "lat": 39.9434021, "lon": -75.1601328 },
+    { "lat": 39.9435068, "lon": -75.1601103 },
+    { "lat": 39.9439597, "lon": -75.1600089 },
+    { "lat": 39.9440197, "lon": -75.1599955 },
+    { "lat": 39.9440696, "lon": -75.1599847 },
+    { "lat": 39.9445458, "lon": -75.1598818 },
+    { "lat": 39.9448594, "lon": -75.1598115 },
+    { "lat": 39.9449132, "lon": -75.1598001 },
+    { "lat": 39.9449764, "lon": -75.1597864 },
+    { "lat": 39.9452859, "lon": -75.1597194 },
+    { "lat": 39.9453905, "lon": -75.1596964 },
+    { "lat": 39.9456660, "lon": -75.1596360 },
+    { "lat": 39.9457558, "lon": -75.1596163 },
+    { "lat": 39.9462679, "lon": -75.1595038 },
+    { "lat": 39.9463333, "lon": -75.1594891 },
+    { "lat": 39.9463882, "lon": -75.1594762 },
+    { "lat": 39.9466556, "lon": -75.1594194 },
+    { "lat": 39.9469577, "lon": -75.1593560 },
+    { "lat": 39.9474950, "lon": -75.1592359 },
+    { "lat": 39.9475553, "lon": -75.1592231 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "bicycle": "yes",
+    "cycleway": "no",
+    "highway": "secondary",
+    "lane_markings": "no",
+    "lit": "yes",
+    "name": "South 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "both",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 170020501,
+  "bounds": {
+    "minlat": 39.9330531,
+    "minlon": -75.1623636,
+    "maxlat": 39.9371707,
+    "maxlon": -75.1614649
+  },
+  "geometry": [
+    { "lat": 39.9330531, "lon": -75.1623636 },
+    { "lat": 39.9334046, "lon": -75.1622860 },
+    { "lat": 39.9334655, "lon": -75.1622732 },
+    { "lat": 39.9335213, "lon": -75.1622609 },
+    { "lat": 39.9336484, "lon": -75.1622323 },
+    { "lat": 39.9338243, "lon": -75.1621921 },
+    { "lat": 39.9341977, "lon": -75.1621170 },
+    { "lat": 39.9344396, "lon": -75.1620659 },
+    { "lat": 39.9347687, "lon": -75.1619962 },
+    { "lat": 39.9348204, "lon": -75.1619852 },
+    { "lat": 39.9348666, "lon": -75.1619741 },
+    { "lat": 39.9353378, "lon": -75.1618611 },
+    { "lat": 39.9358072, "lon": -75.1617568 },
+    { "lat": 39.9358577, "lon": -75.1617466 },
+    { "lat": 39.9359159, "lon": -75.1617349 },
+    { "lat": 39.9363262, "lon": -75.1616468 },
+    { "lat": 39.9368122, "lon": -75.1615373 },
+    { "lat": 39.9369713, "lon": -75.1615045 },
+    { "lat": 39.9370755, "lon": -75.1614804 },
+    { "lat": 39.9370977, "lon": -75.1614763 },
+    { "lat": 39.9371707, "lon": -75.1614649 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "cycleway:left": "track",
+    "cycleway:right": "no",
+    "highway": "residential",
+    "lanes": "2",
+    "name": "South 11th Street",
+    "oneway": "no",
+    "oneway:bicycle": "no",
+    "service": "disused_tram",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 206643520,
+  "bounds": {
+    "minlat": 39.9737933,
+    "minlon": -75.1534912,
+    "maxlat": 39.9779751,
+    "maxlon": -75.1525777
+  },
+  "geometry": [
+    { "lat": 39.9737933, "lon": -75.1534912 },
+    { "lat": 39.9741558, "lon": -75.1534120 },
+    { "lat": 39.9743183, "lon": -75.1533765 },
+    { "lat": 39.9745060, "lon": -75.1533355 },
+    { "lat": 39.9746897, "lon": -75.1532954 },
+    { "lat": 39.9751646, "lon": -75.1531916 },
+    { "lat": 39.9758705, "lon": -75.1530374 },
+    { "lat": 39.9765324, "lon": -75.1528928 },
+    { "lat": 39.9765847, "lon": -75.1528814 },
+    { "lat": 39.9766560, "lon": -75.1528658 },
+    { "lat": 39.9769573, "lon": -75.1528000 },
+    { "lat": 39.9771746, "lon": -75.1527526 },
+    { "lat": 39.9778624, "lon": -75.1526023 },
+    { "lat": 39.9779751, "lon": -75.1525777 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram"
+  }
+},
+{
+  "type": "way",
+  "id": 206643521,
+  "bounds": {
+    "minlat": 39.9779751,
+    "minlon": -75.1525777,
+    "maxlat": 39.9864334,
+    "maxlon": -75.1507317
+  },
+  "geometry": [
+    { "lat": 39.9779751, "lon": -75.1525777 },
+    { "lat": 39.9780707, "lon": -75.1525568 },
+    { "lat": 39.9788312, "lon": -75.1523907 },
+    { "lat": 39.9789768, "lon": -75.1523589 },
+    { "lat": 39.9794826, "lon": -75.1522485 },
+    { "lat": 39.9795314, "lon": -75.1522378 },
+    { "lat": 39.9795918, "lon": -75.1522246 },
+    { "lat": 39.9796741, "lon": -75.1522066 },
+    { "lat": 39.9803766, "lon": -75.1520537 },
+    { "lat": 39.9807406, "lon": -75.1519736 },
+    { "lat": 39.9809830, "lon": -75.1519207 },
+    { "lat": 39.9810227, "lon": -75.1519120 },
+    { "lat": 39.9810762, "lon": -75.1519003 },
+    { "lat": 39.9813579, "lon": -75.1518388 },
+    { "lat": 39.9816582, "lon": -75.1517732 },
+    { "lat": 39.9817420, "lon": -75.1517548 },
+    { "lat": 39.9824721, "lon": -75.1515940 },
+    { "lat": 39.9825265, "lon": -75.1515820 },
+    { "lat": 39.9825932, "lon": -75.1515669 },
+    { "lat": 39.9826274, "lon": -75.1515595 },
+    { "lat": 39.9833141, "lon": -75.1514108 },
+    { "lat": 39.9839146, "lon": -75.1512802 },
+    { "lat": 39.9839781, "lon": -75.1512664 },
+    { "lat": 39.9840710, "lon": -75.1512461 },
+    { "lat": 39.9848086, "lon": -75.1510850 },
+    { "lat": 39.9855431, "lon": -75.1509246 },
+    { "lat": 39.9856015, "lon": -75.1509118 },
+    { "lat": 39.9856735, "lon": -75.1508961 },
+    { "lat": 39.9861940, "lon": -75.1507823 },
+    { "lat": 39.9862212, "lon": -75.1507764 },
+    { "lat": 39.9864334, "lon": -75.1507317 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "lanes": "2",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "11th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19133",
+    "tiger:zip_right": "19133"
+  }
+},
+{
+  "type": "way",
+  "id": 335828093,
+  "bounds": {
+    "minlat": 39.9528286,
+    "minlon": -75.1580693,
+    "maxlat": 39.9536657,
+    "maxlon": -75.1578864
+  },
+  "geometry": [
+    { "lat": 39.9528286, "lon": -75.1580693 },
+    { "lat": 39.9528368, "lon": -75.1580680 },
+    { "lat": 39.9532485, "lon": -75.1579778 },
+    { "lat": 39.9536657, "lon": -75.1578864 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "bicycle": "yes",
+    "cycleway": "no",
+    "highway": "secondary",
+    "lane_markings": "yes",
+    "lanes": "2",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "11th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no"
+  }
+},
+{
+  "type": "way",
+  "id": 335828094,
+  "bounds": {
+    "minlat": 39.9537572,
+    "minlon": -75.1578687,
+    "maxlat": 39.9555972,
+    "maxlon": -75.1574763
+  },
+  "geometry": [
+    { "lat": 39.9537572, "lon": -75.1578687 },
+    { "lat": 39.9538380, "lon": -75.1578514 },
+    { "lat": 39.9543459, "lon": -75.1577419 },
+    { "lat": 39.9544091, "lon": -75.1577285 },
+    { "lat": 39.9546762, "lon": -75.1576703 },
+    { "lat": 39.9552659, "lon": -75.1575442 },
+    { "lat": 39.9555179, "lon": -75.1574902 },
+    { "lat": 39.9555972, "lon": -75.1574763 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "bicycle": "yes",
+    "cycleway": "no",
+    "highway": "secondary",
+    "lanes": "2",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "11th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no"
+  }
+},
+{
+  "type": "way",
+  "id": 492442039,
+  "bounds": {
+    "minlat": 39.9523890,
+    "minlon": -75.1597876,
+    "maxlat": 39.9524372,
+    "maxlon": -75.1597791
+  },
+  "geometry": [
+    { "lat": 39.9524372, "lon": -75.1597791 },
+    { "lat": 39.9523890, "lon": -75.1597876 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "covered": "yes",
+    "highway": "secondary",
+    "lanes": "2",
+    "maxheight": "default",
+    "maxheight:signed": "no",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St"
+  }
+},
+{
+  "type": "way",
+  "id": 492442040,
+  "bounds": {
+    "minlat": 39.9519215,
+    "minlon": -75.1598866,
+    "maxlat": 39.9523890,
+    "maxlon": -75.1597876
+  },
+  "geometry": [
+    { "lat": 39.9523890, "lon": -75.1597876 },
+    { "lat": 39.9520362, "lon": -75.1598635 },
+    { "lat": 39.9519215, "lon": -75.1598866 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "cycleway:both": "no",
+    "highway": "secondary",
+    "lanes": "2",
+    "maxspeed": "25 mph",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St"
+  }
+},
+{
+  "type": "way",
+  "id": 536139719,
+  "bounds": {
+    "minlat": 39.9580699,
+    "minlon": -75.1585308,
+    "maxlat": 39.9599578,
+    "maxlon": -75.1581201
+  },
+  "geometry": [
+    { "lat": 39.9599578, "lon": -75.1581201 },
+    { "lat": 39.9598553, "lon": -75.1581421 },
+    { "lat": 39.9596180, "lon": -75.1581930 },
+    { "lat": 39.9591889, "lon": -75.1582886 },
+    { "lat": 39.9591304, "lon": -75.1583016 },
+    { "lat": 39.9590582, "lon": -75.1583167 },
+    { "lat": 39.9588768, "lon": -75.1583567 },
+    { "lat": 39.9586513, "lon": -75.1584049 },
+    { "lat": 39.9583722, "lon": -75.1584641 },
+    { "lat": 39.9581028, "lon": -75.1585235 },
+    { "lat": 39.9580699, "lon": -75.1585308 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "cycleway:left": "no",
+    "cycleway:right": "lane",
+    "highway": "secondary",
+    "lanes": "2",
+    "lit": "yes",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "parking:lane:left:parallel": "on_street",
+    "parking:left": "no",
+    "parking:left:orientation": "parallel",
+    "parking:right": "yes",
+    "service": "disused_tram",
+    "sidewalk": "both",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:zip_left": "19133",
+    "tiger:zip_right": "19133"
+  }
+},
+{
+  "type": "way",
+  "id": 536139720,
+  "bounds": {
+    "minlat": 39.9617600,
+    "minlon": -75.1577273,
+    "maxlat": 39.9618614,
+    "maxlon": -75.1577074
+  },
+  "geometry": [
+    { "lat": 39.9618614, "lon": -75.1577074 },
+    { "lat": 39.9617600, "lon": -75.1577273 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "lit": "yes",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram"
+  }
+},
+{
+  "type": "way",
+  "id": 555331755,
+  "bounds": {
+    "minlat": 39.9517264,
+    "minlon": -75.1583158,
+    "maxlat": 39.9528286,
+    "maxlon": -75.1580693
+  },
+  "geometry": [
+    { "lat": 39.9517264, "lon": -75.1583158 },
+    { "lat": 39.9518389, "lon": -75.1582923 },
+    { "lat": 39.9526982, "lon": -75.1581028 },
+    { "lat": 39.9527611, "lon": -75.1580870 },
+    { "lat": 39.9528286, "lon": -75.1580693 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "bicycle": "yes",
+    "cycleway": "no",
+    "highway": "secondary",
+    "lane_markings": "no",
+    "lanes": "2",
+    "maxspeed": "25 mph",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "separate",
+    "source:width": "ARCore",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "11th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "width": "30'0\""
+  }
+},
+{
+  "type": "way",
+  "id": 556954158,
+  "bounds": {
+    "minlat": 39.9399604,
+    "minlon": -75.1625000,
+    "maxlat": 39.9477481,
+    "maxlon": -75.1607842
+  },
+  "geometry": [
+    { "lat": 39.9477481, "lon": -75.1607842 },
+    { "lat": 39.9476958, "lon": -75.1607988 },
+    { "lat": 39.9474282, "lon": -75.1608570 },
+    { "lat": 39.9469553, "lon": -75.1609554 },
+    { "lat": 39.9465841, "lon": -75.1610380 },
+    { "lat": 39.9465252, "lon": -75.1610462 },
+    { "lat": 39.9464754, "lon": -75.1610567 },
+    { "lat": 39.9461063, "lon": -75.1611382 },
+    { "lat": 39.9454212, "lon": -75.1612932 },
+    { "lat": 39.9451657, "lon": -75.1613479 },
+    { "lat": 39.9451067, "lon": -75.1613606 },
+    { "lat": 39.9450524, "lon": -75.1613749 },
+    { "lat": 39.9447745, "lon": -75.1614394 },
+    { "lat": 39.9446576, "lon": -75.1614660 },
+    { "lat": 39.9445383, "lon": -75.1614912 },
+    { "lat": 39.9442822, "lon": -75.1615467 },
+    { "lat": 39.9442140, "lon": -75.1615615 },
+    { "lat": 39.9441517, "lon": -75.1615763 },
+    { "lat": 39.9437123, "lon": -75.1616708 },
+    { "lat": 39.9435248, "lon": -75.1617129 },
+    { "lat": 39.9432619, "lon": -75.1617720 },
+    { "lat": 39.9431944, "lon": -75.1617870 },
+    { "lat": 39.9431427, "lon": -75.1617948 },
+    { "lat": 39.9427927, "lon": -75.1618701 },
+    { "lat": 39.9427603, "lon": -75.1618767 },
+    { "lat": 39.9427233, "lon": -75.1618846 },
+    { "lat": 39.9423263, "lon": -75.1619764 },
+    { "lat": 39.9419458, "lon": -75.1620598 },
+    { "lat": 39.9413527, "lon": -75.1622008 },
+    { "lat": 39.9411218, "lon": -75.1622509 },
+    { "lat": 39.9408463, "lon": -75.1623107 },
+    { "lat": 39.9404012, "lon": -75.1624072 },
+    { "lat": 39.9403445, "lon": -75.1624195 },
+    { "lat": 39.9399604, "lon": -75.1625000 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "cycleway:both": "no",
+    "highway": "secondary",
+    "lanes": "2",
+    "lit": "yes",
+    "name": "South 12th Street",
+    "oneway": "yes",
+    "parking:left": "no",
+    "parking:right": "lane",
+    "parking:right:orientation": "parallel",
+    "service": "disused_tram",
+    "sidewalk": "both",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "S",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19147;19148",
+    "tiger:zip_right": "19147;19148;19148"
+  }
+},
+{
+  "type": "way",
+  "id": 584038594,
+  "bounds": {
+    "minlat": 39.9555972,
+    "minlon": -75.1574763,
+    "maxlat": 39.9569965,
+    "maxlon": -75.1571693
+  },
+  "geometry": [
+    { "lat": 39.9555972, "lon": -75.1574763 },
+    { "lat": 39.9556429, "lon": -75.1574657 },
+    { "lat": 39.9559418, "lon": -75.1574007 },
+    { "lat": 39.9561755, "lon": -75.1573483 },
+    { "lat": 39.9562042, "lon": -75.1573421 },
+    { "lat": 39.9563798, "lon": -75.1573021 },
+    { "lat": 39.9568173, "lon": -75.1572064 },
+    { "lat": 39.9569081, "lon": -75.1571868 },
+    { "lat": 39.9569245, "lon": -75.1571838 },
+    { "lat": 39.9569965, "lon": -75.1571693 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "bicycle": "yes",
+    "cycleway": "no",
+    "highway": "secondary",
+    "lanes": "2",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk:both": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "11th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no"
+  }
+},
+{
+  "type": "way",
+  "id": 626112964,
+  "bounds": {
+    "minlat": 39.9574061,
+    "minlon": -75.1570746,
+    "maxlat": 39.9589344,
+    "maxlon": -75.1567419
+  },
+  "geometry": [
+    { "lat": 39.9574061, "lon": -75.1570746 },
+    { "lat": 39.9574987, "lon": -75.1570498 },
+    { "lat": 39.9575873, "lon": -75.1570304 },
+    { "lat": 39.9578974, "lon": -75.1569654 },
+    { "lat": 39.9581757, "lon": -75.1569033 },
+    { "lat": 39.9584648, "lon": -75.1568427 },
+    { "lat": 39.9588677, "lon": -75.1567562 },
+    { "lat": 39.9589344, "lon": -75.1567419 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "cycleway:both": "no",
+    "highway": "secondary",
+    "lanes": "2",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "parking:left": "no",
+    "parking:right": "lane",
+    "parking:right:orientation": "parallel",
+    "service": "disused_tram",
+    "sidewalk:both": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "11th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19133",
+    "tiger:zip_right": "19133"
+  }
+},
+{
+  "type": "way",
+  "id": 626112965,
+  "bounds": {
+    "minlat": 39.9604777,
+    "minlon": -75.1580050,
+    "maxlat": 39.9617600,
+    "maxlon": -75.1577273
+  },
+  "geometry": [
+    { "lat": 39.9617600, "lon": -75.1577273 },
+    { "lat": 39.9616629, "lon": -75.1577483 },
+    { "lat": 39.9613987, "lon": -75.1578055 },
+    { "lat": 39.9613399, "lon": -75.1578199 },
+    { "lat": 39.9609989, "lon": -75.1578928 },
+    { "lat": 39.9604777, "lon": -75.1580050 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "cycleway:left": "no",
+    "cycleway:right": "lane",
+    "highway": "secondary",
+    "lit": "yes",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "parking:lane:left:parallel": "on_street",
+    "parking:left": "yes",
+    "parking:left:orientation": "parallel",
+    "parking:right": "no",
+    "service": "disused_tram",
+    "sidewalk:both": "separate",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:zip_left": "19133",
+    "tiger:zip_right": "19133"
+  }
+},
+{
+  "type": "way",
+  "id": 626112967,
+  "bounds": {
+    "minlat": 39.9475553,
+    "minlon": -75.1592231,
+    "maxlat": 39.9517264,
+    "maxlon": -75.1583158
+  },
+  "geometry": [
+    { "lat": 39.9475553, "lon": -75.1592231 },
+    { "lat": 39.9476142, "lon": -75.1592090 },
+    { "lat": 39.9480297, "lon": -75.1591182 },
+    { "lat": 39.9481129, "lon": -75.1591001 },
+    { "lat": 39.9482164, "lon": -75.1590782 },
+    { "lat": 39.9486394, "lon": -75.1589843 },
+    { "lat": 39.9486914, "lon": -75.1589725 },
+    { "lat": 39.9487612, "lon": -75.1589566 },
+    { "lat": 39.9494112, "lon": -75.1588140 },
+    { "lat": 39.9494502, "lon": -75.1588054 },
+    { "lat": 39.9495017, "lon": -75.1587943 },
+    { "lat": 39.9501431, "lon": -75.1586533 },
+    { "lat": 39.9502157, "lon": -75.1586377 },
+    { "lat": 39.9502693, "lon": -75.1586257 },
+    { "lat": 39.9506742, "lon": -75.1585387 },
+    { "lat": 39.9510542, "lon": -75.1584607 },
+    { "lat": 39.9516239, "lon": -75.1583382 },
+    { "lat": 39.9517264, "lon": -75.1583158 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "bicycle": "yes",
+    "cycleway": "no",
+    "highway": "secondary",
+    "lanes": "2",
+    "lit": "yes",
+    "maxspeed": "25 mph",
+    "name": "South 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk:both": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "11th",
+    "tiger:name_direction_prefix": "S",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19147",
+    "tiger:zip_right": "19147"
+  }
+},
+{
+  "type": "way",
+  "id": 626112968,
+  "bounds": {
+    "minlat": 39.9496460,
+    "minlon": -75.1603710,
+    "maxlat": 39.9519215,
+    "maxlon": -75.1598866
+  },
+  "geometry": [
+    { "lat": 39.9519215, "lon": -75.1598866 },
+    { "lat": 39.9518139, "lon": -75.1599083 },
+    { "lat": 39.9515253, "lon": -75.1599746 },
+    { "lat": 39.9513925, "lon": -75.1600001 },
+    { "lat": 39.9512730, "lon": -75.1600260 },
+    { "lat": 39.9512342, "lon": -75.1600336 },
+    { "lat": 39.9511592, "lon": -75.1600497 },
+    { "lat": 39.9509204, "lon": -75.1601020 },
+    { "lat": 39.9508833, "lon": -75.1601112 },
+    { "lat": 39.9504652, "lon": -75.1602034 },
+    { "lat": 39.9504114, "lon": -75.1602095 },
+    { "lat": 39.9503415, "lon": -75.1602215 },
+    { "lat": 39.9496849, "lon": -75.1603621 },
+    { "lat": 39.9496460, "lon": -75.1603710 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "cycleway:both": "no",
+    "highway": "secondary",
+    "lit": "yes",
+    "maxspeed": "25 mph",
+    "name": "South 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "S",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19147;19148",
+    "tiger:zip_right": "19147;19148;19148"
+  }
+},
+{
+  "type": "way",
+  "id": 626537331,
+  "bounds": {
+    "minlat": 39.9536657,
+    "minlon": -75.1578864,
+    "maxlat": 39.9537572,
+    "maxlon": -75.1578687
+  },
+  "geometry": [
+    { "lat": 39.9536657, "lon": -75.1578864 },
+    { "lat": 39.9536819, "lon": -75.1578832 },
+    { "lat": 39.9537572, "lon": -75.1578687 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "bicycle": "yes",
+    "cycleway": "no",
+    "highway": "secondary",
+    "lanes": "2",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "11th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no"
+  }
+},
+{
+  "type": "way",
+  "id": 626537333,
+  "bounds": {
+    "minlat": 39.9597609,
+    "minlon": -75.1565625,
+    "maxlat": 39.9602802,
+    "maxlon": -75.1564456
+  },
+  "geometry": [
+    { "lat": 39.9597609, "lon": -75.1565625 },
+    { "lat": 39.9602000, "lon": -75.1564636 },
+    { "lat": 39.9602802, "lon": -75.1564456 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "lit": "yes",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk:both": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "11th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19133",
+    "tiger:zip_right": "19133"
+  }
+},
+{
+  "type": "way",
+  "id": 626822023,
+  "bounds": {
+    "minlat": 39.9599578,
+    "minlon": -75.1581201,
+    "maxlat": 39.9604777,
+    "maxlon": -75.1580050
+  },
+  "geometry": [
+    { "lat": 39.9604777, "lon": -75.1580050 },
+    { "lat": 39.9599578, "lon": -75.1581201 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "cycleway": "lane",
+    "highway": "secondary",
+    "lane_markings": "no",
+    "lit": "yes",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "parking:lane:left:parallel": "on_street",
+    "parking:left": "yes",
+    "parking:left:orientation": "parallel",
+    "parking:right": "no",
+    "service": "disused_tram",
+    "sidewalk:both": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:zip_left": "19133",
+    "tiger:zip_right": "19133"
+  }
+},
+{
+  "type": "way",
+  "id": 626822024,
+  "bounds": {
+    "minlat": 39.9602802,
+    "minlon": -75.1564456,
+    "maxlat": 39.9604240,
+    "maxlon": -75.1564137
+  },
+  "geometry": [
+    { "lat": 39.9602802, "lon": -75.1564456 },
+    { "lat": 39.9602932, "lon": -75.1564427 },
+    { "lat": 39.9604240, "lon": -75.1564137 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "lit": "yes",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk:both": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "11th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19133",
+    "tiger:zip_right": "19133"
+  }
+},
+{
+  "type": "way",
+  "id": 666588412,
+  "bounds": {
+    "minlat": 39.9693161,
+    "minlon": -75.1560859,
+    "maxlat": 39.9710570,
+    "maxlon": -75.1557063
+  },
+  "geometry": [
+    { "lat": 39.9710570, "lon": -75.1557063 },
+    { "lat": 39.9710069, "lon": -75.1557176 },
+    { "lat": 39.9709982, "lon": -75.1557192 },
+    { "lat": 39.9709746, "lon": -75.1557246 },
+    { "lat": 39.9709262, "lon": -75.1557349 },
+    { "lat": 39.9708496, "lon": -75.1557513 },
+    { "lat": 39.9705762, "lon": -75.1558110 },
+    { "lat": 39.9704986, "lon": -75.1558279 },
+    { "lat": 39.9704536, "lon": -75.1558377 },
+    { "lat": 39.9693729, "lon": -75.1560735 },
+    { "lat": 39.9693161, "lon": -75.1560859 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "cycleway:left": "lane",
+    "cycleway:left:buffer": "no",
+    "highway": "secondary",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk:both": "separate"
+  }
+},
+{
+  "type": "way",
+  "id": 686176823,
+  "bounds": {
+    "minlat": 39.9592352,
+    "minlon": -75.1566776,
+    "maxlat": 39.9597609,
+    "maxlon": -75.1565625
+  },
+  "geometry": [
+    { "lat": 39.9592352, "lon": -75.1566776 },
+    { "lat": 39.9597609, "lon": -75.1565625 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "lane_markings": "no",
+    "lit": "yes",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "both",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "11th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19133",
+    "tiger:zip_right": "19133"
+  }
+},
+{
+  "type": "way",
+  "id": 686176824,
+  "bounds": {
+    "minlat": 39.9589344,
+    "minlon": -75.1567419,
+    "maxlat": 39.9592352,
+    "maxlon": -75.1566776
+  },
+  "geometry": [
+    { "lat": 39.9589344, "lon": -75.1567419 },
+    { "lat": 39.9589841, "lon": -75.1567313 },
+    { "lat": 39.9592352, "lon": -75.1566776 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "lane_markings": "no",
+    "maxheight": "13'2\"",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "both",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "11th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19133",
+    "tiger:zip_right": "19133"
+  }
+},
+{
+  "type": "way",
+  "id": 771448241,
+  "bounds": {
+    "minlat": 39.9421440,
+    "minlon": -75.1618929,
+    "maxlat": 39.9423071,
+    "maxlon": -75.1605730
+  },
+  "geometry": [
+    { "lat": 39.9423071, "lon": -75.1618929 },
+    { "lat": 39.9422589, "lon": -75.1615033 },
+    { "lat": 39.9422452, "lon": -75.1613856 },
+    { "lat": 39.9422225, "lon": -75.1612037 },
+    { "lat": 39.9421856, "lon": -75.1609090 },
+    { "lat": 39.9421440, "lon": -75.1605730 }
+  ],
+  "tags": {
+    "disused:railway": "tram",
+    "railway": "disused"
+  }
+},
+{
+  "type": "way",
+  "id": 779825690,
+  "bounds": {
+    "minlat": 39.9620194,
+    "minlon": -75.1576801,
+    "maxlat": 39.9693161,
+    "maxlon": -75.1560859
+  },
+  "geometry": [
+    { "lat": 39.9693161, "lon": -75.1560859 },
+    { "lat": 39.9692696, "lon": -75.1560960 },
+    { "lat": 39.9686987, "lon": -75.1562207 },
+    { "lat": 39.9680936, "lon": -75.1563527 },
+    { "lat": 39.9671954, "lon": -75.1565491 },
+    { "lat": 39.9671227, "lon": -75.1565646 },
+    { "lat": 39.9670638, "lon": -75.1565717 },
+    { "lat": 39.9663451, "lon": -75.1567184 },
+    { "lat": 39.9661491, "lon": -75.1567577 },
+    { "lat": 39.9657218, "lon": -75.1568565 },
+    { "lat": 39.9656262, "lon": -75.1568766 },
+    { "lat": 39.9654715, "lon": -75.1569108 },
+    { "lat": 39.9654202, "lon": -75.1569222 },
+    { "lat": 39.9650477, "lon": -75.1570048 },
+    { "lat": 39.9650177, "lon": -75.1570116 },
+    { "lat": 39.9649686, "lon": -75.1570224 },
+    { "lat": 39.9645680, "lon": -75.1571104 },
+    { "lat": 39.9640783, "lon": -75.1572133 },
+    { "lat": 39.9639768, "lon": -75.1572364 },
+    { "lat": 39.9636459, "lon": -75.1573118 },
+    { "lat": 39.9635916, "lon": -75.1573244 },
+    { "lat": 39.9635437, "lon": -75.1573357 },
+    { "lat": 39.9632837, "lon": -75.1573879 },
+    { "lat": 39.9630287, "lon": -75.1574464 },
+    { "lat": 39.9629690, "lon": -75.1574575 },
+    { "lat": 39.9624982, "lon": -75.1575608 },
+    { "lat": 39.9621160, "lon": -75.1576642 },
+    { "lat": 39.9620194, "lon": -75.1576801 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "disused:cycleway:left": "lane",
+    "highway": "secondary",
+    "lit": "yes",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk:both": "separate"
+  }
+},
+{
+  "type": "way",
+  "id": 779825692,
+  "bounds": {
+    "minlat": 39.9689338,
+    "minlon": -75.1545591,
+    "maxlat": 39.9707216,
+    "maxlon": -75.1541660
+  },
+  "geometry": [
+    { "lat": 39.9689338, "lon": -75.1545591 },
+    { "lat": 39.9690576, "lon": -75.1545280 },
+    { "lat": 39.9694255, "lon": -75.1544484 },
+    { "lat": 39.9698252, "lon": -75.1543578 },
+    { "lat": 39.9702505, "lon": -75.1542736 },
+    { "lat": 39.9704124, "lon": -75.1542394 },
+    { "lat": 39.9706237, "lon": -75.1541872 },
+    { "lat": 39.9706510, "lon": -75.1541804 },
+    { "lat": 39.9707216, "lon": -75.1541660 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "disused:cycleway:right": "lane",
+    "highway": "secondary",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram"
+  }
+},
+{
+  "type": "way",
+  "id": 789330148,
+  "bounds": {
+    "minlat": 39.9753679,
+    "minlon": -75.1547652,
+    "maxlat": 39.9781786,
+    "maxlon": -75.1541549
+  },
+  "geometry": [
+    { "lat": 39.9781786, "lon": -75.1541549 },
+    { "lat": 39.9780820, "lon": -75.1541755 },
+    { "lat": 39.9775885, "lon": -75.1542805 },
+    { "lat": 39.9774850, "lon": -75.1543031 },
+    { "lat": 39.9767881, "lon": -75.1544552 },
+    { "lat": 39.9761199, "lon": -75.1546011 },
+    { "lat": 39.9760452, "lon": -75.1546174 },
+    { "lat": 39.9757552, "lon": -75.1546807 },
+    { "lat": 39.9753679, "lon": -75.1547652 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "cycleway:left": "lane",
+    "cycleway:left:buffer": "no",
+    "highway": "secondary",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram"
+  }
+},
+{
+  "type": "way",
+  "id": 828997923,
+  "bounds": {
+    "minlat": 39.9707853,
+    "minlon": -75.1541532,
+    "maxlat": 39.9708517,
+    "maxlon": -75.1541389
+  },
+  "geometry": [
+    { "lat": 39.9707853, "lon": -75.1541532 },
+    { "lat": 39.9708037, "lon": -75.1541498 },
+    { "lat": 39.9708517, "lon": -75.1541389 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "11th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19133",
+    "tiger:zip_right": "19133"
+  }
+},
+{
+  "type": "way",
+  "id": 828997924,
+  "bounds": {
+    "minlat": 39.9707216,
+    "minlon": -75.1541660,
+    "maxlat": 39.9707853,
+    "maxlon": -75.1541532
+  },
+  "geometry": [
+    { "lat": 39.9707216, "lon": -75.1541660 },
+    { "lat": 39.9707720, "lon": -75.1541558 },
+    { "lat": 39.9707853, "lon": -75.1541532 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "11th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19133",
+    "tiger:zip_right": "19133"
+  }
+},
+{
+  "type": "way",
+  "id": 828997926,
+  "bounds": {
+    "minlat": 39.9710570,
+    "minlon": -75.1557063,
+    "maxlat": 39.9727251,
+    "maxlon": -75.1553419
+  },
+  "geometry": [
+    { "lat": 39.9727251, "lon": -75.1553419 },
+    { "lat": 39.9726680, "lon": -75.1553544 },
+    { "lat": 39.9723139, "lon": -75.1554317 },
+    { "lat": 39.9722589, "lon": -75.1554441 },
+    { "lat": 39.9719097, "lon": -75.1555211 },
+    { "lat": 39.9715477, "lon": -75.1555994 },
+    { "lat": 39.9714611, "lon": -75.1556178 },
+    { "lat": 39.9714123, "lon": -75.1556284 },
+    { "lat": 39.9711561, "lon": -75.1556844 },
+    { "lat": 39.9711239, "lon": -75.1556914 },
+    { "lat": 39.9710570, "lon": -75.1557063 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "cycleway:left": "lane",
+    "cycleway:left:buffer": "no",
+    "highway": "secondary",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk:both": "separate"
+  }
+},
+{
+  "type": "way",
+  "id": 980227101,
+  "bounds": {
+    "minlat": 39.9618614,
+    "minlon": -75.1577074,
+    "maxlat": 39.9620194,
+    "maxlon": -75.1576801
+  },
+  "geometry": [
+    { "lat": 39.9620194, "lon": -75.1576801 },
+    { "lat": 39.9619563, "lon": -75.1576908 },
+    { "lat": 39.9618614, "lon": -75.1577074 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "lit": "yes",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram"
+  }
+},
+{
+  "type": "way",
+  "id": 1020533929,
+  "bounds": {
+    "minlat": 39.9494836,
+    "minlon": -75.1604061,
+    "maxlat": 39.9496460,
+    "maxlon": -75.1603710
+  },
+  "geometry": [
+    { "lat": 39.9496460, "lon": -75.1603710 },
+    { "lat": 39.9496031, "lon": -75.1603808 },
+    { "lat": 39.9494836, "lon": -75.1604061 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "lit": "yes",
+    "name": "South 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "S",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19147;19148",
+    "tiger:zip_right": "19147;19148;19148"
+  }
+},
+{
+  "type": "way",
+  "id": 1020533933,
+  "bounds": {
+    "minlat": 39.9477481,
+    "minlon": -75.1607842,
+    "maxlat": 39.9493266,
+    "maxlon": -75.1604405
+  },
+  "geometry": [
+    { "lat": 39.9493266, "lon": -75.1604405 },
+    { "lat": 39.9492165, "lon": -75.1604644 },
+    { "lat": 39.9489551, "lon": -75.1605184 },
+    { "lat": 39.9488871, "lon": -75.1605334 },
+    { "lat": 39.9488347, "lon": -75.1605440 },
+    { "lat": 39.9484917, "lon": -75.1606172 },
+    { "lat": 39.9483797, "lon": -75.1606418 },
+    { "lat": 39.9481355, "lon": -75.1606965 },
+    { "lat": 39.9477984, "lon": -75.1607747 },
+    { "lat": 39.9477481, "lon": -75.1607842 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "cycleway:both": "no",
+    "highway": "secondary",
+    "lit": "yes",
+    "name": "South 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "S",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19147;19148",
+    "tiger:zip_right": "19147;19148;19148"
+  }
+},
+{
+  "type": "way",
+  "id": 1020533934,
+  "bounds": {
+    "minlat": 39.9493266,
+    "minlon": -75.1604405,
+    "maxlat": 39.9493872,
+    "maxlon": -75.1604278
+  },
+  "geometry": [
+    { "lat": 39.9493872, "lon": -75.1604278 },
+    { "lat": 39.9493266, "lon": -75.1604405 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "lit": "yes",
+    "name": "South 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "S",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19147;19148",
+    "tiger:zip_right": "19147;19148;19148"
+  }
+},
+{
+  "type": "way",
+  "id": 1020533935,
+  "bounds": {
+    "minlat": 39.9493872,
+    "minlon": -75.1604278,
+    "maxlat": 39.9494836,
+    "maxlon": -75.1604061
+  },
+  "geometry": [
+    { "lat": 39.9494836, "lon": -75.1604061 },
+    { "lat": 39.9493872, "lon": -75.1604278 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "lit": "yes",
+    "name": "South 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "S",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19147;19148",
+    "tiger:zip_right": "19147;19148;19148"
+  }
+},
+{
+  "type": "way",
+  "id": 1028927440,
+  "bounds": {
+    "minlat": 39.9576067,
+    "minlon": -75.1586364,
+    "maxlat": 39.9580699,
+    "maxlon": -75.1585308
+  },
+  "geometry": [
+    { "lat": 39.9580699, "lon": -75.1585308 },
+    { "lat": 39.9577681, "lon": -75.1585973 },
+    { "lat": 39.9577342, "lon": -75.1586053 },
+    { "lat": 39.9576878, "lon": -75.1586160 },
+    { "lat": 39.9576067, "lon": -75.1586364 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "cycleway:left": "no",
+    "cycleway:right": "lane",
+    "highway": "secondary",
+    "lanes": "3",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "parking:both": "no",
+    "service": "disused_tram",
+    "sidewalk:both": "separate",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "N",
+    "tiger:name_type": "St",
+    "tiger:zip_left": "19133",
+    "tiger:zip_right": "19133",
+    "turn:lanes": "||right"
+  }
+},
+{
+  "type": "way",
+  "id": 1047747800,
+  "bounds": {
+    "minlat": 39.9604240,
+    "minlon": -75.1564137,
+    "maxlat": 39.9617762,
+    "maxlon": -75.1561149
+  },
+  "geometry": [
+    { "lat": 39.9604240, "lon": -75.1564137 },
+    { "lat": 39.9605264, "lon": -75.1563922 },
+    { "lat": 39.9608211, "lon": -75.1563303 },
+    { "lat": 39.9609499, "lon": -75.1562997 },
+    { "lat": 39.9612207, "lon": -75.1562408 },
+    { "lat": 39.9615366, "lon": -75.1561680 },
+    { "lat": 39.9615904, "lon": -75.1561563 },
+    { "lat": 39.9616748, "lon": -75.1561390 },
+    { "lat": 39.9617762, "lon": -75.1561149 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "cycleway:both": "no",
+    "highway": "secondary",
+    "lane_markings": "no",
+    "lit": "yes",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "parking:left": "no",
+    "parking:right": "lane",
+    "parking:right:orientation": "parallel",
+    "service": "disused_tram",
+    "sidewalk:both": "separate",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 1201713300,
+  "bounds": {
+    "minlat": 39.9329920,
+    "minlon": -75.1623636,
+    "maxlat": 39.9330531,
+    "maxlon": -75.1623271
+  },
+  "geometry": [
+    { "lat": 39.9329920, "lon": -75.1623271 },
+    { "lat": 39.9330344, "lon": -75.1623538 },
+    { "lat": 39.9330531, "lon": -75.1623636 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "cycleway:left": "lane",
+    "highway": "residential",
+    "name": "Reed Street",
+    "service": "disused_tram"
+  }
+},
+{
+  "type": "way",
+  "id": 1201713302,
+  "bounds": {
+    "minlat": 39.9421272,
+    "minlon": -75.1603913,
+    "maxlat": 39.9429962,
+    "maxlon": -75.1602111
+  },
+  "geometry": [
+    { "lat": 39.9421272, "lon": -75.1603913 },
+    { "lat": 39.9421781, "lon": -75.1603842 },
+    { "lat": 39.9425630, "lon": -75.1603076 },
+    { "lat": 39.9429292, "lon": -75.1602256 },
+    { "lat": 39.9429962, "lon": -75.1602111 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "bicycle": "yes",
+    "cycleway:right": "shared_lane",
+    "highway": "secondary",
+    "lit": "yes",
+    "name": "South 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "both",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 1203652226,
+  "bounds": {
+    "minlat": 39.9617762,
+    "minlon": -75.1561149,
+    "maxlat": 39.9638216,
+    "maxlon": -75.1556758
+  },
+  "geometry": [
+    { "lat": 39.9617762, "lon": -75.1561149 },
+    { "lat": 39.9618977, "lon": -75.1560892 },
+    { "lat": 39.9619840, "lon": -75.1560706 },
+    { "lat": 39.9623108, "lon": -75.1560003 },
+    { "lat": 39.9624326, "lon": -75.1559723 },
+    { "lat": 39.9627418, "lon": -75.1559047 },
+    { "lat": 39.9627990, "lon": -75.1558920 },
+    { "lat": 39.9628576, "lon": -75.1558797 },
+    { "lat": 39.9631014, "lon": -75.1558283 },
+    { "lat": 39.9633642, "lon": -75.1557710 },
+    { "lat": 39.9634148, "lon": -75.1557600 },
+    { "lat": 39.9634708, "lon": -75.1557484 },
+    { "lat": 39.9638216, "lon": -75.1556758 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "disused:cycleway:right": "lane",
+    "highway": "secondary",
+    "lit": "yes",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "parking:left": "no",
+    "parking:right": "lane",
+    "parking:right:orientation": "parallel",
+    "service": "disused_tram",
+    "sidewalk:both": "separate"
+  }
+},
+{
+  "type": "way",
+  "id": 1203652231,
+  "bounds": {
+    "minlat": 39.9727251,
+    "minlon": -75.1553419,
+    "maxlat": 39.9739964,
+    "maxlon": -75.1550645
+  },
+  "geometry": [
+    { "lat": 39.9739964, "lon": -75.1550645 },
+    { "lat": 39.9739403, "lon": -75.1550767 },
+    { "lat": 39.9733136, "lon": -75.1552135 },
+    { "lat": 39.9731006, "lon": -75.1552600 },
+    { "lat": 39.9729645, "lon": -75.1552897 },
+    { "lat": 39.9728065, "lon": -75.1553241 },
+    { "lat": 39.9727251, "lon": -75.1553419 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "disused:cycleway:left": "lane",
+    "highway": "secondary",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk:both": "separate"
+  }
+},
+{
+  "type": "way",
+  "id": 1203652232,
+  "bounds": {
+    "minlat": 39.9739964,
+    "minlon": -75.1550645,
+    "maxlat": 39.9753679,
+    "maxlon": -75.1547652
+  },
+  "geometry": [
+    { "lat": 39.9753679, "lon": -75.1547652 },
+    { "lat": 39.9750076, "lon": -75.1548436 },
+    { "lat": 39.9747631, "lon": -75.1548972 },
+    { "lat": 39.9746827, "lon": -75.1549147 },
+    { "lat": 39.9740697, "lon": -75.1550485 },
+    { "lat": 39.9739964, "lon": -75.1550645 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "disused:cycleway:left": "lane",
+    "highway": "secondary",
+    "name": "North 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram"
+  }
+},
+{
+  "type": "way",
+  "id": 1424767371,
+  "bounds": {
+    "minlat": 39.9287853,
+    "minlon": -75.1649465,
+    "maxlat": 39.9374084,
+    "maxlon": -75.1630563
+  },
+  "geometry": [
+    { "lat": 39.9374084, "lon": -75.1630563 },
+    { "lat": 39.9373336, "lon": -75.1630725 },
+    { "lat": 39.9372904, "lon": -75.1630819 },
+    { "lat": 39.9368616, "lon": -75.1631748 },
+    { "lat": 39.9364970, "lon": -75.1632539 },
+    { "lat": 39.9361162, "lon": -75.1633365 },
+    { "lat": 39.9355976, "lon": -75.1634490 },
+    { "lat": 39.9350509, "lon": -75.1635675 },
+    { "lat": 39.9347141, "lon": -75.1636406 },
+    { "lat": 39.9345112, "lon": -75.1636846 },
+    { "lat": 39.9343775, "lon": -75.1637136 },
+    { "lat": 39.9341205, "lon": -75.1637693 },
+    { "lat": 39.9340212, "lon": -75.1637908 },
+    { "lat": 39.9337243, "lon": -75.1638535 },
+    { "lat": 39.9336744, "lon": -75.1638640 },
+    { "lat": 39.9336037, "lon": -75.1638796 },
+    { "lat": 39.9331784, "lon": -75.1639736 },
+    { "lat": 39.9330590, "lon": -75.1639995 },
+    { "lat": 39.9328978, "lon": -75.1640345 },
+    { "lat": 39.9325173, "lon": -75.1641170 },
+    { "lat": 39.9324433, "lon": -75.1641330 },
+    { "lat": 39.9323940, "lon": -75.1641437 },
+    { "lat": 39.9322983, "lon": -75.1641644 },
+    { "lat": 39.9320104, "lon": -75.1642269 },
+    { "lat": 39.9318400, "lon": -75.1642638 },
+    { "lat": 39.9316179, "lon": -75.1643120 },
+    { "lat": 39.9312884, "lon": -75.1643864 },
+    { "lat": 39.9312424, "lon": -75.1643968 },
+    { "lat": 39.9311679, "lon": -75.1644136 },
+    { "lat": 39.9307713, "lon": -75.1645029 },
+    { "lat": 39.9300734, "lon": -75.1646608 },
+    { "lat": 39.9299946, "lon": -75.1646794 },
+    { "lat": 39.9299478, "lon": -75.1646895 },
+    { "lat": 39.9293988, "lon": -75.1647932 },
+    { "lat": 39.9288461, "lon": -75.1649302 },
+    { "lat": 39.9287853, "lon": -75.1649465 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "residential",
+    "lit": "yes",
+    "name": "South 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "both",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "S",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19147;19148",
+    "tiger:zip_right": "19147;19148;19148"
+  }
+},
+{
+  "type": "way",
+  "id": 1490874104,
+  "bounds": {
+    "minlat": 39.9374084,
+    "minlon": -75.1630563,
+    "maxlat": 39.9399604,
+    "maxlon": -75.1625000
+  },
+  "geometry": [
+    { "lat": 39.9399604, "lon": -75.1625000 },
+    { "lat": 39.9396459, "lon": -75.1625712 },
+    { "lat": 39.9395689, "lon": -75.1625877 },
+    { "lat": 39.9395167, "lon": -75.1625995 },
+    { "lat": 39.9392754, "lon": -75.1626514 },
+    { "lat": 39.9391738, "lon": -75.1626734 },
+    { "lat": 39.9386086, "lon": -75.1627960 },
+    { "lat": 39.9385810, "lon": -75.1628020 },
+    { "lat": 39.9382379, "lon": -75.1628764 },
+    { "lat": 39.9381884, "lon": -75.1628871 },
+    { "lat": 39.9380942, "lon": -75.1629075 },
+    { "lat": 39.9380658, "lon": -75.1629137 },
+    { "lat": 39.9379910, "lon": -75.1629299 },
+    { "lat": 39.9375157, "lon": -75.1630336 },
+    { "lat": 39.9374803, "lon": -75.1630413 },
+    { "lat": 39.9374084, "lon": -75.1630563 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "lit": "yes",
+    "name": "South 12th Street",
+    "oneway": "yes",
+    "service": "disused_tram",
+    "sidewalk": "both",
+    "surface": "asphalt",
+    "tiger:cfcc": "A41",
+    "tiger:name_base": "12th",
+    "tiger:name_direction_prefix": "S",
+    "tiger:name_type": "St",
+    "tiger:reviewed": "no",
+    "tiger:zip_left": "19147;19148",
+    "tiger:zip_right": "19147;19148;19148"
+  }
+},
+{
+  "type": "way",
+  "id": 1575540251,
+  "bounds": {
+    "minlat": 39.9708517,
+    "minlon": -75.1541389,
+    "maxlat": 39.9737933,
+    "maxlon": -75.1534912
+  },
+  "geometry": [
+    { "lat": 39.9708517, "lon": -75.1541389 },
+    { "lat": 39.9709353, "lon": -75.1541202 },
+    { "lat": 39.9710250, "lon": -75.1541000 },
+    { "lat": 39.9712125, "lon": -75.1540579 },
+    { "lat": 39.9713071, "lon": -75.1540366 },
+    { "lat": 39.9717088, "lon": -75.1539487 },
+    { "lat": 39.9725248, "lon": -75.1537682 },
+    { "lat": 39.9732222, "lon": -75.1536159 },
+    { "lat": 39.9733197, "lon": -75.1535946 },
+    { "lat": 39.9737933, "lon": -75.1534912 }
+  ],
+  "tags": {
+    "abandoned:railway": "tram",
+    "highway": "secondary",
+    "name": "North 11th Street",
+    "oneway": "yes",
+    "service": "disused_tram"
+  }
+}
+
+  ]
+}

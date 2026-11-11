@@ -3,9 +3,9 @@ import * as THREE from 'three';
 import { formatHour } from './scene/sky.js';
 export function createUI(api) {
   const tagsEl = document.getElementById('tags');
-  const LABELS = api.labels.map(({ text, pos, section, stn, far, cutHide }) => {
-    const el = document.createElement('div'); el.className = section ? 'tag sub' : stn ? 'tag stn ' + stn : 'tag'; el.textContent = text; tagsEl.appendChild(el);
-    return { el, v: pos, section, far: far || 6500, cutHide: cutHide || [] };
+  const LABELS = api.labels.map(({ text, pos, section, stn, far, cutHide, layer }) => {
+    const el = document.createElement('div'); el.className = section ? 'tag sub' : stn ? 'tag stn ' + stn : layer ? 'tag ' + layer : 'tag'; el.textContent = text; tagsEl.appendChild(el);
+    return { el, v: pos, section, layer, far: far || 6500, cutHide: cutHide || [] };
   });
   let showTags = true; const pv = new THREE.Vector3();
 
@@ -13,7 +13,7 @@ export function createUI(api) {
     if (!!api.getCar() !== carOn) syncCar();
     const w = window.innerWidth, h = window.innerHeight, placed = [];
     LABELS.forEach(l => {
-      if (!showTags || carOn || (l.section && l.section !== api.getCut()) || l.cutHide.includes(api.getCut())) { l.el.style.display = 'none'; return; }
+      if (!showTags || carOn || (l.section && l.section !== api.getCut()) || l.cutHide.includes(api.getCut()) || (l.layer === 't53' && !api.getTransitMap())) { l.el.style.display = 'none'; return; }
       pv.copy(l.v).project(camera);
       if (pv.z > 1 || pv.x < -1.1 || pv.x > 1.1 || pv.y < -1.1 || pv.y > 1.1 || camera.position.distanceTo(l.v) > l.far) { l.el.style.display = 'none'; return; }
       if (!l.wd) { l.el.style.display = 'block'; l.wd = l.el.offsetWidth || 120; }
@@ -163,6 +163,12 @@ export function createUI(api) {
     const on = api.setTransitMap(!api.getTransitMap());
     trBtn.setAttribute('aria-pressed', String(on)); trBtn.textContent = on ? 'Hide transit lines' : 'Show transit lines'; legendEl.hidden = !on;
   });
+  // the 1953 streetcar stripes share the transit legend, under their own heading
+  const h53 = document.createElement('b'); h53.className = 'legend-h'; h53.textContent = 'Former streetcar lines (1953 map)'; legendEl.appendChild(h53);
+  for (const it of api.oldTrolleyLegend) {
+    const s = document.createElement('span'), i = document.createElement('i'); i.className = it.kind; i.style.setProperty('--c', it.color); i.setAttribute('aria-hidden', 'true');
+    s.append(i, it.name); legendEl.appendChild(s);
+  }
   [timeIn, lblBtn, rideBtn, cutBtn, trBtn].forEach(b => b.disabled = false);
 
   return { placeTags };

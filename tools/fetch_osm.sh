@@ -29,3 +29,17 @@ rel(id:951958,7953595,10702992,1808454,2717636,10703187,1809444,10705524,1809435
 out body;'
 curl -s -m 120 -A "$UA" --data-urlencode "data=$Q" "$API" -o routes.json
 echo "routes.json: $(wc -c < routes.json) bytes"
+
+# 3) for the 1953 streetcar layer (build_trolley1953.py): named Center City streets, and old
+#    tram track still mapped in OSM in the model area
+Q='[out:json][timeout:90];
+way["highway"~"^(trunk|primary|secondary|tertiary|residential|unclassified)$"]["name"](39.936,-75.192,39.962,-75.136);
+out tags geom;'
+curl -s -m 120 -A "$UA" --data-urlencode "data=$Q" "$API" -o streets_cc.json
+echo "streets_cc.json: $(wc -c < streets_cc.json) bytes"
+Q='[out:json][timeout:90];
+( way["disused:railway"="tram"](39.930,-75.208,39.982,-75.136);
+  way["abandoned:railway"="tram"](39.930,-75.208,39.982,-75.136); );
+out tags geom;'
+curl -s -m 120 -A "$UA" --data-urlencode "data=$Q" "$API" -o oldtram.json
+echo "oldtram.json: $(wc -c < oldtram.json) bytes"

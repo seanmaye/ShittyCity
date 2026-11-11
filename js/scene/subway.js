@@ -440,6 +440,7 @@ export function buildSubway(scene, data, river) {
       doorZ: [-3.2, 2.2], doorW: 1.3, sides: [1, -1], seats: [.92, .92],
       col: { wall: '#eef0f2', ceil: '#f7f8f9', floor: '#3f4447', seat: '#c8432f', steel: '#c9ced2', door: '#d0d4d8', cab: '#e3e6e9', dark: '#26292c' } },
   };
+  CAR_IN.pcc53 = { ...CAR_IN.pcc, model: 'PCC car' };   // the 1953 streetcars (oldtrolley.js)
   for (const [k, v] of Object.entries(CAR_IN)) v.layout = v.layout || k;   // metro | trolley | heavy
   const glow = (c, k = .45, o = {}) => mat(new THREE.Color(c).multiplyScalar(.35), Object.assign({ emissive: c, emissiveIntensity: .45 + k * .5, roughness: .8 }, o));
   const flat = c => mat('#000000', { emissive: c, emissiveIntensity: 1 });
