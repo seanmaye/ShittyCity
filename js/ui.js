@@ -26,11 +26,15 @@ export function createUI(api) {
     document.getElementById('pe-w').textContent = `${c.lb} lb`;
     document.getElementById('pe-w').title = `${c.kg} kg`;
     peNow.textContent = c.now; document.getElementById('pe-bio').textContent = c.bio;
+    // their face, from the same model as their figure in the street
+    const face = document.getElementById('pe-face'), cv = api.peds && api.peds.portrait(c.id);
+    face.setAttribute('aria-label', `Portrait of ${c.name}`);
+    if (cv && cv.parentNode !== face) face.replaceChildren(cv);
   }
 
   function placeTags(camera) {
     if (!!api.getCar() !== carOn) syncCar();
-    if (carOn && personaOn) { const c = api.getCar(); if (c && c.kind === 'person') { if (c.id !== personaOn) syncCar(); else if (c.now !== peNow.textContent) peNow.textContent = c.now; } }
+    if (carOn && personaOn !== null) { const c = api.getCar(); if (c && c.kind === 'person') { if (c.id !== personaOn) syncCar(); else if (c.now !== peNow.textContent) peNow.textContent = c.now; } }
     const now = performance.now(); minimap.update(camera, now); ridebar.update(now);
     const w = window.innerWidth, h = window.innerHeight, placed = [];
     LABELS.forEach(l => {

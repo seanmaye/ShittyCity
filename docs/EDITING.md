@@ -300,7 +300,10 @@ js/scene/pedestrians.js  PROPOSAL: about 200 people on Walnut St (buildPedestria
                   Click a person to inhabit them (pickPerson/inhabit/inhabitFrame, wired like a
                   train ride in index.js): the camera is in their head and goes where they go; drag
                   looks around; in a shop it stands just inside the held-open door. The #persona
-                  card (ui.js showPersona) shows their profile and what they're doing now.
+                  card (ui.js showPersona) shows their profile and what they're doing now, with a
+                  head-and-shoulders portrait (portrait(i): a small renderer of its own drawing the
+                  same parts and colours, facing forward). crowdGeometry() adds the face (eyes,
+                  brows, nose, mouth), lifts the hair cap off the forehead and gives some long hair.
 js/scene/profiles.js  made-up lives for the Walnut St people: makeProfile(i) gives a name, sex,
                   age, height, weight (BMI 19-32), coffee order, book and a short biography from
                   seeded word lists ({he} {is} {s}... fill in the grammar, including "they").

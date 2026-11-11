@@ -44,9 +44,23 @@ function rig() {
 // body parts: [geometry in people.js geo(), joints it hangs from, colour]
 const PARTS = [
   ['torso', ['pelvis'], 'shirt'], ['shorts', ['pelvis'], 'pants'], ['neck', ['neck'], 'skin'], ['head', ['head'], 'skin'],
-  ['hair', ['hair'], 'hair'], ['upper', ['shL', 'shR'], 'shirt'], ['fore', ['elL', 'elR'], 'arm'], ['hand', ['handL', 'handR'], 'skin'],
+  ['hairF', ['hair'], 'hair'], ['upper', ['shL', 'shR'], 'shirt'], ['fore', ['elL', 'elR'], 'arm'], ['hand', ['handL', 'handR'], 'skin'],
   ['thigh', ['hipL', 'hipR'], 'pants'], ['shin', ['kneeL', 'kneeR'], 'leg'], ['foot', ['footL', 'footR'], 'shoe'],
+  // a face (so it shows in the portrait and up close): eyes, brows, nose, mouth; long hair for some
+  ['eyeL', ['head'], 'eye'], ['eyeR', ['head'], 'eye'], ['browL', ['head'], 'hair'], ['browR', ['head'], 'hair'],
+  ['nose', ['head'], 'skin'], ['mouth', ['head'], 'lip'], ['longhair', ['head'], 'hair', 'long'],
 ];
+/** Kyle's limb geometry, plus the face and a hair cap tilted back to show the forehead */
+function crowdGeometry() {
+  const G = { ...geo(1) };
+  const at = (g, x, y, z) => { g.translate(x, y, z); return g; };
+  G.hairF = G.hair.clone(); G.hairF.rotateX(-.6);
+  G.eyeL = at(new THREE.SphereGeometry(.017, 8, 6), .038, .022, .098); G.eyeR = at(new THREE.SphereGeometry(.017, 8, 6), -.038, .022, .098);
+  G.browL = at(new THREE.BoxGeometry(.045, .011, .012), .039, .05, .093); G.browR = at(new THREE.BoxGeometry(.045, .011, .012), -.039, .05, .093);
+  G.nose = at(new THREE.SphereGeometry(.018, 8, 6), 0, -.008, .106); G.mouth = at(new THREE.BoxGeometry(.046, .011, .012), 0, -.05, .096);
+  G.longhair = at(new THREE.BoxGeometry(.22, .25, .08), 0, -.075, -.07);
+  return G;
+}
 
 /** walking: Kyle's running pose, toned down to a stroll */
 function walkPose(F, ph) {
@@ -126,11 +140,11 @@ export function buildPedestrians(scene, nav, count = 200) {
 
   // ---- the instanced body parts and props
   const group = new THREE.Group(); group.name = 'walnut-people'; scene.add(group);
-  const G = geo(1), mat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .8 });
-  const parts = PARTS.map(([g, joints, col]) => {
+  const G = crowdGeometry(), mat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .8 });
+  const parts = PARTS.map(([g, joints, col, flag]) => {
     const im = new THREE.InstancedMesh(G[g], mat, count * joints.length);
     im.frustumCulled = false; im.castShadow = false; im.receiveShadow = true; group.add(im);
-    return { im, joints, col };
+    return { im, joints, col, flag };
   });
   const cupG = new THREE.CylinderGeometry(.042, .034, .1, 10); cupG.translate(0, .02, 0);
   const bookG = new THREE.BoxGeometry(.24, .03, .17);
@@ -144,12 +158,13 @@ export function buildPedestrians(scene, nav, count = 200) {
     const long = Math.random() < .7, sleeves = Math.random() < .4;
     const prof = makeProfile(i);   // a made-up life: name, age, sex, height, weight, biography (profiles.js)
     const c = { shirt: pick(SHIRT), pants: pick(PANTS), skin: pick(SKIN), hair: prof.grey ? pick(['#9a9a96', '#c8c8c4', '#e2e0da']) : pick(HAIR), shoe: pick(SHOE) };
-    c.leg = long ? c.pants : c.skin; c.arm = sleeves ? c.shirt : c.skin;
+    c.leg = long ? c.pants : c.skin; c.arm = sleeves ? c.shirt : c.skin; c.eye = '#1b1512'; c.lip = '#7a3b34';
     parts.forEach(p => p.joints.forEach((j, k) => p.im.setColorAt(i * p.joints.length + k, col.set(c[p.col]))));
     books.setColorAt(i, col.set(pick(BOOK)));
     const P = { i, F: rig(), x: 0, z: 0, h: 0, sp: rnd(SPEED[0], SPEED[1]), path: [], then: null, state: 'walk', t: 0, k: 0,
       seat: null, slot: 0, act: 'rest', sipT: rnd(0, 6), ph: rnd(0, 6), hidden: false, lod: i % 8, dirty: true };
-    P.prof = prof; P.F.root.scale.setScalar(prof.scale);
+    P.prof = prof; P.col = c; P.F.root.scale.setScalar(prof.scale);
+    P.long = Math.random() < (prof.sex === 'Female' ? .6 : prof.sex === 'Male' ? .08 : .4);
     people.push(P);
   }
   parts.forEach(p => { p.im.instanceColor.needsUpdate = true; });
@@ -318,7 +333,7 @@ export function buildPedestrians(scene, nav, count = 200) {
         F.root.position.set(x, pave, z); F.root.rotation.y = P.h; F.root.updateMatrixWorld(true);
       }
       // the person being inhabited has no head (the camera is in it)
-      for (const p of parts) p.joints.forEach((j, k) => p.im.setMatrixAt(P.i * p.joints.length + k, hide || (me && (j === 'head' || j === 'hair')) ? ZERO : F[j].matrixWorld));
+      for (const p of parts) p.joints.forEach((j, k) => p.im.setMatrixAt(P.i * p.joints.length + k, hide || (me && (j === 'head' || j === 'hair')) || (p.flag && !P[p.flag]) ? ZERO : F[j].matrixWorld));
       // props: a coffee cup in the right hand, or a book held in both
       const seated = !hide && P.k > .9;
       if (seated && P.act === 'coffee') { F.handR.getWorldPosition(v); dummy.position.copy(v); dummy.rotation.set(0, P.h, 0); dummy.scale.setScalar(1); dummy.updateMatrix(); cups.setMatrixAt(P.i, dummy.matrix); }
@@ -402,6 +417,36 @@ export function buildPedestrians(scene, nav, count = 200) {
     }
     camera.position.copy(eye); camera.up.set(0, 1, 0); camera.lookAt(eye.x + fwd.x, eye.y + fwd.y, eye.z + fwd.z);
   }
+  // ---- a head-and-shoulders portrait (for the card while you inhabit someone): the same parts and
+  // colours as their figure, facing the camera, drawn by a small renderer of its own
+  let pr = null;
+  function portrait(i, size = 176) {
+    const P = people[i]; if (!P) return null;
+    if (!pr) {
+      const canvas = document.createElement('canvas');
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(28, 1, .05, 10);
+      sc.add(new THREE.HemisphereLight('#fff4e6', '#4a5560', .85));
+      const key = new THREE.DirectionalLight('#ffffff', .75); key.position.set(.6, 1.2, 1.4); sc.add(key);
+      const bust = new THREE.Group(); sc.add(bust);
+      pr = { canvas, renderer, sc, cam, bust };
+    }
+    pr.renderer.setSize(size, size, false);
+    // rebuild the bust: a skeleton standing still, its upper-body parts in this person's colours
+    pr.bust.children.forEach(m => m.material.dispose()); pr.bust.clear();
+    const F = rig(); pose(F, 0, 0); F.root.scale.setScalar(P.prof.scale); F.root.updateMatrixWorld(true);
+    const UPPER = new Set(['torso', 'neck', 'head', 'hairF', 'upper', 'eyeL', 'eyeR', 'browL', 'browR', 'nose', 'mouth', 'longhair']);
+    for (const [g, joints, col, flag] of PARTS) {
+      if (!UPPER.has(g) || (flag && !P[flag])) continue;
+      const m = new THREE.MeshStandardMaterial({ color: P.col[col], roughness: .75 });
+      for (const j of joints) { const mesh = new THREE.Mesh(G[g], m); mesh.matrixAutoUpdate = false; mesh.matrix.copy(F[j].matrixWorld); pr.bust.add(mesh); }
+    }
+    const head = F.head.getWorldPosition(new THREE.Vector3());
+    pr.cam.position.set(head.x + .06, head.y - .02, head.z + .78); pr.cam.lookAt(head.x, head.y - .1, head.z);
+    pr.renderer.render(pr.sc, pr.cam);
+    return pr.canvas;
+  }
   const setVisible = on => { group.visible = on; enabled = on; if (!on) inside = null; };
-  return { update: (dt, camera) => { if (enabled) update(dt, camera); }, people, stats, setVisible, pickPerson, inhabit, leave, getInhabited, lookAt, inhabitFrame };
+  return { update: (dt, camera) => { if (enabled) update(dt, camera); }, people, stats, setVisible, pickPerson, inhabit, leave, getInhabited, lookAt, inhabitFrame, portrait };
 }
