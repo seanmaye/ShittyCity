@@ -41,14 +41,14 @@ export async function buildScene(canvas, data, status = () => {}) {
   status('Shaping the river…'); await nextFrame();
   const river = buildRiver(scene, data.river);
   status('Laying out parks and streets…'); await nextFrame();
-  const ground = buildGround(scene, data.ground, river, data.yardpark ? data.yardpark.rings : [], { sea: CITY.sea });
+  const ground = buildGround(scene, data.ground, river, data.yardpark ? data.yardpark.rings : [], { sea: CITY.sea, paved: data.city.limits });
   status(`Raising ${data.buildings.b.length.toLocaleString()} buildings…`); await nextFrame();
   const blds = buildBuildings(scene, data.buildings);
   // the rest of the city out to the city limits (outside the original extent, its own data)
   status(CITY.building); await nextFrame();
   // playing fields that the park trees must keep off (the Edgley frisbee and cricket ground)
   const clear = ((data.cityMarks || {}).fields || []).map(f => pairs(f.outline));
-  const city = buildCity(scene, data, { waterMat: river.waterMat, status, clear, sea: CITY.sea });
+  const city = buildCity(scene, data, { waterMat: river.waterMat, status, clear, sea: CITY.sea, core: CITY.sea ? null : data.ground.bbox.map(v => v / 10) });
   camera.far = 200000; camera.updateProjectionMatrix(); controls.maxDistance = 45000;
   status('Placing landmarks and the monorail…'); await nextFrame();
   // Philadelphia: stadiums, Independence Hall, Memorial Hall and the Delaware bridges (data/phl/city_landmarks.json)
@@ -130,8 +130,9 @@ export async function buildScene(canvas, data, status = () => {}) {
     return { text: l.t, pos: new THREE.Vector3(l.x, l.y, l.z) };
   }).concat(sports.labels, yard.labels, subway.labels, marks.labels, old53.labels, boats.labels, nyc.labels.filter(l => !nycBridges.some(b => b.id === l.text)), nycMono.labels,
     nycBridges.map(b => ({ text: b.id, far: 3700, pos: new THREE.Vector3((b.a[0] + b.b[0]) / 2, b.labelHeight, (b.a[1] + b.b[1]) / 2) })));
-  // instanced meshes hold instances far from their own origin: never let three cull them as a whole
-  scene.traverse(o => { if (o.isInstancedMesh) o.frustumCulled = false; });
+  // instanced meshes hold instances far from their own origin: never let three cull them as a whole,
+  // except those that carry the bounds of their instances (geometry.js withBounds)
+  scene.traverse(o => { if (o.isInstancedMesh && !o.userData.bounded) o.frustumCulled = false; });
 
   // "Show transit lines": every rail line plus the proposed monorails
   const mono = [...(monorail.curve ? [{ id: 'loop', color: '#d6452f', P: monorail.curve.getSpacedPoints(1500) }] : []),
@@ -345,7 +346,37 @@ export async function buildScene(canvas, data, status = () => {}) {
   setDay(dayOfYear(new Date()));
   setTime(sky.sunset - .35);   // open at dusk, the original look
 
+  // Shadow casters that cannot matter this frame. A block of buildings darkens something in view
+  // only if the volume its shadow sweeps (from the block, away from the sun, down to the lowest
+  // thing that can be seen) touches the view frustum. The shadow map covers 5.8 km around the
+  // focus whatever the camera sees, so from a train or a low view most blocks are behind you.
+  const LOWEST = -60;   // below the deepest cut-away
+  const viewFrustum = new THREE.Frustum(), viewMat = new THREE.Matrix4(), toSun = new THREE.Vector3(), sweepEnd = new THREE.Vector3();
+  /** Returns true if any block started casting a shadow (the shadow map is then out of date). */
+  function cullShadowCasters() {
+    let added = false;
+    camera.updateMatrixWorld();   // the camera has moved this frame; render() would do this next
+    viewFrustum.setFromProjectionMatrix(viewMat.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+    toSun.subVectors(sun.position, sun.target.position).normalize();
+    for (const m of blds.meshes) {
+      const c = m.geometry.boundingSphere.center, r = m.geometry.boundingSphere.radius + 5;   // + the reach of the soft-shadow filter
+      // the block's sphere, slid away from the sun as far as the shadow of its highest point reaches
+      sweepEnd.copy(c).addScaledVector(toSun, -(m.geometry.boundingBox.max.y - LOWEST) / toSun.y);
+      // outside if the whole swept capsule is behind any one plane of the frustum
+      const cast = !viewFrustum.planes.some(p => p.distanceToPoint(c) < -r && p.distanceToPoint(sweepEnd) < -r);
+      if (cast && !m.castShadow) added = true;
+      m.castShadow = cast;
+    }
+    return added;
+  }
+
   const clock = new THREE.Clock(), sunOff = new THREE.Vector3();
+  // shadows are the costliest part of a frame: redraw the shadow map at once when the sun moves
+  // (time of day, or re-centring on the camera below), otherwise only every few frames so moving
+  // trains and people still drag their shadows along
+  const SHADOW_EVERY = 4, shadowSun = new THREE.Vector3(NaN, 0, 0);
+  let shadowTick = 0;
+  renderer.shadowMap.autoUpdate = false;
   function start(onFrame) {
     function frame() {
       const dt = Math.min(clock.getDelta(), .05);
@@ -363,6 +394,10 @@ export async function buildScene(canvas, data, status = () => {}) {
         sun.target.position.set(focus.x, 0, focus.z); sun.position.copy(sun.target.position).add(sunOff);
       }
       city.update(camera, scene.fog.far);
+      // a block that starts casting must be in the map at once, or its shadow blinks in late
+      if (cullShadowCasters() || ++shadowTick >= SHADOW_EVERY || !shadowSun.equals(sun.position)) {
+        renderer.shadowMap.needsUpdate = true; shadowTick = 0; shadowSun.copy(sun.position);
+      }
       renderer.render(scene, camera); onFrame(camera);
       requestAnimationFrame(frame);
     }

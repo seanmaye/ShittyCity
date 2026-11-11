@@ -35,6 +35,13 @@ python -m http.server 8765
 
 Then open <http://localhost:8765>.
 
+To measure how fast it loads and renders (frame and GPU time per scenario, hot code paths,
+draw calls by source line, before/after comparisons), see [tools/perf/README.md](tools/perf/README.md):
+
+```bash
+python -I tools/perf/perf.py run --quick
+```
+
 ## Sharing as one file
 
 ```bash
@@ -108,6 +115,8 @@ tools/
   unbundle.py         the reverse: unpacks city-models.html into the sources
   phl/                Philadelphia's data tools (see docs/PHL.md and tools/phl/README.md)
   nyc/                New York's data tools (see docs/NYC.md)
+  perf/               runtime performance harness: frame/GPU/load timings, profiles,
+                      draw-call attribution, A/B checks (see tools/perf/README.md)
 ```
 
 All cities share one set of data formats, which [docs/EDITING.md](docs/EDITING.md) documents. Each city's own document says where its data comes from and how to rebuild it.

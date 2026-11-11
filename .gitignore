@@ -1,3 +1,6 @@
 tools/phl/raw/
 __pycache__/
 tools/.venv/
+tools/perf/out/
+tools/perf/.cache/
+.claude/launch.json

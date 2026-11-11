@@ -1434,21 +1434,35 @@ __mods["js/scene/geometry.js"] = await (async () => {
 
 /** Growable typed-array buffers for one merged BufferGeometry. */
 class Builder {
-  constructor(opts = {}) { this.pos = []; this.nrm = []; this.uv = opts.uv ? [] : null; this.col = opts.color ? [] : null; this.idx = []; }
-  get count() { return this.pos.length / 3; }
+  constructor(opts = {}) {
+    this.n = 0; this.cap = 256;   // vertices used, and room for
+    this.pos = new Float32Array(this.cap * 3); this.nrm = new Float32Array(this.cap * 3);
+    this.uv = opts.uv ? new Float32Array(this.cap * 2) : null; this.col = opts.color ? new Float32Array(this.cap * 3) : null;
+    this.idx = [];
+  }
+  get count() { return this.n; }
+  grow() {
+    const cap = this.cap * 2, more = (a, k) => { const b = new Float32Array(cap * k); b.set(a); return b; };
+    this.pos = more(this.pos, 3); this.nrm = more(this.nrm, 3);
+    if (this.uv) this.uv = more(this.uv, 2);
+    if (this.col) this.col = more(this.col, 3);
+    this.cap = cap;
+  }
   v(x, y, z, nx, ny, nz, u, w, c) {
-    this.pos.push(x, y, z); this.nrm.push(nx, ny, nz);
-    if (this.uv) this.uv.push(u, w);
-    if (this.col) this.col.push(c.r, c.g, c.b);
-    return this.count - 1;
+    if (this.n === this.cap) this.grow();
+    const i = this.n++, j = i * 3, p = this.pos, q = this.nrm;
+    p[j] = x; p[j + 1] = y; p[j + 2] = z; q[j] = nx; q[j + 1] = ny; q[j + 2] = nz;
+    if (this.uv) { this.uv[i * 2] = u; this.uv[i * 2 + 1] = w; }
+    if (this.col) { const k = this.col; k[j] = c.r; k[j + 1] = c.g; k[j + 2] = c.b; }
+    return i;
   }
   tri(a, b, c) { this.idx.push(a, b, c); }
   geometry() {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
-    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.nrm, 3));
-    if (this.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2));
-    if (this.col) g.setAttribute('color', new THREE.Float32BufferAttribute(this.col, 3));
+    const g = new THREE.BufferGeometry(), attr = (a, k) => new THREE.BufferAttribute(a.slice(0, this.n * k), k);   // exact-size copies
+    g.setAttribute('position', attr(this.pos, 3));
+    g.setAttribute('normal', attr(this.nrm, 3));
+    if (this.uv) g.setAttribute('uv', attr(this.uv, 2));
+    if (this.col) g.setAttribute('color', attr(this.col, 3));
     g.setIndex(this.count > 65535 ? new THREE.Uint32BufferAttribute(this.idx, 1) : new THREE.Uint16BufferAttribute(this.idx, 1));
     g.computeBoundingSphere(); g.computeBoundingBox();
     return g;
@@ -1537,7 +1551,24 @@ function addLoft(b, ring, y0, y1, s0, s1, tileW, tileH, color, cap = true, uOff 
   if (cap && s1 > 0) { b.c = color; addPolygon(b, [ring.map(([x, z]) => [x * s1, z * s1])], y1, () => [-1, -1]); }
 }
 
-return { addPolygon, addRibbon, addPrism, addLoft, Builder };
+/**
+ * A geometry that shares g's buffers but has its own bounding sphere. An
+ * InstancedMesh is culled by its geometry's sphere, which knows nothing of where the instances
+ * are; with the sphere of its instances it can be frustum-culled like any mesh, in the main pass
+ * and, by the sun's shadow box, in the shadow pass. Mark the mesh userData.bounded.
+ */
+function withBounds(g, center, radius) {
+  const out = new THREE.BufferGeometry();
+  for (const k in g.attributes) out.setAttribute(k, g.attributes[k]);
+  out.setIndex(g.index); out.boundingSphere = new THREE.Sphere(center, radius);
+  return out;
+}
+
+/** One shared THREE.Color per colour string (palette entries), not one per building. Don't modify it. */
+const colorCache = new Map();
+function colorOf(c) { let o = colorCache.get(c); if (!o) colorCache.set(c, o = new THREE.Color(c)); return o; }
+
+return { addPolygon, addRibbon, addPrism, addLoft, withBounds, colorOf, Builder };
 })();
 // ---- js/scene/river.js
 __mods["js/scene/river.js"] = await (async () => {
@@ -2087,15 +2118,57 @@ function inRings(x, z, rings) {
 }
 
 /**
+ * The countryside plane (size x size metres at y = 0) without the part under the paved city
+ * (`cover`: the city-limits rings, [[x,z],...]). The paving lies on top of it, so that part is
+ * never seen, but it would still be shaded in full: this renderer has no early depth test.
+ * It is a regular grid of cells (no T-junctions). A cell is left out only if it and its eight
+ * neighbours are inside the outline and clear of its edge, so the hole stays a cell's width
+ * inside the paving and is never seen past its edge, however low the camera is.
+ */
+function countryside(cover, size = 30000, cell = 250) {
+  const n = Math.round(size / cell), o = -size / 2, inside = new Uint8Array(n * n), edge = new Uint8Array(n * n);
+  for (let j = 0; j < n; j++) {   // even-odd fill along each row of cell centres
+    const z = o + (j + .5) * cell, xs = [];
+    for (const r of cover) for (let i = 0, k = r.length - 1; i < r.length; k = i++) {
+      const [xi, zi] = r[i], [xk, zk] = r[k];
+      if ((zi > z) !== (zk > z)) xs.push(xi + (z - zi) * (xk - xi) / (zk - zi));
+    }
+    xs.sort((a, b) => a - b);
+    for (let q = 0; q + 1 < xs.length; q += 2)
+      for (let i = Math.max(0, Math.ceil((xs[q] - o) / cell - .5)); i < n && o + (i + .5) * cell < xs[q + 1]; i++) inside[j * n + i] = 1;
+  }
+  for (const r of cover) for (let i = 0, k = r.length - 1; i < r.length; k = i++) {   // cells the outline passes through
+    const [xi, zi] = r[i], [xk, zk] = r[k], steps = Math.max(1, Math.ceil(Math.hypot(xk - xi, zk - zi) / (cell / 4)));
+    for (let q = 0; q <= steps; q++) {
+      const ci = Math.floor((xi + (xk - xi) * q / steps - o) / cell), cj = Math.floor((zi + (zk - zi) * q / steps - o) / cell);
+      if (ci >= 0 && ci < n && cj >= 0 && cj < n) edge[cj * n + ci] = 1;
+    }
+  }
+  const hidden = (i, j) => {
+    for (let b = Math.max(0, j - 1); b <= Math.min(n - 1, j + 1); b++) for (let a = Math.max(0, i - 1); a <= Math.min(n - 1, i + 1); a++) if (edge[b * n + a] || !inside[b * n + a]) return false;
+    return true;
+  };
+  const b = new Builder(), node = new Int32Array((n + 1) * (n + 1)).fill(-1);
+  const at = (i, j) => { const k = j * (n + 1) + i; if (node[k] < 0) node[k] = b.v(o + i * cell, 0, o + j * cell, 0, 1, 0); return node[k]; };
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    if (hidden(i, j)) continue;
+    const p00 = at(i, j), p10 = at(i + 1, j), p01 = at(i, j + 1), p11 = at(i + 1, j + 1);
+    b.tri(p00, p01, p10); b.tri(p10, p01, p11);
+  }
+  return b.geometry();
+}
+
+/**
  * capRings: outline of the rail-yard deck; road bridges over it land on the deck instead.
  * sea: a waterfront city (New York): the land is only what city.js paves from the land outlines,
  * so neither the countryside nor a paved rectangle is drawn here.
+ * paved: outline of the paved city plate that buildCity lays over the countryside plane.
  */
-function buildGround(scene, data, river, capRings = [], { sea = false } = {}) {
+function buildGround(scene, data, river, capRings = [], { sea = false, paved = [] } = {}) {
   const cap = capRings.map(pairs);
   if (!sea) {
-    const outer = new THREE.Mesh(new THREE.PlaneGeometry(30000, 30000), seasonalGrass(M(COUNTRY, { roughness: 1 })));
-    outer.rotation.x = -Math.PI / 2; outer.receiveShadow = true; scene.add(outer);
+    const outer = new THREE.Mesh(countryside(paved.map(pairs)), seasonalGrass(M(COUNTRY, { roughness: 1, side: THREE.FrontSide })));
+    outer.receiveShadow = true; scene.add(outer);
 
     // paved city within the mapped extent
     const [x0, z0, x1, z1] = data.bbox.map(v => v / 10);
@@ -2190,16 +2263,16 @@ function drawLines(scene, lines, { cap = [], wet = () => false, tile = 0 } = {})
       }
     }
   }
-  const meshes = [];
+  const meshes = [], flat = [];   // flat: the ribbons lying on the ground (not bridges or piers)
   const add = m => { scene.add(m); meshes.push(m); return m; };
   const xMat = seasonalGrass(M('#78a85c', { side: THREE.FrontSide })), lineMat = { [ROAD]: M(ROAD, { side: THREE.FrontSide }), [RAIL]: M(RAIL, { side: THREE.FrontSide }), [TRAIL]: M(TRAIL, { side: THREE.FrontSide }) };
   // in winter the streets are ploughed and the rail beds partly clear (see season.js addSnow)
   lineMat[ROAD].userData.snowAmt = .3; lineMat[RAIL].userData.snowAmt = .5; dark.userData.snowAmt = conc.userData.snowAmt = .35;
   for (const t of tiles.values()) {
-    if (t.xb.count) { const m = add(new THREE.Mesh(t.xb.geometry(), xMat)); m.position.y = .33; m.receiveShadow = true; }
+    if (t.xb.count) { const m = add(new THREE.Mesh(t.xb.geometry(), xMat)); m.position.y = .33; m.receiveShadow = true; flat.push(m); }
     [[t.rb, ROAD, .8], [t.tb, RAIL, .85], [t.pb, TRAIL, .9]].forEach(([b, c, y]) => {
       if (!b.count && tile) return;
-      const m = add(new THREE.Mesh(b.geometry(), lineMat[c])); m.position.y = y; m.receiveShadow = true;
+      const m = add(new THREE.Mesh(b.geometry(), lineMat[c])); m.position.y = y; m.receiveShadow = true; flat.push(m);
     });
     [[t.bc, conc], [t.bd, dark], [t.bg, greenDeck]].forEach(([b, m]) => { if (!b.count) return; const mesh = add(new THREE.Mesh(b.geometry(), m)); mesh.castShadow = mesh.receiveShadow = true; });
   }
@@ -2209,7 +2282,7 @@ function drawLines(scene, lines, { cap = [], wet = () => false, tile = 0 } = {})
     piers.forEach((p, i) => { o.position.set(p.x, 0, p.z); o.rotation.y = p.ry; o.scale.set(4, p.h, p.w); o.updateMatrix(); im.setMatrixAt(i, o.matrix); });
     im.castShadow = true; im.frustumCulled = false; scene.add(im); meshes.push(im);
   }
-  return { bridgeSegs, meshes };
+  return { bridgeSegs, meshes, flat };
 }
 
 return { groundMat, buildGround, drawLines, GREEN, GROUND, COUNTRY };
@@ -2221,7 +2294,7 @@ __mods["js/scene/buildings.js"] = await (async () => {
 
 const { pairs } = __mods["js/data.js"];
 const { worldWinMat, WIN_W, WIN_H, roofColor, M, addDisplay } = __mods["js/scene/materials.js"];
-const { Builder, addPrism, addLoft } = __mods["js/scene/geometry.js"];
+const { Builder, addPrism, addLoft, colorOf } = __mods["js/scene/geometry.js"];
 // Facade colours by style, weighted toward what Philadelphia (where they were tuned) is made of: red brick
 // rowhouses (some painted, stuccoed or Formstone), brick and limestone commercial blocks,
 // concrete and precast mid-rises, and blue-grey or green-grey glass towers.
@@ -2322,7 +2395,7 @@ function buildBuildings(scene, data) {
     const b = new Builder({ uv: true, color: true });
     for (const [i, color] of t.items) {
       const [hdm, , ...flat] = data.b[i];
-      addPrism(b, flat.map(pairs), 0, hdm / 10, hash(i + 7) * 4, WIN_W, WIN_H, new THREE.Color(color), new THREE.Color(roofColor(hash(i + 3))));
+      addPrism(b, flat.map(pairs), 0, hdm / 10, hash(i + 7) * 4, WIN_W, WIN_H, colorOf(color), colorOf(roofColor(hash(i + 3))));
     }
     const m = new THREE.Mesh(b.geometry(), worldWinMat(t.kind));
     m.castShadow = m.receiveShadow = true; scene.add(m); meshes.push(m);
@@ -2830,13 +2903,14 @@ __mods["js/scene/nature.js"] = await (async () => {
 // April some blossom pink and white and flower beds bloom beneath them. Conifers stay green.
 
 const { onSeason } = __mods["js/scene/season.js"];
+const { withBounds } = __mods["js/scene/geometry.js"];
 const C = h => new THREE.Color(h);
 const SUMMER = ['#4f7d45', '#5d8c4c', '#3f6b3c', '#6b9a4e', '#628f4a'].map(C), FRESH = C('#93c45a');
 const AUTUMN = ['#b8342a', '#cf5a26', '#d9802b', '#e0ad35', '#c99a3a', '#9a6b3a', '#a8442e'].map(C);
 const BLOSSOM = ['#f3b8cb', '#f7f0f2', '#efc7d6', '#c46fae', '#fbe8ee'].map(C);   // cherry, dogwood, redbud
 const FLOWERS = ['#f2c12e', '#e8452e', '#d43a6a', '#8a52c4', '#f7f3ea', '#f08a24'].map(C);   // daffodils, tulips
 
-let twigTex = null;
+let twigTex = null, twigGeo = null;
 /** bare branches: a canvas of forking twigs on two crossed planes */
 function twigs() {
   if (!twigTex) {
@@ -2851,24 +2925,47 @@ function twigs() {
     branch(32, 128, 0, 36, 9);
     twigTex = new THREE.CanvasTexture(c);
   }
+  if (twigGeo) return twigGeo;
   const g1 = new THREE.PlaneGeometry(10, 12), g2 = g1.clone().rotateY(Math.PI / 2);
   const pos = [...g1.attributes.position.array, ...g2.attributes.position.array], uv = [...g1.attributes.uv.array, ...g2.attributes.uv.array];
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   g.setIndex([0, 2, 1, 2, 3, 1, 4, 6, 5, 6, 7, 5]); g.computeVertexNormals(); g.translate(0, 11, 0);   // trunk top to crown top
-  return g;
+  return twigGeo = g;
+}
+
+// One set of tree geometry for every call (the centre, the rail-yard park, each city tile). The
+// canopy meshes keep a material each: three compiles a material for the first mesh that uses it,
+// and a canopy mesh with no trees in it has no instance colours. Don't merge the canopies'
+// vertices, flat-shaded as they are: the shadow lookup is offset along the vertex normal, and
+// with shared vertices the trees come out visibly lighter.
+let treeKit = null;
+function treeParts() {
+  if (treeKit) return treeKit;
+  const trunk = new THREE.CylinderGeometry(.5, .8, 6, 6); trunk.translate(0, 3, 0);
+  const round = new THREE.IcosahedronGeometry(5, 0); round.translate(0, 10, 0);
+  const cone = new THREE.ConeGeometry(4, 12, 7); cone.translate(0, 11, 0);
+  // a flower bed: a clump of three overlapping round patches
+  const parts = [[0, 0, 2], [1.9, .8, 1.5], [-.9, 1.9, 1.4]].map(([x, z, r]) => { const c = new THREE.CircleGeometry(r, 9); c.rotateX(-Math.PI / 2); c.translate(x, 0, z); return c.toNonIndexed(); });
+  const bed = new THREE.BufferGeometry(), cat = k => new THREE.Float32BufferAttribute(parts.flatMap(p => [...p.attributes[k].array]), k === 'uv' ? 2 : 3);
+  ['position', 'normal', 'uv'].forEach(k => bed.setAttribute(k, cat(k)));
+  return treeKit = { trunk, round, cone, bed, twig: twigs(), bark: new THREE.MeshStandardMaterial({ color: '#6b5444', roughness: 1 }) };
 }
 
 function buildTrees(scene, flat, y = 0) {
   const n = flat.length / 2, dm = new THREE.Object3D();
-  const trunk = new THREE.CylinderGeometry(.5, .8, 6, 6); trunk.translate(0, 3, 0);
-  const round = new THREE.IcosahedronGeometry(5, 0); round.translate(0, 10, 0);
-  const cone = new THREE.ConeGeometry(4, 12, 7); cone.translate(0, 11, 0);
+  const { trunk, round, cone, bed, twig, bark } = treeParts();
   const kinds = Array.from({ length: n }, () => Math.random() < .78 ? 0 : 1);
   const nR = kinds.filter(k => k === 0).length, nC = n - nR;
   const wm = () => new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .95, flatShading: true });
-  const it = new THREE.InstancedMesh(trunk, new THREE.MeshStandardMaterial({ color: '#6b5444', roughness: 1 }), n), ir = new THREE.InstancedMesh(round, wm(), nR), icn = new THREE.InstancedMesh(cone, wm(), nC);
-  const twigGeo = twigs(), twigMat = new THREE.MeshStandardMaterial({ color: '#9c8774', map: twigTex, alphaTest: .4, side: THREE.DoubleSide, roughness: 1 });
-  const ib = new THREE.InstancedMesh(twigGeo, twigMat, nR); twigMat.userData.noSnow = true;
+  // the sphere around all of these trees and their flower beds (a tree reaches 24 m up and 7 m
+  // out at the largest scale, a bed sits up to 8 m from its tree)
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (let i = 0; i < n; i++) { const x = flat[i * 2] / 10, z = flat[i * 2 + 1] / 10; x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+  const centre = n ? new THREE.Vector3((x0 + x1) / 2, y + 12, (z0 + z1) / 2) : new THREE.Vector3(0, y, 0), reach = n ? Math.hypot(x1 - x0, z1 - z0) / 2 + 30 : 0;
+  const mesh = (g, m, count) => { const im = new THREE.InstancedMesh(withBounds(g, centre, reach), m, count); im.userData.bounded = true; return im; };
+  const it = mesh(trunk, bark, n), ir = mesh(round, wm(), nR), icn = mesh(cone, wm(), nC);
+  const twigMat = new THREE.MeshStandardMaterial({ color: '#9c8774', map: twigTex, alphaTest: .4, side: THREE.DoubleSide, roughness: 1 });
+  const ib = mesh(twig, twigMat, nR); twigMat.userData.noSnow = true;
   const col = new THREE.Color();
   // per deciduous tree: its summer green, autumn colour, when it turns and drops, blossom or not
   const rnd = new Float32Array(nR * 4), mats = new Float32Array(nR * 16);
@@ -2886,13 +2983,7 @@ function buildTrees(scene, flat, y = 0) {
     if (Math.random() < .17) { const ang = Math.random() * 6.28, r = 4 + Math.random() * 4; beds.push(flat[i * 2] / 10 + Math.cos(ang) * r, flat[i * 2 + 1] / 10 + Math.sin(ang) * r); }
   }
   ir.setColorAt(0, col); ib.setColorAt(0, col);   // allocate instance colours
-  // a bed: a clump of three overlapping round patches
-  const bedGeo = (() => {
-    const parts = [[0, 0, 2], [1.9, .8, 1.5], [-.9, 1.9, 1.4]].map(([x, z, r]) => { const c = new THREE.CircleGeometry(r, 9); c.rotateX(-Math.PI / 2); c.translate(x, 0, z); return c.toNonIndexed(); });
-    const g = new THREE.BufferGeometry(), cat = k => new THREE.Float32BufferAttribute(parts.flatMap(p => [...p.attributes[k].array]), k === 'uv' ? 2 : 3);
-    ['position', 'normal', 'uv'].forEach(k => g.setAttribute(k, cat(k))); return g;
-  })();
-  const fb = new THREE.InstancedMesh(bedGeo, new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .9 }), Math.max(1, beds.length / 2));
+  const fb = mesh(bed, new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .9 }), Math.max(1, beds.length / 2));
   if (!beds.length) fb.setMatrixAt(0, new THREE.Matrix4().makeScale(0, 0, 0));
   for (let k = 0; k < beds.length / 2; k++) {
     dm.position.set(beds[k * 2], y + .5, beds[k * 2 + 1]); dm.rotation.set(0, Math.random() * 6.28, 0); dm.scale.setScalar(.7 + Math.random() * .7); dm.updateMatrix();
@@ -3473,14 +3564,18 @@ function buildSubway(scene, data, river) {
 
   // --- rails and track beds. Underground ones are never clipped (they stay visible in front of a
   // cut); street-running track belongs to the city and is clipped with it.
-  const bedU = new Builder(), railU = new Builder(), bedS = new Builder(), railS = new Builder();
+  // Track that is below ground at both ends (nearly all of the underground track) is kept apart:
+  // the ground hides it from any camera above it unless a cut is open, so it is only drawn then.
+  const bedD = new Builder(), railD = new Builder(), bedU = new Builder(), railU = new Builder(), bedS = new Builder(), railS = new Builder();
   for (const { P, N } of tracks) for (let i = 0; i < P.length - 1; i++) {
-    const u = P[i].y < .3 || P[i + 1].y < .3, bd = u ? bedU : bedS, rl = u ? railU : railS;
+    const d = under(P, i), u = P[i].y < .3 || P[i + 1].y < .3, bd = d ? bedD : u ? bedU : bedS, rl = d ? railD : u ? railU : railS;
     band(bd, P, N, i, i + 1, 0, 2.8, .02);
     band(rl, P, N, i, i + 1, GAUGE / 2, .14, .17); band(rl, P, N, i, i + 1, -GAUGE / 2, .14, .17);
   }
   const bedMat = mat('#3c3935'), railMat = mat('#a9aeb3', { roughness: .4, metalness: .6 });
-  scene.add(new THREE.Mesh(bedU.geometry(), bedMat), new THREE.Mesh(railU.geometry(), railMat));
+  const deepTrack = new THREE.Group(); scene.add(deepTrack);
+  if (bedD.count) deepTrack.add(new THREE.Mesh(bedD.geometry(), bedMat), new THREE.Mesh(railD.geometry(), railMat));
+  if (bedU.count) scene.add(new THREE.Mesh(bedU.geometry(), bedMat), new THREE.Mesh(railU.geometry(), railMat));
   if (bedS.count) {
     const sb = new THREE.Mesh(bedS.geometry(), new THREE.MeshStandardMaterial({ color: '#55524e', roughness: .9 })); sb.position.y = .01;
     const sr = new THREE.Mesh(railS.geometry(), new THREE.MeshStandardMaterial({ color: '#a9aeb3', roughness: .4, metalness: .6 }));
@@ -4334,6 +4429,8 @@ function buildSubway(scene, data, river) {
       parts.forEach(m => { m.instanceMatrix.needsUpdate = true; });
     }
     if (ride && camera) rideFrame(dt, camera);
+    // deep track shows through an open cut, or to a camera that is itself below the street
+    if (camera) deepTrack.visible = !!active || camera.position.y < 1;
   }
 
   // "Ride a line": board the lead car of the line's first train (same as clicking it)
@@ -4499,7 +4596,7 @@ __mods["js/scene/city.js"] = await (async () => {
 
 const { pairs } = __mods["js/data.js"];
 const { M, worldWinMat, instancedWinMat, roofColor, WIN_W, WIN_H } = __mods["js/scene/materials.js"];
-const { Builder, addPolygon, addRibbon, addPrism } = __mods["js/scene/geometry.js"];
+const { Builder, addPolygon, addRibbon, addPrism, withBounds, colorOf } = __mods["js/scene/geometry.js"];
 const { drawLines, GREEN, GROUND, COUNTRY, groundMat } = __mods["js/scene/ground.js"];
 const { buildTrees } = __mods["js/scene/nature.js"];
 const { seasonalGrass } = __mods["js/scene/season.js"];
@@ -4530,9 +4627,24 @@ function unitBox() {   // 1 x 1 x 1 box standing on y = 0, without a bottom face
 }
 function unitRoof() { const g = new THREE.PlaneGeometry(1, 1); g.rotateX(-Math.PI / 2); g.translate(0, 1, 0); return g; }
 
+/** Does the rectangle [x0, z0, x1, z1] lie wholly inside the ring ([[x,z],...])? */
+function rectInRing(ring, [x0, z0, x1, z1]) {
+  const inside = (x, z) => { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const [xi, zi] = ring[i], [xj, zj] = ring[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; };
+  if (![[x0, z0], [x1, z0], [x1, z1], [x0, z1]].every(([x, z]) => inside(x, z))) return false;
+  // all four corners are inside, so it is wholly inside unless the outline dips into it somewhere
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [ax, az] = ring[i], [bx, bz] = ring[j];
+    let t0 = 0, t1 = 1;   // clip the edge to the rectangle (Liang-Barsky)
+    const clip = (p, q) => { if (p === 0) return q >= 0; const t = q / p; if (p < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; } return true; };
+    if (clip(ax - bx, ax - x0) && clip(bx - ax, x1 - ax) && clip(az - bz, az - z0) && clip(bz - az, z1 - az)) return false;
+  }
+  return true;
+}
+
 /** clear: rings ([[x, z], ...]) kept free of park trees (playing fields);
- *  sea: everything outside the land outlines (city.limits) is water, not countryside */
-function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea = false }) {
+ *  sea: everything outside the land outlines (city.limits) is water, not countryside;
+ *  core: the Center City extent [x0, z0, x1, z1] in metres, which buildGround paves itself */
+function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea = false, core = null }) {
   const city = data.city, B = decode(data.cityBuildings);
   const tiles = new Map();   // key -> { cx, cz, r, full: [], roof: [], trees: [] }
   const tileOf = (x, z) => {
@@ -4543,10 +4655,33 @@ function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea =
   };
 
   // ---- ground: paved city limits, a wider countryside plane, parks, water, streams
+  // Each ground surface is drawn only where it is the top one. Nothing rejects hidden pixels
+  // before they are shaded here (the logarithmic depth buffer writes depth per pixel), so every
+  // full layer stacked under the city used to cost a screenful of lighting and shadow lookups.
   const limits = city.limits.map(pairs);
-  const outer = new THREE.Mesh(new THREE.PlaneGeometry(400000, 400000), sea ? waterMat : seasonalGrass(M(COUNTRY, { roughness: 1 })));
-  outer.rotation.x = -Math.PI / 2; outer.position.y = -.05; outer.receiveShadow = true; scene.add(outer);
-  const pb = new Builder({ uv: true }); limits.forEach(r => addPolygon(pb, [r], 0, (x, z) => [x / 400, z / 400]));
+  if (sea) {
+    const outer = new THREE.Mesh(new THREE.PlaneGeometry(400000, 400000), waterMat);
+    outer.rotation.x = -Math.PI / 2; outer.position.y = -.05; outer.receiveShadow = true; scene.add(outer);
+  } else {
+    const FAR = 200000, HOLE = 14500;   // buildGround's countryside plane (30 km square, y = 0) covers the middle
+    const ob = new Builder(), ub = new Builder();
+    const quad = (b, x0, z0, x1, z1, up) => {
+      const s = b.count, ny = up ? 1 : -1;
+      b.v(x0, 0, z0, 0, ny, 0); b.v(x0, 0, z1, 0, ny, 0); b.v(x1, 0, z0, 0, ny, 0); b.v(x1, 0, z1, 0, ny, 0);
+      if (up) { b.tri(s, s + 1, s + 2); b.tri(s + 2, s + 1, s + 3); } else { b.tri(s, s + 2, s + 1); b.tri(s + 2, s + 3, s + 1); }
+    };
+    quad(ob, -FAR, -FAR, FAR, -HOLE, true); quad(ob, -FAR, HOLE, FAR, FAR, true); quad(ob, -FAR, -HOLE, -HOLE, HOLE, true); quad(ob, HOLE, -HOLE, FAR, HOLE, true);
+    quad(ub, -FAR, -FAR, FAR, FAR, false);   // the whole underside: what a camera below ground sees
+    const countryMat = seasonalGrass(M(COUNTRY, { roughness: 1, side: THREE.FrontSide }));
+    for (const b of [ob, ub]) {
+      const m = new THREE.Mesh(b.geometry(), countryMat);
+      m.position.y = -.05; m.receiveShadow = true; scene.add(m);
+    }
+  }
+  // the paved plate, without the middle of Center City, where buildGround's own paving lies on it
+  const hole = core && limits.length === 1 && rectInRing(limits[0], core)
+    ? [[[core[0] + 100, core[1] + 100], [core[2] - 100, core[1] + 100], [core[2] - 100, core[3] - 100], [core[0] + 100, core[3] - 100]]] : [];
+  const pb = new Builder({ uv: true }); limits.forEach(r => addPolygon(pb, [r, ...hole], 0, (x, z) => [x / 400, z / 400]));
   const plate = new THREE.Mesh(pb.geometry(), groundMat(GROUND, THREE.FrontSide));
   plate.position.y = .14; plate.receiveShadow = true; scene.add(plate);
   const edge = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(limits[0].map(([x, z]) => new THREE.Vector3(x, .6, z))),
@@ -4574,7 +4709,7 @@ function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea =
   const wet = (x, z) => (WG.get(wkey(x, z)) || []).some(p => inRing(x, z, p[0]) && !p.slice(1).some(h => inRing(x, z, h)));
 
   // ---- streets, rail and bridges, tiled
-  const { bridgeSegs } = drawLines(scene, city.lines, { wet, tile: 2000 });
+  const { bridgeSegs, flat: streets } = drawLines(scene, city.lines, { wet, tile: 2000 });
 
   // ---- buildings
   status(`Raising ${(B.nB + B.nP).toLocaleString()} more buildings…`);
@@ -4591,24 +4726,33 @@ function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea =
   const col = new THREE.Color();
   const place = (mat4, j, i, sx = 1, sy = 1, y0 = 0, hh = B.bh[i] / 10) => {
     const a = B.br[i] / 65535 * Math.PI, c = Math.cos(a), s = Math.sin(a), w = B.bw[i] / 10 * sx, d = B.bd[i] / 10 * sx;
-    mat4.set([c * w, 0, -s * w, 0, 0, hh * sy, 0, 0, s * d, 0, c * d, 0, B.bx[i] / 10, y0, B.bz[i] / 10, 1], j * 16);
+    const o = j * 16;   // the rest of the matrix stays 0
+    mat4[o] = c * w; mat4[o + 2] = -s * w; mat4[o + 5] = hh * sy; mat4[o + 8] = s * d; mat4[o + 10] = c * d;
+    mat4[o + 12] = B.bx[i] / 10; mat4[o + 13] = y0; mat4[o + 14] = B.bz[i] / 10; mat4[o + 15] = 1;
   };
-  const instanced = (geo, mat, mat4, cols) => {
-    const m = new THREE.InstancedMesh(geo, mat, mat4.length / 16);
+  // bounds: [centre, radius] of the instances, so the mesh can be frustum-culled (and, by the
+  // sun's shadow box, skipped in the shadow pass) like any mesh; see geometry.js withBounds
+  const instanced = (geo, mat, mat4, cols, bounds = null) => {
+    const m = new THREE.InstancedMesh(bounds ? withBounds(geo, ...bounds) : geo, mat, mat4.length / 16);
     m.instanceMatrix = new THREE.InstancedBufferAttribute(mat4, 16); m.instanceColor = new THREE.InstancedBufferAttribute(cols, 3);
-    m.frustumCulled = false; m.receiveShadow = true; m.userData.tiled = true; scene.add(m); return m;
+    m.frustumCulled = !!bounds; m.userData.bounded = !!bounds; m.receiveShadow = true; m.userData.tiled = true; scene.add(m); return m;
   };
   for (const [t, kinds] of per) {
     const all = Object.values(kinds).flat(), rm4 = new Float32Array(all.length * 16), plant = [];
-    all.forEach((i, j) => place(rm4, j, i));
+    let reach = 0, high = 0;   // how far from the tile's centre, and how high (with rooftop plant), these boxes get
+    all.forEach((i, j) => {
+      place(rm4, j, i);
+      reach = Math.max(reach, Math.hypot(B.bx[i] / 10 - t.cx, B.bz[i] / 10 - t.cz) + Math.hypot(B.bw[i], B.bd[i]) / 20); high = Math.max(high, B.bh[i] / 10 + 10);
+    });
+    const bounds = [new THREE.Vector3(t.cx, high / 2, t.cz), Math.hypot(reach, high / 2)];
     t.roof.push(instanced(geoRoof, instancedWinMat('office'), rm4, new Float32Array(all.length * 3).fill(1)));
     for (const [kind, list] of Object.entries(kinds)) {
       const mat4 = new Float32Array(list.length * 16), cols = new Float32Array(list.length * 3);
       list.forEach((i, j) => {
-        place(mat4, j, i); col.set(facadeColor(kind, hash(i))); cols.set([col.r, col.g, col.b], j * 3);
+        place(mat4, j, i); const fc = colorOf(facadeColor(kind, hash(i))); cols[j * 3] = fc.r; cols[j * 3 + 1] = fc.g; cols[j * 3 + 2] = fc.b;
         if (!kind.startsWith('row') && B.bh[i] > 400) plant.push(i);
       });
-      const full = instanced(geoBox, instancedWinMat(kind), mat4, cols); full.castShadow = true; t.full.push(full);
+      const full = instanced(geoBox, instancedWinMat(kind), mat4, cols, bounds); full.castShadow = true; t.full.push(full);
     }
     if (plant.length) {   // rooftop plant on buildings over 40 m, and aviation lights over 90 m
       const m4 = new Float32Array(plant.length * 16), cl = new Float32Array(plant.length * 3);
@@ -4617,7 +4761,7 @@ function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea =
         col.set(roofColor(hash(i + 5))).multiplyScalar(.9); cl.set([col.r, col.g, col.b], j * 3);
         if (h > 90) lights.push(B.bx[i] / 10, h + 5 + Math.min(6, h * .025), B.bz[i] / 10);
       });
-      const pm = instanced(geoBox, plantMat, m4, cl); pm.castShadow = true; t.full.push(pm);
+      const pm = instanced(geoBox, plantMat, m4, cl, bounds); pm.castShadow = true; t.full.push(pm);
     }
   }
   // large irregular buildings: real outlines, merged per tile and facade style
@@ -4630,7 +4774,7 @@ function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea =
     const t = tileOf(ring[0][0], ring[0][1]);
     let pk = pBuild.get(t); if (!pk) pBuild.set(t, pk = {});
     const h = B.ph[i] / 10, fk = facadeKind(B.pk[i] === 0, h, hash(i + 11)), color = facadeColor(fk, hash(i + 3));
-    addPrism(pk[fk] || (pk[fk] = new Builder({ uv: true, color: true })), [ring], 0, h, hash(i + 7) * 4, WIN_W, WIN_H, new THREE.Color(color), new THREE.Color(roofColor(hash(i + 9))));
+    addPrism(pk[fk] || (pk[fk] = new Builder({ uv: true, color: true })), [ring], 0, h, hash(i + 7) * 4, WIN_W, WIN_H, colorOf(color), colorOf(roofColor(hash(i + 9))));
     if (B.pk[i] && h > 40) addRooftop(pk.plant || (pk.plant = new Builder({ color: true })), ring, h, color, hash(i + 5), lights);
     t.top = Math.max(t.top, h);
   }
@@ -4647,10 +4791,10 @@ function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea =
     const t = tileOf(city.trees[i] / 10, city.trees[i + 1] / 10);
     let l = tt.get(t); if (!l) tt.set(t, l = []); l.push(city.trees[i], city.trees[i + 1]);
   }
-  for (const [t, flat] of tt) { t.trees = buildTrees(scene, flat); t.trees.forEach(m => { m.frustumCulled = false; m.userData.tiled = true; }); }
+  for (const [t, flat] of tt) { t.trees = buildTrees(scene, flat); t.trees.forEach(m => { m.userData.tiled = true; }); }
 
   // ---- per-frame: frustum + distance per tile
-  const frustum = new THREE.Frustum(), pm = new THREE.Matrix4(), sph = new THREE.Sphere(), tl = [...tiles.values()];
+  const frustum = new THREE.Frustum(), pm = new THREE.Matrix4(), sph = new THREE.Sphere(), tl = [...tiles.values()], fwd = new THREE.Vector3();
   tl.forEach(t => { t.r = Math.hypot(TILE * .75, t.top); });
   function update(camera, fogFar) {
     pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frustum.setFromProjectionMatrix(pm);
@@ -4664,6 +4808,13 @@ function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea =
       t.roof.forEach(m => { m.visible = vis && !near; });
       t.always.forEach(m => { m.visible = vis; });
       t.trees.forEach(m => { m.visible = vis && d - t.r < TREE_FAR && m.userData.season !== false; });   // bare branches and flower beds only in season
+    }
+    // Street, rail and trail ribbons wholly past the fog (by view depth, which is what the fog goes
+    // by) come out exactly the fog's colour, the same as the paving they lie on: don't draw them.
+    camera.getWorldDirection(fwd);
+    for (const m of streets) {
+      const c = m.geometry.boundingSphere.center, depth = (c.x - cp.x) * fwd.x + (c.y - cp.y) * fwd.y + (c.z - cp.z) * fwd.z;
+      m.visible = depth - m.geometry.boundingSphere.radius - 1 < fogFar;
     }
   }
 
@@ -7013,14 +7164,14 @@ async function buildScene(canvas, data, status = () => {}) {
   status('Shaping the river…'); await nextFrame();
   const river = buildRiver(scene, data.river);
   status('Laying out parks and streets…'); await nextFrame();
-  const ground = buildGround(scene, data.ground, river, data.yardpark ? data.yardpark.rings : [], { sea: CITY.sea });
+  const ground = buildGround(scene, data.ground, river, data.yardpark ? data.yardpark.rings : [], { sea: CITY.sea, paved: data.city.limits });
   status(`Raising ${data.buildings.b.length.toLocaleString()} buildings…`); await nextFrame();
   const blds = buildBuildings(scene, data.buildings);
   // the rest of the city out to the city limits (outside the original extent, its own data)
   status(CITY.building); await nextFrame();
   // playing fields that the park trees must keep off (the Edgley frisbee and cricket ground)
   const clear = ((data.cityMarks || {}).fields || []).map(f => pairs(f.outline));
-  const city = buildCity(scene, data, { waterMat: river.waterMat, status, clear, sea: CITY.sea });
+  const city = buildCity(scene, data, { waterMat: river.waterMat, status, clear, sea: CITY.sea, core: CITY.sea ? null : data.ground.bbox.map(v => v / 10) });
   camera.far = 200000; camera.updateProjectionMatrix(); controls.maxDistance = 45000;
   status('Placing landmarks and the monorail…'); await nextFrame();
   // Philadelphia: stadiums, Independence Hall, Memorial Hall and the Delaware bridges (data/phl/city_landmarks.json)
@@ -7102,8 +7253,9 @@ async function buildScene(canvas, data, status = () => {}) {
     return { text: l.t, pos: new THREE.Vector3(l.x, l.y, l.z) };
   }).concat(sports.labels, yard.labels, subway.labels, marks.labels, old53.labels, boats.labels, nyc.labels.filter(l => !nycBridges.some(b => b.id === l.text)), nycMono.labels,
     nycBridges.map(b => ({ text: b.id, far: 3700, pos: new THREE.Vector3((b.a[0] + b.b[0]) / 2, b.labelHeight, (b.a[1] + b.b[1]) / 2) })));
-  // instanced meshes hold instances far from their own origin: never let three cull them as a whole
-  scene.traverse(o => { if (o.isInstancedMesh) o.frustumCulled = false; });
+  // instanced meshes hold instances far from their own origin: never let three cull them as a whole,
+  // except those that carry the bounds of their instances (geometry.js withBounds)
+  scene.traverse(o => { if (o.isInstancedMesh && !o.userData.bounded) o.frustumCulled = false; });
 
   // "Show transit lines": every rail line plus the proposed monorails
   const mono = [...(monorail.curve ? [{ id: 'loop', color: '#d6452f', P: monorail.curve.getSpacedPoints(1500) }] : []),
@@ -7317,7 +7469,37 @@ async function buildScene(canvas, data, status = () => {}) {
   setDay(dayOfYear(new Date()));
   setTime(sky.sunset - .35);   // open at dusk, the original look
 
+  // Shadow casters that cannot matter this frame. A block of buildings darkens something in view
+  // only if the volume its shadow sweeps (from the block, away from the sun, down to the lowest
+  // thing that can be seen) touches the view frustum. The shadow map covers 5.8 km around the
+  // focus whatever the camera sees, so from a train or a low view most blocks are behind you.
+  const LOWEST = -60;   // below the deepest cut-away
+  const viewFrustum = new THREE.Frustum(), viewMat = new THREE.Matrix4(), toSun = new THREE.Vector3(), sweepEnd = new THREE.Vector3();
+  /** Returns true if any block started casting a shadow (the shadow map is then out of date). */
+  function cullShadowCasters() {
+    let added = false;
+    camera.updateMatrixWorld();   // the camera has moved this frame; render() would do this next
+    viewFrustum.setFromProjectionMatrix(viewMat.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+    toSun.subVectors(sun.position, sun.target.position).normalize();
+    for (const m of blds.meshes) {
+      const c = m.geometry.boundingSphere.center, r = m.geometry.boundingSphere.radius + 5;   // + the reach of the soft-shadow filter
+      // the block's sphere, slid away from the sun as far as the shadow of its highest point reaches
+      sweepEnd.copy(c).addScaledVector(toSun, -(m.geometry.boundingBox.max.y - LOWEST) / toSun.y);
+      // outside if the whole swept capsule is behind any one plane of the frustum
+      const cast = !viewFrustum.planes.some(p => p.distanceToPoint(c) < -r && p.distanceToPoint(sweepEnd) < -r);
+      if (cast && !m.castShadow) added = true;
+      m.castShadow = cast;
+    }
+    return added;
+  }
+
   const clock = new THREE.Clock(), sunOff = new THREE.Vector3();
+  // shadows are the costliest part of a frame: redraw the shadow map at once when the sun moves
+  // (time of day, or re-centring on the camera below), otherwise only every few frames so moving
+  // trains and people still drag their shadows along
+  const SHADOW_EVERY = 4, shadowSun = new THREE.Vector3(NaN, 0, 0);
+  let shadowTick = 0;
+  renderer.shadowMap.autoUpdate = false;
   function start(onFrame) {
     function frame() {
       const dt = Math.min(clock.getDelta(), .05);
@@ -7335,6 +7517,10 @@ async function buildScene(canvas, data, status = () => {}) {
         sun.target.position.set(focus.x, 0, focus.z); sun.position.copy(sun.target.position).add(sunOff);
       }
       city.update(camera, scene.fog.far);
+      // a block that starts casting must be in the map at once, or its shadow blinks in late
+      if (cullShadowCasters() || ++shadowTick >= SHADOW_EVERY || !shadowSun.equals(sun.position)) {
+        renderer.shadowMap.needsUpdate = true; shadowTick = 0; shadowSun.copy(sun.position);
+      }
       renderer.render(scene, camera); onFrame(camera);
       requestAnimationFrame(frame);
     }

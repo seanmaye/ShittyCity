@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { pairs } from '../data.js';
 import { worldWinMat, WIN_W, WIN_H, roofColor, M, addDisplay } from './materials.js';
-import { Builder, addPrism, addLoft } from './geometry.js';
+import { Builder, addPrism, addLoft, colorOf } from './geometry.js';
 
 // Facade colours by style, weighted toward what Philadelphia (where they were tuned) is made of: red brick
 // rowhouses (some painted, stuccoed or Formstone), brick and limestone commercial blocks,
@@ -105,7 +105,7 @@ export function buildBuildings(scene, data) {
     const b = new Builder({ uv: true, color: true });
     for (const [i, color] of t.items) {
       const [hdm, , ...flat] = data.b[i];
-      addPrism(b, flat.map(pairs), 0, hdm / 10, hash(i + 7) * 4, WIN_W, WIN_H, new THREE.Color(color), new THREE.Color(roofColor(hash(i + 3))));
+      addPrism(b, flat.map(pairs), 0, hdm / 10, hash(i + 7) * 4, WIN_W, WIN_H, colorOf(color), colorOf(roofColor(hash(i + 3))));
     }
     const m = new THREE.Mesh(b.geometry(), worldWinMat(t.kind));
     m.castShadow = m.receiveShadow = true; scene.add(m); meshes.push(m);
