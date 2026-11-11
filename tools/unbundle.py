@@ -2,8 +2,8 @@
 
   python -I tools/unbundle.py [bundled.html] [out_dir]
 
-Defaults: schuylkill-monorail.html -> the repo root. Writes index.html, css/style.css,
-js/**.js, data/*.json and docs/EDITING.md, overwriting what is there.
+Defaults: city-models.html -> the repo root. Writes index.html, css/style.css,
+js/**.js, data/<city>/* and docs/EDITING.md, overwriting what is there.
 Use it when someone has edited the shared HTML directly, then check the result with
 `python -I tools/unbundle.py --check`, which re-bundles and compares.
 """
@@ -26,7 +26,9 @@ EXTERNALS = [  # (import line, how to tell a module uses it), in the order bundl
 GZBLOCK = re.compile(r'^<script type="application/gzip-base64" id="data-([\w-]+)" data-file="([^"]+)">(.*?)</script>\n', re.S | re.M)
 CHUNK = re.compile(r'// ---- (\S+)\n__mods\["\1"\] = await \(async \(\) => \{\n(.*?)\nreturn \{ ?(.*?) ?\};\n\}\)\(\);\n', re.S)
 # a data block starts a line (the editing guide quotes the tag mid-line, which must not match)
-BLOCK = re.compile(r'^<script type="application/json" id="data-([\w-]+)">(.*?)</script>\n', re.S | re.M)
+# (each block names its file, e.g. data-file="nyc/transit.json"; bundles from before the
+# per-city folders had Philadelphia's JSON blocks without it)
+BLOCK = re.compile(r'^<script type="application/json" id="data-([\w-]+)"(?: data-file="([^"]+)")?>(.*?)</script>\n', re.S | re.M)
 LOCAL = re.compile(r'^const \{ (.*?) \} = __mods\["([^"]+)"\];$', re.M)
 
 
@@ -91,9 +93,9 @@ def unbundle(src_html, out):
         if b.re is GZBLOCK:
             files[f"data/{b.group(2)}"] = base64.b64decode(b.group(3))
             continue
-        body = b.group(2).replace("<\\/", "</")
+        body = b.group(3).replace("<\\/", "</")
         json.loads(body)  # sanity
-        files[f"data/{b.group(1)}.json"] = body
+        files[f"data/{b.group(2) or b.group(1) + '.json'}"] = body
     # code
     m = re.search(r'<script type="module">\n(.*?)</script>', html[blocks[-1].end():], re.S)
     script = m.group(1)
@@ -115,7 +117,7 @@ def unbundle(src_html, out):
 
 
 def blocks_of(html):
-    data = {m.group(1): m.group(2) for m in BLOCK.finditer(html)}
+    data = {m.group(1): m.group(3) for m in BLOCK.finditer(html)}
     data.update({m.group(1): m.group(3) for m in GZBLOCK.finditer(html)})
     rest = GZBLOCK.sub("", BLOCK.sub("", html))
     return data, rest
@@ -154,7 +156,7 @@ def check(src_html):
 
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    src = args[0] if args else os.path.join(ROOT, "schuylkill-monorail.html")
+    src = args[0] if args else os.path.join(ROOT, "city-models.html")
     if "--check" in sys.argv:
         sys.exit(0 if check(src) else 1)
     out = args[1] if len(args) > 1 else ROOT

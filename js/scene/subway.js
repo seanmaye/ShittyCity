@@ -1,6 +1,6 @@
-// Underground: the L and the T1-T5 trolleys under Market Street (track positions from OSM, depths
-// estimated offline), trains looping along each route, and the cut-away sections that slice the
-// city along a vertical plane to show them.
+// Rail transit for any city (data/<city>/transit.json): tracks, tunnels, Els, platforms and stations,
+// trains looping along each route, walkable cabins, and the cut-away sections that slice the city
+// along a vertical plane (Philadelphia's under Market Street, New York's under Times Square).
 //
 // How a cut works: every material in the scene (except the ones marked userData.noClip here)
 // is clipped by one shared THREE.Plane. With no cut active the plane sits far away and clips
@@ -10,26 +10,22 @@
 import * as THREE from 'three';
 import { litMats } from './materials.js';
 import { Builder } from './geometry.js';
+import { CITY } from '../cities.js';
 export const SPEC = {
   // hw/h: tunnel half-width and height above the rail; car: length, width, height; cars per train;
   // km: route length per train; speed m/s
+  // Philadelphia: the L (metro) and the trolleys
   metro:   { hw: 2.4, h: 5.2, car: 16.4, w: 2.8, ch: 3.6, cars: 6, km: 1.6, speed: 13, body: '#c9ced3', top: 1.0 },
   trolley: { hw: 2.3, h: 4.8, car: 15.2, w: 2.6, ch: 3.3, cars: 1, km: 2.5, speed: 8, body: '#ece7da', top: 0.3 },
-  // citywide build-out (data/metro.json.gz): Broad Street Line B-IV cars, PATCO, Regional Rail
+  // Philadelphia's citywide network (data/phl/metro.json.gz): Broad Street Line B-IV cars, PATCO, Regional Rail
   // Silverliners (also used for NJ Transit's Atlantic City Line), and PCC cars on the G1
   broad:    { hw: 2.6, h: 5.6, car: 20.4, w: 3.1, ch: 3.7, cars: 6, km: 2.2, speed: 15, body: '#cfd4d8', top: 1.05 },
   patco:    { hw: 2.6, h: 5.6, car: 20.7, w: 3.1, ch: 3.7, cars: 4, km: 3.0, speed: 17, body: '#dfe2e4', top: 1.05 },
   regional: { hw: 3.0, h: 6.6, car: 25.9, w: 3.2, ch: 4.2, cars: 4, km: 7.0, speed: 24, body: '#c6ccd2', top: 1.15 },
   pcc:      { hw: 2.3, h: 4.8, car: 14.2, w: 2.7, ch: 3.2, cars: 1, km: 2.5, speed: 8, body: '#f0e7c9', top: 0.3 },
+  // New York: MTA subway cars (data/nyc/transit.json)
+  nycsub:   { hw: 2.4, h: 5.2, car: 16.4, w: 2.8, ch: 3.6, cars: 6, km: 1.6, speed: 13, body: '#c9ced3', top: 1.0 },
 };
-// how a station tag reads its lines: SEPTA Metro ids, trolley ranges, then the networks
-function lineText(s, LINES) {
-  const ids = s.lines || [], parts = [], t = ids.filter(i => /^T\d$/.test(i)).map(i => +i.slice(1)).sort((a, b) => a - b);
-  for (const id of ids) if (/^(L|B\d|G\d)$/.test(id)) parts.push(id);
-  if (t.length) parts.push(t.length > 2 && t[t.length - 1] - t[0] === t.length - 1 ? `T${t[0]}–T${t[t.length - 1]}` : t.map(v => 'T' + v).join(', '));
-  const groups = new Set(ids.map(i => LINES[i] && LINES[i].group).filter(g => g && g !== 'SEPTA Metro'));
-  return [...parts, ...groups].join(' · ');
-}
 const GAUGE = 1.588;     // Pennsylvania trolley gauge (5 ft 2.5 in): both the L and the trolleys use it
 const COL = 2;           // cut-face column width (m)
 const TOP = .15;         // the cut face's top edge (city plate height)
@@ -130,7 +126,7 @@ export function buildSubway(scene, data, river) {
   {
     const deck = new Builder();
     for (const { k, P, N } of tracks) {
-      if (!['metro', 'broad', 'patco'].includes(k)) continue;
+      if (!['metro', 'broad', 'patco', 'nycsub'].includes(k)) continue;
       for (let i = 0; i < P.length - 1; i++) {
         if (P[i].y < 2.5 || P[i + 1].y < 2.5) continue;
         band(deck, P, N, i, i + 1, 0, 4.6, -.22);
@@ -336,13 +332,13 @@ export function buildSubway(scene, data, river) {
   const labels = [];
   for (const s of data.stations) {
     let text;
-    if (s.lines) text = `${s.t} · ${lineText(s, LINES)}`;
+    if (s.lines) text = `${s.t} · ${CITY.stationLines(s, LINES)}`;   // how a tag reads its lines is per city (js/cities.js)
     else { const parts = []; if (s.k.includes('metro')) parts.push('L'); if (s.k.includes('trolley')) parts.push(range(s.T || [])); text = `${s.t} · ${parts.join(' · ')}`; }
     const under = (s.u || []).length > 0;
     const secs = under ? sections.filter(sec => Math.abs(sec.O(s.x, s.z)) <= 200) : [];
     for (const sec of secs) labels.push({ text, pos: sec.labelAt(s.x, s.z, 3), section: sec.id });
     // tag colour: the first rapid-transit kind here; street stops (trolleys at grade) are 'stop'
-    const k = ['metro', 'broad', 'patco', 'regional'].find(q => s.k.includes(q));
+    const k = ['metro', 'broad', 'patco', 'regional', 'nycsub'].find(q => s.k.includes(q));
     const stn = under || k ? (k || (s.k.includes('pcc') ? 'pcc' : 'trolley')) : 'stop';
     const y = Math.max(7, ...(data.platforms.filter(p => Math.abs(p.x - s.x) < 120 && Math.abs(p.z - s.z) < 120).map(p => p.y + 5)));
     labels.push({ text, pos: new THREE.Vector3(s.x, y, s.z), stn, far: STN_FAR, cutHide: secs.map(sec => sec.id) });
@@ -446,6 +442,7 @@ export function buildSubway(scene, data, river) {
     doorZ: [-6.3], doorW: 1.4, sides: [1, -1], seats: [1.4, 1.4], spawnZ: -2.8,
     deck: { z0: -10.6, hw: 2.8 },   // the open stern deck behind the cabin (boats.js), walkable
     col: { wall: '#eef0ec', ceil: '#f6f5f0', floor: '#6b5a48', seat: '#2f6a8a', steel: '#c3c8cd', door: '#d2d6d9', cab: '#e2e4df', dark: '#2a2c2f' } };
+  CAR_IN.nycsub = { ...CAR_IN.metro, model: 'NYC subway car' };   // New York: the same longitudinal-bench layout
   for (const [k, v] of Object.entries(CAR_IN)) v.layout = v.layout || k;   // metro | trolley | heavy
   const glow = (c, k = .45, o = {}) => mat(new THREE.Color(c).multiplyScalar(.35), Object.assign({ emissive: c, emissiveIntensity: .45 + k * .5, roughness: .8 }, o));
   const flat = c => mat('#000000', { emissive: c, emissiveIntensity: 1 });

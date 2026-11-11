@@ -246,7 +246,8 @@ export const bx = (w, h, d) => fixBoxUV(new THREE.BoxGeometry(w, h, d));
 export const reps = (w, h) => [Math.max(1, Math.round(w / 14)), Math.max(1, Math.round(h / 29))];
 
 // ---- display lights: the coloured lighting on the skyline (crowns, Liberty Place's gables,
-// the Cira Centre's LED facade, the FMC Tower's crown, Boathouse Row), which Philadelphia
+// the Cira Centre's LED facade, the FMC Tower's crown, Boathouse Row, New York's Empire State and
+// Chrysler crowns), which cities
 // changes for teams, holidays and causes. Each piece registers a setter; a scheme's colours
 // are dealt out to the pieces in turn, so a two-colour scheme alternates tower by tower.
 export const DISPLAY_PRESETS = [

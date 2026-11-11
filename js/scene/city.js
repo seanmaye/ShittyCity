@@ -1,6 +1,6 @@
-// The rest of Philadelphia, out to the city limits: ~500k building footprints (City of
-// Philadelphia LI footprints), streets, rail, parks, water and park trees (OpenStreetMap).
-// Everything here lies outside the original Center City extent, which keeps its own data.
+// The city beyond its detailed core (data/<city>/city.json.gz and city_buildings.bin.gz): building
+// footprints, streets, rail, parks, water and park trees, out to the city limits (Philadelphia's
+// ~500k footprints) or the land outlines (New York's outer boroughs).
 //
 // Performance: buildings are instanced boxes (fitted to each footprint) in 1 km tiles, plus
 // real outlines for large irregular ones. Near tiles draw full boxes with window textures;
@@ -16,7 +16,7 @@ import { facadeKind, facadeColor, hash, addRooftop, aviationLights } from './bui
 
 const TILE = 1000, FULL = 5000, TREE_FAR = 7000;
 
-/** Decode city_buildings.bin (see tools/build_city.py). */
+/** Decode city_buildings.bin (PHB1; written by tools/phl/build_city.py and tools/nyc/import_nyc.py). */
 function decode(buf) {
   const dv = new DataView(buf);
   if (String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3)) !== 'PHB1') throw new Error('city buildings: bad header');
@@ -40,8 +40,9 @@ function unitBox() {   // 1 x 1 x 1 box standing on y = 0, without a bottom face
 }
 function unitRoof() { const g = new THREE.PlaneGeometry(1, 1); g.rotateX(-Math.PI / 2); g.translate(0, 1, 0); return g; }
 
-/** clear: rings ([[x, z], ...]) kept free of park trees (playing fields) */
-export function buildCity(scene, data, { waterMat, status = () => {}, clear = [] }) {
+/** clear: rings ([[x, z], ...]) kept free of park trees (playing fields);
+ *  sea: everything outside the land outlines (city.limits) is water, not countryside */
+export function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea = false }) {
   const city = data.city, B = decode(data.cityBuildings);
   const tiles = new Map();   // key -> { cx, cz, r, full: [], roof: [], trees: [] }
   const tileOf = (x, z) => {
@@ -53,14 +54,14 @@ export function buildCity(scene, data, { waterMat, status = () => {}, clear = []
 
   // ---- ground: paved city limits, a wider countryside plane, parks, water, streams
   const limits = city.limits.map(pairs);
-  const outer = new THREE.Mesh(new THREE.PlaneGeometry(400000, 400000), seasonalGrass(M(COUNTRY, { roughness: 1 })));
+  const outer = new THREE.Mesh(new THREE.PlaneGeometry(400000, 400000), sea ? waterMat : seasonalGrass(M(COUNTRY, { roughness: 1 })));
   outer.rotation.x = -Math.PI / 2; outer.position.y = -.05; outer.receiveShadow = true; scene.add(outer);
   const pb = new Builder({ uv: true }); limits.forEach(r => addPolygon(pb, [r], 0, (x, z) => [x / 400, z / 400]));
   const plate = new THREE.Mesh(pb.geometry(), groundMat(GROUND, THREE.FrontSide));
   plate.position.y = .14; plate.receiveShadow = true; scene.add(plate);
   const edge = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(limits[0].map(([x, z]) => new THREE.Vector3(x, .6, z))),
     new THREE.LineBasicMaterial({ color: '#4a5a46', transparent: true, opacity: .7 }));
-  scene.add(edge);
+  if (!sea) scene.add(edge);   // the city limits (a waterfront city's land outlines are its shoreline)
 
   const gb = GREEN.map(() => new Builder());
   for (const [k, ...rings] of city.green) addPolygon(gb[k], rings.map(pairs), 0);
@@ -180,5 +181,5 @@ export function buildCity(scene, data, { waterMat, status = () => {}, clear = []
   const [x0, z0, x1, z1] = city.bbox.map(v => v / 10), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
   const view = { id: 'city', name: 'Whole city', pos: new THREE.Vector3(cx, 26000, cz + 16000), target: new THREE.Vector3(cx, 0, cz - 1500) };
   const beacons = aviationLights(lights); scene.add(beacons);
-  return { update, view, bridgeSegs, wet, bounds: { x0, z0, x1, z1 }, buildingCount: B.nB + B.nP, nightOnly: [beacons] };
+  return { update, view, bridgeSegs, wet, bounds: { x0, z0, x1, z1 }, buildingCount: B.nB + B.nP, nightOnly: [beacons], boxes: B };
 }

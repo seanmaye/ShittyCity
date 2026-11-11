@@ -1,5 +1,5 @@
-// The Schuylkill: real OSM water polygons, plus a centreline (with true bank-to-bank
-// width) that the monorail, boathouses and rowing shells follow.
+// Water: real OSM water polygons, plus an optional river centreline (with true bank-to-bank
+// width) that Philadelphia's monorail, boathouses and rowing shells follow (the Schuylkill).
 import * as THREE from 'three';
 import { latOf, pairs } from '../data.js';
 import { M } from './materials.js';
@@ -16,11 +16,12 @@ export function buildRiver(scene, data) {
 
   /** signed distance from the centreline (positive = east bank) and local width */
   function riverInfo(x, z) {
+    if (!NS) return { d: 1e6, w: 0, s: null };   // a city without a river centreline: never on the river
     let best = 1e18, bi = 0;
     for (let i = 0; i < NS; i++) { const s = RS[i]; const dx = x - s.p.x, dz = z - s.p.z, dd = dx * dx + dz * dz; if (dd < best) { best = dd; bi = i; } }
     const s = RS[bi]; return { d: (x - s.p.x) * s.n.x + (z - s.p.z) * s.n.z, w: s.w, s };
   }
-  function atLat(lat) { let bi = 0, bd = 1e9; RS.forEach((s, i) => { const d = Math.abs(s.lat - lat); if (d < bd) { bd = d; bi = i; } }); return RS[bi]; }
+  function atLat(lat) { if (!NS) return null; let bi = 0, bd = 1e9; RS.forEach((s, i) => { const d = Math.abs(s.lat - lat); if (d < bd) { bd = d; bi = i; } }); return RS[bi]; }
 
   // water polygons (river, plus fountains and ponds), one merged mesh
   const waterMat = M('#6a90ad', { roughness: .3, metalness: 0 });
