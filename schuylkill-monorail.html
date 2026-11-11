@@ -170,7 +170,7 @@ data-metro       (gzip JSON) every rail transit line in the city, merged into da
   replaceRuns: ["L","T1",...]: data-transit runs these replace. Inside the original extent
            their runs are the original geometry, unchanged.
   columns: flat [x, z, h] dm, El and viaduct columns
-  Built from OSM route relations by tools/build_transit.py; tunnel layer -1/-2/-3/-4 ->
+  Built from OSM route relations by tools/build_metro.py; tunnel layer -1/-2/-3/-4 ->
   7/9/13/17 m deep, Els 9.5 m up, Regional Rail on bridges follows the street-layer decks.
 
 data-city_landmarks  hand-styled models fitted to real outlines (tools/build_landmarks.py)
@@ -185,7 +185,7 @@ data-city_landmarks  hand-styled models fitted to real outlines (tools/build_lan
   labels:   [{t, x, y, z}] m
   The city footprints whose centroid is inside a stadium/hall outline, and the street-layer
   decks of these bridges, are left out of data-city / data-city_buildings by build_city.py;
-  PATCO's track on the Ben Franklin Bridge follows the deck profile (build_transit.py). If you
+  PATCO's track on the Ben Franklin Bridge follows the deck profile (build_metro.py). If you
   move an outline in this file only, those buildings stay out until the build is rerun.
 
 data-yardpark    PROPOSAL: deck over the 30th Street rail yard
@@ -2386,6 +2386,62 @@ function buildSubway(scene, data, river) {
     return new THREE.CanvasTexture(c);
   }
 
+  // a simple seated passenger (by Sean Maye), facing forward in the aisle seat just behind where
+  // the rider starts (buildInterior picks it). It turns its head and waves when the camera looks
+  // at it (see wave() in rideFrame).
+  function makePerson(kind, at) {
+    const shirt = kind === 'metro' ? '#8a3f3a' : kind === 'monorail' ? '#4f7a3a' : '#2f6a8a';
+    const M = { skin: glow('#c99370', .45, { roughness: .7 }), shirt: glow(shirt, .45), pants: glow('#2e3542', .4), shoe: glow('#1c1c1c', .3), hair: glow('#3a2a20', .35), eye: glow('#111111', .2) };
+    const box = (m, w, h, l, x, y, z) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, l), m); o.position.set(x, y, z); return o; };
+    const root = new THREE.Group();
+    root.position.copy(at);
+    for (const e of [-1, 1]) {                                   // legs: thighs forward, shins down, shoes
+      root.add(box(M.pants, .15, .14, .46, e * .1, .07, .2));
+      root.add(box(M.pants, .13, .47, .13, e * .1, -.2, .42));
+      root.add(box(M.shoe, .11, .08, .26, e * .1, -.45, .48));
+    }
+    const torso = new THREE.Group(); torso.position.set(0, .05, -.1); torso.rotation.x = -.1; root.add(torso);
+    torso.add(box(M.shirt, .38, .56, .22, 0, .3, 0));
+    torso.add(box(M.skin, .09, .08, .09, 0, .62, 0));              // neck
+    const head = new THREE.Group(); head.position.set(0, .76, 0); torso.add(head);
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(.11, 16, 12), M.skin); skull.scale.set(1, 1.15, 1); head.add(skull);
+    const hair = new THREE.Mesh(new THREE.SphereGeometry(.115, 16, 8, 0, Math.PI * 2, 0, Math.PI * .55), M.hair); hair.position.y = .02; hair.rotation.x = -.35; head.add(hair);
+    for (const e of [-1, 1]) head.add(box(M.eye, .025, .025, .02, e * .04, .02, .1));
+    head.add(box(M.eye, .05, .012, .02, 0, -.05, .1));             // mouth
+    // arms: shoulder -> upper arm group -> elbow -> forearm group -> hand. The right arm
+    // (the person's right is -x, as they face +z) is the one that waves.
+    const arm = sx => {
+      const up = new THREE.Group(); up.position.set(sx * .24, .54, 0); torso.add(up);
+      up.add(box(M.shirt, .1, .3, .1, 0, -.14, 0));
+      const fore = new THREE.Group(); fore.position.set(0, -.28, 0); up.add(fore);
+      fore.add(box(M.skin, .08, .26, .08, 0, -.13, 0));
+      const hand = new THREE.Mesh(new THREE.SphereGeometry(.05, 10, 8), M.skin); hand.position.y = -.29; fore.add(hand);
+      up.rotation.x = -.35; fore.rotation.x = -1.25;               // resting: forearm across the lap
+      return { up, fore };
+    };
+    arm(1);
+    const right = arm(-1);
+    root.traverse(o => { o.frustumCulled = false; });
+    return { root, head, right, w: 0, t: 0 };
+  }
+  const _hp = new THREE.Vector3(), _cd = new THREE.Vector3(), _cl = new THREE.Vector3();
+  /** wave when the camera looks at the passenger's head (within ~30 degrees, closer than 9 m) */
+  function wave(P, dt, camera) {
+    P.t += dt;
+    P.head.getWorldPosition(_hp); camera.getWorldDirection(_cd);
+    const to = _hp.sub(camera.position), d = to.length();
+    const seen = d < 9 && to.dot(_cd) / d > Math.cos(30 * Math.PI / 180);
+    P.w += ((seen ? 1 : 0) - P.w) * Math.min(1, dt * (seen ? 5 : 2.5));
+    const w = P.w * P.w * (3 - 2 * P.w);                           // smoothstep
+    const { up, fore } = P.right;
+    up.rotation.set(-.35 * (1 - w), 0, -1.9 * w);                  // upper arm out to the side, elbow at shoulder height
+    fore.rotation.set(-1.25 * (1 - w), 0, w * (-1.15 + .4 * Math.sin(P.t * 9)));   // forearm up, hand swinging side to side
+    // turn the head toward the camera while waving
+    _cl.copy(camera.position); P.root.worldToLocal(_cl);
+    const yaw = Math.max(-1, Math.min(1, Math.atan2(_cl.x, _cl.z + .1)));
+    P.head.rotation.y = yaw * w;
+  }
+
   function buildInterior(kind, lineId, run, title, colour) {
     const S = CAR_IN[kind], C = S.col, F = S.F, HW = S.hw, Y = F + S.c, SL = F + S.sill, WT = F + S.wt, T = .05, LAY = S.layout;
     const K = {}; ['wall', 'ceil', 'floor', 'seat', 'steel', 'door', 'cab', 'dark', 'yellow', 'light', 'glass'].forEach(k => { K[k] = new Builder(); });
@@ -2448,7 +2504,9 @@ function buildSubway(scene, data, river) {
     }
 
     // seats
+    const seatList = [];                         // [cx, z, fz, w] of every transverse bench (for the passenger)
     const seat = (cx, z, fz, w = .92) => {      // transverse 2-seat bench facing fz (+1 forward / -1 back)
+      seatList.push([cx, z, fz, w]);
       for (const e of [-1, 1]) {
         bx(K.seat, cx + e * w / 4, F + .44, z, w / 2 - .03, .09, .44);
         bx(K.seat, cx + e * w / 4, F + .78, z - fz * .25, w / 2 - .03, .62, .07, -fz * .14);
@@ -2554,7 +2612,13 @@ function buildSubway(scene, data, river) {
       const zMax = LAY === 'trolley' ? (e.x < -.1 ? S.z1 - .35 : S.z1 - 2.15) : S.cab - .3;
       e.z = Math.max(S.z0 + .45, Math.min(zMax, e.z));
     };
-    return { group, setLED, spawn, clampEye };
+    // the passenger: aisle-side place of the forward-facing bench nearest 1.2 m behind the spawn
+    // point, preferring the right-hand side (the L's and the trolley's original seats)
+    const fwd = seatList.filter(q => q[2] > 0);
+    const best = fwd.reduce((b, q) => { const sc = Math.abs(q[1] - (spawn.z - 1.2)) + (q[0] > 0 ? 0 : .3); return !b || sc < b[0] ? [sc, q] : b; }, null);
+    let person = null;
+    if (best) { const [cx, z, , w] = best[1]; person = makePerson(kind, new V3(cx - Math.sign(cx) * w / 4, F + .49, z)); group.add(person.root); }
+    return { group, setLED, spawn, clampEye, person };
   }
 
   // a lit tunnel around every underground track, shown only while riding
@@ -2696,6 +2760,7 @@ function buildSubway(scene, data, river) {
     const cp = Math.cos(r.pitch);
     look.set(r.eye.x + Math.sin(r.yaw) * cp, r.eye.y + Math.sin(r.pitch), r.eye.z + Math.cos(r.yaw) * cp).applyMatrix4(g.matrixWorld);
     camera.up.set(0, 1, 0); camera.lookAt(look);
+    if (r.int.person) wave(r.int.person, dt, camera);
     // next-stop sign
     r.tNext -= dt;
     if (r.first || r.tNext <= 0) {
