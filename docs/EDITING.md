@@ -345,7 +345,7 @@ js/scene/index.js      builds everything in order, each city's parts only when i
                  follow the camera)
 js/ui.js         buttons, line picker, floating labels, keys (inside a car KEYMAP walks; otherwise
                  FLYMAP flies the camera; Space up, Shift down)
-                 Creative mode: a right-click (or a click off any train) on the view captures the
+                 Creative mode: a right-click (only a right-click) on the view captures the
                  mouse (pointer lock), and the #modehint pill at the bottom says so; the mouse
                  then turns the camera (setCreative/creativeLook in index.js, orbit controls off),
                  W A S D fly along the view, the wheel sets the speed, a click boards the train

@@ -347,7 +347,7 @@ js/scene/index.js      builds everything in order, each city's parts only when i
                  follow the camera)
 js/ui.js         buttons, line picker, floating labels, keys (inside a car KEYMAP walks; otherwise
                  FLYMAP flies the camera; Space up, Shift down)
-                 Creative mode: a right-click (or a click off any train) on the view captures the
+                 Creative mode: a right-click (only a right-click) on the view captures the
                  mouse (pointer lock), and the #modehint pill at the bottom says so; the mouse
                  then turns the camera (setCreative/creativeLook in index.js, orbit controls off),
                  W A S D fly along the view, the wheel sets the speed, a click boards the train
@@ -8301,7 +8301,7 @@ function createUI(api) {
   // A cafe chair or bench on Walnut St works the same way: click to sit, Esc to stand up.
   const canvas = api.renderer.domElement, offBtn = document.getElementById('getoff');
   let down = null, carOn = false, hoverPending = false;
-  // creative mode: clicking the view captures the mouse (pointer lock); the mouse then turns the
+  // creative mode: right-clicking the view captures the mouse (pointer lock); the mouse then turns the
   // camera directly (or looks around inside a car), a crosshair marks the centre, Esc lets go
   const xhair = document.getElementById('xhair');
   let locked = false, speedTimer = 0;
@@ -8384,7 +8384,7 @@ function createUI(api) {
     if (d.button === 2) { lockMouse(); return; }   // right-click (not a right-drag pan): creative mode
     const ai = anglerAt(...rel(e));   // someone fishing on the Schuylkill: they ask you to join them
     if (ai != null) { if (riding) { riding = false; api.setRiding(false, true); rideBtn.textContent = 'Ride a line'; openPicker(false); } fishing.open(ai); return; }
-    const hit = api.pickCar(...rel(e)); if (!hit) { if (!riding) lockMouse(); return; }
+    const hit = api.pickCar(...rel(e)); if (!hit) return;   // only a right-click enters creative mode
     if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; openPicker(false); }
     api.boardCar(hit); syncCar(); syncCut();
   };

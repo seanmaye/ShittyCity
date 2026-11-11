@@ -149,7 +149,7 @@ export function createUI(api) {
   // A cafe chair or bench on Walnut St works the same way: click to sit, Esc to stand up.
   const canvas = api.renderer.domElement, offBtn = document.getElementById('getoff');
   let down = null, carOn = false, hoverPending = false;
-  // creative mode: clicking the view captures the mouse (pointer lock); the mouse then turns the
+  // creative mode: right-clicking the view captures the mouse (pointer lock); the mouse then turns the
   // camera directly (or looks around inside a car), a crosshair marks the centre, Esc lets go
   const xhair = document.getElementById('xhair');
   let locked = false, speedTimer = 0;
@@ -232,7 +232,7 @@ export function createUI(api) {
     if (d.button === 2) { lockMouse(); return; }   // right-click (not a right-drag pan): creative mode
     const ai = anglerAt(...rel(e));   // someone fishing on the Schuylkill: they ask you to join them
     if (ai != null) { if (riding) { riding = false; api.setRiding(false, true); rideBtn.textContent = 'Ride a line'; openPicker(false); } fishing.open(ai); return; }
-    const hit = api.pickCar(...rel(e)); if (!hit) { if (!riding) lockMouse(); return; }
+    const hit = api.pickCar(...rel(e)); if (!hit) return;   // only a right-click enters creative mode
     if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; openPicker(false); }
     api.boardCar(hit); syncCar(); syncCut();
   };
