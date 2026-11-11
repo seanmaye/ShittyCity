@@ -286,6 +286,17 @@ js/scene/promenade.js  PROPOSAL: Walnut St, 22nd to Front, as a car-free shoppin
                   view. Every cafe chair and bench is a seat: click to sit (pickSeat/sit, wired
                   into index.js pickCar/boardCar/leaveCar), drag to look, Space or Esc to stand.
                   To pedestrianise another street, give it its own polyline the same way.
+                  Each shop bay also gets a door (frame here; the leaf swings in pedestrians.js),
+                  and nav = {at, project, seats, doors, obst, ...} is what the crowd walks by.
+js/scene/pedestrians.js  PROPOSAL: about 200 people on Walnut St (buildPedestrians(scene, nav, count)).
+                  Kyle's figures (people.js geo() and pose()), drawn instanced: one InstancedMesh per
+                  body part for everyone, posed on CPU skeletons. They stroll the lanes either side
+                  of the streetcar track (LANE, by direction), go into shops through the doors
+                  (which swing open) and come back out, and sit on benches (two a bench) and at
+                  cafe chairs with a coffee (sipping) or a book. Routes to every seat and door are
+                  checked against the obstacles at load; blocked ones are never used. Re-posing:
+                  every frame within 120 m, every 3rd within 350 m, else every 10th; still sitters
+                  once. When the viewer sits, they take a free place or move someone on.
 js/scene/subway.js     every rail line (data-transit + data-metro): rails, platforms, El decks and
                   columns, looping instanced trains (SPEC: car
                   sizes, cars per train, train spacing, speeds), and the cut-away sections:

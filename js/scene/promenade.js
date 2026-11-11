@@ -144,7 +144,10 @@ export function buildPromenade(scene, { buildings, cityB, roads, trees }) {
 
   // lamps, benches and planter trees along both kerb lines; a 24 m rhythm
   const kerbPts = [];
-  const seats = [];   // every chair and bench: {x, z, ry (the way the sitter faces: local +z), kind}
+  const seats = [];   // every chair and bench: {x, z, ry (the way the sitter faces: local +z), kind, ax, az (where to walk up from)}
+  const doors = [];   // a door per shop: {x, z (on the facade), nx, nz (outward)}
+  const obst = [];    // things on the paving to walk around: [x, z, radius]
+  treePts.forEach(([x, z]) => obst.push([x, z, .7]));
   for (let s0 = 6; s0 < WALNUT_LENGTH - 4; s0 += 24) {
     for (const sd of [-1, 1]) {
       const items = [[0, 'lamp'], [7, 'bench'], [12, 'planter'], [17, 'bench']];
@@ -152,9 +155,12 @@ export function buildPromenade(scene, { buildings, cityB, roads, trees }) {
         const s = s0 + ds; if (s > WALNUT_LENGTH - 4) continue;
         const p = at(s, sd * KERB);
         if (inCross(p.x, p.z, 2.5) || nearTree(p.x, p.z, 2)) continue;
-        const ry = yaw(p.tx, p.tz); kerbPts.push([p.x, p.z]);
+        const ry = yaw(p.tx, p.tz); kerbPts.push([p.x, p.z]); obst.push([p.x, p.z, what === 'lamp' ? .3 : what === 'bench' ? 1 : .95]);
         if (what === 'lamp') { put('pole', p.x, PAVE_Y, p.z, ry); put('lantern', p.x, PAVE_Y, p.z, ry); put('cap', p.x, PAVE_Y, p.z, ry); }
-        else if (what === 'bench') { const r = ry + (sd > 0 ? Math.PI / 2 : -Math.PI / 2); put('bench', p.x, PAVE_Y, p.z, r); seats.push({ x: p.x, z: p.z, ry: r, kind: 'bench' }); }   // faces the middle of the street
+        else if (what === 'bench') {   // faces the middle of the street; people walk up to it from the front
+          const r = ry + (sd > 0 ? Math.PI / 2 : -Math.PI / 2); put('bench', p.x, PAVE_Y, p.z, r);
+          seats.push({ x: p.x, z: p.z, ry: r, kind: 'bench', ax: p.x + Math.sin(r) * .8, az: p.z + Math.cos(r) * .8 });
+        }
         else { put('planter', p.x, PAVE_Y, p.z, ry); put('trunk', p.x, PAVE_Y, p.z, 0); put('crown', p.x, PAVE_Y, p.z, s, 1, 1, 1, new THREE.Color(['#5d8c4c', '#4f7d45', '#6b9a4e'][Math.floor(s) % 3])); }
       }
     }
@@ -183,6 +189,7 @@ export function buildPromenade(scene, { buildings, cityB, roads, trees }) {
       put('window', x + nx * .06, PAVE_Y, z + nz * .06, ry, bw - .9, 1, 1);
       put('awning', x + nx * .02, PAVE_Y, z + nz * .02, ry, bw - .5, 1, 1, new THREE.Color(AWN[Math.floor(r * AWN.length)]));
       // cafe tables in front of about half the shops, where the pavement is wide enough
+      const placed = [];
       if (r < .5 && ao > 7.4) {
         const tables = bw > 5 ? [-.24, .24] : [0];
         for (const t of tables) {
@@ -190,15 +197,23 @@ export function buildPromenade(scene, { buildings, cityB, roads, trees }) {
           if (nearTree(tx, tz, 2) || inCross(tx, tz, 1.5) || kerbPts.some(([kx, kz]) => Math.hypot(kx - tx, kz - tz) < 2.2)) continue;
           // and both chairs clear of the lamps, benches and planters (someone sits in them)
           if ([1, -1].some(sd => kerbPts.some(([kx, kz]) => Math.hypot(kx - tx - ux * .75 * sd, kz - tz - uz * .75 * sd) < 1.8))) continue;
-          put('table', tx, PAVE_Y, tz, 0);
+          put('table', tx, PAVE_Y, tz, 0); placed.push(t); obst.push([tx, tz, .5]);
           for (const sd of [1, -1]) {   // one chair either side of the table, facing it
             const cx = tx + ux * .75 * sd, cz = tz + uz * .75 * sd, r = Math.atan2(-ux * sd, -uz * sd);
             // sit down looking past the umbrella pole, half towards the street
             const lx = -ux * sd + nx * 1.2, lz = -uz * sd + nz * 1.2;
-            put('chair', cx, PAVE_Y, cz, r); seats.push({ x: cx, z: cz, ry: r, kind: 'cafe', yaw0: Math.atan2(lx, lz) - r });
+            put('chair', cx, PAVE_Y, cz, r); obst.push([cx, cz, .3]);
+            seats.push({ x: cx, z: cz, ry: r, kind: 'cafe', yaw0: Math.atan2(lx, lz) - r, ax: cx + ux * sd * .75, az: cz + uz * sd * .75 });   // walk up from the side away from the table
           }
           put('umbrella', tx, PAVE_Y, tz, 0, 1, 1, 1, new THREE.Color(UMB[Math.floor(r * 2 * UMB.length) % UMB.length]));
         }
+      }
+      // the shop door: in the middle of the bay, or beside a single cafe table
+      const dOff = placed.length === 1 ? (bw > 3.4 ? .3 * bw : 0) : 0;
+      if (placed.length !== 1 || dOff) {
+        const dx = x + ux * dOff, dz = z + uz * dOff;
+        put('door', dx + nx * .09, PAVE_Y, dz + nz * .09, ry);   // the frame; the door itself swings open (pedestrians.js)
+        doors.push({ x: dx, z: dz, nx, nz, ry });
       }
     }
   };
@@ -234,6 +249,7 @@ export function buildPromenade(scene, { buildings, cityB, roads, trees }) {
     const v = new THREE.BoxGeometry(1, .32, .04); v.translate(0, 3.2, 1.46);
     return merge([g, v]);
   })();
+  G.door = merge([box(.12, 2.4, .16, -.54, 0, 0), box(.12, 2.4, .16, .54, 0, 0), box(1.2, .12, .16, 0, 2.28, 0)]);   // jambs and head
   G.table = merge([cyl(.4, .4, .04, .72, 12), cyl(.04, .04, .72, 0, 6), cyl(.25, .25, .03, 0, 8)]);
   G.chair = merge([box(.42, .04, .42, 0, .44, 0), box(.42, .45, .04, 0, .46, -.2), box(.04, .44, .04, -.18, 0, .18), box(.04, .44, .04, .18, 0, .18), box(.04, .44, .04, -.18, 0, -.18), box(.04, .44, .04, .18, 0, -.18)]);
   G.umbrella = merge([cyl(.03, .03, 2.35, 0, 5), (() => { const g = new THREE.ConeGeometry(1.35, .45, 8, 1, true); g.translate(0, 2.55, 0); return g; })()]);
@@ -242,7 +258,7 @@ export function buildPromenade(scene, { buildings, cityB, roads, trees }) {
   const shopMat = std('#3a4752', { emissive: '#ffd49a', emissiveIntensity: 0, roughness: .25, metalness: .3 }); shopMat.userData.lit = 1.5; litMats.push(shopMat);
   const iron = std('#23272b', { roughness: .6, metalness: .4 }), wood = std('#8a6440'), stone = std('#a9a398'), white = std('#ffffff', { side: THREE.DoubleSide, roughness: .95 });
   const MAT = { pole: iron, lantern: lanternMat, cap: iron, bench: wood, planter: stone, trunk: std('#6b5444', { roughness: 1 }), crown: std('#ffffff', { flatShading: true, roughness: .95 }),
-    bollard: iron, window: shopMat, awning: white, table: iron, chair: iron, umbrella: white };
+    bollard: iron, window: shopMat, door: std('#2a2019', { roughness: .7 }), awning: white, table: iron, chair: iron, umbrella: white };
   for (const [name, k] of kinds) {
     const im = new THREE.InstancedMesh(G[name], MAT[name], k.m.length);
     k.m.forEach((m, i) => { im.setMatrixAt(i, m); if (k.c[i]) im.setColorAt(i, k.c[i]); });
@@ -252,7 +268,9 @@ export function buildPromenade(scene, { buildings, cityB, roads, trees }) {
   // a view east down the shops from above the street at the corner of Rittenhouse Square
   const a = at(600, 0), b = at(860, 0);
   const view = { id: 'walnut', name: 'Walnut St promenade', pos: new THREE.Vector3(a.x, 26, a.z), target: new THREE.Vector3(b.x, 1, b.z) };
-  return { group, view, count: Object.fromEntries([...kinds].map(([n, k]) => [n, k.m.length])), ...seating(seats) };
+  // what the people on the street (pedestrians.js) need to find their way
+  const nav = { at, project, length: WALNUT_LENGTH, seats, doors, obst, pave: PAVE_Y, clear: CLEAR, kerb: KERB, shopMat };
+  return { group, view, nav, count: Object.fromEntries([...kinds].map(([n, k]) => [n, k.m.length])), ...seating(seats) };
 }
 
 // ---- sitting down: click a cafe chair or a bench, drag to look around, Space or Esc to stand up
@@ -273,11 +291,17 @@ function seating(seats) {
     });
     return best && { seat: best.seat };
   }
-  const sit = i => { if (!seats[i]) return null; const y0 = seats[i].yaw0 || 0; seat = { i, yaw: Math.atan2(Math.sin(y0), Math.cos(y0)), pitch: -.12 }; return getSeat(); };
+  const sit = i => {
+    if (!seats[i]) return null; const y0 = seats[i].yaw0 || 0;
+    if (seat) seats[seat.i].user = false;
+    // pedestrians.js finds a free place on the seat (moving someone on if it has to): offset along the seat
+    seats[i].user = true; const off = seats.onUserSit ? seats.onUserSit(i) || 0 : 0;
+    seat = { i, off, yaw: Math.atan2(Math.sin(y0), Math.cos(y0)), pitch: -.12 }; return getSeat();
+  };
   /** stand up: where the seat was and the way it faced (for the camera to pull back from) */
   function stand() {
     if (!seat) return null;
-    const st = seats[seat.i]; seat = null;
+    const st = seats[seat.i]; st.user = false; if (seats.onUserStand) seats.onUserStand(seat.i); seat = null;
     return { p: new THREE.Vector3(st.x, PAVE_Y, st.z), dir: new THREE.Vector3(Math.sin(st.ry), 0, Math.cos(st.ry)) };
   }
   const getSeat = () => seat && { kind: 'seat', seat: seats[seat.i].kind };
@@ -285,7 +309,8 @@ function seating(seats) {
   function seatFrame(camera) {
     if (!seat) return;
     const st = seats[seat.i], a = st.ry + seat.yaw, cp = Math.cos(seat.pitch);
-    camera.position.set(st.x - Math.sin(st.ry) * .05, PAVE_Y + EYE, st.z - Math.cos(st.ry) * .05);
+    const ox = Math.cos(st.ry) * seat.off, oz = -Math.sin(st.ry) * seat.off;   // along the seat (a bench has two places)
+    camera.position.set(st.x + ox - Math.sin(st.ry) * .05, PAVE_Y + EYE, st.z + oz - Math.cos(st.ry) * .05);
     look.set(camera.position.x + Math.sin(a) * cp, camera.position.y + Math.sin(seat.pitch), camera.position.z + Math.cos(a) * cp);
     camera.up.set(0, 1, 0); camera.lookAt(look);
   }
