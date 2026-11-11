@@ -1,21 +1,41 @@
 // Trees (placed offline inside real parks and along streets) and rowing shells on the river.
 import * as THREE from 'three';
-export function buildTrees(scene, flat, y = 0) {
-  const n = flat.length / 2, dm = new THREE.Object3D();
+import { withBounds } from './geometry.js';
+const GREENS = ['#4f7d45', '#5d8c4c', '#3f6b3c', '#6b9a4e', '#7aa65a', '#c08a4a', '#b5653c'].map(c => new THREE.Color(c));
+
+// One set of tree geometry for every call (the centre, the rail-yard park, each city tile). The
+// canopy meshes keep a material each: three compiles a material for the first mesh that uses it,
+// and a canopy mesh with no trees in it has no instance colours. Don't merge the canopies'
+// vertices, flat-shaded as they are: the shadow lookup is offset along the vertex normal, and
+// with shared vertices the trees come out visibly lighter.
+let treeKit = null;
+function treeParts() {
+  if (treeKit) return treeKit;
   const trunk = new THREE.CylinderGeometry(.5, .8, 6, 6); trunk.translate(0, 3, 0);
   const round = new THREE.IcosahedronGeometry(5, 0); round.translate(0, 10, 0);
   const cone = new THREE.ConeGeometry(4, 12, 7); cone.translate(0, 11, 0);
+  return treeKit = { trunk, round, cone, bark: new THREE.MeshStandardMaterial({ color: '#6b5444', roughness: 1 }) };
+}
+
+export function buildTrees(scene, flat, y = 0) {
+  const n = flat.length / 2, dm = new THREE.Object3D();
+  const { trunk, round, cone, bark } = treeParts();
   const kinds = Array.from({ length: n }, () => Math.random() < .78 ? 0 : 1);
   const nR = kinds.filter(k => k === 0).length, nC = n - nR;
   const wm = () => new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .95, flatShading: true });
-  const it = new THREE.InstancedMesh(trunk, new THREE.MeshStandardMaterial({ color: '#6b5444', roughness: 1 }), n), ir = new THREE.InstancedMesh(round, wm(), nR), icn = new THREE.InstancedMesh(cone, wm(), nC);
-  const greens = ['#4f7d45', '#5d8c4c', '#3f6b3c', '#6b9a4e', '#7aa65a', '#c08a4a', '#b5653c'], col = new THREE.Color();
+  // the sphere around all of these trees (a tree reaches 24 m up and 7 m out at the largest scale)
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (let i = 0; i < n; i++) { const x = flat[i * 2] / 10, z = flat[i * 2 + 1] / 10; x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
+  const centre = n ? new THREE.Vector3((x0 + x1) / 2, y + 12, (z0 + z1) / 2) : new THREE.Vector3(0, y, 0), reach = n ? Math.hypot(x1 - x0, z1 - z0) / 2 + 25 : 0;
+  const mesh = (g, m, count) => { const im = new THREE.InstancedMesh(withBounds(g, centre, reach), m, count); im.userData.bounded = true; return im; };
+  const it = mesh(trunk, bark, n), ir = mesh(round, wm(), nR), icn = mesh(cone, wm(), nC);
+  const greens = GREENS;
   let a = 0, b = 0;
   for (let i = 0; i < n; i++) {
     const sc = .8 + Math.random() * .6;
     dm.position.set(flat[i * 2] / 10, y, flat[i * 2 + 1] / 10); dm.rotation.set(0, Math.random() * 6.28, 0); dm.scale.set(sc, sc, sc); dm.updateMatrix();
     it.setMatrixAt(i, dm.matrix);
-    col.set(greens[Math.random() < .14 ? 5 + Math.floor(Math.random() * 2) : Math.floor(Math.random() * 5)]);
+    const col = greens[Math.random() < .14 ? 5 + Math.floor(Math.random() * 2) : Math.floor(Math.random() * 5)];
     if (kinds[i] === 0) { ir.setMatrixAt(a, dm.matrix); ir.setColorAt(a, col); a++; } else { icn.setMatrixAt(b, dm.matrix); icn.setColorAt(b, col); b++; }
   }
   [it, ir, icn].forEach(m => { m.castShadow = true; m.receiveShadow = true; scene.add(m); });

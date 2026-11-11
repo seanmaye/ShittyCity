@@ -26,12 +26,12 @@ export async function buildScene(canvas, data, status = () => {}) {
   status('Shaping the river…'); await nextFrame();
   const river = buildRiver(scene, data.river);
   status('Laying out parks and streets…'); await nextFrame();
-  const ground = buildGround(scene, data.ground, river, data.yardpark.rings);
+  const ground = buildGround(scene, data.ground, river, data.yardpark.rings, data.city.limits);
   status(`Raising ${data.buildings.b.length.toLocaleString()} buildings…`); await nextFrame();
-  buildBuildings(scene, data.buildings);
+  const blocks = buildBuildings(scene, data.buildings).meshes;
   // the rest of the city out to the city limits (outside the original extent, its own data)
   status('Building out the rest of Philadelphia…'); await nextFrame();
-  const city = buildCity(scene, data, { waterMat: river.waterMat, status });
+  const city = buildCity(scene, data, { waterMat: river.waterMat, status, core: data.ground.bbox.map(v => v / 10) });
   camera.far = 200000; camera.updateProjectionMatrix(); controls.maxDistance = 45000;
   status('Placing landmarks and the monorail…'); await nextFrame();
   // stadiums, Independence Hall, Memorial Hall and the Delaware bridges (data/city_landmarks.json)
@@ -87,8 +87,9 @@ export async function buildScene(canvas, data, status = () => {}) {
     if (l.river !== undefined) return { text: l.t, pos: river.atLat(39.9575).p.clone().setY(l.y) };
     return { text: l.t, pos: new THREE.Vector3(l.x, l.y, l.z) };
   }).concat(sports.labels, yard.labels, subway.labels, marks.labels, old53.labels);
-  // instanced meshes hold instances far from their own origin: never let three cull them as a whole
-  scene.traverse(o => { if (o.isInstancedMesh) o.frustumCulled = false; });
+  // instanced meshes hold instances far from their own origin: never let three cull them as a whole,
+  // except those that carry the bounds of their instances (geometry.js withBounds)
+  scene.traverse(o => { if (o.isInstancedMesh && !o.userData.bounded) o.frustumCulled = false; });
 
   // "Show transit lines": every rail line plus the proposed monorails
   const mono = [{ id: 'loop', color: '#d6452f', P: monorail.curve.getSpacedPoints(1500) },
@@ -219,6 +220,25 @@ export async function buildScene(canvas, data, status = () => {}) {
   const pickCar = (x, y) => { camera.updateMatrixWorld(); return subway.pick(camera, x, y, canvas.clientWidth, canvas.clientHeight); };
   setTime(sky.sunset - .35);   // open at dusk, the original look
 
+  // Shadow casters that cannot matter this frame. A block of buildings darkens something in view
+  // only if the volume its shadow sweeps (from the block, away from the sun, down to the lowest
+  // thing that can be seen) touches the view frustum. The shadow map covers 5.8 km around the
+  // focus whatever the camera sees, so from a train or a low view most blocks are behind you.
+  const LOWEST = -60;   // below the deepest cut-away
+  const viewFrustum = new THREE.Frustum(), viewMat = new THREE.Matrix4(), toSun = new THREE.Vector3(), sweepEnd = new THREE.Vector3();
+  function cullShadowCasters() {
+    camera.updateMatrixWorld();   // the camera has moved this frame; render() would do this next
+    viewFrustum.setFromProjectionMatrix(viewMat.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+    toSun.subVectors(sun.position, sun.target.position).normalize();
+    for (const m of blocks) {
+      const c = m.geometry.boundingSphere.center, r = m.geometry.boundingSphere.radius + 5;   // + the reach of the soft-shadow filter
+      // the block's sphere, slid away from the sun as far as the shadow of its highest point reaches
+      sweepEnd.copy(c).addScaledVector(toSun, -(m.geometry.boundingBox.max.y - LOWEST) / toSun.y);
+      // outside if the whole swept capsule is behind any one plane of the frustum
+      m.castShadow = !viewFrustum.planes.some(p => p.distanceToPoint(c) < -r && p.distanceToPoint(sweepEnd) < -r);
+    }
+  }
+
   const clock = new THREE.Clock(), sunOff = new THREE.Vector3();
   function start(onFrame) {
     function frame() {
@@ -236,6 +256,7 @@ export async function buildScene(canvas, data, status = () => {}) {
         sun.target.position.set(focus.x, 0, focus.z); sun.position.copy(sun.target.position).add(sunOff);
       }
       city.update(camera, scene.fog.far);
+      cullShadowCasters();
       renderer.render(scene, camera); onFrame(camera);
       requestAnimationFrame(frame);
     }

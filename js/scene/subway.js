@@ -111,14 +111,18 @@ export function buildSubway(scene, data, river) {
 
   // --- rails and track beds. Underground ones are never clipped (they stay visible in front of a
   // cut); street-running track belongs to the city and is clipped with it.
-  const bedU = new Builder(), railU = new Builder(), bedS = new Builder(), railS = new Builder();
+  // Track that is below ground at both ends (nearly all of the underground track) is kept apart:
+  // the ground hides it from any camera above it unless a cut is open, so it is only drawn then.
+  const bedD = new Builder(), railD = new Builder(), bedU = new Builder(), railU = new Builder(), bedS = new Builder(), railS = new Builder();
   for (const { P, N } of tracks) for (let i = 0; i < P.length - 1; i++) {
-    const u = P[i].y < .3 || P[i + 1].y < .3, bd = u ? bedU : bedS, rl = u ? railU : railS;
+    const d = under(P, i), u = P[i].y < .3 || P[i + 1].y < .3, bd = d ? bedD : u ? bedU : bedS, rl = d ? railD : u ? railU : railS;
     band(bd, P, N, i, i + 1, 0, 2.8, .02);
     band(rl, P, N, i, i + 1, GAUGE / 2, .14, .17); band(rl, P, N, i, i + 1, -GAUGE / 2, .14, .17);
   }
   const bedMat = mat('#3c3935'), railMat = mat('#a9aeb3', { roughness: .4, metalness: .6 });
-  scene.add(new THREE.Mesh(bedU.geometry(), bedMat), new THREE.Mesh(railU.geometry(), railMat));
+  const deepTrack = new THREE.Group(); scene.add(deepTrack);
+  if (bedD.count) deepTrack.add(new THREE.Mesh(bedD.geometry(), bedMat), new THREE.Mesh(railD.geometry(), railMat));
+  if (bedU.count) scene.add(new THREE.Mesh(bedU.geometry(), bedMat), new THREE.Mesh(railU.geometry(), railMat));
   if (bedS.count) {
     const sb = new THREE.Mesh(bedS.geometry(), new THREE.MeshStandardMaterial({ color: '#55524e', roughness: .9 })); sb.position.y = .01;
     const sr = new THREE.Mesh(railS.geometry(), new THREE.MeshStandardMaterial({ color: '#a9aeb3', roughness: .4, metalness: .6 }));
@@ -925,6 +929,8 @@ export function buildSubway(scene, data, river) {
       parts.forEach(m => { m.instanceMatrix.needsUpdate = true; });
     }
     if (ride && camera) rideFrame(dt, camera);
+    // deep track shows through an open cut, or to a camera that is itself below the street
+    if (camera) deepTrack.visible = !!active || camera.position.y < 1;
   }
 
   // "Ride a line": board the lead car of the line's first train (same as clicking it)

@@ -2,21 +2,35 @@
 import * as THREE from 'three';
 /** Growable typed-array buffers for one merged BufferGeometry. */
 export class Builder {
-  constructor(opts = {}) { this.pos = []; this.nrm = []; this.uv = opts.uv ? [] : null; this.col = opts.color ? [] : null; this.idx = []; }
-  get count() { return this.pos.length / 3; }
+  constructor(opts = {}) {
+    this.n = 0; this.cap = 256;   // vertices used, and room for
+    this.pos = new Float32Array(this.cap * 3); this.nrm = new Float32Array(this.cap * 3);
+    this.uv = opts.uv ? new Float32Array(this.cap * 2) : null; this.col = opts.color ? new Float32Array(this.cap * 3) : null;
+    this.idx = [];
+  }
+  get count() { return this.n; }
+  grow() {
+    const cap = this.cap * 2, more = (a, k) => { const b = new Float32Array(cap * k); b.set(a); return b; };
+    this.pos = more(this.pos, 3); this.nrm = more(this.nrm, 3);
+    if (this.uv) this.uv = more(this.uv, 2);
+    if (this.col) this.col = more(this.col, 3);
+    this.cap = cap;
+  }
   v(x, y, z, nx, ny, nz, u, w, c) {
-    this.pos.push(x, y, z); this.nrm.push(nx, ny, nz);
-    if (this.uv) this.uv.push(u, w);
-    if (this.col) this.col.push(c.r, c.g, c.b);
-    return this.count - 1;
+    if (this.n === this.cap) this.grow();
+    const i = this.n++, j = i * 3, p = this.pos, q = this.nrm;
+    p[j] = x; p[j + 1] = y; p[j + 2] = z; q[j] = nx; q[j + 1] = ny; q[j + 2] = nz;
+    if (this.uv) { this.uv[i * 2] = u; this.uv[i * 2 + 1] = w; }
+    if (this.col) { const k = this.col; k[j] = c.r; k[j + 1] = c.g; k[j + 2] = c.b; }
+    return i;
   }
   tri(a, b, c) { this.idx.push(a, b, c); }
   geometry() {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(this.pos, 3));
-    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.nrm, 3));
-    if (this.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2));
-    if (this.col) g.setAttribute('color', new THREE.Float32BufferAttribute(this.col, 3));
+    const g = new THREE.BufferGeometry(), attr = (a, k) => new THREE.BufferAttribute(a.slice(0, this.n * k), k);   // exact-size copies
+    g.setAttribute('position', attr(this.pos, 3));
+    g.setAttribute('normal', attr(this.nrm, 3));
+    if (this.uv) g.setAttribute('uv', attr(this.uv, 2));
+    if (this.col) g.setAttribute('color', attr(this.col, 3));
     g.setIndex(this.count > 65535 ? new THREE.Uint32BufferAttribute(this.idx, 1) : new THREE.Uint16BufferAttribute(this.idx, 1));
     g.computeBoundingSphere(); g.computeBoundingBox();
     return g;
@@ -80,3 +94,17 @@ export function addPrism(b, rings, y0, y1, uOff, tileW, tileH, color) {
   b.c = color;
   addPolygon(b, rings, y1, () => [.01, .01]);
 }
+
+/**
+ * A geometry that shares g's buffers but has its own bounding sphere. An
+ * InstancedMesh is culled by its geometry's sphere, which knows nothing of where the instances
+ * are; with the sphere of its instances it can be frustum-culled like any mesh, in the main pass
+ * and, by the sun's shadow box, in the shadow pass. Mark the mesh userData.bounded.
+ */
+export function withBounds(g, center, radius) {
+  const out = new THREE.BufferGeometry();
+  for (const k in g.attributes) out.setAttribute(k, g.attributes[k]);
+  out.setIndex(g.index); out.boundingSphere = new THREE.Sphere(center, radius);
+  return out;
+}
+

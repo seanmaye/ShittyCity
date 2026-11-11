@@ -15,11 +15,53 @@ function inRings(x, z, rings) {
   return inside;
 }
 
-/** capRings: outline of the rail-yard deck; road bridges over it land on the deck instead. */
-export function buildGround(scene, data, river, capRings = []) {
+/**
+ * The countryside plane (size x size metres at y = 0) without the part under the paved city
+ * (`cover`: the city-limits rings, [[x,z],...]). The paving lies on top of it, so that part is
+ * never seen, but it would still be shaded in full: this renderer has no early depth test.
+ * It is a regular grid of cells (no T-junctions). A cell is left out only if it and its eight
+ * neighbours are inside the outline and clear of its edge, so the hole stays a cell's width
+ * inside the paving and is never seen past its edge, however low the camera is.
+ */
+function countryside(cover, size = 30000, cell = 250) {
+  const n = Math.round(size / cell), o = -size / 2, inside = new Uint8Array(n * n), edge = new Uint8Array(n * n);
+  for (let j = 0; j < n; j++) {   // even-odd fill along each row of cell centres
+    const z = o + (j + .5) * cell, xs = [];
+    for (const r of cover) for (let i = 0, k = r.length - 1; i < r.length; k = i++) {
+      const [xi, zi] = r[i], [xk, zk] = r[k];
+      if ((zi > z) !== (zk > z)) xs.push(xi + (z - zi) * (xk - xi) / (zk - zi));
+    }
+    xs.sort((a, b) => a - b);
+    for (let q = 0; q + 1 < xs.length; q += 2)
+      for (let i = Math.max(0, Math.ceil((xs[q] - o) / cell - .5)); i < n && o + (i + .5) * cell < xs[q + 1]; i++) inside[j * n + i] = 1;
+  }
+  for (const r of cover) for (let i = 0, k = r.length - 1; i < r.length; k = i++) {   // cells the outline passes through
+    const [xi, zi] = r[i], [xk, zk] = r[k], steps = Math.max(1, Math.ceil(Math.hypot(xk - xi, zk - zi) / (cell / 4)));
+    for (let q = 0; q <= steps; q++) {
+      const ci = Math.floor((xi + (xk - xi) * q / steps - o) / cell), cj = Math.floor((zi + (zk - zi) * q / steps - o) / cell);
+      if (ci >= 0 && ci < n && cj >= 0 && cj < n) edge[cj * n + ci] = 1;
+    }
+  }
+  const hidden = (i, j) => {
+    for (let b = Math.max(0, j - 1); b <= Math.min(n - 1, j + 1); b++) for (let a = Math.max(0, i - 1); a <= Math.min(n - 1, i + 1); a++) if (edge[b * n + a] || !inside[b * n + a]) return false;
+    return true;
+  };
+  const b = new Builder(), node = new Int32Array((n + 1) * (n + 1)).fill(-1);
+  const at = (i, j) => { const k = j * (n + 1) + i; if (node[k] < 0) node[k] = b.v(o + i * cell, 0, o + j * cell, 0, 1, 0); return node[k]; };
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    if (hidden(i, j)) continue;
+    const p00 = at(i, j), p10 = at(i + 1, j), p01 = at(i, j + 1), p11 = at(i + 1, j + 1);
+    b.tri(p00, p01, p10); b.tri(p10, p01, p11);
+  }
+  return b.geometry();
+}
+
+/** capRings: outline of the rail-yard deck; road bridges over it land on the deck instead.
+ *  paved: outline of the paved city plate that buildCity lays over the countryside plane. */
+export function buildGround(scene, data, river, capRings = [], paved = []) {
   const cap = capRings.map(pairs);
-  const outer = new THREE.Mesh(new THREE.PlaneGeometry(30000, 30000), M('#7d8a6e', { roughness: 1 }));
-  outer.rotation.x = -Math.PI / 2; outer.receiveShadow = true; scene.add(outer);
+  const outer = new THREE.Mesh(countryside(paved.map(pairs)), M('#7d8a6e', { roughness: 1, side: THREE.FrontSide }));
+  outer.receiveShadow = true; scene.add(outer);
 
   // paved city within the mapped extent
   const [x0, z0, x1, z1] = data.bbox.map(v => v / 10);
@@ -111,14 +153,14 @@ export function drawLines(scene, lines, { cap = [], wet = () => false, tile = 0 
       }
     }
   }
-  const meshes = [];
+  const meshes = [], flat = [];   // flat: the ribbons lying on the ground (not bridges or piers)
   const add = m => { scene.add(m); meshes.push(m); return m; };
   const xMat = M('#78a85c', { side: THREE.FrontSide }), lineMat = { [ROAD]: M(ROAD, { side: THREE.FrontSide }), [RAIL]: M(RAIL, { side: THREE.FrontSide }), [TRAIL]: M(TRAIL, { side: THREE.FrontSide }) };
   for (const t of tiles.values()) {
-    if (t.xb.count) { const m = add(new THREE.Mesh(t.xb.geometry(), xMat)); m.position.y = .33; m.receiveShadow = true; }
+    if (t.xb.count) { const m = add(new THREE.Mesh(t.xb.geometry(), xMat)); m.position.y = .33; m.receiveShadow = true; flat.push(m); }
     [[t.rb, ROAD, .8], [t.tb, RAIL, .85], [t.pb, TRAIL, .9]].forEach(([b, c, y]) => {
       if (!b.count && tile) return;
-      const m = add(new THREE.Mesh(b.geometry(), lineMat[c])); m.position.y = y; m.receiveShadow = true;
+      const m = add(new THREE.Mesh(b.geometry(), lineMat[c])); m.position.y = y; m.receiveShadow = true; flat.push(m);
     });
     [[t.bc, conc], [t.bd, dark], [t.bg, greenDeck]].forEach(([b, m]) => { if (!b.count) return; const mesh = add(new THREE.Mesh(b.geometry(), m)); mesh.castShadow = mesh.receiveShadow = true; });
   }
@@ -128,5 +170,5 @@ export function drawLines(scene, lines, { cap = [], wet = () => false, tile = 0 
     piers.forEach((p, i) => { o.position.set(p.x, 0, p.z); o.rotation.y = p.ry; o.scale.set(4, p.h, p.w); o.updateMatrix(); im.setMatrixAt(i, o.matrix); });
     im.castShadow = true; im.frustumCulled = false; scene.add(im); meshes.push(im);
   }
-  return { bridgeSegs, meshes };
+  return { bridgeSegs, meshes, flat };
 }

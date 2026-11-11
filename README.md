@@ -33,6 +33,13 @@ python -m http.server 8765
 
 Then open <http://localhost:8765>.
 
+To measure how fast it loads and renders (frame and GPU time per scenario, hot code paths,
+draw calls by source line, before/after comparisons), see [tools/perf/README.md](tools/perf/README.md):
+
+```bash
+python -I tools/perf/perf.py run --quick
+```
+
 ## Sharing as one file
 
 ```bash
@@ -117,6 +124,8 @@ tools/
   build_landmarks.py  fits the landmark models (writes data/city_landmarks.json)
   bundle.py           packs everything into schuylkill-monorail.html
   unbundle.py         the reverse: unpacks schuylkill-monorail.html into the sources
+  perf/               runtime performance harness: frame/GPU/load timings, profiles,
+                      draw-call attribution, A/B checks (see tools/perf/README.md)
 ```
 
 ## Data sources

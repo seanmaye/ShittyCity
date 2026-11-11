@@ -31,12 +31,13 @@ export function buildBuildings(scene, data) {
     let t = tiles.get(key); if (!t) { t = { kind, items: [] }; tiles.set(key, t); }
     t.items.push([i, color]);
   }
-  const meshes = [];
+  const meshes = [], colors = new Map();   // one Color per palette entry, not one per building
+  const colorOf = c => { let o = colors.get(c); if (!o) colors.set(c, o = new THREE.Color(c)); return o; };
   tiles.forEach(t => {
     const b = new Builder({ uv: true, color: true });
     for (const [i, color] of t.items) {
       const [hdm, , ...flat] = data.b[i];
-      addPrism(b, flat.map(pairs), 0, hdm / 10, hash(i + 7) * 4, WIN_W, WIN_H, new THREE.Color(color));
+      addPrism(b, flat.map(pairs), 0, hdm / 10, hash(i + 7) * 4, WIN_W, WIN_H, colorOf(color));
     }
     const m = new THREE.Mesh(b.geometry(), worldWinMat(t.kind));
     m.castShadow = m.receiveShadow = true; scene.add(m); meshes.push(m);

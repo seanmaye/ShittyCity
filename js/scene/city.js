@@ -8,7 +8,7 @@
 import * as THREE from 'three';
 import { pairs } from '../data.js';
 import { M, worldWinMat, litMats, WIN_W, WIN_H } from './materials.js';
-import { Builder, addPolygon, addRibbon, addPrism } from './geometry.js';
+import { Builder, addPolygon, addRibbon, addPrism, withBounds } from './geometry.js';
 import { drawLines } from './ground.js';
 import { buildTrees } from './nature.js';
 import { OFFICE, BRICK } from './buildings.js';
@@ -59,7 +59,22 @@ function unitBox() {   // 1 x 1 x 1 box standing on y = 0, without a bottom face
 }
 function unitRoof() { const g = new THREE.PlaneGeometry(1, 1); g.rotateX(-Math.PI / 2); g.translate(0, 1, 0); return g; }
 
-export function buildCity(scene, data, { waterMat, status = () => {} }) {
+/** Does the rectangle [x0, z0, x1, z1] lie wholly inside the ring ([[x,z],...])? */
+function rectInRing(ring, [x0, z0, x1, z1]) {
+  const inside = (x, z) => { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const [xi, zi] = ring[i], [xj, zj] = ring[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; };
+  if (![[x0, z0], [x1, z0], [x1, z1], [x0, z1]].every(([x, z]) => inside(x, z))) return false;
+  // all four corners are inside, so it is wholly inside unless the outline dips into it somewhere
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [ax, az] = ring[i], [bx, bz] = ring[j];
+    let t0 = 0, t1 = 1;   // clip the edge to the rectangle (Liang-Barsky)
+    const clip = (p, q) => { if (p === 0) return q >= 0; const t = q / p; if (p < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; } return true; };
+    if (clip(ax - bx, ax - x0) && clip(bx - ax, x1 - ax) && clip(az - bz, az - z0) && clip(bz - az, z1 - az)) return false;
+  }
+  return true;
+}
+
+/** core: the Center City extent [x0, z0, x1, z1] in metres, which buildGround paves itself. */
+export function buildCity(scene, data, { waterMat, status = () => {}, core = null }) {
   const city = data.city, B = decode(data.cityBuildings);
   const tiles = new Map();   // key -> { cx, cz, r, full: [], roof: [], trees: [] }
   const tileOf = (x, z) => {
@@ -70,10 +85,27 @@ export function buildCity(scene, data, { waterMat, status = () => {} }) {
   };
 
   // ---- ground: paved city limits, a wider countryside plane, parks, water, streams
+  // Each ground surface is drawn only where it is the top one. Nothing rejects hidden pixels
+  // before they are shaded here (the logarithmic depth buffer writes depth per pixel), so every
+  // full layer stacked under the city used to cost a screenful of lighting and shadow lookups.
   const limits = city.limits.map(pairs);
-  const outer = new THREE.Mesh(new THREE.PlaneGeometry(400000, 400000), M('#7d8a6e', { roughness: 1 }));
-  outer.rotation.x = -Math.PI / 2; outer.position.y = -.05; outer.receiveShadow = true; scene.add(outer);
-  const pb = new Builder(); limits.forEach(r => addPolygon(pb, [r], 0));
+  const FAR = 200000, HOLE = 14500;   // buildGround's countryside plane (30 km square, y = 0) covers the middle
+  const ob = new Builder(), ub = new Builder();
+  const quad = (b, x0, z0, x1, z1, up) => {
+    const s = b.count, ny = up ? 1 : -1;
+    b.v(x0, 0, z0, 0, ny, 0); b.v(x0, 0, z1, 0, ny, 0); b.v(x1, 0, z0, 0, ny, 0); b.v(x1, 0, z1, 0, ny, 0);
+    if (up) { b.tri(s, s + 1, s + 2); b.tri(s + 2, s + 1, s + 3); } else { b.tri(s, s + 2, s + 1); b.tri(s + 2, s + 3, s + 1); }
+  };
+  quad(ob, -FAR, -FAR, FAR, -HOLE, true); quad(ob, -FAR, HOLE, FAR, FAR, true); quad(ob, -FAR, -HOLE, -HOLE, HOLE, true); quad(ob, HOLE, -HOLE, FAR, HOLE, true);
+  quad(ub, -FAR, -FAR, FAR, FAR, false);   // the whole underside: what a camera below ground sees
+  for (const b of [ob, ub]) {
+    const m = new THREE.Mesh(b.geometry(), M('#7d8a6e', { roughness: 1, side: THREE.FrontSide }));
+    m.position.y = -.05; m.receiveShadow = true; scene.add(m);
+  }
+  // the paved plate, without the middle of Center City, where buildGround's own paving lies on it
+  const hole = core && limits.length === 1 && rectInRing(limits[0], core)
+    ? [[[core[0] + 100, core[1] + 100], [core[2] - 100, core[1] + 100], [core[2] - 100, core[3] - 100], [core[0] + 100, core[3] - 100]]] : [];
+  const pb = new Builder(); limits.forEach(r => addPolygon(pb, [r, ...hole], 0));
   const plate = new THREE.Mesh(pb.geometry(), M('#bdb6a8', { roughness: 1, side: THREE.FrontSide }));
   plate.position.y = .14; plate.receiveShadow = true; scene.add(plate);
   const edge = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(limits[0].map(([x, z]) => new THREE.Vector3(x, .6, z))),
@@ -101,7 +133,7 @@ export function buildCity(scene, data, { waterMat, status = () => {} }) {
   const wet = (x, z) => (WG.get(wkey(x, z)) || []).some(p => inRing(x, z, p[0]) && !p.slice(1).some(h => inRing(x, z, h)));
 
   // ---- streets, rail and bridges, tiled
-  const { bridgeSegs } = drawLines(scene, city.lines, { wet, tile: 2000 });
+  const { bridgeSegs, flat: streets } = drawLines(scene, city.lines, { wet, tile: 2000 });
 
   // ---- buildings
   status(`Raising ${(B.nB + B.nP).toLocaleString()} more buildings…`);
@@ -112,19 +144,25 @@ export function buildCity(scene, data, { waterMat, status = () => {} }) {
     l[B.bk[i]].push(i); t.top = Math.max(t.top, B.bh[i] / 10);
   }
   const geoBox = unitBox(), geoRoof = unitRoof(), mats = [instancedWinMat('row'), instancedWinMat('office')];
-  const col = new THREE.Color();
+  const PAL = [BRICK, OFFICE].map(p => p.map(c => new THREE.Color(c)));   // by kind
   for (const [t, kinds] of per) kinds.forEach((list, kind) => {
     if (!list.length) return;
-    const n = list.length, mat4 = new Float32Array(n * 16), cols = new Float32Array(n * 3), pal = kind ? OFFICE : BRICK;
+    const n = list.length, mat4 = new Float32Array(n * 16), cols = new Float32Array(n * 3), pal = PAL[kind];
+    let reach = 0, high = 0;   // how far from the tile's centre, and how high, these boxes get
     list.forEach((i, j) => {
       const a = B.br[i] / 65535 * Math.PI, c = Math.cos(a), s = Math.sin(a), w = B.bw[i] / 10, d = B.bd[i] / 10, h = B.bh[i] / 10;
-      mat4.set([c * w, 0, -s * w, 0, 0, h, 0, 0, s * d, 0, c * d, 0, B.bx[i] / 10, 0, B.bz[i] / 10, 1], j * 16);
-      col.set(pal[Math.floor(hash(i) * pal.length)]); cols.set([col.r, col.g, col.b], j * 3);
+      reach = Math.max(reach, Math.hypot(B.bx[i] / 10 - t.cx, B.bz[i] / 10 - t.cz) + Math.hypot(w, d) / 2); high = Math.max(high, h);
+      const o = j * 16, col = pal[Math.floor(hash(i) * pal.length)];   // the rest of the matrix stays 0
+      mat4[o] = c * w; mat4[o + 2] = -s * w; mat4[o + 5] = h; mat4[o + 8] = s * d; mat4[o + 10] = c * d; mat4[o + 12] = B.bx[i] / 10; mat4[o + 14] = B.bz[i] / 10; mat4[o + 15] = 1;
+      cols[j * 3] = col.r; cols[j * 3 + 1] = col.g; cols[j * 3 + 2] = col.b;
     });
-    const full = new THREE.InstancedMesh(geoBox, mats[kind], n), roof = new THREE.InstancedMesh(geoRoof, mats[kind], n);
+    // the full boxes cast shadows: with their own bounds, tiles outside the sun's shadow box are skipped there
+    const fullGeo = withBounds(geoBox, new THREE.Vector3(t.cx, high / 2, t.cz), Math.hypot(reach, high / 2));
+    const full = new THREE.InstancedMesh(fullGeo, mats[kind], n), roof = new THREE.InstancedMesh(geoRoof, mats[kind], n);
     full.instanceMatrix = new THREE.InstancedBufferAttribute(mat4, 16); roof.instanceMatrix = full.instanceMatrix;
     full.instanceColor = new THREE.InstancedBufferAttribute(cols, 3); roof.instanceColor = full.instanceColor;
     for (const m of [full, roof]) { m.frustumCulled = false; m.receiveShadow = true; m.userData.tiled = true; scene.add(m); }
+    full.frustumCulled = true; full.userData.bounded = true;
     full.castShadow = true;
     t.full.push(full); t.roof.push(roof);
   });
@@ -137,8 +175,8 @@ export function buildCity(scene, data, { waterMat, status = () => {} }) {
     v += n;
     const t = tileOf(ring[0][0], ring[0][1]), key = t;
     let pk = pBuild.get(key); if (!pk) pBuild.set(key, pk = [new Builder({ uv: true, color: true }), new Builder({ uv: true, color: true })]);
-    const kind = B.pk[i], pal = kind ? OFFICE : BRICK;
-    addPrism(pk[kind], [ring], 0, B.ph[i] / 10, hash(i + 7) * 4, WIN_W, WIN_H, new THREE.Color(pal[Math.floor(hash(i + 3) * pal.length)]));
+    const kind = B.pk[i], pal = PAL[kind];
+    addPrism(pk[kind], [ring], 0, B.ph[i] / 10, hash(i + 7) * 4, WIN_W, WIN_H, pal[Math.floor(hash(i + 3) * pal.length)]);
     t.top = Math.max(t.top, B.ph[i] / 10);
   }
   for (const [t, bs] of pBuild) bs.forEach((b, kind) => {
@@ -153,10 +191,10 @@ export function buildCity(scene, data, { waterMat, status = () => {} }) {
     const t = tileOf(city.trees[i] / 10, city.trees[i + 1] / 10);
     let l = tt.get(t); if (!l) tt.set(t, l = []); l.push(city.trees[i], city.trees[i + 1]);
   }
-  for (const [t, flat] of tt) { t.trees = buildTrees(scene, flat); t.trees.forEach(m => { m.frustumCulled = false; m.userData.tiled = true; }); }
+  for (const [t, flat] of tt) { t.trees = buildTrees(scene, flat); t.trees.forEach(m => { m.userData.tiled = true; }); }
 
   // ---- per-frame: frustum + distance per tile
-  const frustum = new THREE.Frustum(), pm = new THREE.Matrix4(), sph = new THREE.Sphere(), tl = [...tiles.values()];
+  const frustum = new THREE.Frustum(), pm = new THREE.Matrix4(), sph = new THREE.Sphere(), tl = [...tiles.values()], fwd = new THREE.Vector3();
   tl.forEach(t => { t.r = Math.hypot(TILE * .75, t.top); });
   function update(camera, fogFar) {
     pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frustum.setFromProjectionMatrix(pm);
@@ -170,6 +208,13 @@ export function buildCity(scene, data, { waterMat, status = () => {} }) {
       t.roof.forEach(m => { m.visible = vis && !near; });
       t.always.forEach(m => { m.visible = vis; });
       t.trees.forEach(m => { m.visible = vis && d - t.r < TREE_FAR; });
+    }
+    // Street, rail and trail ribbons wholly past the fog (by view depth, which is what the fog goes
+    // by) come out exactly the fog's colour, the same as the paving they lie on: don't draw them.
+    camera.getWorldDirection(fwd);
+    for (const m of streets) {
+      const c = m.geometry.boundingSphere.center, depth = (c.x - cp.x) * fwd.x + (c.y - cp.y) * fwd.y + (c.z - cp.z) * fwd.z;
+      m.visible = depth - m.geometry.boundingSphere.radius - 1 < fogFar;
     }
   }
 
