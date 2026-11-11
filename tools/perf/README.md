@@ -207,14 +207,14 @@ Gains of about 1 ms are detectable; for smaller ones, raise `--rounds`.
   panel's record button. Turn on "Enable advanced rendering instrumentation" for GPU detail.
 - **The probe on any page**: paste `tools/perf/probe.js` into the console of a running
   page (the browser pane, Chrome DevTools MCP's `evaluate_script`, …), then
-  `__perf.attach(window.__schuylkill)`, `await __perf.record(3000)`,
+  `__perf.attach(window.__city)`, `await __perf.record(3000)`,
   `await __perf.census()` or `__perf.inventory()`. Without the init-script route,
   attribution and load timings aren't available.
 - **Chrome DevTools MCP** (if your agent has it): `performance_start_trace` /
   `performance_analyze_insight` for a full trace with Chrome's own insights, and
   `take_heapsnapshot` for retained memory. Its browser runs with vsync and default flags,
   so use it for exploring, and `perf.py` for numbers.
-- **`window.__schuylkill`** (the object `buildScene` returns in `js/scene/index.js`) drives
+- **`window.__city`** (the object `buildScene` returns in `js/scene/index.js`) drives
   the app: `flyTo(id)`, `boardLine(id)`, `setTime(h)`, `setTransitMap(on)`, `setCut(id)`,
   `setFly(f, s, u)`, plus `renderer`, `scene`, `camera`, `controls`.
 

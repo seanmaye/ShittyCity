@@ -1,7 +1,7 @@
 """Scenarios for tools/perf/perf.py: camera positions and app states to measure.
 
 Each scenario's `setup` is the body of an async JS function run in the page with
-`api` (window.__schuylkill, the object buildScene returns in js/scene/index.js) and
+`api` (window.__city, the object buildScene returns in js/scene/index.js) and
 `P` (window.__perf, tools/perf/probe.js) in scope. RESET runs before every setup.
 The harness then waits `settle` ms (camera flights take 2.2 s; first views of new
 materials compile shaders) before it measures.

@@ -407,14 +407,14 @@ def census_tables(rows):
 # depends on frame timing, and the shadow map's texels land differently from run to run. Centre it
 # on the focus exactly, so both sides draw their shadows from the same place.
 SHOT_ALIGN = """() => {
-  const api = window.__schuylkill, sun = api.scene.children.find(o => o.isDirectionalLight);
+  const api = (window.__city || window.__schuylkill), sun = api.scene.children.find(o => o.isDirectionalLight);
   if (!sun || api.getCar()) return;
   const off = sun.position.clone().sub(sun.target.position), t = api.controls.target;
   sun.target.position.set(t.x, 0, t.z); sun.position.copy(sun.target.position).add(off);
 }"""
 
 def js_setup(sc):
-    return 'async () => { const api = window.__schuylkill, P = window.__perf;\n' + RESET + sc['setup'] + '\n}'
+    return 'async () => { const api = window.__city || window.__schuylkill, P = window.__perf;\n' + RESET + sc['setup'] + '\n}'
 
 
 def quick_measure(page, ms):
@@ -561,7 +561,7 @@ def open_app(browser, a, base, tag=False, profile_load=False):
         cdp.send('Profiler.enable')
         cdp.send('Profiler.setSamplingInterval', {'interval': 200})
         cdp.send('Profiler.start')
-    page.goto(base + '/index.html', wait_until='load', timeout=120000)
+    page.goto(base + '/index.html?city=' + a.city, wait_until='load', timeout=120000)   # ?city skips the start menu
     page.wait_for_function("""() => (window.__perf && __perf.frameCount >= 10)
         || getComputedStyle(document.getElementById('err')).display !== 'none'
         || /Couldn|needs a local/.test(document.getElementById('status').textContent)""", timeout=300000, polling=250)
@@ -1049,6 +1049,7 @@ def main():
         p.add_argument('--out', help='output folder (default tools/perf/out/<time>[-label])')
         p.add_argument('--seconds', type=float, default=5, help='timing window per scenario')
         p.add_argument('--settle', type=int, default=3000, help='ms to wait after a scenario starts')
+        p.add_argument('--city', default='phl', help='city id from js/cities.js (the scenarios are written for phl)')
         p.add_argument('--size', default='1600x900', help='viewport WxH')
         p.add_argument('--dpr', type=float, default=1, help='device pixel ratio (the app caps at 2)')
         p.add_argument('--headed', action='store_true', help='show the browser window')

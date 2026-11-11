@@ -1,8 +1,9 @@
-// Time of day: the real sun position over Philadelphia for today's date, and everything that
+// Time of day: the real sun position over the city (CITY.sun) for today's date, and everything that
 // follows from it (sky gradient, fog, sun/moon light, ambient light, stars, lit windows).
 import * as THREE from 'three';
+import { CITY } from '../cities.js';
 
-const LAT = 39.952, LON = -75.164, RAD = Math.PI / 180;
+const RAD = Math.PI / 180;
 
 /** US daylight saving: second Sunday of March to first Sunday of November. */
 function isDST(d) {
@@ -17,7 +18,8 @@ export function sunAt(h, date = new Date()) {
   const g = 2 * Math.PI / 365 * (doy - 1 + (h - 12) / 24);
   const eqt = 229.18 * (.000075 + .001868 * Math.cos(g) - .032077 * Math.sin(g) - .014615 * Math.cos(2 * g) - .040849 * Math.sin(2 * g));
   const dec = .006918 - .399912 * Math.cos(g) + .070257 * Math.sin(g) - .006758 * Math.cos(2 * g) + .000907 * Math.sin(2 * g) - .002697 * Math.cos(3 * g) + .00148 * Math.sin(3 * g);
-  const tz = isDST(date) ? -4 : -5;
+  const tz = isDST(date) ? -4 : -5;   // US Eastern time (both cities)
+  const LAT = CITY.sun.lat, LON = CITY.sun.lon;
   const tst = h * 60 + eqt + 4 * LON - 60 * tz, ha = (tst / 4 - 180) * RAD, phi = LAT * RAD;
   const el = Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(ha));
   const az = Math.atan2(Math.sin(ha), Math.cos(ha) * Math.sin(phi) - Math.tan(dec) * Math.cos(phi)) + Math.PI;
@@ -42,8 +44,8 @@ const KEYS = [
 const LIGHT = [ // [elevation, hemi sky, hemi ground, hemi intensity, water]
   [-18, '#34406a', '#1a1f1a', .3, '#1c2e40'],
   [-4, '#5a5580', '#2c2c28', .38, '#3d5470'],
-  [2, '#f6c29a', '#3e4f3a', .55, '#6a90ad'],
-  [25, '#e3f2ff', '#5b7a4a', .5, '#4f86a8'],
+  [2, '#f6c29a', '#3e4f3a', .55, '#62879a'],
+  [25, '#e3f2ff', '#5b7a4a', .5, '#4a7684'],      // rivers read green-grey from above
 ];
 const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const ca = new THREE.Color(), cb = new THREE.Color();
@@ -60,7 +62,7 @@ function lerpKeys(keys, e, idx, out) {
  * Returns setTime(h) and helpers.
  */
 export function createSky({ scene, sun, hemi, litMats, nightOnly, onChange }) {
-  const date = new Date();
+  let date = new Date();   // the time-of-year slider moves it (setDate)
   // sky gradient canvas, redrawn when the time changes
   const cv = document.createElement('canvas'); cv.width = 2; cv.height = 256;
   const tex = new THREE.CanvasTexture(cv); scene.background = tex;
@@ -110,7 +112,10 @@ export function createSky({ scene, sun, hemi, litMats, nightOnly, onChange }) {
     onChange && onChange(state);
     return hour;
   }
-  return { setTime, getTime: () => hour, getState: () => state, sunset: sunsetHour(date), date, stars };
+  /** another day of the year: the sun's path (and so day length and sunset) follow it */
+  function setDate(d) { date = d; api.sunset = sunsetHour(date); api.date = date; return setTime(hour); }
+  const api = { setTime, setDate, getTime: () => hour, getState: () => state, sunset: sunsetHour(date), date, stars };
+  return api;
 }
 
 /** "6:30 PM" */

@@ -2,8 +2,8 @@
 
   python -I tools/unbundle.py [bundled.html] [out_dir]
 
-Defaults: schuylkill-monorail.html -> the repo root. Writes index.html, css/style.css,
-js/**.js, data/*.json and docs/EDITING.md, overwriting what is there.
+Defaults: city-models.html -> the repo root. Writes index.html, css/style.css,
+js/**.js, data/<city>/* and docs/EDITING.md, overwriting what is there.
 Use it when someone has edited the shared HTML directly, then check the result with
 `python -I tools/unbundle.py --check`, which re-bundles and compares.
 """
@@ -17,6 +17,8 @@ EXTERNALS = [  # (import line, how to tell a module uses it), in the order bundl
     ("import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';", re.compile(r"\bOrbitControls\b")),
     ("import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';", re.compile(r"\bBufferGeometryUtils\b")),
     ("import { Line2 } from 'three/examples/jsm/lines/Line2.js';", re.compile(r"\bLine2\b")),
+    ("import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';", re.compile(r"\bLineSegments2\b")),
+    ("import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';", re.compile(r"\bLineSegmentsGeometry\b")),
     ("import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';", re.compile(r"\bLineMaterial\b")),
     ("import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';", re.compile(r"\bLineGeometry\b")),
 ]
@@ -24,7 +26,9 @@ EXTERNALS = [  # (import line, how to tell a module uses it), in the order bundl
 GZBLOCK = re.compile(r'^<script type="application/gzip-base64" id="data-([\w-]+)" data-file="([^"]+)">(.*?)</script>\n', re.S | re.M)
 CHUNK = re.compile(r'// ---- (\S+)\n__mods\["\1"\] = await \(async \(\) => \{\n(.*?)\nreturn \{ ?(.*?) ?\};\n\}\)\(\);\n', re.S)
 # a data block starts a line (the editing guide quotes the tag mid-line, which must not match)
-BLOCK = re.compile(r'^<script type="application/json" id="data-([\w-]+)">(.*?)</script>\n', re.S | re.M)
+# (each block names its file, e.g. data-file="nyc/transit.json"; bundles from before the
+# per-city folders had Philadelphia's JSON blocks without it)
+BLOCK = re.compile(r'^<script type="application/json" id="data-([\w-]+)"(?: data-file="([^"]+)")?>(.*?)</script>\n', re.S | re.M)
 LOCAL = re.compile(r'^const \{ (.*?) \} = __mods\["([^"]+)"\];$', re.M)
 
 
@@ -44,10 +48,10 @@ def module_source(path, body, exports):
     # external imports were blanked; put them back into the blank lines of the import header
     code = "\n".join(l for l in lines if not l.startswith("import "))
     need = [imp for imp, used in EXTERNALS if used.search(code)]
-    first_local = next((i for i, l in enumerate(lines) if l.startswith("import ")), None)
-    header_end = first_local if first_local is not None else next(
-        (i for i, l in enumerate(lines) if l.strip() and not l.startswith("//")), len(lines))
-    blanks = [i for i in range(0, header_end + 1) if i < len(lines) and lines[i] == ""]
+    # the import block runs from the top to the first line of code (external imports may sit
+    # before, between or after the local ones)
+    header_end = next((i for i, l in enumerate(lines) if l.strip() and not l.startswith(("//", "import "))), len(lines))
+    blanks = [i for i in range(0, header_end) if lines[i] == ""]
     if len(blanks) < len(need):
         raise SystemExit(f"{path}: no room to restore {need[len(blanks):]}")
     for i, imp in zip(blanks, need):  # first blanks after the header comment = original slots
@@ -89,9 +93,9 @@ def unbundle(src_html, out):
         if b.re is GZBLOCK:
             files[f"data/{b.group(2)}"] = base64.b64decode(b.group(3))
             continue
-        body = b.group(2).replace("<\\/", "</")
+        body = b.group(3).replace("<\\/", "</")
         json.loads(body)  # sanity
-        files[f"data/{b.group(1)}.json"] = body
+        files[f"data/{b.group(2) or b.group(1) + '.json'}"] = body
     # code
     m = re.search(r'<script type="module">\n(.*?)</script>', html[blocks[-1].end():], re.S)
     script = m.group(1)
@@ -113,7 +117,7 @@ def unbundle(src_html, out):
 
 
 def blocks_of(html):
-    data = {m.group(1): m.group(2) for m in BLOCK.finditer(html)}
+    data = {m.group(1): m.group(3) for m in BLOCK.finditer(html)}
     data.update({m.group(1): m.group(3) for m in GZBLOCK.finditer(html)})
     rest = GZBLOCK.sub("", BLOCK.sub("", html))
     return data, rest
@@ -152,7 +156,7 @@ def check(src_html):
 
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    src = args[0] if args else os.path.join(ROOT, "schuylkill-monorail.html")
+    src = args[0] if args else os.path.join(ROOT, "city-models.html")
     if "--check" in sys.argv:
         sys.exit(0 if check(src) else 1)
     out = args[1] if len(args) > 1 else ROOT

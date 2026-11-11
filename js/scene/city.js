@@ -1,23 +1,22 @@
-// The rest of Philadelphia, out to the city limits: ~500k building footprints (City of
-// Philadelphia LI footprints), streets, rail, parks, water and park trees (OpenStreetMap).
-// Everything here lies outside the original Center City extent, which keeps its own data.
+// The city beyond its detailed core (data/<city>/city.json.gz and city_buildings.bin.gz): building
+// footprints, streets, rail, parks, water and park trees, out to the city limits (Philadelphia's
+// ~500k footprints) or the land outlines (New York's outer boroughs).
 //
 // Performance: buildings are instanced boxes (fitted to each footprint) in 1 km tiles, plus
 // real outlines for large irregular ones. Near tiles draw full boxes with window textures;
 // far tiles draw only their roofs; tiles outside the view or past the fog are hidden.
 import * as THREE from 'three';
 import { pairs } from '../data.js';
-import { M, worldWinMat, litMats, WIN_W, WIN_H } from './materials.js';
-import { Builder, addPolygon, addRibbon, addPrism, withBounds } from './geometry.js';
-import { drawLines } from './ground.js';
+import { M, worldWinMat, instancedWinMat, roofColor, WIN_W, WIN_H } from './materials.js';
+import { Builder, addPolygon, addRibbon, addPrism, withBounds, colorOf } from './geometry.js';
+import { drawLines, GREEN, GROUND, COUNTRY, groundMat } from './ground.js';
 import { buildTrees } from './nature.js';
-import { OFFICE, BRICK } from './buildings.js';
+import { seasonalGrass } from './season.js';
+import { facadeKind, facadeColor, hash, addRooftop, aviationLights } from './buildings.js';
 
 const TILE = 1000, FULL = 5000, TREE_FAR = 7000;
-const GREEN = ['#6c9a52', '#7aa65a', '#5f9a4e', '#557d45', '#6f9256'];
-const hash = i => { let x = (i + 1) * 2654435761 >>> 0; x ^= x >>> 15; x = Math.imul(x, 2246822507) >>> 0; x ^= x >>> 13; return (x >>> 0) / 4294967296; };
 
-/** Decode city_buildings.bin (see tools/build_city.py). */
+/** Decode city_buildings.bin (PHB1; written by tools/phl/build_city.py and tools/nyc/import_nyc.py). */
 function decode(buf) {
   const dv = new DataView(buf);
   if (String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3)) !== 'PHB1') throw new Error('city buildings: bad header');
@@ -31,24 +30,6 @@ function decode(buf) {
   const bk = u8(nB), pk = u8(nP);
   for (let i = 1; i < nB; i++) { bx[i] += bx[i - 1]; bz[i] += bz[i - 1]; }
   return { nB, nP, bx, bz, bw, bd, br, bh, bk, vx, vz, pn, ph, pk };
-}
-
-/** Facade material for instanced boxes: window UVs are worked out on the GPU from each
- *  instance's size, so one unit box serves every building. */
-function instancedWinMat(kind) {
-  const m = worldWinMat(kind).clone();
-  m.vertexColors = false; litMats.push(m);
-  m.onBeforeCompile = sh => {
-    sh.vertexShader = sh.vertexShader.replace('#include <uv_vertex>', `
-#ifdef USE_UV
-  vec3 sc = vec3(length(instanceMatrix[0].xyz), length(instanceMatrix[1].xyz), length(instanceMatrix[2].xyz));
-  float along = abs(normal.x) > .5 ? (position.z + .5) * sc.z : (position.x + .5) * sc.x;
-  float jit = fract(instanceMatrix[3].x * .0131 + instanceMatrix[3].z * .0173) * 4.0;
-  vUv = abs(normal.y) > .5 ? vec2(.01, .01) : vec2(along / ${WIN_W.toFixed(1)} + jit, position.y * sc.y / ${WIN_H.toFixed(1)});
-#endif`);
-  };
-  m.customProgramCacheKey = () => 'instWin' + kind;
-  return m;
 }
 
 function unitBox() {   // 1 x 1 x 1 box standing on y = 0, without a bottom face
@@ -73,8 +54,10 @@ function rectInRing(ring, [x0, z0, x1, z1]) {
   return true;
 }
 
-/** core: the Center City extent [x0, z0, x1, z1] in metres, which buildGround paves itself. */
-export function buildCity(scene, data, { waterMat, status = () => {}, core = null }) {
+/** clear: rings ([[x, z], ...]) kept free of park trees (playing fields);
+ *  sea: everything outside the land outlines (city.limits) is water, not countryside;
+ *  core: the Center City extent [x0, z0, x1, z1] in metres, which buildGround paves itself */
+export function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea = false, core = null }) {
   const city = data.city, B = decode(data.cityBuildings);
   const tiles = new Map();   // key -> { cx, cz, r, full: [], roof: [], trees: [] }
   const tileOf = (x, z) => {
@@ -89,32 +72,38 @@ export function buildCity(scene, data, { waterMat, status = () => {}, core = nul
   // before they are shaded here (the logarithmic depth buffer writes depth per pixel), so every
   // full layer stacked under the city used to cost a screenful of lighting and shadow lookups.
   const limits = city.limits.map(pairs);
-  const FAR = 200000, HOLE = 14500;   // buildGround's countryside plane (30 km square, y = 0) covers the middle
-  const ob = new Builder(), ub = new Builder();
-  const quad = (b, x0, z0, x1, z1, up) => {
-    const s = b.count, ny = up ? 1 : -1;
-    b.v(x0, 0, z0, 0, ny, 0); b.v(x0, 0, z1, 0, ny, 0); b.v(x1, 0, z0, 0, ny, 0); b.v(x1, 0, z1, 0, ny, 0);
-    if (up) { b.tri(s, s + 1, s + 2); b.tri(s + 2, s + 1, s + 3); } else { b.tri(s, s + 2, s + 1); b.tri(s + 2, s + 3, s + 1); }
-  };
-  quad(ob, -FAR, -FAR, FAR, -HOLE, true); quad(ob, -FAR, HOLE, FAR, FAR, true); quad(ob, -FAR, -HOLE, -HOLE, HOLE, true); quad(ob, HOLE, -HOLE, FAR, HOLE, true);
-  quad(ub, -FAR, -FAR, FAR, FAR, false);   // the whole underside: what a camera below ground sees
-  for (const b of [ob, ub]) {
-    const m = new THREE.Mesh(b.geometry(), M('#7d8a6e', { roughness: 1, side: THREE.FrontSide }));
-    m.position.y = -.05; m.receiveShadow = true; scene.add(m);
+  if (sea) {
+    const outer = new THREE.Mesh(new THREE.PlaneGeometry(400000, 400000), waterMat);
+    outer.rotation.x = -Math.PI / 2; outer.position.y = -.05; outer.receiveShadow = true; scene.add(outer);
+  } else {
+    const FAR = 200000, HOLE = 14500;   // buildGround's countryside plane (30 km square, y = 0) covers the middle
+    const ob = new Builder(), ub = new Builder();
+    const quad = (b, x0, z0, x1, z1, up) => {
+      const s = b.count, ny = up ? 1 : -1;
+      b.v(x0, 0, z0, 0, ny, 0); b.v(x0, 0, z1, 0, ny, 0); b.v(x1, 0, z0, 0, ny, 0); b.v(x1, 0, z1, 0, ny, 0);
+      if (up) { b.tri(s, s + 1, s + 2); b.tri(s + 2, s + 1, s + 3); } else { b.tri(s, s + 2, s + 1); b.tri(s + 2, s + 3, s + 1); }
+    };
+    quad(ob, -FAR, -FAR, FAR, -HOLE, true); quad(ob, -FAR, HOLE, FAR, FAR, true); quad(ob, -FAR, -HOLE, -HOLE, HOLE, true); quad(ob, HOLE, -HOLE, FAR, HOLE, true);
+    quad(ub, -FAR, -FAR, FAR, FAR, false);   // the whole underside: what a camera below ground sees
+    const countryMat = seasonalGrass(M(COUNTRY, { roughness: 1, side: THREE.FrontSide }));
+    for (const b of [ob, ub]) {
+      const m = new THREE.Mesh(b.geometry(), countryMat);
+      m.position.y = -.05; m.receiveShadow = true; scene.add(m);
+    }
   }
   // the paved plate, without the middle of Center City, where buildGround's own paving lies on it
   const hole = core && limits.length === 1 && rectInRing(limits[0], core)
     ? [[[core[0] + 100, core[1] + 100], [core[2] - 100, core[1] + 100], [core[2] - 100, core[3] - 100], [core[0] + 100, core[3] - 100]]] : [];
-  const pb = new Builder(); limits.forEach(r => addPolygon(pb, [r, ...hole], 0));
-  const plate = new THREE.Mesh(pb.geometry(), M('#bdb6a8', { roughness: 1, side: THREE.FrontSide }));
+  const pb = new Builder({ uv: true }); limits.forEach(r => addPolygon(pb, [r, ...hole], 0, (x, z) => [x / 400, z / 400]));
+  const plate = new THREE.Mesh(pb.geometry(), groundMat(GROUND, THREE.FrontSide));
   plate.position.y = .14; plate.receiveShadow = true; scene.add(plate);
   const edge = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(limits[0].map(([x, z]) => new THREE.Vector3(x, .6, z))),
     new THREE.LineBasicMaterial({ color: '#4a5a46', transparent: true, opacity: .7 }));
-  scene.add(edge);
+  if (!sea) scene.add(edge);   // the city limits (a waterfront city's land outlines are its shoreline)
 
   const gb = GREEN.map(() => new Builder());
   for (const [k, ...rings] of city.green) addPolygon(gb[k], rings.map(pairs), 0);
-  gb.forEach((b, k) => { if (!b.count) return; const m = new THREE.Mesh(b.geometry(), M(GREEN[k], { side: THREE.FrontSide })); m.position.y = .3 + k * .02; m.receiveShadow = true; scene.add(m); });
+  gb.forEach((b, k) => { if (!b.count) return; const m = new THREE.Mesh(b.geometry(), seasonalGrass(M(GREEN[k], { side: THREE.FrontSide }))); m.position.y = .3 + k * .02; m.receiveShadow = true; scene.add(m); });
   const wb = new Builder(), water = city.water.map(p => p.map(pairs));
   water.forEach(p => addPolygon(wb, p, 0));
   for (const s of city.streams) addRibbon(wb, pairs(s.p), s.w, 0);
@@ -137,57 +126,81 @@ export function buildCity(scene, data, { waterMat, status = () => {}, core = nul
 
   // ---- buildings
   status(`Raising ${(B.nB + B.nP).toLocaleString()} more buildings…`);
-  const per = new Map();   // tile -> [kind0 indices, kind1 indices]
+  // one instanced mesh per facade style per tile up close, one roof-only mesh per tile far away
+  const per = new Map();   // tile -> { style: [indices] }
+  const lights = [];
   for (let i = 0; i < B.nB; i++) {
-    const x = B.bx[i] / 10, z = B.bz[i] / 10, t = tileOf(x, z);
-    let l = per.get(t); if (!l) per.set(t, l = [[], []]);
-    l[B.bk[i]].push(i); t.top = Math.max(t.top, B.bh[i] / 10);
+    const x = B.bx[i] / 10, z = B.bz[i] / 10, t = tileOf(x, z), h = B.bh[i] / 10;
+    let l = per.get(t); if (!l) per.set(t, l = {});
+    const k = facadeKind(B.bk[i] === 0, h, hash(i + 11));
+    (l[k] || (l[k] = [])).push(i); t.top = Math.max(t.top, h);
   }
-  const geoBox = unitBox(), geoRoof = unitRoof(), mats = [instancedWinMat('row'), instancedWinMat('office')];
-  const PAL = [BRICK, OFFICE].map(p => p.map(c => new THREE.Color(c)));   // by kind
-  for (const [t, kinds] of per) kinds.forEach((list, kind) => {
-    if (!list.length) return;
-    const n = list.length, mat4 = new Float32Array(n * 16), cols = new Float32Array(n * 3), pal = PAL[kind];
-    let reach = 0, high = 0;   // how far from the tile's centre, and how high, these boxes get
-    list.forEach((i, j) => {
-      const a = B.br[i] / 65535 * Math.PI, c = Math.cos(a), s = Math.sin(a), w = B.bw[i] / 10, d = B.bd[i] / 10, h = B.bh[i] / 10;
-      reach = Math.max(reach, Math.hypot(B.bx[i] / 10 - t.cx, B.bz[i] / 10 - t.cz) + Math.hypot(w, d) / 2); high = Math.max(high, h);
-      const o = j * 16, col = pal[Math.floor(hash(i) * pal.length)];   // the rest of the matrix stays 0
-      mat4[o] = c * w; mat4[o + 2] = -s * w; mat4[o + 5] = h; mat4[o + 8] = s * d; mat4[o + 10] = c * d; mat4[o + 12] = B.bx[i] / 10; mat4[o + 14] = B.bz[i] / 10; mat4[o + 15] = 1;
-      cols[j * 3] = col.r; cols[j * 3 + 1] = col.g; cols[j * 3 + 2] = col.b;
+  const geoBox = unitBox(), geoRoof = unitRoof(), plantMat = M('#ffffff', { roughness: .85 }), plantVC = M('#ffffff', { roughness: .85, vertexColors: true });
+  const col = new THREE.Color();
+  const place = (mat4, j, i, sx = 1, sy = 1, y0 = 0, hh = B.bh[i] / 10) => {
+    const a = B.br[i] / 65535 * Math.PI, c = Math.cos(a), s = Math.sin(a), w = B.bw[i] / 10 * sx, d = B.bd[i] / 10 * sx;
+    const o = j * 16;   // the rest of the matrix stays 0
+    mat4[o] = c * w; mat4[o + 2] = -s * w; mat4[o + 5] = hh * sy; mat4[o + 8] = s * d; mat4[o + 10] = c * d;
+    mat4[o + 12] = B.bx[i] / 10; mat4[o + 13] = y0; mat4[o + 14] = B.bz[i] / 10; mat4[o + 15] = 1;
+  };
+  // bounds: [centre, radius] of the instances, so the mesh can be frustum-culled (and, by the
+  // sun's shadow box, skipped in the shadow pass) like any mesh; see geometry.js withBounds
+  const instanced = (geo, mat, mat4, cols, bounds = null) => {
+    const m = new THREE.InstancedMesh(bounds ? withBounds(geo, ...bounds) : geo, mat, mat4.length / 16);
+    m.instanceMatrix = new THREE.InstancedBufferAttribute(mat4, 16); m.instanceColor = new THREE.InstancedBufferAttribute(cols, 3);
+    m.frustumCulled = !!bounds; m.userData.bounded = !!bounds; m.receiveShadow = true; m.userData.tiled = true; scene.add(m); return m;
+  };
+  for (const [t, kinds] of per) {
+    const all = Object.values(kinds).flat(), rm4 = new Float32Array(all.length * 16), plant = [];
+    let reach = 0, high = 0;   // how far from the tile's centre, and how high (with rooftop plant), these boxes get
+    all.forEach((i, j) => {
+      place(rm4, j, i);
+      reach = Math.max(reach, Math.hypot(B.bx[i] / 10 - t.cx, B.bz[i] / 10 - t.cz) + Math.hypot(B.bw[i], B.bd[i]) / 20); high = Math.max(high, B.bh[i] / 10 + 10);
     });
-    // the full boxes cast shadows: with their own bounds, tiles outside the sun's shadow box are skipped there
-    const fullGeo = withBounds(geoBox, new THREE.Vector3(t.cx, high / 2, t.cz), Math.hypot(reach, high / 2));
-    const full = new THREE.InstancedMesh(fullGeo, mats[kind], n), roof = new THREE.InstancedMesh(geoRoof, mats[kind], n);
-    full.instanceMatrix = new THREE.InstancedBufferAttribute(mat4, 16); roof.instanceMatrix = full.instanceMatrix;
-    full.instanceColor = new THREE.InstancedBufferAttribute(cols, 3); roof.instanceColor = full.instanceColor;
-    for (const m of [full, roof]) { m.frustumCulled = false; m.receiveShadow = true; m.userData.tiled = true; scene.add(m); }
-    full.frustumCulled = true; full.userData.bounded = true;
-    full.castShadow = true;
-    t.full.push(full); t.roof.push(roof);
-  });
-  // large irregular buildings: real outlines, merged per tile
+    const bounds = [new THREE.Vector3(t.cx, high / 2, t.cz), Math.hypot(reach, high / 2)];
+    t.roof.push(instanced(geoRoof, instancedWinMat('office'), rm4, new Float32Array(all.length * 3).fill(1)));
+    for (const [kind, list] of Object.entries(kinds)) {
+      const mat4 = new Float32Array(list.length * 16), cols = new Float32Array(list.length * 3);
+      list.forEach((i, j) => {
+        place(mat4, j, i); const fc = colorOf(facadeColor(kind, hash(i))); cols[j * 3] = fc.r; cols[j * 3 + 1] = fc.g; cols[j * 3 + 2] = fc.b;
+        if (!kind.startsWith('row') && B.bh[i] > 400) plant.push(i);
+      });
+      const full = instanced(geoBox, instancedWinMat(kind), mat4, cols, bounds); full.castShadow = true; t.full.push(full);
+    }
+    if (plant.length) {   // rooftop plant on buildings over 40 m, and aviation lights over 90 m
+      const m4 = new Float32Array(plant.length * 16), cl = new Float32Array(plant.length * 3);
+      plant.forEach((i, j) => {
+        const h = B.bh[i] / 10; place(m4, j, i, .55 + hash(i + 5) * .1, 1, h, 3 + Math.min(6, h * .025));
+        col.set(roofColor(hash(i + 5))).multiplyScalar(.9); cl.set([col.r, col.g, col.b], j * 3);
+        if (h > 90) lights.push(B.bx[i] / 10, h + 5 + Math.min(6, h * .025), B.bz[i] / 10);
+      });
+      const pm = instanced(geoBox, plantMat, m4, cl, bounds); pm.castShadow = true; t.full.push(pm);
+    }
+  }
+  // large irregular buildings: real outlines, merged per tile and facade style
   const pBuild = new Map();
   for (let i = 0, v = 0; i < B.nP; i++) {
     const n = B.pn[i], ring = [];
     let x = 0, z = 0;
     for (let k = 0; k < n; k++) { x = k ? x + B.vx[v + k] : B.vx[v + k]; z = k ? z + B.vz[v + k] : B.vz[v + k]; ring.push([x / 10, z / 10]); }
     v += n;
-    const t = tileOf(ring[0][0], ring[0][1]), key = t;
-    let pk = pBuild.get(key); if (!pk) pBuild.set(key, pk = [new Builder({ uv: true, color: true }), new Builder({ uv: true, color: true })]);
-    const kind = B.pk[i], pal = PAL[kind];
-    addPrism(pk[kind], [ring], 0, B.ph[i] / 10, hash(i + 7) * 4, WIN_W, WIN_H, pal[Math.floor(hash(i + 3) * pal.length)]);
-    t.top = Math.max(t.top, B.ph[i] / 10);
+    const t = tileOf(ring[0][0], ring[0][1]);
+    let pk = pBuild.get(t); if (!pk) pBuild.set(t, pk = {});
+    const h = B.ph[i] / 10, fk = facadeKind(B.pk[i] === 0, h, hash(i + 11)), color = facadeColor(fk, hash(i + 3));
+    addPrism(pk[fk] || (pk[fk] = new Builder({ uv: true, color: true })), [ring], 0, h, hash(i + 7) * 4, WIN_W, WIN_H, colorOf(color), colorOf(roofColor(hash(i + 9))));
+    if (B.pk[i] && h > 40) addRooftop(pk.plant || (pk.plant = new Builder({ color: true })), ring, h, color, hash(i + 5), lights);
+    t.top = Math.max(t.top, h);
   }
-  for (const [t, bs] of pBuild) bs.forEach((b, kind) => {
-    if (!b.count) return;
-    const m = new THREE.Mesh(b.geometry(), worldWinMat(kind ? 'office' : 'row'));
+  for (const [t, bs] of pBuild) for (const [kind, b] of Object.entries(bs)) {
+    if (!b.count) continue;
+    const m = new THREE.Mesh(b.geometry(), kind === 'plant' ? plantVC : worldWinMat(kind));
     m.castShadow = m.receiveShadow = true; scene.add(m); t.always.push(m);
-  });
+  }
 
   // ---- park trees, tiled with a draw distance
   const tt = new Map();
   for (let i = 0; i < city.trees.length; i += 2) {
+    if (clear.some(r => inRing(city.trees[i] / 10, city.trees[i + 1] / 10, r))) continue;
     const t = tileOf(city.trees[i] / 10, city.trees[i + 1] / 10);
     let l = tt.get(t); if (!l) tt.set(t, l = []); l.push(city.trees[i], city.trees[i + 1]);
   }
@@ -207,7 +220,7 @@ export function buildCity(scene, data, { waterMat, status = () => {}, core = nul
       t.full.forEach(m => { m.visible = near; });
       t.roof.forEach(m => { m.visible = vis && !near; });
       t.always.forEach(m => { m.visible = vis; });
-      t.trees.forEach(m => { m.visible = vis && d - t.r < TREE_FAR; });
+      t.trees.forEach(m => { m.visible = vis && d - t.r < TREE_FAR && m.userData.season !== false; });   // bare branches and flower beds only in season
     }
     // Street, rail and trail ribbons wholly past the fog (by view depth, which is what the fog goes
     // by) come out exactly the fog's colour, the same as the paving they lie on: don't draw them.
@@ -221,5 +234,6 @@ export function buildCity(scene, data, { waterMat, status = () => {}, core = nul
   // the whole city from above, north up
   const [x0, z0, x1, z1] = city.bbox.map(v => v / 10), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
   const view = { id: 'city', name: 'Whole city', pos: new THREE.Vector3(cx, 26000, cz + 16000), target: new THREE.Vector3(cx, 0, cz - 1500) };
-  return { update, view, bridgeSegs, wet, bounds: { x0, z0, x1, z1 }, buildingCount: B.nB + B.nP };
+  const beacons = aviationLights(lights); scene.add(beacons);
+  return { update, view, bridgeSegs, wet, bounds: { x0, z0, x1, z1 }, buildingCount: B.nB + B.nP, nightOnly: [beacons], boxes: B };
 }

@@ -2,12 +2,12 @@
 //
 // perf.py injects this with add_init_script, so it runs before the page's own scripts. It
 // wraps requestAnimationFrame (per-frame JS time) and, once main.js publishes
-// window.__schuylkill, the renderer's render() (render CPU time, GPU time via
+// window.__city, the renderer's render() (render CPU time, GPU time via
 // EXT_disjoint_timer_query_webgl2, draw calls, triangles). Everything is exposed on
 // window.__perf.
 //
 // It also works pasted into a DevTools console on a page that's already running (in the
-// browser pane, Chrome DevTools MCP, ...): run it, then __perf.attach(window.__schuylkill) and
+// browser pane, Chrome DevTools MCP, ...): run it, then __perf.attach(window.__city) and
 // e.g. await __perf.record(3000). Load timings and the first frame need the init-script route.
 (() => {
   if (window.__perf) return;
@@ -48,9 +48,10 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watchStatus); else watchStatus();
   try { new PerformanceObserver(l => l.getEntries().forEach(e => P.longTasks.push({ t: e.startTime, d: e.duration }))).observe({ type: 'longtask', buffered: true }); } catch (e) { /* unsupported */ }
 
-  // main.js sets window.__schuylkill right after api.start(), before the first frame runs
+  // main.js sets window.__city (window.__schuylkill before the city picker) right after
+  // api.start(), before the first frame runs
   let appApi;
-  Object.defineProperty(window, '__schuylkill', {
+  for (const name of ['__city', '__schuylkill']) Object.defineProperty(window, name, {
     configurable: true, enumerable: true,
     get: () => appApi,
     set: v => { appApi = v; if (P.readyAt == null) P.readyAt = now(); if (v && v.renderer) P.attach(v); },

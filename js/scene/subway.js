@@ -1,6 +1,6 @@
-// Underground: the L and the T1-T5 trolleys under Market Street (track positions from OSM, depths
-// estimated offline), trains looping along each route, and the cut-away sections that slice the
-// city along a vertical plane to show them.
+// Rail transit for any city (data/<city>/transit.json): tracks, tunnels, Els, platforms and stations,
+// trains looping along each route, walkable cabins, and the cut-away sections that slice the city
+// along a vertical plane (Philadelphia's under Market Street, New York's under Times Square).
 //
 // How a cut works: every material in the scene (except the ones marked userData.noClip here)
 // is clipped by one shared THREE.Plane. With no cut active the plane sits far away and clips
@@ -10,26 +10,22 @@
 import * as THREE from 'three';
 import { litMats } from './materials.js';
 import { Builder } from './geometry.js';
+import { CITY } from '../cities.js';
 export const SPEC = {
   // hw/h: tunnel half-width and height above the rail; car: length, width, height; cars per train;
   // km: route length per train; speed m/s
+  // Philadelphia: the L (metro) and the trolleys
   metro:   { hw: 2.4, h: 5.2, car: 16.4, w: 2.8, ch: 3.6, cars: 6, km: 1.6, speed: 13, body: '#c9ced3', top: 1.0 },
   trolley: { hw: 2.3, h: 4.8, car: 15.2, w: 2.6, ch: 3.3, cars: 1, km: 2.5, speed: 8, body: '#ece7da', top: 0.3 },
-  // citywide build-out (data/metro.json.gz): Broad Street Line B-IV cars, PATCO, Regional Rail
+  // Philadelphia's citywide network (data/phl/metro.json.gz): Broad Street Line B-IV cars, PATCO, Regional Rail
   // Silverliners (also used for NJ Transit's Atlantic City Line), and PCC cars on the G1
   broad:    { hw: 2.6, h: 5.6, car: 20.4, w: 3.1, ch: 3.7, cars: 6, km: 2.2, speed: 15, body: '#cfd4d8', top: 1.05 },
   patco:    { hw: 2.6, h: 5.6, car: 20.7, w: 3.1, ch: 3.7, cars: 4, km: 3.0, speed: 17, body: '#dfe2e4', top: 1.05 },
   regional: { hw: 3.0, h: 6.6, car: 25.9, w: 3.2, ch: 4.2, cars: 4, km: 7.0, speed: 24, body: '#c6ccd2', top: 1.15 },
   pcc:      { hw: 2.3, h: 4.8, car: 14.2, w: 2.7, ch: 3.2, cars: 1, km: 2.5, speed: 8, body: '#f0e7c9', top: 0.3 },
+  // New York: MTA subway cars (data/nyc/transit.json)
+  nycsub:   { hw: 2.4, h: 5.2, car: 16.4, w: 2.8, ch: 3.6, cars: 6, km: 1.6, speed: 13, body: '#c9ced3', top: 1.0 },
 };
-// how a station tag reads its lines: SEPTA Metro ids, trolley ranges, then the networks
-function lineText(s, LINES) {
-  const ids = s.lines || [], parts = [], t = ids.filter(i => /^T\d$/.test(i)).map(i => +i.slice(1)).sort((a, b) => a - b);
-  for (const id of ids) if (/^(L|B\d|G\d)$/.test(id)) parts.push(id);
-  if (t.length) parts.push(t.length > 2 && t[t.length - 1] - t[0] === t.length - 1 ? `T${t[0]}–T${t[t.length - 1]}` : t.map(v => 'T' + v).join(', '));
-  const groups = new Set(ids.map(i => LINES[i] && LINES[i].group).filter(g => g && g !== 'SEPTA Metro'));
-  return [...parts, ...groups].join(' · ');
-}
 const GAUGE = 1.588;     // Pennsylvania trolley gauge (5 ft 2.5 in): both the L and the trolleys use it
 const COL = 2;           // cut-face column width (m)
 const TOP = .15;         // the cut face's top edge (city plate height)
@@ -134,7 +130,7 @@ export function buildSubway(scene, data, river) {
   {
     const deck = new Builder();
     for (const { k, P, N } of tracks) {
-      if (!['metro', 'broad', 'patco'].includes(k)) continue;
+      if (!['metro', 'broad', 'patco', 'nycsub'].includes(k)) continue;
       for (let i = 0; i < P.length - 1; i++) {
         if (P[i].y < 2.5 || P[i + 1].y < 2.5) continue;
         band(deck, P, N, i, i + 1, 0, 4.6, -.22);
@@ -340,13 +336,13 @@ export function buildSubway(scene, data, river) {
   const labels = [];
   for (const s of data.stations) {
     let text;
-    if (s.lines) text = `${s.t} · ${lineText(s, LINES)}`;
+    if (s.lines) text = `${s.t} · ${CITY.stationLines(s, LINES)}`;   // how a tag reads its lines is per city (js/cities.js)
     else { const parts = []; if (s.k.includes('metro')) parts.push('L'); if (s.k.includes('trolley')) parts.push(range(s.T || [])); text = `${s.t} · ${parts.join(' · ')}`; }
     const under = (s.u || []).length > 0;
     const secs = under ? sections.filter(sec => Math.abs(sec.O(s.x, s.z)) <= 200) : [];
     for (const sec of secs) labels.push({ text, pos: sec.labelAt(s.x, s.z, 3), section: sec.id });
     // tag colour: the first rapid-transit kind here; street stops (trolleys at grade) are 'stop'
-    const k = ['metro', 'broad', 'patco', 'regional'].find(q => s.k.includes(q));
+    const k = ['metro', 'broad', 'patco', 'regional', 'nycsub'].find(q => s.k.includes(q));
     const stn = under || k ? (k || (s.k.includes('pcc') ? 'pcc' : 'trolley')) : 'stop';
     const y = Math.max(7, ...(data.platforms.filter(p => Math.abs(p.x - s.x) < 120 && Math.abs(p.z - s.z) < 120).map(p => p.y + 5)));
     labels.push({ text, pos: new THREE.Vector3(s.x, y, s.z), stn, far: STN_FAR, cutHide: secs.map(sec => sec.id) });
@@ -445,6 +441,12 @@ export function buildSubway(scene, data, river) {
       col: { wall: '#eef0f2', ceil: '#f7f8f9', floor: '#3f4447', seat: '#c8432f', steel: '#c9ced2', door: '#d0d4d8', cab: '#e3e6e9', dark: '#26292c' } },
   };
   CAR_IN.pcc53 = { ...CAR_IN.pcc, model: 'PCC car' };   // the 1953 streetcars (oldtrolley.js)
+  // the river boats (boats.js): a wide cabin of 2 + 2 rows, the helm forward, gates aft
+  CAR_IN.boat = { model: 'river boat', layout: 'heavy', F: 1.05, sill: .95, wt: 2.05, c: 2.4, hw: 2.6, z0: -7.4, z1: 5.4, cab: 3.6,
+    doorZ: [-6.3], doorW: 1.4, sides: [1, -1], seats: [1.4, 1.4], spawnZ: -2.8,
+    deck: { z0: -10.6, hw: 2.8 },   // the open stern deck behind the cabin (boats.js), walkable
+    col: { wall: '#eef0ec', ceil: '#f6f5f0', floor: '#6b5a48', seat: '#2f6a8a', steel: '#c3c8cd', door: '#d2d6d9', cab: '#e2e4df', dark: '#2a2c2f' } };
+  CAR_IN.nycsub = { ...CAR_IN.metro, model: 'NYC subway car' };   // New York: the same longitudinal-bench layout
   for (const [k, v] of Object.entries(CAR_IN)) v.layout = v.layout || k;   // metro | trolley | heavy
   const glow = (c, k = .45, o = {}) => mat(new THREE.Color(c).multiplyScalar(.35), Object.assign({ emissive: c, emissiveIntensity: .45 + k * .5, roughness: .8 }, o));
   const flat = c => mat('#000000', { emissive: c, emissiveIntensity: 1 });
@@ -684,9 +686,12 @@ export function buildSubway(scene, data, river) {
       bx(K.dark, 0, F + .5, S.z1 - .35, 2 * HW - .1, 1.0, .45); bx(K.seat, -.55, F + .5, S.z1 - 1.05, .5, .1, .5); bx(K.seat, -.55, F + .85, S.z1 - 1.3, .5, .6, .08);
       bx(K.cab, 0, (F + F + 1.05) / 2, S.z1, 2 * HW, 1.05, .05); bx(K.glass, 0, F + 1.48, S.z1, 2 * HW, .85, .01); bx(K.cab, 0, (F + 1.9 + Y) / 2, S.z1, 2 * HW, Y - F - 1.9, .05);
       bx(K.cab, 0, F + 1.48, S.z1, .12, .85, .06);
-      // rear end: end door with a window, into the next car
-      bx(K.wall, (-HW - .42) / 2, (F + Y) / 2, S.z0, HW - .42, Y - F, .05); bx(K.wall, (HW + .42) / 2, (F + Y) / 2, S.z0, HW - .42, Y - F, .05);
-      bx(K.door, 0, (F + F + 1.05) / 2, S.z0, .84, 1.05, .05); bx(K.glass, 0, F + 1.45, S.z0, .84, .8, .01); bx(K.door, 0, (F + 1.85 + Y) / 2, S.z0, .84, Y - F - 1.85, .05);
+      // rear end: end door with a window, into the next car; on a boat an open doorway out to
+      // the stern deck (S.deck), with a lintel above
+      const dw = S.deck ? 1.1 : .84;
+      bx(K.wall, (-HW - dw / 2) / 2, (F + Y) / 2, S.z0, HW - dw / 2, Y - F, .05); bx(K.wall, (HW + dw / 2) / 2, (F + Y) / 2, S.z0, HW - dw / 2, Y - F, .05);
+      if (S.deck) { bx(K.wall, 0, (F + 2.05 + Y) / 2, S.z0, dw, Y - F - 2.05, .05); bx(K.yellow, 0, F + .003, S.z0, dw, .01, .2); }
+      else { bx(K.door, 0, (F + F + 1.05) / 2, S.z0, .84, 1.05, .05); bx(K.glass, 0, F + 1.45, S.z0, .84, .8, .01); bx(K.door, 0, (F + 1.85 + Y) / 2, S.z0, .84, Y - F - 1.85, .05); }
     }
 
     const group = new THREE.Group(); group.visible = false;
@@ -711,12 +716,20 @@ export function buildSubway(scene, data, river) {
     group.traverse(o => { o.frustumCulled = false; });
     scene.add(group);
     const eyeY = F + 1.62;
-    const spawn = LAY === 'trolley' ? new V3(-.1, eyeY, 2.6) : LAY === 'metro' ? new V3(-.1, eyeY, 2.2) : new V3(-.1, eyeY, Math.min(2.2, S.cab - 1.5));
+    const spawn = LAY === 'trolley' ? new V3(-.1, eyeY, 2.6) : LAY === 'metro' ? new V3(-.1, eyeY, 2.2) : new V3(-.1, eyeY, S.spawnZ ?? Math.min(2.2, S.cab - 1.5));
     // keep the rider inside the passenger area (the trolley's front door area is open to the windscreen on the right)
     const clampEye = e => {
+      if (S.deck && e.z < S.z0 + .4) {
+        // a boat: through the rear doorway (keep within it) and out on the open stern deck
+        if (Math.abs(e.x) > .3) e.z = Math.min(e.z, S.z0 - .35);   // beside the doorway: the cabin's back wall
+        const xm = e.z > S.z0 - .35 ? .3 : S.deck.hw - .3;
+        e.x = Math.max(-xm, Math.min(xm, e.x)); e.z = Math.max(S.deck.z0 + .3, e.z);
+        return;
+      }
       e.x = Math.max(-HW + .3, Math.min(HW - .3, e.x));
       const zMax = LAY === 'trolley' ? (e.x < -.1 ? S.z1 - .35 : S.z1 - 2.15) : S.cab - .3;
-      e.z = Math.max(S.z0 + .45, Math.min(zMax, e.z));
+      // in line with a boat's rear doorway you can keep walking back, out onto the deck
+      e.z = Math.max(S.deck && Math.abs(e.x) < .3 ? S.deck.z0 + .3 : S.z0 + .45, Math.min(zMax, e.z));
     };
     // the passenger: aisle-side place of the forward-facing bench nearest 1.2 m behind the spawn
     // point, preferring the right-hand side (the L's and the trolley's original seats)
@@ -850,6 +863,36 @@ export function buildSubway(scene, data, river) {
     const l = LINES[ride.sl.line];
     return { line: ride.sl.line, lineName: ride.sl.lineName || (l && l.name) || ride.sl.line, kind: ride.kind, model: CAR_IN[ride.kind].model, next: ride.next, under: ride.sl.pos.y < -1 };
   }
+  /**
+   * Where the ride is along its line, for the line diagram: { name, color, x, z, dx, dz,
+   * stops: [{t, f}] | null, f (0..1 along the line), dir (1 out, -1 back), loop, next }.
+   * Runs are out-and-back loops (A -> B -> A): stops come from the outbound half.
+   */
+  const _a = new V3(), _b = new V3();
+  function rideStrip() {
+    if (!ride) return null;
+    const sl = ride.sl, l = LINES[sl.line], run = sl.run || sl.path;
+    const out = { name: sl.lineName || (l && l.name) || sl.line, color: sl.color || (l && l.color) || '#8a96a0',
+      x: sl.pos.x, z: sl.pos.z, dx: sl.dir.x, dz: sl.dir.z, stops: null, f: null, dir: 1, loop: true, next: ride.next };
+    if (!run || !run.L || typeof sl.s !== 'number' || !run.at) return out;
+    if (!run.strip) {
+      if (sl.run && !run.stops) run.stops = stopsOn(run, sl.line, ride.kind);
+      // every run goes out to one terminus and back (some Regional Rail lines take other tracks
+      // on the way back). A run needn't start at a terminus: the farthest point from anywhere
+      // on it is one terminus (B), the farthest from B the other (A); A -> B is the way out.
+      const far = from => { run.at(from, _a); let best = 0, at = 0; for (let k = 0; k < 400; k++) { const s = run.L * k / 400, d = run.at(s, _b).distanceTo(_a); if (d > best) { best = d; at = s; } } return [at, best]; };
+      const [sB] = far(0), [sA, len] = far(sB), out_ = ((sB - sA) % run.L + run.L) % run.L;
+      const u = s => ((s - sA) % run.L + run.L) % run.L;   // distance along the run from A
+      const back = len > 300 && out_ > 1 && out_ < run.L - 1, seen = new Set(), stops = [];
+      const fold = s => (back ? (u(s) <= out_ ? u(s) / out_ : (run.L - u(s)) / (run.L - out_)) : s / run.L);
+      // a stop matched on the way back folds onto the way out
+      for (const o of run.stops || []) { if (seen.has(o.t)) continue; seen.add(o.t); stops.push({ t: o.t, f: Math.min(1, fold(o.s)) }); }
+      stops.sort((p, q) => p.f - q.f);
+      run.strip = { back, out: out_, fold, u, stops };
+    }
+    const st = run.strip, s = ((sl.s % run.L) + run.L) % run.L, outb = !st.back || st.u(s) <= st.out;
+    return Object.assign(out, { stops: st.stops, loop: !st.back, dir: outb ? 1 : -1, f: st.fold(s) });
+  }
   const look_ = (dx, dy) => { if (!ride) return; ride.yaw -= dx * .0045; ride.pitch = Math.max(-1.2, Math.min(1.2, ride.pitch - dy * .0045)); };
   const move = (f, s) => { if (ride) { ride.mf = f; ride.ms = s; } };
   function rideFrame(dt, camera) {
@@ -875,7 +918,7 @@ export function buildSubway(scene, data, river) {
       if (!run.stops) run.stops = stopsOn(run, r.sl.line, r.kind);
       const s = ((r.sl.s % run.L) + run.L) % run.L, nx = run.stops.find(o => o.s > s + 15) || run.stops[0];
       const next = nx ? nx.t : null;
-      if (r.first || next !== r.next) { r.next = next; r.int.setLED(`${r.sl.line}  ·  ${next ? 'Next stop: ' + next : CAR_IN[r.kind].model}`); }
+      if (r.first || next !== r.next) { r.next = next; r.int.setLED(`${r.sl.led || r.sl.line}  ·  ${next ? 'Next stop: ' + next : CAR_IN[r.kind].model}`); }
     }
     r.first = false;
   }
@@ -949,6 +992,6 @@ export function buildSubway(scene, data, river) {
   update(0);
 
   return { planes: [plane], setCut, getCut: () => (active ? active.id : false), update, labels, views: sections.map(s => s.view),
-           pick, board, leave, getRide, look: look_, move,
+           pick, board, leave, getRide, rideStrip, look: look_, move,
            boardLine, registerFleet, routes, lines: data.lines };
 }

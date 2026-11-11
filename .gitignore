@@ -1,4 +1,4 @@
-tools/raw/
+tools/phl/raw/
 __pycache__/
 tools/.venv/
 tools/perf/out/

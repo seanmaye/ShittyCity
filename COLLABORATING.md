@@ -1,8 +1,9 @@
-# Working on the Schuylkill monorail model
+# Working on the city models
 
-The project is one file, `schuylkill-monorail.html`: a 3D model of Center City Philadelphia
-with proposed monorails, parks, and the L and trolleys underground. The Git repository lives
-on the office share:
+The project is one file, `city-models.html`: 3D models of Philadelphia and New York, with
+their transit and our proposals, on one shared engine (pick the city on its start menu).
+`README.md` has the overview, and `docs/PHL.md` and `docs/NYC.md` describe each city and how
+to rebuild its data. The Git repository lives on the office share:
 
 ```
 \\192.168.168.72\tsptemp\sean\test
@@ -28,8 +29,8 @@ Run these in Git Bash or PowerShell.
 2. Clone it to your own computer:
 
    ```
-   git clone //192.168.168.72/tsptemp/sean/test schuylkill-monorail
-   cd schuylkill-monorail
+   git clone //192.168.168.72/tsptemp/sean/test city-models
+   cd city-models
    ```
 
 3. If you haven't used Git on this computer before, set your name and email:
@@ -39,9 +40,10 @@ Run these in Git Bash or PowerShell.
    git config --global user.email "you@example.com"
    ```
 
-## Looking at the model
+## Looking at the models
 
-Double-click `schuylkill-monorail.html` to open it in your browser. There is no server or build step.
+Double-click `city-models.html` to open it in your browser, then pick a city. There is no
+server or build step.
 
 ## Making changes
 
@@ -49,15 +51,16 @@ Work in your own clone, not in the share folder.
 
 ```
 git pull                          # get everyone's latest changes first
-# ... edit schuylkill-monorail.html ...
-git add schuylkill-monorail.html
+# ... edit city-models.html ...
+git add city-models.html
 git commit -m "Short description of the change"
 git push
 ```
 
-Read the **EDITING GUIDE** comment at the top of `schuylkill-monorail.html` before you edit.
-It explains the coordinate system, the data blocks and where each feature lives in the code.
-The file is about 6 MB, so use an editor that handles large files well, such as VS Code.
+Read the **EDITING GUIDE** comment at the top of `city-models.html` before you edit.
+It explains each city's coordinates, the data blocks and where each feature lives in the code.
+The file is about 28 MB, so use an editor that handles large files well, such as VS Code.
+If you have the sources, edit those instead and rebuild (see `README.md`).
 
 ### If `git push` is refused
 
