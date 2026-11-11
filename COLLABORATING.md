@@ -1,6 +1,6 @@
 # Working on the Schuylkill monorail model
 
-The project is one file, `schuylkill-monorail.html`: a 3D model of Philadelphia with proposed
+The project is one file, `city-models.html`: a 3D model of Philadelphia with proposed
 monorails, parks, and the L and trolleys underground, and of New York (pick the city on its
 start menu). New York's data comes from the NYC City Model repository; see `docs/NYC.md` to
 refresh it. The Git repository lives
@@ -43,7 +43,7 @@ Run these in Git Bash or PowerShell.
 
 ## Looking at the model
 
-Double-click `schuylkill-monorail.html` to open it in your browser. There is no server or build step.
+Double-click `city-models.html` to open it in your browser. There is no server or build step.
 
 ## Making changes
 
@@ -51,13 +51,13 @@ Work in your own clone, not in the share folder.
 
 ```
 git pull                          # get everyone's latest changes first
-# ... edit schuylkill-monorail.html ...
-git add schuylkill-monorail.html
+# ... edit city-models.html ...
+git add city-models.html
 git commit -m "Short description of the change"
 git push
 ```
 
-Read the **EDITING GUIDE** comment at the top of `schuylkill-monorail.html` before you edit.
+Read the **EDITING GUIDE** comment at the top of `city-models.html` before you edit.
 It explains the coordinate system, the data blocks and where each feature lives in the code.
 The file is about 6 MB, so use an editor that handles large files well, such as VS Code.
 

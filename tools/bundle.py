@@ -12,7 +12,7 @@ import base64, json, os, re, sys
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 # the shareable file lives at the repo root and is committed alongside the sources
-OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "schuylkill-monorail.html")
+OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "city-models.html")
 ENTRY = "js/main.js"
 
 IMPORT = re.compile(r"^import\s+(.+?)\s+from\s+'([^']+)';\s*$", re.M)

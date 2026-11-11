@@ -55,7 +55,7 @@ Then open <http://localhost:8765>.
 python -I tools/bundle.py
 ```
 
-This rebuilds `schuylkill-monorail.html` at the repo root (about 28 MB, both cities), the file you send
+This rebuilds `city-models.html` at the repo root (about 28 MB, both cities), the file you send
 people. It has the CSS, every script and all the map data inline, so it opens with a
 double-click; no server needed. three.js and the font still load from their CDNs, so
 viewers need an internet connection.
@@ -86,7 +86,7 @@ embedded data, and recipes.
 ## Layout
 
 ```
-schuylkill-monorail.html  the shareable single-file build (generated: run tools/bundle.py)
+city-models.html      the shareable single-file build (generated: run tools/bundle.py)
 index.html            page shell, HUD markup, import map for three.js 0.128
 css/style.css         HUD and label styles
 js/main.js            entry point: city menu -> load data -> build scene -> start UI
@@ -140,8 +140,8 @@ tools/
   extract_landmarks.py  stadium, hall and pitch outlines from the Pennsylvania extract
   extract_bridges.py  the Delaware bridge decks and Memorial Hall (merged into the same file)
   build_landmarks.py  fits the landmark models (writes data/city_landmarks.json)
-  bundle.py           packs everything into schuylkill-monorail.html
-  unbundle.py         the reverse: unpacks schuylkill-monorail.html into the sources
+  bundle.py           packs everything into city-models.html
+  unbundle.py         the reverse: unpacks city-models.html into the sources
   import_nyc.py       converts the NYC City Model's data into data/nyc/ (see docs/NYC.md)
 ```
 
