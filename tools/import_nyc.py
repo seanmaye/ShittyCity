@@ -318,6 +318,18 @@ write_json("trees.json", [])
 
 # ---- transit: the MTA lines as kind "nycsub"; one station per stop, listing all its lines
 KIND = "nycsub"
+# every ride path must be a closed out-and-back loop of finite [x, z, y] points, or the ride jumps
+# (the NYC repository's tools/check_transit.py)
+for run in TR["runs"]:
+    flat = run["p"]
+    if len(flat) < 9 or len(flat) % 3 or not all(math.isfinite(v) for v in flat):
+        raise SystemExit(f'line {run["line"]}: invalid ride path')
+    pts = [flat[i:i + 3] for i in range(0, len(flat), 3)]
+    if pts[0] != pts[-1]:
+        raise SystemExit(f'line {run["line"]}: the ride path must end where it starts')
+    print(f'  line {run["line"]}: {len(pts)} points, longest step {max(math.dist(a, b) for a, b in zip(pts, pts[1:])) / 10:.1f} m')
+if {str(l["id"]) for l in TR["lines"]} != {str(r["line"]) for r in TR["runs"]}:
+    raise SystemExit("every line needs exactly one ride path")
 stations = []
 for s in TR["stations"]:
     hit = next((o for o in stations if o["t"] == s["t"] and math.hypot(o["x"] - s["x"], o["z"] - s["z"]) < 250), None)

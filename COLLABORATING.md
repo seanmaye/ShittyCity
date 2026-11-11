@@ -1,7 +1,9 @@
 # Working on the Schuylkill monorail model
 
-The project is one file, `schuylkill-monorail.html`: a 3D model of Center City Philadelphia
-with proposed monorails, parks, and the L and trolleys underground. The Git repository lives
+The project is one file, `schuylkill-monorail.html`: a 3D model of Philadelphia with proposed
+monorails, parks, and the L and trolleys underground, and of New York (pick the city on its
+start menu). New York's data comes from the NYC City Model repository; see `docs/NYC.md` to
+refresh it. The Git repository lives
 on the office share:
 
 ```

@@ -1,9 +1,15 @@
-EDITING GUIDE: Philadelphia Schuylkill model (single-file build)
-================================================================
+EDITING GUIDE: Philadelphia and New York city models (single-file build)
+=========================================================================
 
 This guide is for an AI assistant (or a person) who has only this HTML file and wants to
-change the city. Everything the page needs is inside the file: styles, all scripts, and
+change a city. Everything the page needs is inside the file: styles, all scripts, and
 all map data. three.js r128 loads from the jsDelivr CDN.
+
+The page holds two cities on one engine. It opens on a start menu (#menu) to pick one, or
+goes straight to one with ?city=phl or ?city=nyc; "Change city" (#switch-city) reloads to
+the menu. Everything that differs between the cities and isn't data is in the js/cities.js
+chunk (section 8). Most of this guide describes Philadelphia, the original model. New
+York's data blocks use the same schemas; section 8 lists them.
 
 Read this guide before opening the rest of the file. The data blocks are single-line
 JSON, several megabytes in total, so never print or paste them whole: edit them with the
@@ -22,6 +28,9 @@ Python helper below.
   3 gzip data blocks (the citywide build-out), each
               <script type="application/gzip-base64" id="data-NAME" data-file="FILE">base64</script>
               for city (city.json.gz), city_buildings (city_buildings.bin.gz), metro (metro.json.gz)
+  New York's blocks, after Philadelphia's: the same two kinds, with ids prefixed "nyc-" and
+              the file named, e.g. <script type="application/json" id="data-nyc-transit"
+              data-file="nyc/transit.json"> (section 8)
   1 <script type="module"> holding all the code:
       - import lines at the very top (THREE, OrbitControls, BufferGeometryUtils, Line2,
         LineMaterial, LineGeometry)
@@ -70,6 +79,9 @@ of editing this file. If you only have this file, edit it directly as described 
   - The rest of Philadelphia out to the city limits: x -8903..18800 m, z -20197..9878 m
     (data-city `bbox`). It is in the gzip blocks and never overlaps the original extent.
   Outside the city limits is plain ground.
+
+  New York has its own frame: origin lat 40.745, lon -73.984 (Midtown), x = (lon - LON0) *
+  84096.04, z as above. Units and winding are the same.
 
 
 3. Data blocks (schemas)
@@ -211,8 +223,12 @@ data-yardpark    PROPOSAL: deck over the 30th Street rail yard
 4. Code map (chunk, then what you would change there)
 -----------------------------------------------------
 
-js/data.js        projection (LAT0, LON0, MX, MZ, G(lat,lon), latOf) and the data loader
-                  (FILES: JSON blocks as text, .gz blocks gunzipped with DecompressionStream)
+js/cities.js      CITIES (per city: projection frame, data files, home view, sun position, HUD
+                  text, transit groups, station-tag text, skyline presets, `sea`) and CITY, the
+                  active one (section 8)
+js/main.js        the start menu, then setCity -> loadData -> buildScene -> createUI
+js/data.js        projection (G(lat,lon), latOf, using CITY.frame) and the data loader
+                  (CITY.files: JSON blocks as text, .gz blocks gunzipped with DecompressionStream)
 js/scene/core.js  renderer, camera, OrbitControls, sun, fog. HOME_POS and HOME_TGT
                   are the overview camera.
 js/scene/sky.js   the 24-hour clock: sunAt(h) = the real sun position over Philadelphia for
@@ -334,8 +350,8 @@ Debug handle in the browser console: window.__schuylkill
     PATH = "schuylkill-monorail.html"
     html = open(PATH, encoding="utf-8").read()
 
-    def _block(name):
-        return re.search(r'(<script type="application/json" id="data-%s">)(.*?)(</script>)'
+    def _block(name):                    # name: "transit", or "nyc-transit" for New York's
+        return re.search(r'(<script type="application/json" id="data-%s"[^>]*>)(.*?)(</script>)'
                          % name, html, re.S)
 
     def load(name):                      # "<\/" inside the block is a legal JSON escape
@@ -534,11 +550,56 @@ Change the opening camera: HOME_POS and HOME_TGT in js/scene/core.js.
   in view (far city tiles draw only roofs). Merge or instance new geometry; don't add
   thousands of separate meshes. Instanced meshes must have frustumCulled = false (or manage
   their own visibility, as city.js does), because three.js r128 culls them by their origin.
-- The file is about 16 MB. The gzip blocks hold most of the citywide data; keep new bulky
-  data in a gzip block rather than JSON.
-- Keep the attribution line on the page. Map data (c) OpenStreetMap contributors, ODbL;
-  building data (c) City of Philadelphia.
+- The file is about 28 MB (Philadelphia about 16, New York about 11). The gzip blocks hold most
+  of the data; keep new bulky data in a gzip block rather than JSON.
+- Keep each city's attribution line (CITY.credit). Map data (c) OpenStreetMap contributors,
+  ODbL; building data (c) City of Philadelphia and NYC Open Data; shorelines NYC Open Data and
+  NJDEP; New York subway routes MTA GTFS.
 - After a change, open the file in a browser (double-click works) and check the console.
   Without a browser, at least check the syntax: copy the module script to x.mjs and run
   `node --check x.mjs`.
 - If you change how the file works, update this guide too.
+
+
+8. Cities
+---------
+
+js/cities.js lists the cities (CITIES.phl, CITIES.nyc). main.js picks one and calls
+setCity(id) before anything loads; every module then reads the active city from CITY inside
+its functions (never at module top level: the bundle runs every chunk before main does).
+A city entry holds:
+  frame {LAT0, LON0, MX, MZ}   the projection (section 2)
+  dir, prefix, files           where its data lives: data/ and "" for Philadelphia, data/nyc/
+                               and "nyc-" for New York; files = [[key, file], ...]
+  home, sunTarget, sun         the Overview camera ([lat, lon, height]), the shadow centre, and
+                               where the sun is computed for (sky.js)
+  sea                          true: no countryside; everything outside data-city `limits`
+                               (here: land outlines) is water
+  storage                      localStorage prefix (folded panel, skyline lights)
+  title, heading, hint, canvasLabel, cutButton, cutHint, credit, building   page text
+  groups                       the "Ride a line" networks in order (a line without `group` is
+                               in the first); stationLines(s, LINES) = a station tag's line text
+  presets                      skyline-light preset ids (null = all of materials.js's)
+
+index.js builds whatever the city's data has: Philadelphia's proposals (landmarks, riverfront
+monorail, sports parks, rail yard park, 1953 streetcars, citywide landmarks) only when their
+blocks are there, New York's parts only when theirs are.
+
+New York (data-nyc-*; made by tools/import_nyc.py from the NYC City Model, see docs/NYC.md):
+  data-nyc-buildings       gzip; Manhattan's footprints, schema as data-buildings (style 0 only)
+  data-nyc-city_buildings  gzip; the outer-borough detail windows, PHB1 as data-city_buildings
+  data-nyc-city            gzip; schema as data-city: `limits` = land outlines (borough
+                           shorelines and the New Jersey waterfront), parks, streets, water, trees
+  data-nyc-ground          only `bbox` (Manhattan's extent); river, trees: empty
+  data-nyc-transit         schema as data-transit: 11 MTA lines of kind "nycsub" (stations list
+                           their `lines`), and the Times Square section
+  data-nyc-landmarks       {features: [{id, name, x, z, w, d, h, color, kind, cap, ry, source_id}],
+                           labels: [{t, x, y, z}], views: [{id, name, pos, target}]} (metres);
+                           drawn by js/scene/nyc/landmarks.js (bespoke shapes by id, else by cap)
+  data-nyc-monorail        {height, speed, routes: [{id, name, color, closed, path: [[x, z] or
+                           [x, y, z]], stations: [{name, position: [x, z], length}], cars, ...}]}
+The hand-built parts are code: js/scene/nyc/bridges.js (the four East River bridges, their
+specs in local metres), js/scene/nyc/boroughmarks.js (Wonder Wheel, Unisphere, Citi Field).
+
+Adding a city: put its data in data/<id>/ in these schemas, add an entry to CITIES, and run
+tools/bundle.py (it picks up every data/<id>/ folder).

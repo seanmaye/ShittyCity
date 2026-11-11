@@ -3,8 +3,10 @@
   python -I tools/bundle.py [out.html]
 
 Inlines css/style.css, every module under js/, every data/*.json file as JSON and every
-data/*.gz file (the citywide build-out) as base64. three.js still loads from the CDN through
-the page's import map. The result opens straight from disk.
+data/*.gz file (the citywide build-out) as base64. Each other city's folder (data/<city>/, see
+js/cities.js) is inlined the same way, its block ids prefixed with "<city>-" and its files named
+in data-file. three.js still loads from the CDN through the page's import map. The result opens
+straight from disk.
 """
 import base64, json, os, re, sys
 
@@ -126,14 +128,18 @@ html = read("index.html")
 css = read("css/style.css")
 html = html.replace('<link rel="stylesheet" href="css/style.css">', f"<style>\n{css}</style>")
 data_tags = ""
-for name in sorted(os.listdir(os.path.join(ROOT, "data"))):
-    if name.endswith(".json"):
-        body = read("data/" + name).replace("</", "<\\/")
-        data_tags += f'<script type="application/json" id="data-{name[:-5]}">{body}</script>\n'
-    elif name.endswith(".gz"):   # gzip data (city build-out): base64, decoded by js/data.js
-        with open(os.path.join(ROOT, "data", name), "rb") as f:
-            b64 = base64.b64encode(f.read()).decode("ascii")
-        data_tags += f'<script type="application/gzip-base64" id="data-{name.split(".")[0]}" data-file="{name}">{b64}</script>\n'
+# Philadelphia's files in data/, then each other city's folder data/<city>/ (js/cities.js)
+dirs = [("", "")] + [(d + "/", d + "-") for d in sorted(os.listdir(os.path.join(ROOT, "data"))) if os.path.isdir(os.path.join(ROOT, "data", d))]
+for sub, prefix in dirs:
+    for name in sorted(os.listdir(os.path.join(ROOT, "data", sub))):
+        if name.endswith(".json"):
+            body = read("data/" + sub + name).replace("</", "<\\/")
+            file_attr = f' data-file="{sub}{name}"' if sub else ""
+            data_tags += f'<script type="application/json" id="data-{prefix}{name[:-5]}"{file_attr}>{body}</script>\n'
+        elif name.endswith(".gz"):   # gzip data (city build-out): base64, decoded by js/data.js
+            with open(os.path.join(ROOT, "data", sub, name), "rb") as f:
+                b64 = base64.b64encode(f.read()).decode("ascii")
+            data_tags += f'<script type="application/gzip-base64" id="data-{prefix}{name.split(".")[0]}" data-file="{sub}{name}">{b64}</script>\n'
 loader = re.search(r'<script type="module">\s*import\(\'\./js/main\.js\'\).*?</script>', html, re.S)
 html = html.replace(loader.group(0), data_tags + f'<script type="module">\n{imports}try {{\n{bundle}\n}} catch (e) {{ console.error(e); document.getElementById(\'err\').style.display = \'flex\'; }}\n</script>')
 # the editing guide rides along as a comment right after the doctype, so whoever opens

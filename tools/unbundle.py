@@ -3,7 +3,7 @@
   python -I tools/unbundle.py [bundled.html] [out_dir]
 
 Defaults: schuylkill-monorail.html -> the repo root. Writes index.html, css/style.css,
-js/**.js, data/*.json and docs/EDITING.md, overwriting what is there.
+js/**.js, data/*.json, data/<city>/* and docs/EDITING.md, overwriting what is there.
 Use it when someone has edited the shared HTML directly, then check the result with
 `python -I tools/unbundle.py --check`, which re-bundles and compares.
 """
@@ -26,7 +26,8 @@ EXTERNALS = [  # (import line, how to tell a module uses it), in the order bundl
 GZBLOCK = re.compile(r'^<script type="application/gzip-base64" id="data-([\w-]+)" data-file="([^"]+)">(.*?)</script>\n', re.S | re.M)
 CHUNK = re.compile(r'// ---- (\S+)\n__mods\["\1"\] = await \(async \(\) => \{\n(.*?)\nreturn \{ ?(.*?) ?\};\n\}\)\(\);\n', re.S)
 # a data block starts a line (the editing guide quotes the tag mid-line, which must not match)
-BLOCK = re.compile(r'^<script type="application/json" id="data-([\w-]+)">(.*?)</script>\n', re.S | re.M)
+# (another city's blocks also name their file: data-file="nyc/transit.json")
+BLOCK = re.compile(r'^<script type="application/json" id="data-([\w-]+)"(?: data-file="([^"]+)")?>(.*?)</script>\n', re.S | re.M)
 LOCAL = re.compile(r'^const \{ (.*?) \} = __mods\["([^"]+)"\];$', re.M)
 
 
@@ -91,9 +92,9 @@ def unbundle(src_html, out):
         if b.re is GZBLOCK:
             files[f"data/{b.group(2)}"] = base64.b64decode(b.group(3))
             continue
-        body = b.group(2).replace("<\\/", "</")
+        body = b.group(3).replace("<\\/", "</")
         json.loads(body)  # sanity
-        files[f"data/{b.group(1)}.json"] = body
+        files[f"data/{b.group(2) or b.group(1) + '.json'}"] = body
     # code
     m = re.search(r'<script type="module">\n(.*?)</script>', html[blocks[-1].end():], re.S)
     script = m.group(1)
@@ -115,7 +116,7 @@ def unbundle(src_html, out):
 
 
 def blocks_of(html):
-    data = {m.group(1): m.group(2) for m in BLOCK.finditer(html)}
+    data = {m.group(1): m.group(3) for m in BLOCK.finditer(html)}
     data.update({m.group(1): m.group(3) for m in GZBLOCK.finditer(html)})
     rest = GZBLOCK.sub("", BLOCK.sub("", html))
     return data, rest
