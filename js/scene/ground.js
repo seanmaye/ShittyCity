@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { pairs } from '../data.js';
 import { M } from './materials.js';
 import { Builder, addPolygon, addRibbon } from './geometry.js';
+import { onPromenade } from './promenade.js';
 const GREEN = ['#6c9a52', '#7aa65a', '#5f9a4e', '#557d45', '#6f9256']; // park, grass, pitch, wood, cemetery
 const ROAD = '#5c5f63', TRAIL = '#e2cfa4', RAIL = '#6f665e';
 
@@ -53,6 +54,7 @@ export function drawLines(scene, lines, { cap = [], wet = () => false, tile = 0 
   for (const l of lines) {
     const pts = pairs(l.p);
     if (l.b) { bridges.push({ ...l, pts }); continue; }
+    if (l.k === 0 && onPromenade(pts)) continue;   // Walnut St is paved as a promenade (promenade.js)
     const { rb, pb, tb, xb } = T(keyOf(pts));
     if (l.x) {
       // proposal: expressway carriageways become park, ramps become greenway trails

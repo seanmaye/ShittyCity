@@ -16,6 +16,7 @@ import { buildCity } from './city.js';
 import { buildCityMarks } from './citymarks.js';
 import { buildTransitMap } from './transitmap.js';
 import { buildOldTrolleys } from './oldtrolley.js';
+import { buildPromenade } from './promenade.js';
 // let the status line paint between build steps (a timer, so it also works in background tabs)
 const nextFrame = () => new Promise(r => setTimeout(r, 16));
 
@@ -39,6 +40,8 @@ export async function buildScene(canvas, data, status = () => {}) {
   const lm = buildLandmarks(scene, data.landmarks, river);
   const monorail = buildMonorail(scene, river, ground.bridgeSegs, data.buildings, data.landmarks, courtTest(data.sports));
   buildTrees(scene, data.trees);
+  // PROPOSAL: Walnut St, 22nd to Front, as a brick-paved shopping street
+  const walnut = buildPromenade(scene, { buildings: data.buildings, cityB: city.boxes, roads: [data.ground.lines, data.city.lines], trees: data.trees });
   const updateShells = buildShells(scene, river);
   status('Building the sports parks…'); await nextFrame();
   const sports = buildSports(scene, data.sports, river, ground.bridgeSegs, data.ground.lines);
@@ -122,7 +125,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   lines.push(...old53.lines.map(l => ({ ...l, group: '1953 streetcars' })));
   /** r: a line id from `lines`, or false for the overview (stay = keep the camera where it is) */
   function setRiding(r, stay = false) {
-    if (subway.getRide()) leaveCar(true);
+    if (aboard()) leaveCar(true);
     riding = r; controls.enabled = r === false; fly = null;
     if (r === false && !stay) { camera.position.copy(core.HOME_POS); controls.target.copy(core.HOME_TGT); controls.update(); }
   }
@@ -135,6 +138,7 @@ export async function buildScene(canvas, data, status = () => {}) {
     city.view,
     // from behind the lawn, looking over the audience at the bandshell
     { id: 'bowl', name: 'Railyard Bowl', pos: V(vn.x + vx * (vn.r + 70), yp.h + 75, vn.z + vz * (vn.r + 70)), target: V(vn.x, yp.h + 12, vn.z) },
+    walnut.view,
     { id: 'yard', name: 'Rail Yard Park', pos: V(yp.label[0] - 420, 330, yp.label[1] + 520), target: V(yp.label[0] + 40, yp.h, yp.label[1] + 120) },
   ];
   // each corridor view centres on its densest cluster of courts, looking down along the corridor
@@ -164,7 +168,7 @@ export async function buildScene(canvas, data, status = () => {}) {
     const v = views.find(w => w.id === id); if (!v) return;
     setCreative(false);
     if (riding !== false) setRiding(false, true);
-    if (subway.getRide()) leaveCar(true);
+    if (aboard()) leaveCar(true);
     if (v.cut) setCut(v.cut);
     fly = { t: 0, dur: 2.2, p0: camera.position.clone(), t0: controls.target.clone(), p1: v.pos, t1: v.target,
             lift: Math.min(450, camera.position.distanceTo(v.pos) * .22) };
@@ -181,13 +185,19 @@ export async function buildScene(canvas, data, status = () => {}) {
     setCreative(false);
     if (riding !== false) setRiding(false, true);
     fly = null; if (subway.getCut()) setCut(false);
+    if (h && h.seat !== undefined) {   // a cafe chair or bench on Walnut St: sit down
+      subway.leave(); const r = walnut.sit(h.seat); if (!r) return null;
+      controls.enabled = false; camera.near = .05; camera.updateProjectionMatrix();
+      return r;
+    }
+    walnut.stand();
     const r = subway.board(h); if (!r) return null;
     controls.enabled = false; camera.near = .05; camera.updateProjectionMatrix();   // the car is only 2.6 m wide
     return r;
   }
   /** stay: leave the camera where it is (another view is about to take over) */
   function leaveCar(stay = false) {
-    const o = subway.leave(); if (!o) return;
+    const o = subway.leave() || walnut.stand(); if (!o) return;
     camera.near = 2; camera.updateProjectionMatrix(); camera.up.set(0, 1, 0); controls.enabled = riding === false;
     if (stay) return;
     const t = o.p.clone(); t.y = Math.max(t.y, 0) + 2;   // underground: look down on the street above the car
@@ -201,6 +211,7 @@ export async function buildScene(canvas, data, status = () => {}) {
     const key = id === 'loop' ? 'mono:loop' : typeof id === 'number' ? 'mono:shuttle' + id : String(id).replace(/^m:/, '');
     if (riding !== false) setRiding(false, true);
     fly = null; if (subway.getCut()) setCut(false);
+    walnut.stand();
     const r = subway.boardLine(key); if (!r) return null;
     controls.enabled = false; camera.near = .05; camera.updateProjectionMatrix();
     return r;
@@ -215,7 +226,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   let creative = false, yaw = 0, pitch = 0, speedMul = 1;
   const eul = new THREE.Euler(0, 0, 0, 'YXZ');
   function setCreative(on) {
-    on = !!on && riding === false && !subway.getRide();
+    on = !!on && riding === false && !aboard();
     if (on === creative) return creative;
     creative = on;
     if (on) {
@@ -251,7 +262,9 @@ export async function buildScene(canvas, data, status = () => {}) {
     controls.target.x += mv.x; controls.target.z += mv.z;
     controls.target.y = Math.max(0, controls.target.y + mv.y);
   }
-  const pickCar = (x, y) => { camera.updateMatrixWorld(); return subway.pick(camera, x, y, canvas.clientWidth, canvas.clientHeight); };
+  // click a train car to board it, or a cafe chair or bench on Walnut St to sit down
+  const pickCar = (x, y) => { camera.updateMatrixWorld(); const w = canvas.clientWidth, h = canvas.clientHeight; return subway.pick(camera, x, y, w, h) || walnut.pickSeat(camera, x, y, w, h); };
+  const aboard = () => subway.getRide() || walnut.getSeat();
   setTime(sky.sunset - .35);   // open at dusk, the original look
 
   const clock = new THREE.Clock(), sunOff = new THREE.Vector3();
@@ -260,10 +273,11 @@ export async function buildScene(canvas, data, status = () => {}) {
       const dt = Math.min(clock.getDelta(), .05);
       monorail.update(dt, riding === 'loop', camera); old53.update(dt); subway.update(dt, camera); updateShells(dt); sports.update(dt, riding, camera); yard.update(dt);
       if (fly) stepFly(dt);
-      if ((flyKeys.f || flyKeys.s || flyKeys.u) && riding === false && !subway.getRide()) stepFlyKeys(dt);
-      if (riding === false && !subway.getRide() && !creative) controls.update();
+      walnut.seatFrame(camera);
+      if ((flyKeys.f || flyKeys.s || flyKeys.u) && riding === false && !aboard()) stepFlyKeys(dt);
+      if (riding === false && !aboard() && !creative) controls.update();
       // fog, draw distance and the shadowed area follow the camera, so the whole city reads from above
-      const free = riding === false && !subway.getRide() && !creative;
+      const free = riding === false && !aboard() && !creative;
       const focus = free ? controls.target : camera.position, d = free ? camera.position.distanceTo(controls.target) : creative ? Math.max(300, camera.position.y * 1.6) : 300;
       scene.fog.near = Math.max(2200, d * .8); scene.fog.far = Math.max(9000, d * 3.2);
       if (Math.hypot(sun.target.position.x - focus.x, sun.target.position.z - focus.z) > 150) {
@@ -289,5 +303,5 @@ export async function buildScene(canvas, data, status = () => {}) {
   }
   legend.push({ name: 'Proposed monorails', color: '#d6452f' });
 
-  return { scene, camera, controls, renderer, labels, lines, views, flyTo, boardLine, setFly, setCreative, getCreative: () => creative, creativeLook, creativeSpeed, setTransitMap: on => { old53.setOverlay(on); return tmap.set(on); }, getTransitMap: tmap.get, legend, oldTrolleyLegend: old53.legend, cityBuildings: city.buildingCount, setTime, getTime: sky.getTime, sunset: sky.sunset, setMood, getMood, setRiding, setCut, getCut: subway.getCut, pickCar, boardCar, leaveCar, getCar: subway.getRide, lookCar: subway.look, moveCar: subway.move, start, river, monorail };
+  return { scene, camera, controls, renderer, labels, lines, views, flyTo, boardLine, setFly, setCreative, getCreative: () => creative, creativeLook, creativeSpeed, setTransitMap: on => { old53.setOverlay(on); return tmap.set(on); }, getTransitMap: tmap.get, legend, oldTrolleyLegend: old53.legend, cityBuildings: city.buildingCount, setTime, getTime: sky.getTime, sunset: sky.sunset, setMood, getMood, setRiding, setCut, getCut: subway.getCut, pickCar, boardCar, leaveCar, getCar: aboard, lookCar: (dx, dy) => (walnut.getSeat() ? walnut.lookSeat(dx, dy) : subway.look(dx, dy)), moveCar: subway.move, start, river, monorail };
 }

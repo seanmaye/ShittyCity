@@ -254,6 +254,17 @@ js/scene/sports.js     courts (SURFACE = line markings, EQUIP = nets, hoops, goa
                   about every 1.1 km, piers placed between courts at load time)
 js/scene/yardpark.js   rail yard deck, park, and the Railyard Bowl (bandshell, seats,
                   screens, light beams)
+js/scene/promenade.js  PROPOSAL: Walnut St, 22nd to Front, as a car-free shopping street.
+                  WALNUT = the centreline (metres). drawLines() skips every road piece on it
+                  (onPromenade) and oldtrolley.js leaves out the 1953 track bed there (onWalnut),
+                  so the rails sit in the paving. Herringbone brick HALF = 9 m each side, granite
+                  gutters either side of the streetcar track (CLEAR), and on the KERB lines
+                  (4.4 m out) a 24 m rhythm of lamp, bench, planter tree, bench. Facades parallel
+                  to the street and facing it get an awning and a shop window (lit at dusk) per
+                  ~6.5 m bay, cafe tables in front of about half. Adds the "Walnut St promenade"
+                  view. Every cafe chair and bench is a seat: click to sit (pickSeat/sit, wired
+                  into index.js pickCar/boardCar/leaveCar), drag to look, Space or Esc to stand.
+                  To pedestrianise another street, give it its own polyline the same way.
 js/scene/subway.js     every rail line (data-transit + data-metro): rails, platforms, El decks and
                   columns, looping instanced trains (SPEC: car
                   sizes, cars per train, train spacing, speeds), and the cut-away sections:

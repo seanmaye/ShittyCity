@@ -6,7 +6,8 @@ and transit come from real map data.
 
 - **Center City, University City and Fairmount** are the original detailed area, with the
   hand-made proposals: styled landmarks, the monorail loop, the expressway sports parks, the
-  rail yard park and the Market Street subway cut-away.
+  rail yard park, Walnut Street as a car-free brick shopping street (22nd to Front) and the
+  Market Street subway cut-away.
 - **The rest of the city** (about 500k more buildings, streets, parks, creeks and park trees)
   is drawn around it without changing anything in the original area.
 - **Every rail transit line** is modelled: the L, the B1-B3 Broad Street Line, the G1 and
@@ -93,6 +94,7 @@ js/scene/
   nature.js           trees, rowing shells
   sports.js           proposal: expressway sports parks + shuttle monorails
   yardpark.js         proposal: rail yard deck, park and the Railyard Bowl
+  promenade.js        proposal: Walnut St (22nd to Front) as a brick-paved shopping street
   subway.js           every rail line: tracks, tunnels, Els, platforms, trains, line rides,
                       the Market St cut-away and the walkable cabins of every car
 data/                 generated (don't edit by hand):
