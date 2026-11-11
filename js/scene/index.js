@@ -349,7 +349,9 @@ export async function buildScene(canvas, data, status = () => {}) {
   // focus whatever the camera sees, so from a train or a low view most blocks are behind you.
   const LOWEST = -60;   // below the deepest cut-away
   const viewFrustum = new THREE.Frustum(), viewMat = new THREE.Matrix4(), toSun = new THREE.Vector3(), sweepEnd = new THREE.Vector3();
+  /** Returns true if any block started casting a shadow (the shadow map is then out of date). */
   function cullShadowCasters() {
+    let added = false;
     camera.updateMatrixWorld();   // the camera has moved this frame; render() would do this next
     viewFrustum.setFromProjectionMatrix(viewMat.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
     toSun.subVectors(sun.position, sun.target.position).normalize();
@@ -358,11 +360,20 @@ export async function buildScene(canvas, data, status = () => {}) {
       // the block's sphere, slid away from the sun as far as the shadow of its highest point reaches
       sweepEnd.copy(c).addScaledVector(toSun, -(m.geometry.boundingBox.max.y - LOWEST) / toSun.y);
       // outside if the whole swept capsule is behind any one plane of the frustum
-      m.castShadow = !viewFrustum.planes.some(p => p.distanceToPoint(c) < -r && p.distanceToPoint(sweepEnd) < -r);
+      const cast = !viewFrustum.planes.some(p => p.distanceToPoint(c) < -r && p.distanceToPoint(sweepEnd) < -r);
+      if (cast && !m.castShadow) added = true;
+      m.castShadow = cast;
     }
+    return added;
   }
 
   const clock = new THREE.Clock(), sunOff = new THREE.Vector3();
+  // shadows are the costliest part of a frame: redraw the shadow map at once when the sun moves
+  // (time of day, or re-centring on the camera below), otherwise only every few frames so moving
+  // trains and people still drag their shadows along
+  const SHADOW_EVERY = 4, shadowSun = new THREE.Vector3(NaN, 0, 0);
+  let shadowTick = 0;
+  renderer.shadowMap.autoUpdate = false;
   function start(onFrame) {
     function frame() {
       const dt = Math.min(clock.getDelta(), .05);
@@ -380,7 +391,10 @@ export async function buildScene(canvas, data, status = () => {}) {
         sun.target.position.set(focus.x, 0, focus.z); sun.position.copy(sun.target.position).add(sunOff);
       }
       city.update(camera, scene.fog.far);
-      cullShadowCasters();
+      // a block that starts casting must be in the map at once, or its shadow blinks in late
+      if (cullShadowCasters() || ++shadowTick >= SHADOW_EVERY || !shadowSun.equals(sun.position)) {
+        renderer.shadowMap.needsUpdate = true; shadowTick = 0; shadowSun.copy(sun.position);
+      }
       renderer.render(scene, camera); onFrame(camera);
       requestAnimationFrame(frame);
     }

@@ -217,7 +217,12 @@
   };
   const TOGGLES = {
     // stop re-rendering the shadow map every frame (shadows freeze but stay drawn): the shadow pass's cost
-    'no shadow pass': api => { const sm = api.renderer.shadowMap, was = sm.autoUpdate; sm.autoUpdate = false; return () => { sm.autoUpdate = was; }; },
+    // the app sets needsUpdate itself (it redraws the map every few frames), so swallow that too
+    'no shadow pass': api => {
+      const sm = api.renderer.shadowMap, was = sm.autoUpdate; sm.autoUpdate = false;
+      Object.defineProperty(sm, 'needsUpdate', { configurable: true, get: () => false, set: () => {} });
+      return () => { delete sm.needsUpdate; sm.autoUpdate = was; sm.needsUpdate = true; };
+    },
     // half the pixels: a big GPU drop means fragment/fill bound, none means vertex/draw bound
     'half resolution': api => { const r = api.renderer, pr = r.getPixelRatio(); r.setPixelRatio(pr / 2); return () => r.setPixelRatio(pr); },
     // the floating DOM labels (placeTags each frame, style recalc and layout)
