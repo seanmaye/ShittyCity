@@ -52,7 +52,7 @@ export const CITIES = {
       ['transit', 'transit.json'], ['city', 'city.json.gz'], ['cityBuildings', 'city_buildings.bin.gz'],
       ['nycLandmarks', 'landmarks.json'], ['monorailRoutes', 'monorail.json'],
     ],
-    home: { pos: [40.68914, -74.04583, 8200], target: [40.75041, -73.98495, 50] },
+    home: { pos: [40.74334, -73.99095, 1000], target: [40.75100, -73.98500, 60] },   // over Midtown, looking north
     sunTarget: [40.745, -73.984], sun: { lat: 40.745, lon: -73.984 },
     sea: true,    // true: everything that isn't mapped land is water (the harbour, the rivers, the ocean)
     storage: 'nyc3d:',

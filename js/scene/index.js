@@ -18,6 +18,12 @@ import { buildCity } from './city.js';
 import { buildCityMarks } from './citymarks.js';
 import { buildTransitMap } from './transitmap.js';
 import { buildOldTrolleys } from './oldtrolley.js';
+// New York (ported from the NYC City Model): towers, East River bridges, outer-borough landmarks
+// and the proposed East River monorail
+import { buildLandmarks as buildNycLandmarks } from './nyc/landmarks.js';
+import { buildBridges as buildNycBridges } from './nyc/bridges.js';
+import { buildBoroughMarks } from './nyc/boroughmarks.js';
+import { buildMonorail as buildNycMonorail } from './nyc/monorail.js';
 // let the status line paint between build steps (a timer, so it also works in background tabs)
 const nextFrame = () => new Promise(r => setTimeout(r, 16));
 // what a feature contributes when the city doesn't have it (the Philadelphia proposals, say)
@@ -47,6 +53,11 @@ export async function buildScene(canvas, data, status = () => {}) {
   const monorail = data.landmarks
     ? buildMonorail(scene, river, ground.bridgeSegs, data.buildings, data.landmarks, data.sports ? courtTest(data.sports) : undefined)
     : { curve: null, cars: [], trainWinMat: { emissiveIntensity: 0 }, update() {} };
+  // New York's modelled towers, bridges and borough landmarks (data/nyc/landmarks.json)
+  const nyc = data.nycLandmarks ? buildNycLandmarks(scene, data.nycLandmarks) : none();
+  const nycBridges = data.nycLandmarks ? buildNycBridges(scene).bridgeSpans : [];
+  if (data.nycLandmarks) buildBoroughMarks(scene);
+  const nycMono = data.monorailRoutes ? buildNycMonorail(scene, data.monorailRoutes) : { routes: [], labels: [], update() {} };
   buildTrees(scene, data.trees);
   const updateShells = data.landmarks ? buildShells(scene, river) : () => {};
   let sports = none(), yard = none();
@@ -72,13 +83,14 @@ export async function buildScene(canvas, data, status = () => {}) {
   const old53 = data.trolley1953 ? buildOldTrolleys(scene, data.trolley1953, renderer) : none();   // 1953 streetcar track and cars
   // the monorails' cars can be boarded like any transit car (positioned by their own modules)
   const monoSlots = [];
-  const addTrain = (cars, line, lineName, color) => cars.forEach((car, c) => monoSlots.push({
-    line, lineName, color, k: 0, c, pos: new THREE.Vector3(), dir: new THREE.Vector3(0, 0, 1), q: new THREE.Quaternion(),
+  const addTrain = (cars, line, lineName, color, k = 0) => cars.forEach((car, c) => monoSlots.push({
+    line, lineName, color, k, c, pos: new THREE.Vector3(), dir: new THREE.Vector3(0, 0, 1), q: new THREE.Quaternion(),
     sync() { this.pos.copy(car.position); this.pos.y -= 1.6; this.dir.set(0, 0, 1).applyQuaternion(car.quaternion); this.q.copy(car.quaternion); },
     onBoard(on) { car.visible = !on; },
   }));
   addTrain(monorail.cars, 'mono:loop', 'Riverfront loop monorail (proposed)', '#d6452f');
   sports.trains.forEach((cars, i) => addTrain(cars, 'mono:shuttle' + i, `${sports.lines[i].name} (proposed)`, '#1f9a8f'));
+  nycMono.routes.forEach(r => r.trains.forEach((t, k) => addTrain(t.cars, 'mono:' + r.id, `${r.name} monorail (proposed)`, r.color, k)));
   monoSlots.forEach(sl => sl.sync());
   if (monoSlots.length) subway.registerFleet('monorail', { car: 14 }, monoSlots);
   if (old53.slots.length) subway.registerFleet('pcc53', SPEC.pcc, old53.slots);   // the 1953 streetcars can be boarded too
@@ -94,13 +106,15 @@ export async function buildScene(canvas, data, status = () => {}) {
     if (l.t === 'City Hall') return { text: l.t, pos: lm.cityhall.clone().setY(l.y) };
     if (l.river !== undefined) return { text: l.t, pos: river.atLat(39.9575).p.clone().setY(l.y) };
     return { text: l.t, pos: new THREE.Vector3(l.x, l.y, l.z) };
-  }).concat(sports.labels, yard.labels, subway.labels, marks.labels, old53.labels);
+  }).concat(sports.labels, yard.labels, subway.labels, marks.labels, old53.labels, nyc.labels.filter(l => !nycBridges.some(b => b.id === l.text)), nycMono.labels,
+    nycBridges.map(b => ({ text: b.id, far: 3700, pos: new THREE.Vector3((b.a[0] + b.b[0]) / 2, b.labelHeight, (b.a[1] + b.b[1]) / 2) })));
   // instanced meshes hold instances far from their own origin: never let three cull them as a whole
   scene.traverse(o => { if (o.isInstancedMesh) o.frustumCulled = false; });
 
   // "Show transit lines": every rail line plus the proposed monorails
   const mono = [...(monorail.curve ? [{ id: 'loop', color: '#d6452f', P: monorail.curve.getSpacedPoints(1500) }] : []),
-    ...sports.curves.map((c, i) => ({ id: 'shuttle' + i, color: '#1f9a8f', P: c.getSpacedPoints(800) }))];
+    ...sports.curves.map((c, i) => ({ id: 'shuttle' + i, color: '#1f9a8f', P: c.getSpacedPoints(800) })),
+    ...nycMono.routes.map(r => ({ id: 'mono:' + r.id, color: r.color, P: r.curve.getSpacedPoints(1500) }))];
   const tmap = buildTransitMap(scene, renderer, [...subway.routes, ...mono]);
 
   let riding = false;
@@ -117,7 +131,9 @@ export async function buildScene(canvas, data, status = () => {}) {
   // then every real rail line, grouped by network
   const PROPOSED = 'Monorails (proposed)';
   const lines = (monorail.curve ? [{ id: 'loop', name: 'Riverfront loop', group: PROPOSED, color: '#d6452f', hint: 'You’re in the lead car. The loop runs along the east bank past the Art Museum and Boathouse Row, then back down the west bank past 30th Street.' }] : [])
-    .concat(sports.lines.map((l, i) => ({ id: i, group: PROPOSED, color: '#1f9a8f', ...l })));
+    .concat(sports.lines.map((l, i) => ({ id: i, group: PROPOSED, color: '#1f9a8f', ...l })))
+    .concat(nycMono.routes.map(r => ({ id: 'm:mono:' + r.id, name: r.name, group: PROPOSED, color: r.color,
+      hint: `You’re in the lead car of the proposed ${r.name}. Look through the front or side windows as the monorail crosses the East River.` })));
   // the city's networks in order (js/cities.js); a line without a group belongs to the first
   const GROUPS = CITY.groups, groupOf = l => l.group || GROUPS[0];
   const rideable = new Set(subway.routes.map(r => r.id));
@@ -162,6 +178,9 @@ export async function buildScene(canvas, data, status = () => {}) {
     views.push({ id: 'sports' + i, name: r.label.replace(' Sports Park', ' courts'),
       pos: V(cx, 0, cz).addScaledVector(n, steep ? 70 : 120).addScaledVector(t, -110).setY(steep ? 190 : 95), target: V(cx, 2, cz).addScaledVector(t, 30) });
   });
+  // New York's named views (data/nyc/landmarks.json; its overview is the home view) and the bridges
+  for (const v of (data.nycLandmarks || {}).views || []) if (v.id !== 'overview') views.push({ id: v.id, name: v.name, pos: V(...v.pos), target: V(...v.target) });
+  if (nycBridges.length) views.push({ id: 'bridges', name: 'East River bridges', pos: V(1260, 475, 5070), target: V(-460, 70, 4030) });
   views.push(...subway.views, ...marks.views);
   // while a section is cut open the camera may look level into it (normally it stays above the horizon)
   function setCut(id) {
@@ -285,7 +304,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   function start(onFrame) {
     function frame() {
       const dt = Math.min(clock.getDelta(), .05);
-      monorail.update(dt, riding === 'loop', camera); old53.update(dt); subway.update(dt, camera); updateShells(dt); sports.update(dt, riding, camera); yard.update(dt); marks.update(dt);
+      monorail.update(dt, riding === 'loop', camera); old53.update(dt); subway.update(dt, camera); updateShells(dt); sports.update(dt, riding, camera); yard.update(dt); marks.update(dt); nycMono.update(dt);
       if (fly) stepFly(dt);
       if ((flyKeys.f || flyKeys.s || flyKeys.u) && riding === false && !subway.getRide()) stepFlyKeys(dt);
       if (riding === false && !subway.getRide() && !creative) controls.update();
