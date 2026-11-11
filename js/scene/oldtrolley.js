@@ -10,6 +10,7 @@ import { pairs } from '../data.js';
 import { M, litMats } from './materials.js';
 import { Builder, addRibbon } from './geometry.js';
 import { SPEC } from './subway.js';
+import { onWalnut } from './promenade.js';
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
@@ -91,7 +92,13 @@ export function buildOldTrolleys(scene, data, renderer) {
   const segs = ERAS.map(() => []), casSegs = CASING.map(() => []);   // flat [x0,y0,z0, x1,y1,z1, ...] per colour
   const addSegs = (out, pts) => { for (let i = 1; i < pts.length; i++) out.push(pts[i - 1][0], LIFT, pts[i - 1][1], pts[i][0], LIFT, pts[i][1]); };
   const track = pts => {   // one track: bed and two rails
-    addRibbon(bed, pts, 2.8, 0);
+    // no dark bed where Walnut St is a brick promenade: there the rails are set in the paving
+    let run = [];
+    pts.forEach((p, i) => {
+      const q = pts[i + 1], keep = q && !onWalnut((p[0] + q[0]) / 2, (p[1] + q[1]) / 2);
+      if (keep) { if (!run.length) run.push(p); run.push(q); } else if (run.length) { addRibbon(bed, run, 2.8, 0); run = []; }
+    });
+    if (run.length) addRibbon(bed, run, 2.8, 0);
     for (const sd of [-1, 1]) addRibbon(rails, offset(pts, sd * GAUGE / 2), .14, 0);
   };
   const groups = new Map(), byStreet = new Map();   // route list -> longest run (labels); street -> runs (loops)

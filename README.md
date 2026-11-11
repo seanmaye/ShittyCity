@@ -12,7 +12,9 @@ this same engine: see [docs/NYC.md](docs/NYC.md). The rest of this README is abo
 
 - **Center City, University City and Fairmount** are the original detailed area, with the
   hand-made proposals: styled landmarks, the monorail loop, the expressway sports parks, the
-  rail yard park and the Market Street subway cut-away.
+  rail yard park, Walnut Street as a car-free brick shopping street (22nd to Front), busy with
+  people who stroll, shop and sit for a coffee, and the
+  Market Street subway cut-away.
 - **The rest of the city** (about 500k more buildings, streets, parks, creeks and park trees)
   is drawn around it without changing anything in the original area.
 - **Every rail transit line** is modelled: the L, the B1-B3 Broad Street Line, the G1 and
@@ -21,6 +23,9 @@ this same engine: see [docs/NYC.md](docs/NYC.md). The rest of this README is abo
 - **Ride inside any train.** Pick a line under "Ride a line", or click any train car (or
   monorail car) to board it. Every car has a walkable cabin (M-4, B-IV, Kawasaki LRV, PCC,
   Silverliner IV, PATCO, monorail): drag to look, W A S D to walk, Esc to get off.
+- **See through someone’s eyes** on Walnut Street: click any of the people there to inhabit
+  them. You go where they go (you can look around, not steer), with a card showing their
+  age, sex, height, weight and a short biography. Esc or Space steps out.
 - **Fly around** with W A S D (or the arrow keys), Space to rise and Shift to sink.
 - **Citywide landmarks** are modelled on their real outlines: Lincoln Financial Field,
   Citizens Bank Park, Xfinity Mobile Arena, Independence Hall, Memorial Hall, and the Ben
@@ -114,6 +119,9 @@ js/scene/
   nature.js           trees, rowing shells
   sports.js           proposal: expressway sports parks + shuttle monorails
   yardpark.js         proposal: rail yard deck, park and the Railyard Bowl
+  promenade.js        proposal: Walnut St (22nd to Front) as a brick-paved shopping street
+  pedestrians.js      proposal: ~200 people on Walnut St who shop, stroll and sit for a coffee or a book
+  profiles.js         made-up name, age, sex, height, weight and biography for each of them
   subway.js           every rail line: tracks, tunnels, Els, platforms, trains, line rides,
                       the Market St cut-away and the walkable cabins of every car
   nyc/                New York's hand-built parts, ported from the NYC City Model: landmarks.js

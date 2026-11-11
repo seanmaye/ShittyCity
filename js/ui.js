@@ -13,9 +13,29 @@ export function createUI(api) {
     return { el, v: pos, section, layer, far: far || 6500, cutHide: cutHide || [] };
   });
   let showTags = true; const pv = new THREE.Vector3();
+  // the card for someone you're inhabiting on Walnut St
+  const persona = document.getElementById('persona'), peNow = document.getElementById('pe-now');
+  let personaOn = null;
+  function showPersona(c) {
+    persona.hidden = !c; personaOn = c ? c.id : null; if (!c) return;
+    document.getElementById('pe-name').textContent = c.name;
+    document.getElementById('pe-age').textContent = c.age;
+    document.getElementById('pe-sex').textContent = c.sex;
+    const tin = Math.round(c.height / 2.54), ft = Math.floor(tin / 12), inch = tin % 12;
+    document.getElementById('pe-h').textContent = `${ft}′${inch}″`;
+    document.getElementById('pe-h').title = `${c.height} cm`;
+    document.getElementById('pe-w').textContent = `${c.lb} lb`;
+    document.getElementById('pe-w').title = `${c.kg} kg`;
+    peNow.textContent = c.now; document.getElementById('pe-bio').textContent = c.bio;
+    // their face, from the same model as their figure in the street
+    const face = document.getElementById('pe-face'), cv = api.peds && api.peds.portrait(c.id);
+    face.setAttribute('aria-label', `Portrait of ${c.name}`);
+    if (cv && cv.parentNode !== face) face.replaceChildren(cv);
+  }
 
   function placeTags(camera) {
     if (!!api.getCar() !== carOn) syncCar();
+    if (carOn && personaOn !== null) { const c = api.getCar(); if (c && c.kind === 'person') { if (c.id !== personaOn) syncCar(); else if (c.now !== peNow.textContent) peNow.textContent = c.now; } }
     const now = performance.now(); minimap.update(camera, now); ridebar.update(now);
     const w = window.innerWidth, h = window.innerHeight, placed = [];
     LABELS.forEach(l => {
@@ -94,7 +114,8 @@ export function createUI(api) {
   });
   syncCut();
 
-  // click any train car (or a monorail car) to ride inside it; underground cars only inside an open cut
+  // click any train car (or a monorail car) to ride inside it; underground cars only inside an open cut.
+  // A cafe chair or bench on Walnut St works the same way: click to sit, Esc to stand up.
   const canvas = api.renderer.domElement, offBtn = document.getElementById('getoff');
   let down = null, carOn = false, hoverPending = false;
   // creative mode: clicking the view captures the mouse (pointer lock); the mouse then turns the
@@ -106,7 +127,7 @@ export function createUI(api) {
   const modeHint = document.getElementById('modehint');
   const syncModeHint = () => {
     modeHint.innerHTML = carOn ? ''
-      : locked ? 'Flying · <kbd>W A S D</kbd> move · <kbd>Space</kbd> / <kbd>Shift</kbd> up and down · scroll for speed · click a train to board · <kbd>Esc</kbd> to let go'
+      : locked ? 'Flying · <kbd>W A S D</kbd> move · <kbd>Space</kbd> / <kbd>Shift</kbd> up and down · scroll for speed · click a train to board, a chair to sit or a person to see through their eyes · <kbd>Esc</kbd> to let go'
       : '<kbd>Right-click</kbd> to fly with the mouse (creative mode)';
   };
   canvas.addEventListener('contextmenu', e => e.preventDefault());   // right-click enters creative mode instead
@@ -132,8 +153,14 @@ export function createUI(api) {
     const c = api.getCar(); carOn = !!c; offBtn.hidden = !carOn; canvas.style.cursor = carOn ? 'grab' : '';
     if (!carOn && locked) api.setCreative(true);   // got off with the mouse still captured: back to flying
     syncModeHint();
+    offBtn.textContent = c && c.kind === 'seat' ? 'Stand up' : c && c.kind === 'person' ? 'Leave' : 'Get off';
+    showPersona(c && c.kind === 'person' ? c : null);
     if (c) {
-      hint.textContent = c.kind === 'metro'
+      hint.textContent = c.kind === 'person'
+        ? `Seeing Walnut Street through ${c.name}’s eyes. You can’t steer; you go where they go. Drag or click to look around, Space, Esc or “Leave” to step out.`
+        : c.kind === 'seat'
+        ? (c.seat === 'cafe' ? 'Sitting at a café table on Walnut Street.' : 'Sitting on a bench on Walnut Street.') + ' Drag or click to look around, Space, Esc or “Stand up” to get up.'
+        : c.kind === 'metro'
         ? 'Aboard an L train, inside a SEPTA M-4 car. Drag or click to look around, W A S D or the arrow keys to walk the aisle, Esc or “Get off” to leave. The sign at the front shows the next stop.'
         : c.kind === 'trolley'
           ? `Aboard a ${c.line} trolley, inside a Kawasaki LRV. Walk up to the front for the view through the windscreen. Drag or click to look around, W A S D or the arrow keys to walk, Esc or “Get off” to leave.`
@@ -176,6 +203,7 @@ export function createUI(api) {
   // keys: inside a car W A S D / arrows walk the aisle; otherwise they fly the camera over the
   // city, with Space to rise and Shift to sink
   const keys = new Set(), flyKeys = new Set();
+  let holdSpace = false;   // the Space press that stood up from a seat doesn't also fly up, until it's released
   const KEYMAP = { w: 'f', arrowup: 'f', s: 'b', arrowdown: 'b', a: 'l', arrowleft: 'l', d: 'r', arrowright: 'r' };
   const FLYMAP = { ...KEYMAP, ' ': 'u', shift: 'd' };
   const applyKeys = () => api.moveCar((keys.has('f') ? 1 : 0) - (keys.has('b') ? 1 : 0), (keys.has('r') ? 1 : 0) - (keys.has('l') ? 1 : 0));
@@ -185,11 +213,13 @@ export function createUI(api) {
     const t = e.target, typing = t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'range'));
     if (typing) return;
     if (carOn) {
-      if (e.key === 'Escape') { api.leaveCar(); syncCar(); return; }
+      // Esc gets off any train or stands up from a seat; Space also stands up from a seat
+      if (e.key === 'Escape' || (e.key === ' ' && ['seat', 'person'].includes(api.getCar().kind))) { e.preventDefault(); if (e.key === ' ') holdSpace = true; api.leaveCar(); syncCar(); return; }
       const k = KEYMAP[e.key.toLowerCase()]; if (!k) return;
       e.preventDefault(); keys.add(k); applyKeys();
       return;
     }
+    if (e.key === ' ' && holdSpace) { e.preventDefault(); return; }
     const k = FLYMAP[e.key.toLowerCase()]; if (!k) return;
     if (t && t.type === 'range' && e.key.startsWith('Arrow')) return;   // the time slider keeps its arrow keys
     e.preventDefault();
@@ -197,6 +227,7 @@ export function createUI(api) {
     flyKeys.add(k); applyFly();
   });
   window.addEventListener('keyup', e => {
+    if (e.key === ' ') holdSpace = false;
     const k = KEYMAP[e.key.toLowerCase()]; if (k) { keys.delete(k); applyKeys(); }
     const f = FLYMAP[e.key.toLowerCase()]; if (f && flyKeys.delete(f)) { applyFly(); if (e.key === ' ') e.preventDefault(); }
   });

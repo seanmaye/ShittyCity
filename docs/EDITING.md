@@ -291,6 +291,40 @@ js/scene/sports.js     courts (SURFACE = line markings, EQUIP = nets, hoops, goa
                   about every 1.1 km, piers placed between courts at load time)
 js/scene/yardpark.js   rail yard deck, park, and the Railyard Bowl (bandshell, seats,
                   screens, light beams)
+js/scene/promenade.js  PROPOSAL: Walnut St, 22nd to Front, as a car-free shopping street.
+                  WALNUT = the centreline (metres). drawLines() skips every road piece on it
+                  (onPromenade) and oldtrolley.js leaves out the 1953 track bed there (onWalnut),
+                  so the rails sit in the paving. Herringbone brick HALF = 9 m each side, granite
+                  gutters either side of the streetcar track (CLEAR), and on the KERB lines
+                  (4.4 m out) a 24 m rhythm of lamp, bench, planter tree, bench. Facades parallel
+                  to the street and facing it get an awning and a shop window (lit at dusk) per
+                  ~6.5 m bay, cafe tables in front of about half. Adds the "Walnut St promenade"
+                  view. Every cafe chair and bench is a seat: click to sit (pickSeat/sit, wired
+                  into index.js pickCar/boardCar/leaveCar), drag to look, Space or Esc to stand.
+                  To pedestrianise another street, give it its own polyline the same way.
+                  Each shop bay also gets a door (frame here; the leaf swings in pedestrians.js),
+                  and nav = {at, project, seats, doors, obst, ...} is what the crowd walks by.
+js/scene/pedestrians.js  PROPOSAL: about 200 people on Walnut St (buildPedestrians(scene, nav, count)).
+                  Kyle's figures (people.js geo() and pose()), drawn instanced: one InstancedMesh per
+                  body part for everyone, posed on CPU skeletons. They stroll the lanes either side
+                  of the streetcar track (LANE, by direction), go into shops through the doors
+                  (which swing open) and come back out, and sit on benches (two a bench) and at
+                  cafe chairs with a coffee (sipping) or a book. Routes to every seat and door are
+                  checked against the obstacles at load; blocked ones are never used. Re-posing:
+                  every frame within 120 m, every 3rd within 350 m, else every 10th; still sitters
+                  once. When the viewer sits, they take a free place or move someone on.
+                  Click a person to inhabit them (pickPerson/inhabit/inhabitFrame, wired like a
+                  train ride in index.js): the camera is in their head and goes where they go; drag
+                  looks around; in a shop it stands just inside the held-open door. The #persona
+                  card (ui.js showPersona) shows their profile and what they're doing now, with a
+                  head-and-shoulders portrait (portrait(i): a small renderer of its own drawing the
+                  same parts and colours, facing forward). crowdGeometry() adds the face (eyes,
+                  brows, nose, mouth), lifts the hair cap off the forehead and gives some long hair.
+js/scene/profiles.js  made-up lives for the Walnut St people: makeProfile(i) gives a name, sex,
+                  age, height, weight (BMI 19-32), coffee order, book and a short biography from
+                  seeded word lists ({he} {is} {s}... fill in the grammar, including "they").
+                  Height sets the figure's size, and most people over 62 have grey hair. SHOPS
+                  names what each door's shop sells. All fictional.
 js/scene/subway.js     every rail line (data-transit + data-metro): rails, platforms, El decks and
                   columns, looping instanced trains (SPEC: car
                   sizes, cars per train, train spacing, speeds), and the cut-away sections:
