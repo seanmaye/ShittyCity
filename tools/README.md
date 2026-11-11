@@ -1,7 +1,7 @@
 # tools: rebuilding the subway data
 
 The page does not need anything in this folder to run. These files are only for regenerating
-the underground transit data (the `data-transit` block inside `schuylkill-monorail.html`).
+the underground transit data (the `data-transit` block inside `city-models.html`).
 Use them to add a line (the B, Regional Rail), refresh from OpenStreetMap, or change the depth
 and platform rules.
 
@@ -22,7 +22,7 @@ Data © OpenStreetMap contributors, ODbL. The page credits it.
 You need Python 3 (no extra packages). From the repository folder:
 
 ```
-python tools/build_transit.py tools/osm/transit.json tools/osm/routes.json schuylkill-monorail.html
+python tools/build_transit.py tools/osm/transit.json tools/osm/routes.json city-models.html
 ```
 
 That is a dry run. It prints what it would build: tracks, platforms, stations, entrances and the

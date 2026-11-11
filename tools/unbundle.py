@@ -2,7 +2,7 @@
 
   python -I tools/unbundle.py [bundled.html] [out_dir]
 
-Defaults: schuylkill-monorail.html -> the repo root. Writes index.html, css/style.css,
+Defaults: city-models.html -> the repo root. Writes index.html, css/style.css,
 js/**.js, data/*.json, data/<city>/* and docs/EDITING.md, overwriting what is there.
 Use it when someone has edited the shared HTML directly, then check the result with
 `python -I tools/unbundle.py --check`, which re-bundles and compares.
@@ -155,7 +155,7 @@ def check(src_html):
 
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    src = args[0] if args else os.path.join(ROOT, "schuylkill-monorail.html")
+    src = args[0] if args else os.path.join(ROOT, "city-models.html")
     if "--check" in sys.argv:
         sys.exit(0 if check(src) else 1)
     out = args[1] if len(args) > 1 else ROOT

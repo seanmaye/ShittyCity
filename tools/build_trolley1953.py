@@ -2,7 +2,7 @@
 
 usage: python -I build_trolley1953.py PTC_MAP3.GIF osm/streets_cc.json osm/oldtram.json data/trolley1953.json [--write] [--overlay out.png]
 
-Then run tools/bundle.py to refresh schuylkill-monorail.html.
+Then run tools/bundle.py to refresh city-models.html.
 
 Needs Pillow (pip install pillow).
 
