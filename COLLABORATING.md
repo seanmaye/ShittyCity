@@ -22,7 +22,7 @@ Run these in Git Bash or PowerShell.
    refuses to use the repository without this:
 
    ```
-   git config --global --add safe.directory "%(prefix)///192.168.168.72/tsptemp/sean/test"
+   git config --global --add safe.directory //192.168.168.72/tsptemp/sean/test/.git
    ```
 
 2. Clone it to your own computer:
