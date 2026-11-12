@@ -19,6 +19,8 @@ export const CITIES = {
     loadingArt: [
       { file: 'loading-waterfront.webp', colors: ['#f5703b', '#f9da70'] },
       { file: 'loading-street.webp', colors: ['#a28cc3', '#ffb853'] },
+      { file: 'loading-independence-hall.webp', colors: ['#23a6bc', '#f4c76b'] },
+      { file: 'loading-30th-street-station.webp', colors: ['#9e71bd', '#ffc56b'] },
     ],
     blurb: 'All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill.',
     // projection: x metres east, z metres south of (LAT0, LON0); MX is metres per degree of longitude here
@@ -51,6 +53,8 @@ export const CITIES = {
     loadingArt: [
       { file: 'loading-waterfront.webp', colors: ['#ea72a8', '#febe81'] },
       { file: 'loading-street.webp', colors: ['#5ea7ec', '#fda449'] },
+      { file: 'loading-bethesda-terrace.webp', colors: ['#20a5b6', '#c4d86b'] },
+      { file: 'loading-unisphere.webp', colors: ['#7d75ec', '#ffc08c'] },
     ],
     blurb: 'Manhattan, Brooklyn and Queens, the East River bridges, eleven subway lines and a proposed East River monorail loop.',
     frame: { LAT0: 40.745, LON0: -73.984, MX: 84096.03595426386, MZ: 111000 },
@@ -80,6 +84,9 @@ export const CITIES = {
     id: 'jsh', name: 'Jersey Shore, PA',
     loadingArt: [
       { file: 'loading-overlook.webp', colors: ['#e8572a', '#f6c445'] },
+      { file: 'loading-allegheny-street.webp', colors: ['#e66991', '#ffc06d'] },
+      { file: 'loading-pine-creek.webp', colors: ['#29a3ae', '#badd65'] },
+      { file: 'loading-river-island.webp', colors: ['#80ae3c', '#f7cb4e'] },
     ],
     blurb: 'A Lycoming County river town on the West Branch of the Susquehanna, with Bald Eagle Mountain and a proposed monorail loop to Antes Fort.',
     frame: { LAT0: 41.2025, LON0: -77.2536, MX: 83877.23, MZ: 111000 },   // Allegheny & Main; tools/jsh/extent.py
