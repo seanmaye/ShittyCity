@@ -78,6 +78,9 @@ export const CITIES = {
   },
   jsh: {
     id: 'jsh', name: 'Jersey Shore, PA',
+    loadingArt: [
+      { file: 'loading-overlook.webp', colors: ['#e8572a', '#f6c445'] },
+    ],
     blurb: 'A Lycoming County river town on the West Branch of the Susquehanna, with Pine Creek, Bald Eagle Mountain and the hills around it.',
     frame: { LAT0: 41.2025, LON0: -77.2536, MX: 83877.23, MZ: 111000 },   // Allegheny & Main; tools/jsh/extent.py
     dir: 'data/jsh', prefix: 'jsh-',
