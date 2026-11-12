@@ -62,14 +62,19 @@ const M = (x, y, z, ry = 0, sx = 1, sy = 1, sz = 1, rx = 0, rz = 0) =>
   new THREE.Matrix4().compose(V(x, y, z), QU.setFromEuler(EUL.set(rx, ry, rz, 'YXZ')).clone(), V(sx, sy, sz));
 
 /** hip roof w x d, ridge h above the eaves, corners turned up by `up` (w == d: a pyramid) */
-function hipRoof(w, d, h, up) {
+function hipRoof(w, d, h, up, frontPrint = false) {
   const r = Math.max(0, (w - d) / 2), W = w / 2, D = d / 2;
   const cFL = [-W, up, D], cFR = [W, up, D], cBL = [-W, up, -D], cBR = [W, up, -D];
   const mF = [0, 0, D], mB = [0, 0, -D], mL = [-W, 0, 0], mR = [W, 0, 0], rL = [-r, h, 0], rR = [r, h, 0];
-  const tris = [[cFL, mF, rL], [mF, cFR, rR], [rL, mB, cBL], [rR, cBR, mB], [cFR, mR, rR], [mR, cBR, rR], [rL, mL, cFL], [rL, cBL, mL]];
-  if (r > 0) tris.push([mF, rR, rL], [rL, rR, mB]);
+  const front = [[cFL, mF, rL], [mF, cFR, rR]];
+  const rest = [[rL, mB, cBL], [rR, cBR, mB], [cFR, mR, rR], [mR, cBR, rR], [rL, mL, cFL], [rL, cBL, mL]];
+  if (r > 0) { front.push([mF, rR, rL]); rest.push([rL, rR, mB]); }
   const pos = [], uv = [];
-  for (const t of tris) for (const p of t) { pos.push(...p); uv.push((p[0] + p[2]) * 2.2, p[1] * 4.5); }
+  for (const faces of [front, rest]) for (const p of faces.flat()) {
+    pos.push(...p);
+    if (frontPrint) uv.push(...(faces === front ? [p[0] / w + .5, 1 - p[2] / D] : [0, 0]));
+    else uv.push((p[0] + p[2]) * 2.2, p[1] * 4.5);
+  }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   g.computeVertexNormals(); return g;
@@ -381,6 +386,16 @@ export function buildChinatown(scene, { buildings }) {
 
   /** a market stall at (x, z) in the lot, facing +z (dir 1) or -z (dir -1) */
   const STALL_COLORS = ['#c22a1f', '#e0a92a', '#2f7d5b', '#1e4d8c', '#d0601c', '#7a2a8c'].map(c => std(c, { roughness: .85, side: THREE.DoubleSide }));
+  // Print across the slope so the name is visible above the arcade cabinets and from overhead.
+  const arcadePrint = tex(512, 128, (g, w, h) => {
+    g.fillStyle = '#c22a1f'; g.fillRect(0, 0, w, h);
+    g.font = `900 66px ${LAT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.strokeStyle = '#4c1319'; g.lineWidth = 8; g.lineJoin = 'round';
+    g.strokeText('LUCKY ARCADE', w / 2, h * .72, w * .66);
+    g.fillStyle = '#fff3cf'; g.fillText('LUCKY ARCADE', w / 2, h * .72, w * .66);
+  });
+  const arcadeCanopy = std('#ffffff', { roughness: .85, side: THREE.DoubleSide, map: arcadePrint,
+    emissive: '#ffffff', emissiveMap: arcadePrint, emissiveIntensity: .28 });
   const stalls = [];
   function stall(x, z, dir, kind, board, w = 3.6, color = 0) {
     const ry = dir > 0 ? 0 : Math.PI, SM = (...a) => LM(x, 0, z).multiply(M(0, 0, 0, ry)).multiply(M(...a));
@@ -389,7 +404,8 @@ export function buildChinatown(scene, { buildings }) {
     B.add(cm, box(w, 2.2, .05), SM(0, 0, -D / 2 + .05));                                    // back cloth
     B.add(MAT.wood, box(w - .3, .95, .5), SM(0, 0, D / 2 - .45));                            // counter
     B.add(MAT.tan, box(w - .2, .05, .6), SM(0, .95, D / 2 - .45));
-    B.add(cm, hipRoof(w + .8, D + .7, .7, .22), SM(0, 2.6, 0));                               // canopy
+    const isArcade = kind === 'arcade';
+    B.add(isArcade ? arcadeCanopy : cm, hipRoof(w + .8, D + .7, .7, .22, isArcade), SM(0, 2.6, 0)); // canopy
     B.add(cm, box(w + .5, .3, .03), SM(0, 2.3, D / 2 + .32));                                 // valance
     const c = V(0, 2.0, D / 2 - .02).applyMatrix4(M(x, 0, z, ry)), r = V(Math.min(1.5, w / 2 - .25), 0, 0).applyAxisAngle(V(0, 1, 0), ry);
     lotQuad(c, r, V(0, .37, 0), boardCell(board));
