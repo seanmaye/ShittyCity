@@ -113,6 +113,18 @@ export const CITIES = {
     stationLines: s => (s.lines || []).join(' '),
     presets: [],   // no lit skyline: the panel leaves out Skyline lights
   },
+  pine: {
+    // not a map: one kitchen, built by hand in js/scene/pine/kitchen.js (main.js skips the map
+    // data, the city scene and its panel controls for a city with kitchen: true)
+    id: 'pine', name: '1938 Pine St Kitchen', kitchen: true,
+    blurb: 'One kitchen, drawer by drawer: open any drawer or cabinet to see what goes in it under the organization plan.',
+    dir: 'data/pine', prefix: 'pine-', files: [], storage: 'pine3d:',
+    title: '1938 Pine St Kitchen',
+    heading: '1938 Pine St Kitchen',
+    canvasLabel: '3D model of the kitchen at 1938 Pine St, with drawers and cabinets that open to show what is stored in each',
+    hint: 'Click any drawer or cabinet door to open it and see what goes inside, or pick one below. Drag to look around, scroll to zoom, right-drag to slide the view.',
+    credit: 'Modelled from photos of the kitchen · Contents follow the kitchen organization plan',
+  },
 };
 
 /** the active city (filled in place by setCity, so every importer sees the same object) */

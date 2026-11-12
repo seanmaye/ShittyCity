@@ -1,12 +1,13 @@
 # City models
 
-Interactive three.js models of whole cities, built from real map data, with proposals of our own. There are three so far: Philadelphia, New York and Jersey Shore, PA. They run on one shared engine and are delivered as one shareable HTML file. The page opens on a menu where you pick a city. "Change city" returns to that menu, and `?city=phl`, `?city=nyc` or `?city=jsh` links straight to a city.
+Interactive three.js models of whole cities, built from real map data, with proposals of our own. There are three so far: Philadelphia, New York and Jersey Shore, PA, plus one kitchen (1938 Pine St). They run on one shared engine and are delivered as one shareable HTML file. The page opens on a menu where you pick a city. "Change city" returns to that menu, and `?city=phl`, `?city=nyc` or `?city=jsh` links straight to a city.
 
 | City | What's in it | More |
 | --- | --- | --- |
 | **Philadelphia** (`phl`) | Philadelphia out to the city limits on its real terrain (USGS 3DEP elevation); every rail transit line (SEPTA Metro, Regional Rail, PATCO, NJ Transit); the 1953 streetcars; stadiums, Independence Hall and the Delaware bridges. Proposals: a Schuylkill riverfront monorail loop, expressway sports parks, a rail yard park and a bowl, and Walnut Street as a brick promenade busy with people you can see through the eyes of, djour's 265 starred restaurants modelled as storefronts on their real buildings with their own labels and cards, and a Chinatown night market whose arcade stall has games you can play. Chinatown is modelled in detail, Friendship Gate and all. Cut-away: under Market Street. | [docs/PHL.md](docs/PHL.md) |
 | **New York** (`nyc`) | Manhattan, Brooklyn and Queens; the four East River bridges; Manhattan's towers, the Wonder Wheel, the Unisphere and Citi Field; 11 subway lines. Proposal: an East River monorail loop. Cut-away: under Times Square. | [docs/NYC.md](docs/NYC.md) |
 | **Jersey Shore, PA** (`jsh`) | Jersey Shore borough and its neighbours on the West Branch of the Susquehanna: about 4,100 buildings, every street, the river round the island, Pine Creek, and Bald Eagle Mountain and the hills, on real terrain, with crop fields that grow and are harvested through the year, barns and silos, and in July a detasseling crew in the seed corn whose eyes you can see through. Proposal: the West Branch monorail loop via the river island and Antes Fort. | [docs/JSH.md](docs/JSH.md) |
+| **1938 Pine St Kitchen** (`pine`) | Not a city: one kitchen, modelled from photos, with every drawer and cabinet in the kitchen organization plan. Click a drawer or door (or pick it in the panel) to open it and see what goes inside; the corner lazy susan turns. The island sits with equal gaps on both sides: the aisle to the sink run is as wide as the space between the island and the west wall. | [docs/PINE.md](docs/PINE.md) |
 
 ## In every city
 
@@ -112,6 +113,8 @@ js/scene/
                       profiles, the 1953 streetcars
   nyc/                New York's hand-built parts: landmarks (Manhattan towers), bridges (East
                       River), boroughmarks (Wonder Wheel, Unisphere, Citi Field), the monorail
+  pine/               1938 Pine St Kitchen: the room, cabinets, appliances and opening drawers
+                      (kitchen.js) and the things stored in them (items.js)
   jsh/                Jersey Shore's labels and views, its elevation grid (terrain.js, laying
                       everything onto the hills), house types, farms, the detasseling crew,
                       the overlook and the late harvest

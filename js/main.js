@@ -6,6 +6,7 @@ import { CITIES, setCity } from './cities.js';
 import { loadData } from './data.js';
 import { buildScene } from './scene/index.js';
 import { createUI } from './ui.js';
+import { buildKitchen } from './scene/pine/kitchen.js';
 const $ = id => document.getElementById(id);
 const statusEl = $('status'), progress = $('loading-progress');
 const changeCity = () => location.assign(location.href.split(/[?#]/)[0]);
@@ -65,13 +66,22 @@ $('switch-city').addEventListener('click', changeCity);
 $('loading-back').addEventListener('click', changeCity);
 
 try {
-  const data = await loadData(p => status(`Loading map data… ${Math.round(p * 100)}%`, p * 50));
-  const api = await buildScene($('c'), data, status);
-  const ui = createUI(api);
-  status('Rendering the city…', 95);
-  const firstFrame = api.start(camera => ui.placeTags(camera));
-  window.__city = api; // handy for poking at the scene from the console
-  await firstFrame;
+  if (city.kitchen) {
+    // a single room, not a map: no data to load and none of the city controls
+    document.body.classList.add('kitchen');
+    status('Setting out the kitchen…', 60);
+    const api = buildKitchen($('c'));
+    window.__kitchen = api;
+    await api.start();
+  } else {
+    const data = await loadData(p => status(`Loading map data… ${Math.round(p * 100)}%`, p * 50));
+    const api = await buildScene($('c'), data, status);
+    const ui = createUI(api);
+    status('Rendering the city…', 95);
+    const firstFrame = api.start(camera => ui.placeTags(camera));
+    window.__city = api; // handy for poking at the scene from the console
+    await firstFrame;
+  }
   status('', 100);
   const screen = $('city-loading'), view = $('city-view');
   const hadFocus = screen.contains(document.activeElement);
