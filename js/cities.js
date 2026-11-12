@@ -16,7 +16,10 @@ function septaLines(s, LINES) {
 export const CITIES = {
   phl: {
     id: 'phl', name: 'Philadelphia',
-    loadingArt: ['loading-waterfront.webp', 'loading-street.webp'],
+    loadingArt: [
+      { file: 'loading-waterfront.webp', colors: ['#f5703b', '#f9da70'] },
+      { file: 'loading-street.webp', colors: ['#a28cc3', '#ffb853'] },
+    ],
     blurb: 'All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill.',
     // projection: x metres east, z metres south of (LAT0, LON0); MX is metres per degree of longitude here
     frame: { LAT0: 39.9560, LON0: -75.1760, MX: 85390, MZ: 111000 },
@@ -45,7 +48,10 @@ export const CITIES = {
   },
   nyc: {
     id: 'nyc', name: 'New York',
-    loadingArt: ['loading-waterfront.webp', 'loading-street.webp'],
+    loadingArt: [
+      { file: 'loading-waterfront.webp', colors: ['#ea72a8', '#febe81'] },
+      { file: 'loading-street.webp', colors: ['#5ea7ec', '#fda449'] },
+    ],
     blurb: 'Manhattan, Brooklyn and Queens, the East River bridges, eleven subway lines and a proposed East River monorail loop.',
     frame: { LAT0: 40.745, LON0: -73.984, MX: 84096.03595426386, MZ: 111000 },
     dir: 'data/nyc', prefix: 'nyc-',

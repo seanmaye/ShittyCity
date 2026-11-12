@@ -113,8 +113,8 @@ button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 
 }
 #loading-progress[hidden] { display: none; }
 #loading-progress::-webkit-progress-bar { background: #524b58; }
-#loading-progress::-webkit-progress-value { background: var(--loading-accent); }
-#loading-progress::-moz-progress-bar { background: var(--loading-accent); }
+#loading-progress::-webkit-progress-value { background: var(--loading-fill, var(--loading-accent)); }
+#loading-progress::-moz-progress-bar { background: var(--loading-fill, var(--loading-accent)); }
 .loading-copy #status {
   width: fit-content;
   max-width: min(100%, 560px);

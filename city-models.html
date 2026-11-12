@@ -33,7 +33,8 @@ Python helper below.
               NAME is the file name without .json / .json.gz / .bin.gz. Which blocks a city
               has is listed in section 3 and in its `files` entry in js/cities.js.
               Loading art uses application/webp-base64 and id="art-<city>-NAME", where NAME
-              is the file name without .webp. The city lists its two files in `loadingArt`.
+              is the file name without .webp. The city lists each file and its progress bar
+              gradient colors in `loadingArt`.
   1 <script type="module"> holding all the code:
       - import lines at the very top (THREE, OrbitControls, BufferGeometryUtils, Line2,
         LineMaterial, LineGeometry)
@@ -890,8 +891,8 @@ button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 
 }
 #loading-progress[hidden] { display: none; }
 #loading-progress::-webkit-progress-bar { background: #524b58; }
-#loading-progress::-webkit-progress-value { background: var(--loading-accent); }
-#loading-progress::-moz-progress-bar { background: var(--loading-accent); }
+#loading-progress::-webkit-progress-value { background: var(--loading-fill, var(--loading-accent)); }
+#loading-progress::-moz-progress-bar { background: var(--loading-fill, var(--loading-accent)); }
 .loading-copy #status {
   width: fit-content;
   max-width: min(100%, 560px);
@@ -1125,7 +1126,10 @@ function septaLines(s, LINES) {
 const CITIES = {
   phl: {
     id: 'phl', name: 'Philadelphia',
-    loadingArt: ['loading-waterfront.webp', 'loading-street.webp'],
+    loadingArt: [
+      { file: 'loading-waterfront.webp', colors: ['#f5703b', '#f9da70'] },
+      { file: 'loading-street.webp', colors: ['#a28cc3', '#ffb853'] },
+    ],
     blurb: 'All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill.',
     // projection: x metres east, z metres south of (LAT0, LON0); MX is metres per degree of longitude here
     frame: { LAT0: 39.9560, LON0: -75.1760, MX: 85390, MZ: 111000 },
@@ -1154,7 +1158,10 @@ const CITIES = {
   },
   nyc: {
     id: 'nyc', name: 'New York',
-    loadingArt: ['loading-waterfront.webp', 'loading-street.webp'],
+    loadingArt: [
+      { file: 'loading-waterfront.webp', colors: ['#ea72a8', '#febe81'] },
+      { file: 'loading-street.webp', colors: ['#5ea7ec', '#fda449'] },
+    ],
     blurb: 'Manhattan, Brooklyn and Queens, the East River bridges, eleven subway lines and a proposed East River monorail loop.',
     frame: { LAT0: 40.745, LON0: -73.984, MX: 84096.03595426386, MZ: 111000 },
     dir: 'data/nyc', prefix: 'nyc-',
@@ -9823,7 +9830,8 @@ function showLoading(city) {
   screen.dataset.city = city.id;
   heading.textContent = city.name;
   if (city.loadingArt?.length) {
-    const file = city.loadingArt[Math.floor(Math.random() * city.loadingArt.length)];
+    const { file, colors } = city.loadingArt[Math.floor(Math.random() * city.loadingArt.length)];
+    progress.style.setProperty('--loading-fill', `linear-gradient(90deg, ${colors.join(', ')})`);
     const embedded = $(`art-${city.prefix}${file.replace(/\.webp$/, '')}`);
     art.addEventListener('load', () => { art.hidden = false; }, { once: true });
     art.src = embedded ? `data:image/webp;base64,${embedded.textContent.trim()}` : `${city.dir}/${file}`;

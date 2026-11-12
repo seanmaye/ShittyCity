@@ -19,7 +19,8 @@ function showLoading(city) {
   screen.dataset.city = city.id;
   heading.textContent = city.name;
   if (city.loadingArt?.length) {
-    const file = city.loadingArt[Math.floor(Math.random() * city.loadingArt.length)];
+    const { file, colors } = city.loadingArt[Math.floor(Math.random() * city.loadingArt.length)];
+    progress.style.setProperty('--loading-fill', `linear-gradient(90deg, ${colors.join(', ')})`);
     const embedded = $(`art-${city.prefix}${file.replace(/\.webp$/, '')}`);
     art.addEventListener('load', () => { art.hidden = false; }, { once: true });
     art.src = embedded ? `data:image/webp;base64,${embedded.textContent.trim()}` : `${city.dir}/${file}`;

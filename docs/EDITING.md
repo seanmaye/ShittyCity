@@ -31,7 +31,8 @@ Python helper below.
               NAME is the file name without .json / .json.gz / .bin.gz. Which blocks a city
               has is listed in section 3 and in its `files` entry in js/cities.js.
               Loading art uses application/webp-base64 and id="art-<city>-NAME", where NAME
-              is the file name without .webp. The city lists its two files in `loadingArt`.
+              is the file name without .webp. The city lists each file and its progress bar
+              gradient colors in `loadingArt`.
   1 <script type="module"> holding all the code:
       - import lines at the very top (THREE, OrbitControls, BufferGeometryUtils, Line2,
         LineMaterial, LineGeometry)
