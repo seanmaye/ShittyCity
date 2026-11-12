@@ -58,7 +58,7 @@ function rectInRing(ring, [x0, z0, x1, z1]) {
 /** clear: rings ([[x, z], ...]) kept free of park trees (playing fields);
  *  sea: everything outside the land outlines (city.limits) is water, not countryside;
  *  core: the Center City extent [x0, z0, x1, z1] in metres, which buildGround paves itself */
-export function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea = false, core = null }) {
+export async function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea = false, core = null }) {
   const city = data.city, B = decode(data.cityBuildings);
   const tiles = new Map();   // key -> { cx, cz, r, full: [], roof: [], trees: [] }
   const tileOf = (x, z) => {
@@ -142,7 +142,7 @@ export function buildCity(scene, data, { waterMat, status = () => {}, clear = []
   const { bridgeSegs, flat: streets } = drawLines(scene, city.lines, { wet, tile: 2000 });
 
   // ---- buildings
-  status(`Raising ${(B.nB + B.nP).toLocaleString()} more buildings…`);
+  await status(`Raising ${(B.nB + B.nP).toLocaleString()} more buildings…`);
   // one instanced mesh per facade style per tile up close, one roof-only mesh per tile far away
   const per = new Map();   // tile -> { style: [indices] }
   const lights = [];

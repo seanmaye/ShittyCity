@@ -56,8 +56,81 @@ button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 
 .tag.stn{font-size:11px;font-weight:500;padding:2px 7px;border-width:1.5px}
 .tag.stn.boat{border-color:#2a7ab8;border-style:dashed}.tag.stn.metro,.tag.stn.nycsub{border-color:#2d6fc0}.tag.stn.broad{border-color:#f2862b}.tag.stn.patco{border-color:#cf3a3d}.tag.stn.regional{border-color:#5c6c96}.tag.stn.pcc{border-color:#e9a920}.tag.stn.trolley,.tag.stn.stop{border-color:#4f9a32}.tag.stn.stop{font-style:italic}
 .views button[aria-current="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-.status{margin:10px 0 0;font-size:13px}
-.status:empty{display:none}
+.city-loading {
+  --loading-accent: #ffbd68;
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  display: flex;
+  align-items: flex-end;
+  isolation: isolate;
+  overflow: auto;
+  padding: clamp(20px, 6vw, 96px);
+  padding-bottom: max(clamp(20px, 6vh, 76px), env(safe-area-inset-bottom));
+  padding-left: max(clamp(20px, 6vw, 96px), env(safe-area-inset-left));
+  padding-right: max(clamp(20px, 6vw, 96px), env(safe-area-inset-right));
+  background: #291e2c;
+  color: #fff6e8;
+}
+.city-loading[data-city="nyc"] {
+  --loading-accent: #ffce88;
+  background: #1d2941;
+}
+.city-loading[hidden] { display: none; }
+.loading-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  object-fit: cover;
+  z-index: -1;
+}
+.loading-copy { width: 100%; }
+#loading-city {
+  margin: 0 0 16px;
+  font-size: clamp(2.25rem, 8.3vw, 6.5rem);
+  font-weight: 900;
+  line-height: .98;
+  letter-spacing: -.035em;
+  text-transform: uppercase;
+  -webkit-text-stroke: 1px #181522;
+  text-shadow: 0 3px 12px #181522;
+  overflow-wrap: anywhere;
+}
+#loading-city:focus, #city-view:focus { outline: none; }
+#city-view[inert] { visibility: hidden; }
+#loading-progress {
+  appearance: none;
+  display: block;
+  width: min(100%, 560px);
+  height: 10px;
+  border: 1px solid #181522;
+  border-radius: 5px;
+  overflow: hidden;
+  background: #524b58;
+  color: var(--loading-accent);
+}
+#loading-progress[hidden] { display: none; }
+#loading-progress::-webkit-progress-bar { background: #524b58; }
+#loading-progress::-webkit-progress-value { background: var(--loading-fill, var(--loading-accent)); }
+#loading-progress::-moz-progress-bar { background: var(--loading-fill, var(--loading-accent)); }
+.loading-copy #status {
+  width: fit-content;
+  max-width: min(100%, 560px);
+  box-sizing: border-box;
+  margin: 10px 0 0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #181522;
+  color: #fff6e8;
+  font-size: 15px;
+}
+#loading-back { margin-top: 16px; background: #fff6e8; border-color: #fff6e8; color: #1d2231; }
+#loading-back:focus-visible { outline-color: var(--loading-accent); }
+@media (max-width: 600px) {
+  #loading-city { font-size: clamp(1.5rem, 9vw, 3.25rem); }
+}
 .credit{position:fixed;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 6px);margin:0;font-size:11px;color:var(--ink);background:var(--panel);border-radius:6px;padding:2px 7px;opacity:.85}
 .err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:24px;text-align:center;font-size:16px;color:#1d2b36}
 @media (max-width:520px){.tag{font-size:11px;padding:2px 7px}h1{font-size:17px}.views button{font-size:12px;padding:5px 9px}.credit{left:10px;right:auto;max-width:calc(100vw - 20px)}}
@@ -144,3 +217,22 @@ button.fish-x{width:32px;height:32px;padding:0;font-size:20px;line-height:1;back
 .fish-cell canvas{width:72px;height:72px}
 .fish-cell b{font-weight:600;line-height:1.2}
 .fish-cell span{color:var(--muted);font-size:11px}
+/* Lucky Arcade in Chinatown's night market (js/arcade.js) */
+.arc-modal{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,14,20,.5)}
+.arc-modal[hidden],.arc-menu[hidden],.arc-game[hidden]{display:none}
+.arc-card{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:14px 16px 16px;width:min(760px,100%);max-height:calc(100vh - 32px);overflow:auto;box-sizing:border-box;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.arc-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:6px}
+.arc-head h2{flex:1;margin:0;font-size:18px;font-weight:600;line-height:1.3}
+button.arc-x{width:32px;height:32px;padding:0;font-size:20px;line-height:1;background:transparent;color:var(--ink);border-color:var(--line)}
+.arc-quote{font-size:15px;color:var(--ink);font-style:italic;margin:6px 0 14px}
+.arc-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+button.arc-pick{display:flex;flex-direction:column;align-items:stretch;gap:4px;text-align:left;border-radius:12px;padding:8px 8px 10px;background:transparent;color:var(--ink);border:2px solid var(--line);font-weight:400}
+button.arc-pick:hover{border-color:var(--accent)}
+.arc-pick canvas{display:block;width:100%;height:auto;aspect-ratio:1;border-radius:8px;background:#060814}
+.arc-pick b{font-size:16px;font-weight:600;margin-top:4px}
+.arc-pick span{font-size:13px;line-height:1.4;color:var(--muted)}
+.arc-pick .arc-best{font-size:12px;font-weight:600;color:var(--ink)}
+.arc-cv{display:block;width:min(100%,calc(100vh - 250px));min-width:240px;height:auto;aspect-ratio:1;margin:0 auto;border-radius:10px;touch-action:none;cursor:crosshair;background:#060814}
+.arc-cv:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.arc-msg{margin:10px 0 0;min-height:42px;color:var(--ink)}
+.arc-row{margin-top:8px}

@@ -4,7 +4,7 @@ Interactive three.js models of whole cities, built from real map data, with prop
 
 | City | What's in it | More |
 | --- | --- | --- |
-| **Philadelphia** (`phl`) | Philadelphia out to the city limits on its real terrain (USGS 3DEP elevation); every rail transit line (SEPTA Metro, Regional Rail, PATCO, NJ Transit); the 1953 streetcars; stadiums, Independence Hall and the Delaware bridges. Proposals: a Schuylkill riverfront monorail loop, expressway sports parks, a rail yard park and a bowl, and Walnut Street as a brick promenade busy with people you can see through the eyes of. Cut-away: under Market Street. | [docs/PHL.md](docs/PHL.md) |
+| **Philadelphia** (`phl`) | Philadelphia out to the city limits on its real terrain (USGS 3DEP elevation); every rail transit line (SEPTA Metro, Regional Rail, PATCO, NJ Transit); the 1953 streetcars; stadiums, Independence Hall and the Delaware bridges. Proposals: a Schuylkill riverfront monorail loop, expressway sports parks, a rail yard park and a bowl, and Walnut Street as a brick promenade busy with people you can see through the eyes of, and a Chinatown night market whose arcade stall has games you can play. Chinatown is modelled in detail, Friendship Gate and all. Cut-away: under Market Street. | [docs/PHL.md](docs/PHL.md) |
 | **New York** (`nyc`) | Manhattan, Brooklyn and Queens; the four East River bridges; Manhattan's towers, the Wonder Wheel, the Unisphere and Citi Field; 11 subway lines. Proposal: an East River monorail loop. Cut-away: under Times Square. | [docs/NYC.md](docs/NYC.md) |
 
 ## In every city
@@ -48,7 +48,7 @@ python -I tools/perf/perf.py run --quick
 python -I tools/bundle.py
 ```
 
-This rebuilds `city-models.html` at the repo root (about 36 MB), the file you send people. It has the CSS, every script and every city's data inline, so it opens with a double-click and needs no server. three.js and the font still load from their CDNs, so viewers need an internet connection.
+This rebuilds `city-models.html` at the repo root (about 39 MB), the file you send people. It has the CSS, every script and every city's data inline, so it opens with a double-click and needs no server. three.js and the font still load from their CDNs, so viewers need an internet connection.
 
 **Workflow.** Edit the sources (`js/`, `css/`, `data/`, `index.html`) and check them with the local server. Then run the bundler and commit the sources and the rebuilt HTML together.
 

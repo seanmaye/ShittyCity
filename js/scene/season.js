@@ -24,25 +24,38 @@ const at = (keys, d) => { const k = keys.findIndex(p => p[0] > d); if (k <= 0) r
 export const SNOW = { value: 0 };   // shared shader uniform
 const listeners = [];
 let state = null;
+
+/** Day of the year for a local date, and back. Use UTC for the difference across DST. */
+export const dayOfYear = d => (Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(d.getFullYear(), 0, 1)) / 864e5;
+export const dateOfDay = (day, year = new Date().getFullYear()) => new Date(year, 0, 1 + day, 12);
+const daysInYear = year => dayOfYear(new Date(year, 11, 31)) + 1;
+
+// The curves use a 365-day calendar. Interpolate Feb 29 and keep March through
+// December aligned to the same dates in leap years.
+const curveDay = (day, days) => {
+  if (days !== 366 || day < 59) return day;
+  return day === 59 ? 58.5 : day - 1;
+};
+
 /** fn(state) now and on every change; state = { day, snow, bare, fall, bloom, flowers, fresh, dormant } */
 export function onSeason(fn) { listeners.push(fn); if (state) fn(state); }
-export function setSeason(day) {
-  day = ((Math.round(day) % 365) + 365) % 365;
+export function setSeason(day, year = new Date().getFullYear()) {
+  const days = daysInYear(year);
+  day = ((Math.round(day) % days) + days) % days;
   state = { day };
-  for (const [k, keys] of Object.entries(CURVES)) state[k] = at(keys, day);
+  const d = curveDay(day, days);
+  for (const [k, keys] of Object.entries(CURVES)) state[k] = at(keys, d);
   SNOW.value = state.snow;
   listeners.forEach(fn => fn(state));
   return state;
 }
 export const getSeason = () => state;
 
-/** Day of the year for a Date, and back (in a non-leap year). */
-export const dayOfYear = d => Math.min(364, Math.floor((Date.UTC(2001, d.getMonth(), d.getDate()) - Date.UTC(2001, 0, 1)) / 864e5));
-export const dateOfDay = (day, year = new Date().getFullYear()) => { const d = new Date(Date.UTC(2001, 0, 1) + day * 864e5); return new Date(year, d.getUTCMonth(), d.getUTCDate(), 12); };
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 /** "Nov 11 · fall" (astronomical seasons) */
-export function formatDay(day) {
-  const d = dateOfDay(day), name = day < 78 || day >= 354 ? 'winter' : day < 171 ? 'spring' : day < 264 ? 'summer' : 'fall';
+export function formatDay(day, year = new Date().getFullYear()) {
+  const d = dateOfDay(day, year), seasonDay = curveDay(day, daysInYear(year));
+  const name = seasonDay < 78 || seasonDay >= 354 ? 'winter' : seasonDay < 171 ? 'spring' : seasonDay < 264 ? 'summer' : 'fall';
   return `${MON[d.getMonth()]} ${d.getDate()} · ${name}`;
 }
 

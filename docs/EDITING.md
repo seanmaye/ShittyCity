@@ -3,7 +3,7 @@ EDITING GUIDE: City models (single-file build)
 
 This guide is for an AI assistant (or a person) who has only this HTML file and wants to
 change a city. Everything the page needs is inside the file: styles, all scripts, and
-all map data. three.js r128 loads from the jsDelivr CDN.
+all map data and loading illustrations. three.js r128 loads from the jsDelivr CDN.
 
 The page holds several cities on one engine: today Philadelphia (id "phl") and New York
 (id "nyc"). It opens on a start menu (#menu) to pick one, or goes straight to one with
@@ -22,14 +22,17 @@ Python helper below.
   <head>      <style> (HUD, labels, start menu) and an import map that maps "three" to three@0.128.0
   <body>      HUD markup: #ride, #transit, #lbl, #cut, #getoff, #switch-city buttons, #xhair
               (creative-mode crosshair), #modehint, #time slider (+ #time-out), #legend,
-              #lines picker, #view-btns (Go to), #heading, #hint, #status, #tags, #credit;
+              #lines picker, #view-btns (Go to), #heading, #hint, #tags, #credit;
               the #persona card (someone inhabited on Philadelphia's Walnut St);
-              the start menu #menu with #cities
+              the start menu #menu with #cities and the #city-loading screen with #status
   data blocks, city by city, one per file in the city's data folder:
               <script type="application/json" id="data-<city>-NAME" data-file="<city>/FILE">...</script>
               <script type="application/gzip-base64" id="data-<city>-NAME" data-file="<city>/FILE">base64</script>
               NAME is the file name without .json / .json.gz / .bin.gz. Which blocks a city
               has is listed in section 3 and in its `files` entry in js/cities.js.
+              Loading art uses application/webp-base64 and id="art-<city>-NAME", where NAME
+              is the file name without .webp. The city lists each file and its progress bar
+              gradient colors in `loadingArt`.
   1 <script type="module"> holding all the code:
       - import lines at the very top (THREE, OrbitControls, BufferGeometryUtils, Line2,
         LineMaterial, LineGeometry)
@@ -327,7 +330,7 @@ js/scene/nature.js     trees (instanced) and rowing shells (on a river centrelin
                  the season: crown colours (SUMMER, FRESH, AUTUMN, BLOSSOM), leaf drop (crowns
                  scaled to zero, bare-branch planes shown), and flower beds (FLOWERS) near one tree
                  in six. Returned meshes with userData.season === false stay hidden in city tiles.
-js/scene/season.js     time of year: setSeason(day 0-364) evaluates CURVES (snow, bare, fall, bloom,
+js/scene/season.js     time of year: setSeason(day of year starting at 0) evaluates CURVES (snow, bare, fall, bloom,
                  flowers, fresh, dormant) and calls every onSeason(fn) listener. addSnow(mat,
                  amount) whitens up-facing surfaces by the SNOW uniform (index.js applies it to
                  every mesh once built; userData.noSnow opts out, userData.snowAmt scales it:
@@ -409,6 +412,15 @@ js/fishing.js    the fishing minigame (a dialog over the city): invitation, then
                  The catch log is kept in localStorage (CITY.storage + 'creel'). Snap the line and
                  the angler yells at you (YELLS, in a speech bubble), then always gives you one
                  more try (ONE_MORE; the button becomes "One more try").
+js/arcade.js     Lucky Arcade (a dialog over the city), opened by a click on the stall in Chinatown's
+                 night market: a menu of GAMES, each make() -> { update(dt, inp), draw(g), score,
+                 over, result, help } on one 480 x 480 canvas. pingPong (first to 7 against a CPU
+                 paddle; score = longest rally), skySwarm (fixed shooter: bugs enter on curves,
+                 hold a swaying formation, dive and drop bombs; BUGS = kinds and points),
+                 dumplingDash (maze chase on MAZE: '#' wall, '.' seed, 'o' fortune cookie, '-' pen
+                 door, 'C' pen, ' ' void except the row-9 tunnel, '_' eaten; four CATS with their
+                 own chase targets on a scatter/chase SCHEDULE). Best scores in localStorage
+                 (CITY.storage + 'arcade').
 js/ridebar.js    line diagram (#ridebar) while riding, from api.rideStrip() (subway.js): stops
                  evenly spaced, the train between them, passed stops greyed, the next in bold.
 
@@ -440,6 +452,17 @@ anglers.js       people fishing the Schuylkill (buildAnglers(scene, river, boats
                  water's edge (walked out from the water to the bank); figure, rod, line, bobber,
                  bucket, cooler. pick() / info(i) (name, hello, spot, view); wired as api.pickAngler,
                  anglerInfo, viewAngler; ui.js opens js/fishing.js on a click.
+chinatown.js     Chinatown dressed in detail (buildChinatown(scene, { buildings })). Streets are OSM
+                 centrelines in metres (RACE, TENTH, NINTH, ELEVENTH, ARCH; CROSSINGS keep things
+                 back from the corners). Facades 5-26 m tall that face a street get a lit board
+                 (BOARDS), a blade sign (BLADES; both from one canvas atlas, signAtlas) and an
+                 awning per bay. Lantern strings cross Race, 10th and 9th; pagoda-topped lamps line
+                 their kerbs. The Friendship Gate spans 10th at GATE_S. A dragon dance loops along
+                 Race (loopAt). OUR ADDITION: a night market on the open lot east of 10th between
+                 Race and Cherry (LOT_S; lot frame u east, v south), with stalls, tables, string
+                 lights, a pavilion and the Lucky Arcade stall: pickStall / stallView, wired as
+                 api.pickStall and api.viewStall; ui.js opens js/arcade.js on a click. Static
+                 pieces are merged into one mesh per material (batch / mergeGeos).
 boats.js         river boats from data-phl-boats: piers (deck, pilings, float, shelter), boat
                  models, fleets easing into each stop. Registered with subway.registerFleet as
                  kind 'boat' (CAR_IN.boat is the walkable cabin; aboard, only the model's outer
@@ -712,8 +735,8 @@ Add another rail line
     3. Every new material that must stay visible inside a cut needs userData.noClip = true.
 
 Change the sky and light by time of day: KEYS and LIGHT in the js/scene/sky.js chunk
-(keyed by sun elevation in degrees). The slider opens at sunset minus 20 minutes
-(setTime(sky.sunset - .35) in index.js).
+(keyed by sun elevation in degrees). The time and season open at the browser's
+current local date and time, set in js/scene/index.js.
 Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, height]).
 
 
@@ -743,7 +766,7 @@ Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, hei
   in view (far city tiles draw only roofs). Merge or instance new geometry; don't add
   thousands of separate meshes. Instanced meshes must have frustumCulled = false (or manage
   their own visibility, as city.js does), because three.js r128 culls them by their origin.
-- The file is about 36 MB (Philadelphia about 24, 8 of it the terrain; New York about 11). The gzip blocks hold most
+- The file is about 39 MB (Philadelphia about 24, 8 of it the terrain; New York about 11). The gzip blocks hold most
   of the data; keep new bulky data in a gzip block rather than JSON.
 - Keep each city's attribution line (CITY.credit). Philadelphia: map data (c) OpenStreetMap
   contributors, ODbL; building data (c) City of Philadelphia. New York: buildings NYC Open
