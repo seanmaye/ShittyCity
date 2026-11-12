@@ -76,6 +76,7 @@ class _Handler(http.server.SimpleHTTPRequestHandler):
 
 class _Server(http.server.ThreadingHTTPServer):
     daemon_threads = True
+    request_queue_size = 128   # the page opens dozens of module and data requests at once; Windows refuses past the default 5
 
     def handle_error(self, request, client_address):   # the browser closing sockets early is fine
         pass
