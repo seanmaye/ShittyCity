@@ -17,6 +17,7 @@
 <body>
 <canvas id="c" aria-label="3D city model"></canvas>
 <div id="tags" aria-hidden="true"></div>
+<div id="binoc" aria-hidden="true" hidden><svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet"><defs><filter id="bn-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="7"/></filter><mask id="bn-mask" maskUnits="userSpaceOnUse" x="-4000" y="-4000" width="9600" height="8900"><rect x="-4000" y="-4000" width="9600" height="8900" fill="#fff"/><g filter="url(#bn-soft)"><circle cx="540" cy="450" r="405"/><circle cx="1060" cy="450" r="405"/></g></mask></defs><rect x="-4000" y="-4000" width="9600" height="8900" mask="url(#bn-mask)"/></svg><p id="binoc-cap"></p></div>
 <div id="xhair" aria-hidden="true" hidden></div>
 <div id="modehint" class="modehint" role="status"></div>
 <div class="hud"><div class="card">
@@ -46,6 +47,7 @@
 <div class="mm-ctl"><button type="button" id="mm-in" aria-label="Zoom the map in" title="Zoom in">+</button><button type="button" id="mm-out" aria-label="Zoom the map out" title="Zoom out">−</button></div>
 <span class="mm-scale" id="mm-scale" aria-hidden="true"></span></div>
 <aside class="persona" id="persona" aria-live="polite" hidden><div class="pe-face" id="pe-face" role="img"></div><h2 id="pe-name"></h2><dl class="pe-facts"><div><dt>Age</dt><dd id="pe-age"></dd></div><div><dt>Sex</dt><dd id="pe-sex"></dd></div><div><dt>Height</dt><dd id="pe-h"></dd></div><div><dt>Weight</dt><dd id="pe-w"></dd></div></dl><p class="pe-now"><span>Now</span> <b id="pe-now"></b></p><p class="pe-bio" id="pe-bio"></p></aside>
+<div class="actions" id="actions" role="group" aria-label="Things to do" hidden></div>
 <div class="ridebar" id="ridebar" role="status" aria-live="off" hidden><div class="rb-h"><span class="rb-dot" id="rb-dot" aria-hidden="true"></span><b id="rb-name"></b><span class="rb-to" id="rb-to"></span><span class="rb-next" id="rb-next"></span></div><svg id="rb-svg" viewBox="0 0 1000 120" preserveAspectRatio="xMidYMax meet" aria-hidden="true"></svg></div>
 <p class="credit" id="credit"></p>
 <div class="menu" id="menu" hidden><div class="menu-card" role="dialog" aria-labelledby="menu-h"><h1 id="menu-h"><span aria-hidden="true"></span>City models</h1>

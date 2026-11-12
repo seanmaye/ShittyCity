@@ -87,7 +87,7 @@ export const CITIES = {
     title: 'Jersey Shore, PA: a river town on the West Branch',
     heading: 'Jersey Shore, on the West Branch',
     canvasLabel: '3D model of Jersey Shore, Pennsylvania, on the West Branch Susquehanna River, with the surrounding hills',
-    hint: 'Jersey Shore borough and its neighbours on the West Branch of the Susquehanna, with Pine Creek and Bald Eagle Mountain, on real terrain. Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom.',
+    hint: 'Jersey Shore borough and its neighbours on the West Branch of the Susquehanna, with Pine Creek and Bald Eagle Mountain, on real terrain. In July a detasseling crew works the seed corn on the island: click one of them to see through their eyes. “Bald Eagle Vista w/ Mr. Kepner” leaves you standing behind a hunter above the valley: click him to take a drag, drink his beer, or glass the valley through his binoculars (in late autumn a combine works the last standing corn below). Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom.',
     cutButton: '', cutHint: '',
     credit: 'Buildings: Overture Maps (Microsoft ML Buildings, OpenStreetMap) · Streets, parks, water: © OpenStreetMap contributors · Terrain: AWS Terrain Tiles (USGS 3DEP) · Crops: USDA NASS Cropland Data Layer',
     building: 'Spreading out along the river…',

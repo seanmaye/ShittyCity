@@ -24,6 +24,7 @@ from shapely import wkt as swkt
 from shapely.geometry import Polygon, MultiPolygon, LineString, Point, box
 from shapely.ops import unary_union, linemerge, polygonize
 from shapely.strtree import STRtree
+from shapely.prepared import prep
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -281,7 +282,7 @@ downtown = unary_union([ls.intersection(Point(0, 0).buffer(650)).buffer(42) for 
 # house siding: white and pale clapboard, some brick (style kind "row": punched windows)
 HOUSE = ['#e8e5dc', '#ece9e1', '#dcd6c4', '#d8cfae', '#c9cfc9', '#b8c3c6', '#c7c9b4', '#e2d6bd', '#9a5a45', '#a7a197', '#d3c4a2', '#bfb9ad']
 styles = [None] + [{'id': f'house{i}', 'color': c, 'kind': 'row'} for i, c in enumerate(HOUSE)]
-blds, foot = [], []
+blds, foot, info = [], [], []
 for r in rows:
     g = swkt.loads(r['wkt'])
     for p in polys_of(g):
@@ -311,7 +312,68 @@ for r in rows:
         style = 1 + int(hashf(r['id'][::-1]) * len(HOUSE)) if house else 0
         blds.append([dm(h), style] + poly_rings(p))
         foot.append(p)
+        info.append({'A': A, 'dt': dt, 'cls': r['class'], 'fill': False})
 print(f'buildings: {len(blds)}')
+
+# infill: the ML footprints miss many houses in the borough (under trees, on narrow lots). Walk
+# every town street and set a house on each stretch of frontage that is still empty (no building,
+# street, path, rail, water, park or school ground near it), some with a garage out back.
+random.seed(23)
+TOWN_HW = ('residential', 'tertiary', 'secondary', 'primary', 'unclassified', 'living_street')
+town_lines = [LineString([(l['p'][i] / 10, l['p'][i + 1] / 10) for i in range(0, len(l['p']), 2)]) for l in lines
+              if l['k'] == 0 and l['_hw'] in TOWN_HW and not l['b']]
+grounds = [way_poly(e) for e in osm if e['type'] == 'way' and tags(e).get('amenity') in ('school', 'place_of_worship', 'parking')]
+keep_out = unary_union(
+    [p.buffer(2.5) for p in foot] +
+    [LineString([(l['p'][i] / 10, l['p'][i + 1] / 10) for i in range(0, len(l['p']), 2)]).buffer(l['w'] / 2 + (8 if l['k'] == 2 else 1.5))
+     for l in lines] +
+    [g for _, g in green] + [water_union.buffer(4)] + [g for g in grounds if g is not None] +
+    [p.buffer(35) for p in foot if p.area > 700] + [downtown])
+keep_p, town_p = prep(keep_out), prep(limits_geom.buffer(-6))
+added = []
+
+
+def lot(cx, cz, ux, uz, w, d):
+    """rectangle w along the street (unit ux, uz), d deep, centred on cx, cz"""
+    nx, nz = -uz, ux
+    return Polygon([(cx + sx * ux * w / 2 + sz * nx * d / 2, cz + sx * uz * w / 2 + sz * nz * d / 2)
+                    for sx, sz in ((-1, -1), (1, -1), (1, 1), (-1, 1))])
+
+
+def free(p):
+    return town_p.contains(p) and not keep_p.intersects(p) and not any(q.distance(p) < 2.5 for q in added[-400:])
+
+
+for ls in town_lines:
+    for side in (1, -1):
+        s, L = 4.0, ls.length
+        while s < L - 4:
+            a, b = ls.interpolate(s), ls.interpolate(min(L, s + 1))
+            ux, uz = b.x - a.x, b.y - a.y
+            n = math.hypot(ux, uz) or 1
+            ux, uz = ux / n, uz / n
+            nx, nz = -uz * side, ux * side                     # away from the street
+            w, d, back = 7 + random.random() * 3, 9 + random.random() * 4, 7 + random.random() * 3
+            cx, cz = a.x + nx * (back + d / 2), a.y + nz * (back + d / 2)
+            p = lot(cx, cz, ux, uz, w, d)
+            if not free(p):
+                s += 2
+                continue
+            added.append(p)
+            h = 7 + random.random() * 2.5
+            blds.append([dm(h), 1 + int(random.random() * len(HOUSE))] + poly_rings(p))
+            foot.append(p)
+            info.append({'A': p.area, 'dt': False, 'cls': '', 'fill': True})
+            if random.random() < .4:                           # a garage on the alley
+                gc = (cx + nx * (d / 2 + 9), cz + nz * (d / 2 + 9))
+                g = lot(gc[0], gc[1], ux, uz, 6 + random.random() * 1.5, 6.5)
+                if free(g):
+                    added.append(g)
+                    blds.append([dm(3.4), 0] + poly_rings(g))
+                    foot.append(g)
+                    info.append({'A': g.area, 'dt': False, 'cls': '', 'fill': True})
+            s += w + 2.5 + random.random() * 2.5
+print(f'buildings: {len(added)} infilled on empty frontage, {len(blds)} in all')
 foot_tree = STRtree(foot)
 
 # ---------------------------------------------------------------- trees
@@ -319,7 +381,6 @@ random.seed(7)
 road_geoms = [LineString([(l['p'][i] / 10, l['p'][i + 1] / 10) for i in range(0, len(l['p']), 2)]).buffer(l['w'] / 2 + 2.5)
               for l in lines if l['k'] in (0, 2)]
 blocked = unary_union(road_geoms + [p.buffer(3) for p in foot] + [water_union.buffer(4)])
-from shapely.prepared import prep  # noqa: E402
 blocked_p = prep(blocked)
 # ---------------------------------------------------------------- farms: crop fields, barns, silos
 # USDA NASS Cropland Data Layer (src/cdl.png, 30 m classes in EPSG:5070) -> field outlines by crop
@@ -376,6 +437,34 @@ for gi, name in enumerate(list(CROPS) + ['pasture'], 1):
             e1, e2 = (rr[1][0] - rr[0][0], rr[1][1] - rr[0][1]), (rr[2][0] - rr[1][0], rr[2][1] - rr[1][1])
             ex, ez = e1 if math.hypot(*e1) >= math.hypot(*e2) else e2
             fields.append({'k': name, 'a': round(math.atan2(ez, ex), 3), 's': round(random.random(), 3), 'p': poly_rings(q)})
+# a seed-corn block in the biggest corn field (js/scene/jsh/detassel.js): sets of four female rows,
+# each between two taller male rows, down which a detasseling crew walks in July
+SEED_SETS, SEED_LEN, ROW_W = 4, 120.0, .76
+seed = None
+corn = [(i, Polygon([(f['p'][0][k] / 10, f['p'][0][k + 1] / 10) for k in range(0, len(f['p'][0]), 2)],
+                    [[(h[k] / 10, h[k + 1] / 10) for k in range(0, len(h), 2)] for h in f['p'][1:]])) for i, f in enumerate(fields) if f['k'] == 'corn']
+if corn:
+    fi, fp = max(corn, key=lambda c: c[1].area)
+    a = fields[fi]['a']; ux, uz = math.cos(a), math.sin(a); vx, vz = -uz, ux
+    rows = SEED_SETS * 5 + 1; W = (rows - 1) * ROW_W
+    def block(cx, cz, mu=0, mv=0):
+        hl, hw = SEED_LEN / 2 + mu, W / 2 + mv
+        return Polygon([(cx + ux * su * hl + vx * sv * hw, cz + uz * su * hl + vz * sv * hw) for su, sv in ((-1, -1), (1, -1), (1, 1), (-1, 1))])
+    inner = fp.buffer(-12)
+    best = None
+    x0, z0, x1, z1 = inner.bounds
+    for cx in np.arange(x0, x1, 15):
+        for cz in np.arange(z0, z1, 15):
+            if inner.contains(block(cx, cz, 14, 4)):
+                d = inner.exterior.distance(Point(cx, cz))
+                if best is None or d > best[0]:
+                    best = (d, cx, cz)
+    if best:
+        _, cx, cz = best
+        seed = {'x': round(float(cx), 1), 'z': round(float(cz), 1), 'a': a, 'len': SEED_LEN, 'sets': SEED_SETS, 'row': ROW_W, 's': fields[fi]['s']}   # s: its field's planting group
+        # the field keeps its outline: its canopy covers the block from afar, and near the camera
+        # js/scene/jsh/cornlod.js leaves the block and its 8 m headlands to detassel.js
+        print(f'farms: seed-corn block at ({cx:.0f}, {cz:.0f}), {SEED_SETS} sets of 4 female rows')
 farm_ctx = prep(unary_union(farm_any).buffer(150)) if farm_any else None
 blocked = unary_union([blocked] + [Polygon([(f['p'][0][i] / 10, f['p'][0][i + 1] / 10) for i in range(0, len(f['p'][0]), 2)]) for f in fields])
 blocked_p = prep(blocked)
@@ -422,8 +511,84 @@ for i, p in enumerate(foot):
     silos.append({'x': round(c.x, 1), 'z': round(c.y, 1), 'r': round(r, 2), 'h': round(10 + r * 3 + random.random() * 4, 1),
                   'c': random.choice(['#c9c4b8', '#b8b2a5', '#d5d0c4', '#5b6f8a', '#8e3a2c'])})
     drop.add(i)
-blds = [b for i, b in enumerate(blds) if i not in drop]
 print(f'farms: {len(barns)} barns, {len(silos)} silos')
+
+# what each remaining building is, for js/scene/jsh/town.js, which gives it a shape of its own:
+# pitched roofs, porches and chimneys on houses, storefronts and cornices downtown, steeples on
+# churches, metal sheds at the mills. Per building: [type, x, z, w, d, angle] (dm, dm, dm, dm,
+# mrad): the footprint's best-fit rectangle with its front (+d) turned to the nearest street.
+JTYPES = ['shed', 'garage', 'house', 'brick', 'ranch', 'cape', 'trailer', 'block', 'church', 'school', 'mill', 'big', 'store']
+CHURCH_WORDS = ('church', 'chapel', 'lutheran', 'methodist', 'baptist', 'presbyterian', 'catholic', 'episcopal', 'brethren')
+churches = [Point(xy) for t, xy in named if t.get('amenity') == 'place_of_worship' or
+            any(w in t.get('name', '').lower() for w in CHURCH_WORDS)]
+schools = [Point(xy) for t, xy in named if t.get('amenity') == 'school' or 'school' in t.get('name', '').lower()]
+street_geoms = [LineString([(l['p'][i] / 10, l['p'][i + 1] / 10) for i in range(0, len(l['p']), 2)]) for l in lines
+                if l['k'] == 0 and l['_hw'] not in ('motorway', 'motorway_link', 'service')]
+street_tree = STRtree(street_geoms)
+borough_p = prep(limits_geom)
+# the business blocks: Allegheny St from about Broad St to past Main, and Main St by the corner
+def named_lines(test):
+    return [LineString([(l['p'][i] / 10, l['p'][i + 1] / 10) for i in range(0, len(l['p']), 2)]) for l in lines if test(l['_n'])]
+
+
+shops_p = prep(unary_union([ls.intersection(box(-330, -120, 90, 80)).buffer(26) for ls in named_lines(lambda n: n == 'Allegheny Street')] +
+                           [ls.intersection(Point(0, 0).buffer(140)).buffer(24) for ls in named_lines(lambda n: n.endswith('Main Street'))]))
+jmeta, kept = [], []
+for i, p in enumerate(foot):
+    if i in drop:
+        continue
+    kept.append(blds[i])
+    c, A, inf = centroids[i], p.area, info[i]
+    rr = list(p.minimum_rotated_rectangle.exterior.coords)
+    e1 = (rr[1][0] - rr[0][0], rr[1][1] - rr[0][1])
+    e2 = (rr[2][0] - rr[1][0], rr[2][1] - rr[1][1])
+    l1, l2 = math.hypot(*e1) or 1, math.hypot(*e2) or 1
+    fill_ratio = A / (l1 * l2)
+    # the front: toward the nearest street within 45 m, else across the short side
+    j = street_tree.nearest(c)
+    sd = street_geoms[j].distance(c)
+    if sd < 45:
+        q = street_geoms[j].interpolate(street_geoms[j].project(c))
+        fx, fz = q.x - c.x, q.y - c.y
+    else:
+        fx, fz = (e1 if l1 < l2 else e2)
+    # depth axis: whichever rectangle side lines up best with the front
+    if abs(e1[0] * fx + e1[1] * fz) / l1 >= abs(e2[0] * fx + e2[1] * fz) / l2:
+        dax, d, w = e1, l1, l2
+    else:
+        dax, d, w = e2, l2, l1
+    sgn = 1 if dax[0] * fx + dax[1] * fz >= 0 else -1
+    ang = math.atan2(dax[1] * sgn, dax[0] * sgn)
+    k = A / (w * d)                                      # the rectangle, shrunk to the footprint's area
+    w, d = w * math.sqrt(k), d * math.sqrt(k)
+    rnd = hashf(f'{c.x:.1f},{c.y:.1f}')
+    long_ = max(w, d) / max(1, min(w, d))
+    in_boro = borough_p.contains(c)
+    near = lambda pts, r: any(c.distance(q) < r for q in pts)
+    if A < 22:
+        t = 'shed'
+    elif A < 55 or (A < 90 and long_ > 2.2 and not inf['fill']):
+        t = 'garage'
+    elif A >= 100 and near(churches, 35):
+        t = 'church'
+    elif A >= 500 and (inf['cls'] == 'school' or near(schools, 90)):
+        t = 'school'
+    elif shops_p.contains(c):
+        t = 'block'
+    elif A < 400:
+        if in_boro:
+            t = 'brick' if rnd < (.45 if inf['dt'] else .22) else 'house'
+        elif long_ > 2.5 and A < 140:
+            t = 'trailer'
+        else:
+            t = 'ranch' if rnd < .45 else 'cape' if rnd < .65 else 'house'
+    elif A < 900:
+        t = 'big' if in_boro and fill_ratio > .75 and long_ < 2.2 else 'store'
+    else:
+        t = 'mill'
+    jmeta += [JTYPES.index(t), dm(c.x), dm(c.y), dm(w), dm(d), int(round(ang * 1000))]
+blds = kept
+print('buildings by type: ' + ', '.join(f'{t} {jmeta[0::6].count(k)}' for k, t in enumerate(JTYPES)))
 
 # terrain colour past the mapped area: the Cropland Data Layer's forest and fields
 lon_g, lat_g = LON0 + GX / MX, LAT0 - GZ / MZ
@@ -515,9 +680,10 @@ bx, bz = LineString([(bridge['p'][i] / 10, bridge['p'][i + 1] / 10) for i in ran
 views = [
     {'id': 'downtown', 'name': 'Allegheny St', **V(-330, 260, 110, -60, -30, 5)},
     {'id': 'bridge', 'name': 'River bridge', **V(bx + 380, bz + 330, 90, bx - 60, bz - 20, 5)},
-    {'id': 'ridge', 'name': 'From Bald Eagle Mtn', **V(float(gx[i]), float(gx[j]) - 600, 140, 0, -200, 0)},
+    # (the view from Bald Eagle Mountain is the overlook's: js/scene/jsh/overlook.js, at the mountain's label)
     *([{'id': 'farms', 'name': 'Corn fields', **V(cf.x + 800, cf.y + 1250, 600, cf.x + 60, cf.y + 250, 0)}] if (cf := (lambda cs: max(cs, key=lambda q: q.area).centroid if cs else None)(
         [Polygon([(f['p'][0][i] / 10, f['p'][0][i + 1] / 10) for i in range(0, len(f['p'][0]), 2)]) for f in fields if f['k'] == 'corn'])) else []),
+    # (the detasseling crew's view follows the crew: js/scene/jsh/detassel.js)
     {'id': 'pinecreek', 'name': 'Pine Creek', **V(pp.x + 900, pp.y + 1100, 380, pp.x, pp.y, 0)},
 ]
 
@@ -531,7 +697,7 @@ def wgz(name, raw):
 
 lim_polys = polys_of(limits_geom)
 core = [dm(-250), dm(-75), dm(30), dm(35)]        # the paved core: Allegheny St's business blocks, Broad to Main
-wjson('buildings.json', {'styles': styles, 'b': blds})
+wjson('buildings.json', {'styles': styles, 'b': blds, 'jtypes': JTYPES, 'j': jmeta})
 wjson('ground.json', {'bbox': core, 'green': [], 'lines': []})
 wjson('river.json', {'water': [], 'river': [], 'center': [], 'dams': []})
 wjson('trees.json', [])
@@ -553,6 +719,6 @@ wgz('city_buildings.bin.gz', b'PHB1' + struct.pack('<III', 0, 0, 0))
 raw = b'TER1' + struct.pack('<Ifff', N, HALF, CELL, BASE) + np.round(Hrel * 10).astype('<i2').tobytes() + cover.tobytes()
 wgz('terrain.bin.gz', raw)
 wjson('places.json', {'labels': labels, 'views': views})
-wgz('farms.json.gz', json.dumps({'year': cdl_meta['year'], 'fields': fields, 'barns': barns, 'silos': silos}, separators=(',', ':')).encode())
+wgz('farms.json.gz', json.dumps({'year': cdl_meta['year'], 'fields': fields, 'barns': barns, 'silos': silos, 'seed': seed}, separators=(',', ':')).encode())
 for f in sorted(os.listdir(OUT)):
     print(f'  {f:24s} {os.path.getsize(os.path.join(OUT, f)) / 1024:8.0f} KB')

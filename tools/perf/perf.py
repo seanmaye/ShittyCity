@@ -66,6 +66,11 @@ TAG_PATCH = r"""
 # ---------------------------------------------------------------- serving the app
 
 class _Handler(http.server.SimpleHTTPRequestHandler):
+    # HTTP/1.1 keep-alive: with the default HTTP/1.0 close-per-request, current Playwright's
+    # request interception (the CDN route in open_app) resets parallel module loads
+    # (net::ERR_CONNECTION_RESET) and the scene never starts
+    protocol_version = 'HTTP/1.1'
+
     def log_message(self, *a):
         pass
 

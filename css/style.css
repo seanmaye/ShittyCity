@@ -98,6 +98,19 @@ button.fold svg{transition:transform .2s}
 #rb-svg text.next{fill:var(--ink);font-weight:600}
 #rb-svg text.done{opacity:.55}
 @media (max-width:640px){.minimap{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 30px);width:130px;height:130px}.ridebar{left:14px;transform:none;width:calc(100vw - 172px)}.rb-next{display:none}}
+/* through someone's eyes: things they can do (js/ui.js syncActions), and the mask of their binoculars */
+.actions{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 30px);transform:translateX(-50%);display:flex;gap:6px;padding:6px;background:var(--panel);border:1px solid var(--line);border-radius:999px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);max-width:calc(100vw - 20px);box-sizing:border-box}
+.actions[hidden]{display:none}
+.actions button{white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
+.actions button[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.actions kbd{font:inherit;font-size:11px;line-height:1;border:1px solid currentColor;border-radius:4px;padding:2px 5px;opacity:.6}
+#binoc{position:fixed;inset:0;pointer-events:none}
+#binoc[hidden]{display:none}
+#binoc svg{display:block;width:100%;height:100%}
+#binoc-cap{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 88px);transform:translateX(-50%);margin:0;padding:6px 14px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font-size:13px;font-weight:600;text-align:center;max-width:calc(100vw - 32px);box-sizing:border-box}
+#binoc-cap:empty{display:none}
+.persona.away{visibility:hidden}
+@media (max-width:640px){.actions{bottom:calc(env(safe-area-inset-bottom,0px) + 10px);gap:4px;padding:4px}.actions button{font-size:13px;padding:8px 10px}.actions kbd{display:none}body:has(#actions:not([hidden])) .credit{display:none}}
 /* start menu: pick a city (js/main.js). The page behind it shows the dusk sky colours. */
 body.choosing{background:linear-gradient(#363a66,#e98e72 62%,#f6c89f)}
 body.choosing .hud,body.choosing .credit,body.choosing #modehint{display:none}

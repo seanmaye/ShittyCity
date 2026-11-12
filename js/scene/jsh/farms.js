@@ -15,6 +15,31 @@ import { Builder, addPolygon } from '../geometry.js';
 import { onSeason } from '../season.js';
 import { groundAt, groundBase } from '../terrain.js';
 
+/** where real corn plants stand in for the canopy slab (cornlod.js sets it each frame): x, z, radius */
+export const CORN_HOLE = { value: new THREE.Vector3(0, 0, 0) };
+/** discard a material's fragments inside CORN_HOLE (the slab's colour and its shadow), or with
+ *  inside = true everywhere else (the plants, which stand only in the hole; reach: metres past its edge) */
+export function cutHole(m, inside = false, reach = 4) {
+  const prev = m.onBeforeCompile;
+  m.onBeforeCompile = (sh, r) => {
+    sh.uniforms.uHole = CORN_HOLE;
+    sh.vertexShader = 'varying vec2 vHoleXZ;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+  vec4 holeP = vec4(transformed, 1.0);
+  #ifdef USE_INSTANCING
+    holeP = instanceMatrix * holeP;
+  #endif
+  vHoleXZ = (modelMatrix * holeP).xz;`);
+    // the slab thins out over the hole's last 8 m in a fine stipple, so it blends into the plants
+    // (which reach past the edge) instead of ending in a hard circle
+    const test = inside ? `distance(vHoleXZ, uHole.xy) >= uHole.z + ${reach.toFixed(1)}`
+      : '(distance(vHoleXZ, uHole.xy) < uHole.z && fract(sin(dot(floor(vHoleXZ * 3.0), vec2(12.9898, 78.233))) * 43758.5453) < clamp((uHole.z - distance(vHoleXZ, uHole.xy)) / 8.0, 0.0, 1.0))';
+    sh.fragmentShader = 'uniform vec3 uHole;\nvarying vec2 vHoleXZ;\n' + sh.fragmentShader.replace('void main() {', `void main() {\n  if (${test}) discard;`);
+    if (prev) prev(sh, r);
+  };
+  m.customProgramCacheKey = () => (inside ? 'corn-plants' : 'corn-hole');
+  return m;
+}
+
 const C = h => new THREE.Color(h);
 const SOIL = C('#6e5641'), STUBBLE = C('#a8946c'), WINTER = C('#8a8560');
 const smooth = (a, b, d) => { const t = Math.max(0, Math.min(1, (d - a) / (b - a))); return t * t * (3 - 2 * t); };
@@ -22,7 +47,7 @@ const mix = (a, b, t) => a.clone().lerp(b, t);
 
 /** stripes across v: rows of plants (light) and soil between them (dark), multiplied by the stage colour */
 let rowTex = null;
-function rows() {
+export function rows() {
   if (rowTex) return rowTex;
   const c = document.createElement('canvas'); c.width = 8; c.height = 64; const g = c.getContext('2d');
   for (let y = 0; y < 64; y++) { const k = Math.round(222 + 33 * Math.cos(y / 16 * Math.PI * 2)); g.fillStyle = `rgb(${k},${k},${k})`; g.fillRect(0, y, 8, 1); }
@@ -33,17 +58,19 @@ function rows() {
 /**
  * What a field of crop `k` looks like on `day`, `dd` days behind the earliest group:
  * { ground: colour, canopy: height (m, 0 = none), top: canopy colour, bales: hay just cut }
+ * harvestDay: the day this field comes off, when it isn't its group's (harvest.js: the last corn standing)
  */
-function stage(k, day, dd) {
+export function stage(k, day, dd, harvestDay) {
   const d = day - dd;
   if (k === 'corn' || k === 'soy' || k === 'veg') {
-    const corn = k !== 'soy', tall = corn ? 2.7 : .9, plant = corn ? 130 : 140, harvest = corn ? 282 + dd * 1.5 : 275 + dd;
+    const corn = k !== 'soy', tall = corn ? 2.7 : .9, plant = corn ? 130 : 140, harvest = harvestDay ?? (corn ? 282 + dd * 1.5 : 275 + dd);
     if (day >= harvest || d < 105) return { ground: day >= harvest && day < 345 ? STUBBLE : mix(STUBBLE, WINTER, .4), canopy: 0 };
     if (d < plant + 20) return { ground: mix(SOIL, C('#6f8a3c'), smooth(plant + 8, plant + 20, d) * .45), canopy: 0 };
     const h = tall * smooth(plant + 18, corn ? 215 : 205, d);
     const top = corn ? mix(mix(C('#5d8f37'), C('#47752b'), smooth(170, 200, d)), C('#c2a96e'), smooth(238, 268, d))
       : mix(mix(C('#6a9a3e'), C('#cdb84a'), smooth(240, 258, d)), C('#8f7448'), smooth(258, 272, d));
-    return { ground: SOIL, canopy: h, top };
+    // under a closed canopy the ground is in leaf shade (it shows only between the near plants, cornlod.js)
+    return { ground: mix(SOIL, top.clone().multiplyScalar(.5), smooth(plant + 30, plant + 70, d) * .85), canopy: h, top };
   }
   if (k === 'grain') {   // winter wheat: sown in October, cut in July
     const cut = 192 + dd;
@@ -59,9 +86,11 @@ function stage(k, day, dd) {
   return { ground: since < 12 ? mix(C('#b3b06a'), grow, since / 12) : grow, canopy: 0, bales: since < 26 };
 }
 
-export function buildFarms(scene, data) {
+/** skip: the index of a field that is drawn elsewhere (harvest.js) */
+export function buildFarms(scene, data, skip = -1) {
   const tex = rows(), groups = new Map();   // "kind:cohort" -> { k, dd, fields: [] }
-  for (const f of data.fields) {
+  for (const [i, f] of data.fields.entries()) {
+    if (i === skip) continue;
     const c = Math.min(2, Math.floor(f.s * 3)), key = f.k + ':' + c;
     if (!groups.has(key)) groups.set(key, { k: f.k, dd: c * 8, fields: [] });
     groups.get(key).fields.push(f);
@@ -97,6 +126,9 @@ export function buildFarms(scene, data) {
     if (cb.count) {
       cm = M('#ffffff', { map: tex, roughness: .95 }); canopy = new THREE.Mesh(cb.geometry(), cm);
       canopy.castShadow = canopy.receiveShadow = true; scene.add(canopy);
+      if (g.k === 'corn') {   // near the camera, real plants stand here instead (cornlod.js)
+        cutHole(cm); canopy.customDepthMaterial = cutHole(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }));
+      }
     }
     if (bales.length) {
       const geo = new THREE.CylinderGeometry(.8, .8, 1.25, 12); geo.rotateZ(Math.PI / 2); geo.translate(0, .8, 0);
@@ -172,7 +204,7 @@ export function buildFarms(scene, data) {
     for (const p of parts) {
       const s = stage(p.k, st.day, p.dd);
       p.gm.color.copy(s.ground);
-      if (p.canopy) { p.canopy.visible = s.canopy > .05; p.canopy.position.y = .45 + s.canopy; if (s.top) p.cm.color.copy(s.top); }
+      if (p.canopy) { p.canopy.visible = s.canopy > .05; p.canopy.position.y = .45 + s.canopy; if (s.top) p.cm.color.copy(s.top).multiplyScalar(p.k === 'corn' ? .8 : 1); }   // corn: as dark as the self-shaded plants that replace it near the camera
       if (p.baleMesh) p.baleMesh.visible = !!s.bales;
     }
   });

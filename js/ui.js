@@ -28,18 +28,47 @@ export function createUI(api) {
     document.getElementById('pe-w').title = `${c.kg} kg`;
     peNow.textContent = c.now; document.getElementById('pe-bio').textContent = c.bio;
     // their face, from the same model as their figure in the street
-    const face = document.getElementById('pe-face'), cv = api.peds && api.peds.portrait(c.id);
+    const face = document.getElementById('pe-face'), cv = c.portrait ? c.portrait() : api.peds && api.peds.portrait(c.id);
     face.setAttribute('aria-label', `Portrait of ${c.name}`);
     if (cv && cv.parentNode !== face) face.replaceChildren(cv);
   }
 
+  // things to do as the person you are inside (c.actions: [{ id, label, key, on }]), in a bar at the
+  // bottom; and the mask of the binoculars they are looking through (c.bino: 0 down .. 1 up)
+  const actEl = document.getElementById('actions'), binoc = document.getElementById('binoc'), binocCap = document.getElementById('binoc-cap'), actBtns = [];
+  let actIds = '';
+  function syncActions(c) {
+    const acts = (c && c.actions) || [], ids = acts.map(a => a.id).join();
+    if (ids !== actIds) {
+      actIds = ids; actEl.hidden = !acts.length; actBtns.length = 0;
+      actEl.replaceChildren(...acts.map(a => {
+        const b = document.createElement('button'), t = document.createElement('span'), k = document.createElement('kbd');
+        b.type = 'button'; b.className = 'ghost'; k.textContent = a.key; b.append(t, k);
+        b.addEventListener('click', () => { api.actCar(a.id); b.blur(); });   // (blur: Space must still mean "leave", not "press this again")
+        actBtns.push({ b, t }); return b;
+      }));
+    }
+    acts.forEach((a, i) => {
+      const { b, t } = actBtns[i];
+      if (t.textContent !== a.label) t.textContent = a.label;
+      if (a.on !== undefined && b.getAttribute('aria-pressed') !== String(a.on)) b.setAttribute('aria-pressed', String(a.on));
+    });
+    // binoculars up: the card steps aside, and what they are looking at is written under the view
+    const k = (c && c.bino) || 0;
+    if (binoc.hidden !== k < .01) binoc.hidden = k < .01;
+    if (k >= .01) { binoc.style.opacity = k.toFixed(2); if (binocCap.textContent !== c.now) binocCap.textContent = c.now; }
+    persona.classList.toggle('away', k > .5);
+  }
+
   function placeTags(camera) {
-    if (!!api.getCar() !== carOn) syncCar();
-    if (carOn && personaOn !== null) { const c = api.getCar(); if (c && c.kind === 'person') { if (c.id !== personaOn) syncCar(); else if (c.now !== peNow.textContent) peNow.textContent = c.now; } }
+    const car = api.getCar();
+    if (!!car !== carOn) syncCar();
+    if (carOn && personaOn !== null) { const c = car; if (c && c.kind === 'person') { if (c.id !== personaOn) syncCar(); else if (c.now !== peNow.textContent) peNow.textContent = c.now; } }
+    syncActions(car);
     const now = performance.now(); minimap.update(camera, now); ridebar.update(now);
-    const w = window.innerWidth, h = window.innerHeight, placed = [];
+    const w = window.innerWidth, h = window.innerHeight, placed = [], noTags = !showTags || (carOn && !(car && car.labels));   // (from the overlook the place names help)
     LABELS.forEach(l => {
-      if (!showTags || carOn || (l.section && l.section !== api.getCut()) || l.cutHide.includes(api.getCut()) || (l.layer === 't53' && !api.getTransitMap())) { l.el.style.display = 'none'; return; }
+      if (noTags || (l.section && l.section !== api.getCut()) || l.cutHide.includes(api.getCut()) || (l.layer === 't53' && !api.getTransitMap())) { l.el.style.display = 'none'; return; }
       pv.copy(l.v).project(camera);
       if (pv.z > 1 || pv.x < -1.1 || pv.x > 1.1 || pv.y < -1.1 || pv.y > 1.1 || camera.position.distanceTo(l.v) > l.far) { l.el.style.display = 'none'; return; }
       if (!l.wd) { l.el.style.display = 'block'; l.wd = l.el.offsetWidth || 120; }
@@ -173,6 +202,7 @@ export function createUI(api) {
     if (carOn) api.lookCar(e.movementX, e.movementY); else api.creativeLook(e.movementX, e.movementY);
   });
   canvas.addEventListener('wheel', e => {
+    if (carOn && api.wheelCar(e.deltaY)) { e.preventDefault(); return; }   // binoculars: zoom
     if (!api.getCreative()) return;
     e.preventDefault();
     const m = api.creativeSpeed(e.deltaY);
@@ -184,12 +214,12 @@ export function createUI(api) {
     const c = api.getCar(); carOn = !!c; offBtn.hidden = !carOn; canvas.style.cursor = carOn ? 'grab' : '';
     if (!carOn && locked) api.setCreative(true);   // got off with the mouse still captured: back to flying
     syncModeHint();
-    offBtn.textContent = c && c.kind === 'seat' ? 'Stand up' : c && c.kind === 'person' ? 'Leave' : 'Get off';
+    offBtn.textContent = c && c.kind === 'seat' ? 'Stand up' : c && c.kind === 'person' ? 'Leave' : c && c.kind === 'vista' ? 'Step away' : 'Get off';
     showPersona(c && c.kind === 'person' ? c : null);
     if (c) {
       // Philadelphia's Walnut St (people, seats), L and trolleys have their own wording; every
-      // other car uses its model name
-      hint.textContent = c.kind === 'person'
+      // other car uses its model name (c.hint: somewhere with wording of its own)
+      hint.textContent = c.hint ? c.hint : c.kind === 'person'
         ? `Seeing Walnut Street through ${c.name}’s eyes. You can’t steer; you go where they go. Drag or click to look around, Space, Esc or “Leave” to step out.`
         : c.kind === 'seat'
         ? (c.seat === 'cafe' ? 'Sitting at a café table on Walnut Street.' : 'Sitting on a bench on Walnut Street.') + ' Drag or click to look around, Space, Esc or “Stand up” to get up.'
@@ -198,7 +228,7 @@ export function createUI(api) {
         : c.kind === 'trolley'
           ? `Aboard a ${c.line} trolley, inside a Kawasaki LRV. Walk up to the front for the view through the windscreen. Drag or click to look around, W A S D or the arrow keys to walk, Esc or “Get off” to leave.`
           : `Aboard the ${c.lineName}, inside a ${c.model}. Drag or click to look around, W A S D or the arrow keys to walk the aisle (the cab window is at the front), Esc or “Get off” to leave.`;
-      markView(null);
+      markView(c.view || null);
     } else if (!riding) hint.textContent = baseHint();
   }
   canvas.addEventListener('pointerdown', e => {
@@ -210,22 +240,30 @@ export function createUI(api) {
     if (locked) return;   // handled by the mousemove listener above
     if (carOn) {
       if (down && down.id === e.pointerId) { api.lookCar(e.clientX - down.lx, e.clientY - down.ly); down.lx = e.clientX; down.ly = e.clientY; }
+      else if (!e.buttons && e.pointerType === 'mouse' && spectating()) canvas.style.cursor = api.pickCar(...rel(e)) ? 'pointer' : 'grab';
       return;
     }
     if (e.buttons || e.pointerType !== 'mouse' || hoverPending) return;   // hover cursor over a clickable car
     hoverPending = true;
     requestAnimationFrame(() => { hoverPending = false; if (!carOn) canvas.style.cursor = api.pickCar(...rel(e)) ? 'pointer' : ''; });
   });
+  // standing somewhere as yourself (the overlook), where there is still someone to click on
+  const spectating = () => { const c = carOn && api.getCar(); return !!c && c.kind === 'vista'; };
   const endDrag = e => {
     const d = down; down = null;
     if (d && d.lockedClick) {   // mouse captured: click the train under the crosshair
-      if (carOn || e.type !== 'pointerup') return;
+      if ((carOn && !spectating()) || e.type !== 'pointerup') return;
       const hit = api.pickCar(canvas.clientWidth / 2, canvas.clientHeight / 2); if (!hit) return;
       if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; openPicker(false); }
       api.boardCar(hit); syncCar(); syncCut(); return;
     }
     const click = d && e.type === 'pointerup' && Math.hypot(e.clientX - d.x, e.clientY - d.y) <= 6 && performance.now() - d.t <= 600;
-    if (carOn) { canvas.style.cursor = 'grab'; if (click) lockMouse(); return; }
+    if (carOn) {
+      canvas.style.cursor = 'grab'; if (!click) return;
+      const hit = d.button !== 2 && spectating() && api.pickCar(...rel(e));
+      if (hit) { api.boardCar(hit); syncCar(); } else lockMouse();
+      return;
+    }
     if (!click) return;
     if (d.button === 2) { lockMouse(); return; }   // right-click (not a right-drag pan): creative mode
     const hit = api.pickCar(...rel(e)); if (!hit) { if (!riding) lockMouse(); return; }
@@ -247,7 +285,9 @@ export function createUI(api) {
     if (typing) return;
     if (carOn) {
       // Esc gets off any train or stands up from a seat; Space also stands up from a seat
-      if (e.key === 'Escape' || (e.key === ' ' && ['seat', 'person'].includes(api.getCar().kind))) { e.preventDefault(); if (e.key === ' ') holdSpace = true; api.leaveCar(); syncCar(); return; }
+      const car = api.getCar();
+      if (e.key === 'Escape' || (e.key === ' ' && ['seat', 'person', 'vista'].includes(car.kind))) { e.preventDefault(); if (e.key === ' ') holdSpace = true; api.leaveCar(); syncCar(); return; }
+      const todo = (car.actions || []).find(a => a.key === e.key); if (todo) { e.preventDefault(); if (!e.repeat) api.actCar(todo.id); return; }
       const k = KEYMAP[e.key.toLowerCase()]; if (!k) return;
       e.preventDefault(); keys.add(k); applyKeys();
       return;

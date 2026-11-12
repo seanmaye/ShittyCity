@@ -88,6 +88,8 @@ function facade(style) {
         }
       }
     }
+  } else if (SMALLTOWN.includes(style)) {
+    smallTown(style, day, night, put, room, homeOff, shopOff, glassCol, A);
   } else {
     // offices, modern ribbon windows, curtain walls and masonry: the texture is cut into building
     // widths of 6-14 bays, each with its own share of lit floors and light colour
@@ -147,7 +149,118 @@ function facade(style) {
   return { day: mk(day), night: mk(night) };
 }
 
-const STYLES = ['row', 'row2', 'office', 'office2', 'glass', 'stone'];
+// ---- small-town facades (Jersey Shore: js/scene/jsh/town.js)
+//  clap   clapboard or vinyl siding: a shadow line under every board, double-hung windows with
+//         white trim, shutters on some houses, a front door per house
+//  brickh brick houses: the same windows in brick, with stone sills and lintels
+//  plain  siding with no windows (garages, sheds; town.js adds their doors)
+//  block  19th-century brick storefront blocks: shop windows, a sign band, tall upper windows
+//  metal  ribbed steel siding: mills and warehouses, overhead doors, a few small windows
+//  church tall pointed windows of coloured glass, two floors high
+const SMALLTOWN = ['clap', 'brickh', 'plain', 'block', 'metal', 'church'];
+const DOORS = [[74, 48, 36], [120, 30, 28], [40, 52, 44], [30, 34, 48], [235, 232, 222], [96, 70, 50]];
+const SHUTTERS = [[40, 46, 40], [30, 32, 36], [70, 34, 30], [46, 58, 76], [90, 80, 66]];
+const SIGNS = [[38, 64, 48], [96, 34, 30], [28, 30, 34], [34, 44, 74], [120, 96, 52], [70, 58, 44]];
+function smallTown(style, day, night, put, room, homeOff, shopOff, glassCol, A) {
+  const mul = (x0, y0, w, h, k) => {
+    for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) { if (BLANK(x, y)) continue; const i = (y * TW + x) * 4; for (let c = 0; c < 3; c++) day[i + c] *= k; }
+  };
+  // wall surface
+  if (style === 'clap' || style === 'plain') for (let y = 0; y < TH; y += 2) mul(0, y, TW, 1, .86);
+  if (style === 'brickh' || style === 'block' || style === 'church')
+    for (let y = 0; y < TH; y++) for (let x = 0; x < TW; x += 2) mul(x, y, 2, 1, .88 + rnd() * .12 - (y % 2 ? 0 : .04));
+  if (style === 'metal') for (let x = 0; x < TW; x += 3) mul(x, 0, 1, TH, .8);
+  if (style === 'plain') return;
+
+  const upper = (X, Y, wx, ww, wy, wh, trim, sh) => {   // a double-hung window, lit at night by chance
+    const r = rnd(), g = r < .7 ? glassCol() : r < .88 ? [168, 160, 140] : [214, 212, 204];
+    put(day, X + wx - 1, Y + wy - 1, ww + 2, wh + 2, ...trim);
+    put(day, X + wx, Y + wy, ww, wh, ...g); put(day, X + wx, Y + wy + (wh >> 1), ww, 1, ...trim);   // the meeting rail
+    if (sh) { put(day, X + wx - 3, Y + wy, 2, wh, ...sh); put(day, X + wx + ww + 1, Y + wy, 2, wh, ...sh); }
+  };
+  if (style === 'clap' || style === 'brickh') {
+    // a house is 2 to 4 bays: each its own tone, door bay and shutters
+    for (let hx = 0; hx < COLS;) {
+      const hw = Math.min(COLS - hx, 2 + Math.floor(rnd() * 3));
+      mul(hx * CELL, 0, hw * CELL, TH, .9 + rnd() * .1);
+      const home = .15 + rnd() * .45, door = Math.floor(rnd() * hw), sh = rnd() < .45 ? pick(SHUTTERS) : null;
+      const brick = style === 'brickh', trim = brick ? [236, 230, 214] : [255, 255, 255];
+      for (let f = 0; f < FLOORS; f++) for (let b = 0; b < hw; b++) {
+        const X = (hx + b) * CELL, Y = f * CELL;
+        if (f === 0 && b === door) {
+          put(day, X + 4, Y, 8, 13, ...trim); put(day, X + 5, Y, 6, 11, ...pick(DOORS));
+          put(day, X + 6, Y + 6, 4, 3, ...glassCol());   // a light in the door
+          if (rnd() < .55) put(night, X + 12, Y + 9, 2, 2, 255, 210, 150, A(rnd() < .5 ? 1 : homeOff()));   // porch light
+          continue;
+        }
+        if (rnd() < .1) continue;   // a blank stretch of wall
+        upper(X, Y, 5, 6, 3, 9, trim, sh);
+        if (brick) put(day, X + 4, Y + 13, 8, 1, 230, 224, 206);   // stone lintel
+        if (rnd() < home) room(X + 5, Y + 3, 6, 9, pick(rnd() < .07 ? TV : WARM), .5 + rnd() * .45, homeOff(), rnd() < .4 ? .4 : 0);
+      }
+      hx += hw;
+    }
+  } else if (style === 'block') {
+    // storefront blocks, 3 to 6 bays: shop windows and a recessed door below, a sign band, tall
+    // narrow sash windows with stone heads above (offices, flats)
+    for (let hx = 0; hx < COLS;) {
+      const hw = Math.min(COLS - hx, 3 + Math.floor(rnd() * 4));
+      mul(hx * CELL, 0, hw * CELL, TH, .82 + rnd() * .18);
+      const sign = pick(SIGNS), door = Math.floor(rnd() * hw), open = rnd() < .75, home = .1 + rnd() * .4, head = rnd() < .5;
+      for (let f = 0; f < FLOORS; f++) for (let b = 0; b < hw; b++) {
+        const X = (hx + b) * CELL, Y = f * CELL;
+        if (f === 0) {
+          put(day, X, Y + 12, 16, 4, ...sign);   // sign band
+          put(day, X, Y, 16, 2, ...sign.map(v => v * .7));   // bulkhead
+          if (b === door) { put(day, X + 4, Y, 8, 11, 44, 40, 38); put(day, X + 5, Y + 1, 6, 9, ...glassCol()); continue; }
+          put(day, X + 1, Y + 2, 14, 9, ...glassCol().map(v => v + 30)); put(day, X + 7, Y + 2, 1, 9, 70, 66, 60);
+          if (open && rnd() < .85) room(X + 1, Y + 2, 14, 9, pick(WARM), .85, shopOff());
+          continue;
+        }
+        put(day, X + 4, Y + 1, 8, 1, 226, 220, 204);   // sill
+        put(day, X + 5, Y + 2, 6, 11, ...glassCol()); put(day, X + 5, Y + 7, 6, 1, 214, 210, 200);
+        put(day, X + 4, Y + 13, 8, head ? 2 : 1, 226, 220, 204);   // stone head
+        if (rnd() < home) room(X + 5, Y + 2, 6, 11, pick(WARM), .5 + rnd() * .4, homeOff(), rnd() < .3 ? .4 : 0);
+      }
+      hx += hw;
+    }
+  } else if (style === 'metal') {
+    for (let hx = 0; hx < COLS;) {
+      const hw = Math.min(COLS - hx, 4 + Math.floor(rnd() * 8)), band = rnd() < .35;
+      mul(hx * CELL, 0, hw * CELL, TH, .86 + rnd() * .14);
+      for (let b = 0; b < hw; b++) {
+        const X = (hx + b) * CELL, r = rnd();
+        if (r < .14) {   // an overhead door, two floors' worth
+          put(day, X + 1, 0, 14, 18, 190, 192, 190); for (let j = 2; j < 18; j += 3) put(day, X + 1, j, 14, 1, 150, 152, 150);
+          if (rnd() < .5) put(night, X + 7, 20, 2, 2, 255, 230, 190, A(1));   // a yard light over it
+        } else if (r < .24) { put(day, X + 5, 0, 6, 11, 90, 96, 100); }   // a steel door
+        for (let f = 1; f < FLOORS; f += 2) if (band) {
+          put(day, X + 1, f * CELL + 8, 14, 4, ...glassCol());
+          if (rnd() < .12) room(X + 1, f * CELL + 8, 14, 4, pick(COOL), .7, shopOff());
+        }
+      }
+      hx += hw;
+    }
+  } else if (style === 'church') {
+    for (let b = 0; b < COLS; b++) {
+      const X = b * CELL; if (b % 2) continue;
+      for (let f = 0; f < FLOORS; f += 2) {
+        const Y = f * CELL + 4, H = 22;
+        for (let j = 0; j < H; j++) {
+          const inset = j > H - 4 ? (j - (H - 4)) : 0;   // the pointed head
+          for (let x = X + 5 + inset; x < X + 11 - inset; x++) {
+            const k = (x + j) % 5, col = [[120, 40, 44], [46, 58, 120], [150, 120, 50], [60, 100, 70], [96, 60, 110]][k];
+            put(day, x, Y + j, 1, 1, ...col);
+          }
+        }
+        put(day, X + 4, Y - 1, 8, 1, 230, 226, 214);
+        if (rnd() < .25) room(X + 6, Y, 4, 18, [255, 196, 140], .5, shopOff());
+      }
+    }
+  }
+}
+
+const STYLES = ['row', 'row2', 'office', 'office2', 'glass', 'stone', ...SMALLTOWN];
 const TEX = {};
 const styleOf = kind => (STYLES.includes(kind) ? kind : 'office');
 const texFor = s => TEX[s] || (TEX[s] = facade(s));
@@ -206,7 +319,7 @@ function hook(m, rep = [1, 1], off = [0, 0], inst = false) {
 }
 
 function facadeMat(kind, color, vertexColors) {
-  const s = styleOf(kind), t = texFor(s), glass = s === 'glass', row = s.startsWith('row');
+  const s = styleOf(kind), t = texFor(s), glass = s === 'glass', row = s.startsWith('row') || SMALLTOWN.includes(s);
   const m = new THREE.MeshStandardMaterial({ color, vertexColors, map: t.day, emissive: '#ffffff', emissiveMap: t.night, emissiveIntensity: 0,
     roughness: glass ? .35 : row ? .92 : .8, metalness: glass ? .18 : .04 });
   m.userData.lit = row ? .6 : .95; litMats.push(m);

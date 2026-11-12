@@ -23,7 +23,8 @@ Python helper below.
   <body>      HUD markup: #ride, #transit, #lbl, #cut, #getoff, #switch-city buttons, #xhair
               (creative-mode crosshair), #modehint, #time slider (+ #time-out), #legend,
               #lines picker, #view-btns (Go to), #heading, #hint, #status, #tags, #credit;
-              the #persona card (someone inhabited on Philadelphia's Walnut St);
+              the #persona card (someone inhabited: Walnut St, the detasseling crew, the hunter);
+              #actions (what the person you are inside can do) and #binoc (their binocular mask);
               the start menu #menu with #cities
   data blocks, city by city, one per file in the city's data folder:
               <script type="application/json" id="data-<city>-NAME" data-file="<city>/FILE">...</script>
@@ -281,13 +282,18 @@ data-jsh-terrain        (gzip binary "TER1") the elevation grid
   into two triangles from its north-west to its south-east corner; groundAt(x, z) in terrain.js
   interpolates on those triangles.
 data-jsh-places         labels [{t, x, z, y (m above the ground there), far?}] and views
-                        [{id, name, pos: [x, y, z], target: [x, y, z]}] (y already includes the ground)
+                        [{id, name, pos: [x, y, z], target: [x, y, z]}] (y already includes the ground).
+                        The "Bald Eagle Vista w/ Mr. Kepner" view is NOT here: overlook.js computes it from the
+                        "Bald Eagle Mountain" label (build_jsh.py keeps it that way)
 
 data-jsh-farms          (gzip JSON) {year, fields, barns, silos} (js/scene/jsh/farms.js)
   fields: [{k: "corn" | "soy" | "grain" | "hay" | "veg", a: row direction (rad, in x-z), s: 0..1
           (which of three planting groups), p: [outer_ring_dm, hole_ring_dm...]}]
   barns:  [{x, z, w (long side), d, ry, t: "gambrel" | "gable" | "pole", c: wall colour, r: roof colour}] METRES
   silos:  [{x, z, r, h, c}] METRES
+  seed:   {x, z (centre, m), a (row direction, rad), len (m), sets, row (row spacing, m)} or null:
+          the seed-corn block (detassel.js; s = its field's planting group). The field isn't cut: its
+          canopy covers the block from afar, and cornlod.js leaves the block and 8 m headlands out
   The footprints these barns and silos came from are left out of data-jsh-buildings.
 
 All of Jersey Shore's blocks are written by tools/jsh/build_jsh.py; rerun it rather than editing them.
@@ -393,6 +399,10 @@ js/ui.js         buttons, line picker, floating labels, keys (inside a car KEYMA
                  The #fold button folds the panel (#hud-body) to its title. "Skyline lights"
                  swatches come from the city's presets plus a colour picker; the choice and the
                  fold are remembered in localStorage (keys CITY.storage + '...').
+                 syncActions draws a person's actions (#actions, keys 1-3, api.actCar) and the
+                 binocular mask (#binoc, its opacity is the person's bino 0..1; the wheel zooms
+                 through api.wheelCar first). Standing somewhere (kind 'vista', the overlook)
+                 the button reads "Step away" and clicks still pick the person there.
 js/minimap.js    top-right map (#minimap): base map of limits, parks, water and rail drawn once
                  from api.mapData; LEVELS = metres across per zoom step; you as a view cone, or
                  the train and its line in bold when riding; a click calls api.flyToPoint(x, z).
@@ -494,7 +504,42 @@ places.js        labels and "Go to" views from data-jsh-places, label heights ab
 farms.js         crop fields from data-jsh-farms through the farming year (stage(kind, day):
                  ground colour, canopy height and colour, hay bales), in three planting groups a week
                  apart; the canopy is a slab raised by position.y; barns (gambrel, gable, pole) and
-                 silos standing on the terrain
+                 silos standing on the terrain; exports stage() for detassel.js
+detassel.js      the seed-corn block: female and male plants and tassels (instanced; a slab from far
+                 off), and the detasseling crew: four teenagers and the crew boss, Kyle's figures
+                 (phl/people.js) with faces, caps, trash bags before DEW and the boss's holstered
+                 pistol and scowl. They work SEASON (days) and HOURS, walking the sets in turn
+                 (legs) and pulling tassels as they pass. Same interface as phl/pedestrians.js
+                 (pickPerson, inhabit, leave, getInhabited, inhabitFrame, portrait), so index.js uses it
+                 as `peds` for Jersey Shore and ui.js shows the same #persona card
+crewprofiles.js  made-up lives for the crew: detasselerProfile(i), bossProfile()
+cornlod.js       corn plants near the camera in every corn field: 16 m squares of plants made on
+                 the fields' rows when first needed (cache of CACHE), copied into two instanced meshes
+                 (full plants within NEAR, cheap ones to FAR; FAR shrinks as the camera rises, 0 above
+                 ~95 m) when the camera has moved MOVE m or turned; farms.js CORN_HOLE cuts the canopy
+                 slab (colour and shadow) to the same circle
+overlook.js      the hunter on Bald Eagle Mountain: folding chair, camo and blaze-orange figure
+                 (phl/people.js geo(), posed by reach()), cigarette and smoke, beer can and
+                 40-pack, stump with binoculars and rifle, pickup with a buck in the bed.
+                 overlookSite(places) puts the site a few steps off the "Bald Eagle Mountain"
+                 label toward town; the module owns the "Bald Eagle Vista w/ Mr. Kepner" view (id 'ridge',
+                 not in data-jsh-places): the flight ends standing behind him (stand(), kind
+                 'vista' in getState(), "Step away"). pick() -> boardCar -> inhabit() is first
+                 person (kind 'person', Duane Kepner, fictional): act('drag' | 'drink' |
+                 'glass') on keys 1-3 and the #actions bar in ui.js; every fourth drink adds
+                 an empty. The binoculars (setGlass/aim/zoom, the #binoc mask in index.html)
+                 pan and zoom to opts.spot() (harvest.js's combine, else the river bridge in
+                 town, TOWN); scroll zooms (wheelCar in index.js), dragging takes over.
+                 leave() steps back behind the chair, leave(true) hands the camera back.
+                 He and the buck are there all year.
+harvest.js       the last corn standing: pickLateField(farms, eye, blockers) chooses the
+                 nearest corn field of 3 ha or more wholly in sight of the overlook (called
+                 from index.js with buildings, barns, silos and trees as blockers; that field is
+                 skipped by farms.js buildFarms and drawn here). A combine with an eight-row
+                 head works it HARVEST (days of the year, Oct 14 to Dec 1), HOURS 7:00-21:30,
+                 lights after dark, swath by swath (CUT shader hook on its ground and canopy;
+                 cornlod.js asks its cut(x, z) per plant). spot() is what the overlook's
+                 binoculars aim at while it is in the field, null outside the window
 
 Debug handle in the browser console: window.__city
   { scene, camera, controls, renderer, labels, lines, views, flyTo(viewId),
@@ -504,7 +549,9 @@ Debug handle in the browser console: window.__city
     setFly(forward, strafe, up), setRiding(false), setCreative(on), getCreative(),
     creativeLook(dx, dy), creativeSpeed(dir), setTransitMap(on), getTransitMap(), legend,
     oldTrolleyLegend, setCut('market' | 'times-square' | false), getCut(), pickCar(x, y),
-    boardCar(hit), leaveCar(), getCar(), lookCar(dx, dy), moveCar(forward, strafe), river, monorail }
+    boardCar(hit), leaveCar(), getCar(), lookCar(dx, dy), moveCar(forward, strafe), river, monorail,
+    actCar(id) ('drag' | 'drink' | 'glass': the person you are inside, today only the hunter),
+    wheelCar(dy) (binocular zoom; true if it zoomed), corn, harvest, overlook (the jsh modules) }
 
 
 5. Editing data: stdlib-only Python helper

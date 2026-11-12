@@ -49,6 +49,15 @@ SCENARIOS = [
      "setup": "api.setTime(12.5); api.boardLine('m:PAO');", "moving": True},
     {"name": "ride-monorail", "desc": "riding the riverfront loop monorail, first person",
      "setup": "api.setTime(api.sunset - .35); api.boardLine('loop');", "moving": True},
+    # Jersey Shore only (run with --city jsh): the Bald Eagle Mountain overlook in harvest season
+    {"name": "overlook-stand", "desc": "standing behind the hunter on Bald Eagle Mountain, looking across the valley (jsh)",
+     "setup": "api.setDay(300); api.setTime(12); api.flyTo('ridge');", "settle": 3000},
+    {"name": "overlook-bino", "desc": "through the hunter's binoculars at the combine in the last standing corn (jsh)",
+     "setup": """api.setDay(300); api.setTime(12); api.flyTo('ridge'); await P.sleep(2600);
+       { const c = api.renderer.domElement; let hit = null;
+         for (let x = 60; x < c.clientWidth && !hit; x += 10) for (let y = 60; y < c.clientHeight; y += 10) { const h = api.pickCar(x, y); if (h && h.hunter) { hit = h; break; } }
+         if (hit) { api.boardCar(hit); api.actCar('glass'); } }
+       await P.sleep(3000);""", "settle": 1500},
 ]
 
 QUICK = ["overview-dusk", "whole-city", "fly-market", "ride-L"]
