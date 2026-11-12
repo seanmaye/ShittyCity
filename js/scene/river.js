@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { latOf, pairs } from '../data.js';
 import { M } from './materials.js';
 import { Builder, addPolygon, addRibbon } from './geometry.js';
+import { terrain } from './terrain.js';
 export function buildRiver(scene, data) {
   const c = data.center, NS = c.length / 3, RS = [];
   for (let i = 0; i < NS; i++) RS.push({ p: new THREE.Vector3(c[i * 3] / 10, 0, c[i * 3 + 1] / 10), w: c[i * 3 + 2] / 10 });
@@ -28,7 +29,7 @@ export function buildRiver(scene, data) {
   const wb = new Builder();
   const polys = data.water.map(poly => poly.map(pairs));
   polys.forEach(rings => addPolygon(wb, rings, 0));
-  const water = new THREE.Mesh(wb.geometry(), waterMat); water.position.y = .6; water.receiveShadow = true; scene.add(water);
+  const water = new THREE.Mesh(wb.geometry(), waterMat); water.position.y = terrain.on ? .15 : .6; water.receiveShadow = true; water.userData.terrain = 'water'; scene.add(water);
 
   // stone bulkhead along the river banks
   const eb = new Builder();

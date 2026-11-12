@@ -6,6 +6,7 @@
 // invitation to fish with them (js/fishing.js).
 import * as THREE from 'three';
 import { makeFigure } from './people.js';
+import { terrain, surface, water } from '../terrain.js';
 
 // [label, lat, side (1 east bank, -1 west bank)] on the river centreline; and boat-pier banks
 const BANK_SPOTS = [
@@ -32,10 +33,10 @@ const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const SKIN = ['#8d5a3c', '#c99370', '#e0b48f', '#6b4430', '#b07a55', '#f0c9a6'], HAIR = ['#1d1410', '#3a2a20', '#6b4a2b', '#9a9a96', '#2a1d16'];
 const SHIRT = ['#3f6b8a', '#8a3f3a', '#4f7a3a', '#c9a227', '#6a4c93', '#e07b39', '#2e4b2a', '#b5b9be'];
 
-/** water: polygons (lists of flat dm rings) of the real water outline */
-export function buildAnglers(scene, river, boats, water = []) {
+/** waterPolys: polygons (lists of flat dm rings) of the real water outline */
+export function buildAnglers(scene, river, boats, waterPolys = []) {
   // point-in-water test against the real outline (bounding boxes first)
-  const polys = water.map(p => { const rings = p.map(r => { const o = []; for (let i = 0; i < r.length; i += 2) o.push([r[i] / 10, r[i + 1] / 10]); return o; });
+  const polys = waterPolys.map(p => { const rings = p.map(r => { const o = []; for (let i = 0; i < r.length; i += 2) o.push([r[i] / 10, r[i + 1] / 10]); return o; });
     const xs = rings[0].map(q => q[0]), zs = rings[0].map(q => q[1]); return { rings, x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) }; });
   const inRing = (x, z, r) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; };
   const wet = (x, z) => polys.some(p => x >= p.x0 && x <= p.x1 && z >= p.z0 && z <= p.z1 && inRing(x, z, p.rings[0]) && !p.rings.slice(1).some(h => inRing(x, z, h)));
@@ -59,7 +60,7 @@ export function buildAnglers(scene, river, boats, water = []) {
   const bucket = new THREE.MeshStandardMaterial({ color: '#d8d4c8', roughness: .7 }), cooler = new THREE.MeshStandardMaterial({ color: '#2f6ab0', roughness: .6 }), lid = new THREE.MeshStandardMaterial({ color: '#f1f1ec' });
   const anglers = spots.map((sp, i) => {
     const [name, hello] = FOLK[i % FOLK.length], sit = i % 3 !== 1;
-    const g = new THREE.Group(); g.position.copy(sp.at).setY(.45); g.rotation.y = Math.atan2(sp.face.x, sp.face.z); scene.add(g);
+    const g = new THREE.Group(); g.position.copy(sp.at).setY(terrain.on ? surface(sp.at.x, sp.at.z) + .3 : .45); g.rotation.y = Math.atan2(sp.face.x, sp.face.z); g.userData.terrain = 'done'; scene.add(g);
     const F = makeFigure({ shirt: SHIRT[(i * 3) % SHIRT.length], skin: SKIN[(i * 5) % SKIN.length], hair: HAIR[(i * 7) % HAIR.length], shorts: '#3a3f4a' });
     g.add(F.root);
     if (sit) {   // on a folding stool
@@ -78,7 +79,9 @@ export function buildAnglers(scene, river, boats, water = []) {
     // line from the tip to a bobber out on the water
     const cast = 7 + (i % 4) * 1.5, bobber = new THREE.Group();
     const b1 = new THREE.Mesh(new THREE.SphereGeometry(.09, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2), bob[0]), b2 = new THREE.Mesh(new THREE.SphereGeometry(.09, 10, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), bob[1]);
-    bobber.add(b1, b2); bobber.position.set(.3, .6 - .45, cast); g.add(bobber);
+    bobber.add(b1, b2); bobber.position.set(.3, 0, cast); g.add(bobber); g.updateMatrixWorld(true);
+    const bw = g.localToWorld(V(.3, 0, cast)), by = (terrain.on ? water(bw.x, bw.z) + .15 : .6) - g.position.y;   // the water surface out there
+    bobber.position.y = by;
     const lg = new THREE.BufferGeometry().setFromPoints([tipL, bobber.position]); const line = new THREE.Line(lg, lineMat); g.add(line);
     // a bait bucket and a cooler on the bank
     const bk = new THREE.Mesh(new THREE.CylinderGeometry(.16, .13, .36, 10), bucket); bk.position.set(-.6, .18, -.2); g.add(bk);
@@ -86,8 +89,8 @@ export function buildAnglers(scene, river, boats, water = []) {
     const cl = new THREE.Mesh(new THREE.BoxGeometry(.57, .06, .38), lid); cl.position.set(.7, .41, -.3); g.add(cl);
     g.traverse(o => { if (o.isMesh) o.castShadow = true; });
     const head = V(0, 0, 0);
-    return { name, hello, spot: sp.label, g, F, bobber, line, tip: tipL, cast, phase: i * 1.3, nibble: 0, head, sit,
-      view: { pos: g.localToWorld(V(-2.2, 3.4, -4.2)), target: g.localToWorld(V(.4, .9, cast * .6)) } };
+    return { name, hello, spot: sp.label, g, F, bobber, line, tip: tipL, cast, by, phase: i * 1.3, nibble: 0, head, sit,
+      view: { pos: g.localToWorld(V(-2.2, 3.4, -4.2)), target: g.localToWorld(V(.4, .9, cast * .6)), abs: true } };
   });
 
   const pv = new THREE.Vector3();
@@ -99,7 +102,7 @@ export function buildAnglers(scene, river, boats, water = []) {
       if (A.nibble <= 0 && Math.random() < dt * .08) A.nibble = .6;
       A.nibble -= dt;
       const dip = A.nibble > 0 ? Math.sin(A.nibble * 18) * .06 - .05 : 0;
-      A.bobber.position.y = .6 - .45 + Math.sin(t * 2.1 + A.phase) * .025 + dip;
+      A.bobber.position.y = A.by + Math.sin(t * 2.1 + A.phase) * .025 + dip;
       const p = A.line.geometry.attributes.position; p.setXYZ(1, A.bobber.position.x, A.bobber.position.y + .05, A.bobber.position.z); p.needsUpdate = true;
       A.F.chest.rotation.y = Math.sin(t * .4 + A.phase) * .08;   // shifting about, watching the water
     }
@@ -123,8 +126,8 @@ export function buildAnglers(scene, river, boats, water = []) {
   const A = anglers.find(x => x.spot === 'on Kelly Drive') || anglers[0];
   const views = [];
   if (A) {
-    const ry = A.g.rotation.y, fwd = V(Math.sin(ry), 0, Math.cos(ry)), right = V(-fwd.z, 0, fwd.x), at = A.g.position.clone().setY(1.2);
-    views.push({ id: 'fishing', name: 'Fishing on the Schuylkill', pos: at.clone().addScaledVector(fwd, 36).addScaledVector(right, -6).setY(12), target: at.clone().addScaledVector(right, 9) });
+    const ry = A.g.rotation.y, fwd = V(Math.sin(ry), 0, Math.cos(ry)), right = V(-fwd.z, 0, fwd.x), at = A.g.position.clone();
+    views.push({ id: 'fishing', name: 'Fishing on the Schuylkill', pos: at.clone().addScaledVector(fwd, 36).addScaledVector(right, -6).setY(A.g.position.y + 12), target: at.clone().addScaledVector(right, 9).setY(A.g.position.y + 1), abs: true });
   }
   return { update, pick, info, views, count: anglers.length };
 }

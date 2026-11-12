@@ -14,6 +14,7 @@ import { onWalnut } from './promenade.js';
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+import { terrain, surface, drape } from '../terrain.js';
 
 // shades picked to stand apart from the live lines' colours (PATCO and monorail reds, Broad St
 // and Girard oranges, the L's blue, the Atlantic City Line's purple, the shuttles' teal) when "Show transit lines" is on
@@ -79,18 +80,23 @@ function loopRunner(P) {
     s = ((s % L) + L) % L; let lo = 0, hi = S.length - 1;
     while (hi - lo > 1) { const m = (lo + hi) >> 1; if (S[m] <= s) lo = m; else hi = m; }
     const t = (s - S[lo]) / ((S[hi] - S[lo]) || 1);
-    return out.set(P[lo][0] + (P[hi][0] - P[lo][0]) * t, RAIL_Y, P[lo][1] + (P[hi][1] - P[lo][1]) * t);
+    const x = P[lo][0] + (P[hi][0] - P[lo][0]) * t, z = P[lo][1] + (P[hi][1] - P[lo][1]) * t;
+    return out.set(x, RAIL_Y + surface(x, z), z);
   } };
 }
 
 export function buildOldTrolleys(scene, data, renderer) {
   const group = new THREE.Group(); scene.add(group);                               // track and cars
   const overlay = new THREE.Group(); overlay.visible = false; scene.add(overlay);   // the "Show transit lines" lines
+  group.userData.terrain = overlay.userData.terrain = 'done';                       // both put on the ground here
   const gone = Object.fromEntries(data.routes.map(r => [r.n, r.gone]));
   const eraOf = rs => { const y = Math.max(...rs.map(n => gone[n] || 0)); const i = ERAS.findIndex(e => y <= e.to); return i < 0 ? ERAS.length - 1 : i; };
   const bed = new Builder(), rails = new Builder();
   const segs = ERAS.map(() => []), casSegs = CASING.map(() => []);   // flat [x0,y0,z0, x1,y1,z1, ...] per colour
-  const addSegs = (out, pts) => { for (let i = 1; i < pts.length; i++) out.push(pts[i - 1][0], LIFT, pts[i - 1][1], pts[i][0], LIFT, pts[i][1]); };
+  const addSegs = (out, pts) => {
+    const Y = p => LIFT + surface(p[0], p[1]);
+    for (let i = 1; i < pts.length; i++) out.push(pts[i - 1][0], Y(pts[i - 1]), pts[i - 1][1], pts[i][0], Y(pts[i]), pts[i][1]);
+  };
   const track = pts => {   // one track: bed and two rails
     // no dark bed where Walnut St is a brick promenade: there the rails are set in the paving
     let run = [];
@@ -182,6 +188,7 @@ export function buildOldTrolleys(scene, data, renderer) {
     const mat = M(color, Object.assign({ roughness: .7, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }, o));
     if (lit) { mat.emissive.set(color); mat.emissiveIntensity = 0; mat.userData.lit = lit; litMats.push(mat); }   // glows at night
     const m = new THREE.Mesh(b.geometry(), mat); m.position.y = y; m.receiveShadow = true; into.add(m);
+    if (terrain.on) drape(m, surface, 10);   // the track lies in the street, wherever the ground is
   };
   // overlay: screen-space fat lines drawn over everything, one draw call per colour
   const mats = [], size = new THREE.Vector2();

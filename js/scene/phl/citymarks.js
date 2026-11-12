@@ -10,6 +10,7 @@ import { M, litMats, winMat, reps, addDisplay, DISPLAY_PRESETS } from '../materi
 import { Builder, addPolygon } from '../geometry.js';
 import { makeFigure } from './people.js';
 import { buildFrisbee } from './frisbee.js';
+import { terrain, profile, drape } from '../terrain.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const cen = r => { let x = 0, z = 0; for (const p of r) { x += p[0]; z += p[1]; } return [x / r.length, z / r.length]; };
@@ -360,7 +361,18 @@ export function buildCityMarks(scene, data) {
   // the frisbee game on the Belmont & Edgley cricket ground
   const games = (data.fields || []).map(f => buildFrisbee(scene, f));
   for (const h of data.halls || []) (h.type === 'independence' ? independenceHall : memorialHall)(scene, h);
-  for (const b of data.bridges || []) bridge(scene, b, nightOnly);
+  for (const b of data.bridges || []) {
+    const from = scene.children.length; bridge(scene, b, nightOnly);
+    if (!terrain.on) continue;
+    const [ax, az] = b.a, [bx, bz] = b.b, L = Math.hypot(bx - ax, bz - az), dx = (bx - ax) / L, dz = (bz - az) / L, P = [];
+    for (let s = 0; s <= L; s += 10) P.push({ x: ax + dx * s, z: az + dz * s });
+    const off = profile(P, 60), f = (x, z) => { const s = Math.max(0, Math.min(L, (x - ax) * dx + (z - az) * dz)) / 10, i = Math.min(off.length - 2, Math.floor(s)); return off[i] + (off[i + 1] - off[i]) * (s - i); };
+    for (const o of scene.children.slice(from)) {
+      if (o.isInstancedMesh) { const a = o.instanceMatrix.array; for (let i = 0; i < o.count; i++) a[i * 16 + 13] += f(a[i * 16 + 12], a[i * 16 + 14]); o.instanceMatrix.needsUpdate = true; }
+      else drape(o, f, 1e9);
+      o.userData.terrain = 'done';
+    }
+  }
   const labels = (data.labels || []).map(l => ({ text: l.t, pos: V(l.x, l.y, l.z) }));
   // camera presets
   const views = [];

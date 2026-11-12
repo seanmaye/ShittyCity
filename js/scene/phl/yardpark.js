@@ -141,7 +141,7 @@ export function buildYardPark(scene, data, guideways) {
     const x = data.trees[i] / 10, z = data.trees[i + 1] / 10;
     if (!local.some(s => segDist2(x, z, s[0], s[1], s[2], s[3]) < 12 * 12)) trees.push(data.trees[i], data.trees[i + 1]);
   }
-  buildTrees(scene, trees, data.h);
+  buildTrees(scene, trees, data.h, false);   // on the deck, which index.js lifts as a whole
   return {
     duskOnly: b.duskOnly, update: b.update,
     labels: [

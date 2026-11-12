@@ -83,7 +83,7 @@ function sitPose(F, k, act, sip, hip) {
 }
 
 export function buildPedestrians(scene, nav, count = 200) {
-  const { at, project, seats, doors, obst, pave } = nav, L = nav.length;
+  const { at, project, seats, doors, obst, pave } = nav, L = nav.length, gr = nav.ground || (() => 0);   // gr: the street's real height there
 
   // ---- which seats and doors can be reached: the walk from the lane must be clear
   const segDist = (px, pz, ax, az, bx, bz) => { const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz; const t = l2 ? Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / l2)) : 0; return Math.hypot(px - ax - dx * t, pz - az - dz * t); };
@@ -127,11 +127,11 @@ export function buildPedestrians(scene, nav, count = 200) {
   const glassG = new THREE.PlaneGeometry(.6, 1.35); glassG.translate(.47, 1.3, .03);
   const leaves = new THREE.InstancedMesh(leafG, new THREE.MeshStandardMaterial({ color: '#3a2b1f', roughness: .7 }), doors.length);
   const glass = new THREE.InstancedMesh(glassG, nav.shopMat, doors.length);
-  for (const im of [leaves, glass]) { im.frustumCulled = false; scene.add(im); }   // the doors stay when the people are off
+  for (const im of [leaves, glass]) { im.frustumCulled = false; im.userData.terrain = 'done'; scene.add(im); }   // the doors stay when the people are off; on the ground by gr below
   const doorM = new THREE.Object3D();
   function setDoor(i) {
     const d = doors[i], hx = Math.cos(d.ry), hz = -Math.sin(d.ry);   // the door's local +x, along the facade
-    doorM.position.set(d.x - hx * .47 + d.nx * .09, pave, d.z - hz * .47 + d.nz * .09); doorM.rotation.set(0, d.ry + d.angle, 0); doorM.updateMatrix();
+    doorM.position.set(d.x - hx * .47 + d.nx * .09, pave + gr(d.x, d.z), d.z - hz * .47 + d.nz * .09); doorM.rotation.set(0, d.ry + d.angle, 0); doorM.updateMatrix();
     leaves.setMatrixAt(i, doorM.matrix); glass.setMatrixAt(i, doorM.matrix);
   }
   doors.forEach((d, i) => { d.i = i; d.angle = 0; d.until = -1; setDoor(i); });
@@ -140,6 +140,7 @@ export function buildPedestrians(scene, nav, count = 200) {
 
   // ---- the instanced body parts and props
   const group = new THREE.Group(); group.name = 'walnut-people'; scene.add(group);
+  group.userData.terrain = 'done';   // each person already stands on the street's real height (gr)
   const G = crowdGeometry(), mat = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .8 });
   const parts = PARTS.map(([g, joints, col, flag]) => {
     const im = new THREE.InstancedMesh(G[g], mat, count * joints.length);
@@ -330,7 +331,7 @@ export function buildPedestrians(scene, nav, count = 200) {
         // seated: sit a little back on the seat
         let x = P.x, z = P.z;
         if (P.k > 0 && P.seat != null) { const st = seats[P.seat]; x -= Math.sin(st.ry) * .1 * P.k; z -= Math.cos(st.ry) * .1 * P.k; }
-        F.root.position.set(x, pave, z); F.root.rotation.y = P.h; F.root.updateMatrixWorld(true);
+        F.root.position.set(x, pave + gr(x, z), z); F.root.rotation.y = P.h; F.root.updateMatrixWorld(true);
       }
       // the person being inhabited has no head (the camera is in it)
       for (const p of parts) p.joints.forEach((j, k) => p.im.setMatrixAt(P.i * p.joints.length + k, hide || (me && (j === 'head' || j === 'hair')) || (p.flag && !P[p.flag]) ? ZERO : F[j].matrixWorld));
@@ -368,7 +369,7 @@ export function buildPedestrians(scene, nav, count = 200) {
     const f = h / (2 * Math.tan(camera.fov * Math.PI / 360)), cp = camera.position; let best = null;
     for (const P of people) {
       if (P.hidden || P.hiddenOut || P === inside) continue;
-      const cy = pave + (P.k > .5 ? .95 : 1.25) * P.prof.scale, dist = Math.hypot(P.x - cp.x, cy - cp.y, P.z - cp.z); if (dist > 300) continue;
+      const cy = pave + gr(P.x, P.z) + (P.k > .5 ? .95 : 1.25) * P.prof.scale, dist = Math.hypot(P.x - cp.x, cy - cp.y, P.z - cp.z); if (dist > 300) continue;
       pv.set(P.x, cy, P.z).project(camera); if (pv.z > 1) continue;
       const d = Math.hypot((pv.x + 1) / 2 * w - x, (1 - pv.y) / 2 * h - y), tol = Math.max(8, f * .45 / dist);
       if (d < tol && (!best || d / tol < best.r)) best = { person: P.i, r: d / tol };
@@ -380,7 +381,7 @@ export function buildPedestrians(scene, nav, count = 200) {
   function leave() {
     if (!inside) return null;
     const P = inside; inside = null; P.posed = false;
-    return { p: new THREE.Vector3(P.x, pave, P.z), dir: new THREE.Vector3(Math.sin(P.h), 0, Math.cos(P.h)), cam: pullBack(P.x, P.z, P.h) };
+    return { p: new THREE.Vector3(P.x, pave + gr(P.x, P.z), P.z), dir: new THREE.Vector3(Math.sin(P.h), 0, Math.cos(P.h)), cam: pullBack(P.x, P.z, P.h) };
   }
   /** what they're doing right now, in words */
   function activity(P) {
@@ -405,7 +406,7 @@ export function buildPedestrians(scene, nav, count = 200) {
   function inhabitFrame(camera) {
     const P = inside; if (!P) return;
     if (P.hidden || P.hiddenOut) {   // in the shop: just inside the (held open) door, looking out through the shopfront
-      const d = P.door; openDoor(d); eye.set(d.x - d.nx * .9, pave + 1.6 * P.prof.scale, d.z - d.nz * .9);
+      const d = P.door; openDoor(d); eye.set(d.x - d.nx * .9, pave + gr(d.x, d.z) + 1.6 * P.prof.scale, d.z - d.nz * .9);
       const a = Math.atan2(d.nx, d.nz) + Math.max(-1, Math.min(1, look.yaw)); fwd.set(Math.sin(a), Math.sin(look.pitch - .05), Math.cos(a));
     } else {
       P.F.head.getWorldPosition(eye); eye.y += .04;

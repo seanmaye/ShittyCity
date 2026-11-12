@@ -53,7 +53,10 @@ instead of editing this file. If you only have this file, edit it directly as de
   Every city has its own local frame (js/cities.js `frame`), with the same axes:
   x       metres EAST   = (lon - LON0) * MX
   z       metres SOUTH  = -(lat - LAT0) * 111000      (north is -z)
-  y       metres UP
+  y       metres UP. New York is flat (ground at y = 0). Philadelphia has real terrain
+          (data-phl-terrain, NAVD88 metres): heights in the data are ABOVE THE GROUND
+          (building, El and label heights; tunnel depths below it), and the page sets
+          everything on the ground as it loads (js/scene/terrain.js, section 4).
 
   City           LAT0      LON0       MX         origin
   Philadelphia   39.9560   -75.1760   85390      near 22nd and Arch Streets
@@ -240,6 +243,17 @@ data-phl-boats          river boat lines (tools/phl/build_boats.py; all but Rive
          from; s = distance along p. p runs mid-channel through the real water; dams are
          barriers. Boats run out and back (phl/boats.js), one per 6 km, dwelling DWELL s a stop.
 
+data-phl-terrain        (gzip binary "TER1", little endian) the ground, from USGS 3DEP bare earth
+  int32 x0_dm, z0_dm, cell_dm, W, H   first sample, spacing (10 m), samples per row and rows
+  int16 ground[W*H]   decimetres; under rivers and lakes the bed (up to 2.5 m below the water)
+  int16 water[W*H]    water surface minus ground, decimetres: set in the water and 120 m onto
+                      the land beside it, 0 elsewhere
+  Each row of both grids is delta-coded (first value, then differences). The grid covers the
+  city's bbox plus 200 m; beyond it the edge heights carry on. Built by
+  tools/phl/build_terrain.py from tools/phl/fetch_dem.py's download. Water levels are real
+  (3DEP is hydro-flattened): tidal Delaware and lower Schuylkill about -1.5 m, the pool above
+  the Fairmount Dam about 3.3 m.
+
 data-phl-yardpark       PROPOSAL: deck over the 30th Street rail yard
   h:      deck height (m)
   rings:  [outer_ring_dm, hole_ring_dm, ...]; a hole lets a tall building stand through
@@ -318,6 +332,30 @@ js/scene/season.js     time of year: setSeason(day 0-364) evaluates CURVES (snow
                  amount) whitens up-facing surfaces by the SNOW uniform (index.js applies it to
                  every mesh once built; userData.noSnow opts out, userData.snowAmt scales it:
                  roads .3). seasonalGrass(mat) browns grass over winter.
+js/scene/terrain.js    the ground (data-<city>-terrain; without it terrain.on is false and every
+                 lookup returns 0, so a flat city needs nothing). Lookups: ground(x,z),
+                 water(x,z), surface(x,z) = max of the two, isWet, normalAt, profile(points)
+                 (surface smoothed along a line and level across water: tracks, guideways,
+                 bridges). footprint(ring, h) -> {y0, top, mid}: walls from the lowest
+                 ground under the ring, roof h above the ground at its middle (city.js,
+                 buildings.js). buildTerrain draws the ground mesh (1 km tiles at 20 m near,
+                 80 m far, 4 km blocks in one mesh each once a whole block is far, and a skirt
+                 to the horizon). seat(scene) runs once everything is
+                 built and sets each object on the ground by its userData.terrain:
+                   'done'  placed by its own module      'water'  drape onto the water
+                   'drape' bend onto the ground          'rigid'  lift as one by footing()
+                   {y}     lift as one by y              (none)   instanced meshes per
+                   instance, meshes wider than 80 m drape, the rest lift as one.
+                 Draping splits a flat piece only where the ground under it bends more than
+                 its tolerance (default 10 cm either way; userData.drapeTol = [below, above]:
+                 TOL_LAWN for parks, TOL_WATER for water), so flat ground costs no triangles.
+                 index.js also lifts the transit data first (liftTransit: track split to
+                 points 5 m apart; street-level track onto the ground right under it, Els
+                 and tunnels by profile; each piece keeps its lift per point in `g`, and
+                 subway.js tells street, El and tunnel apart by height above the ground,
+                 point.h, never by y; platforms by their track, El columns stretched to the
+                 deck), the yard park deck (level, on the yard's median floor), labels and
+                 "Go to" views.
 js/scene/subway.js     every rail line (data-<city>-transit, plus data-phl-metro): rails, platforms,
                  El decks and columns, looping instanced trains (SPEC: car sizes, cars per train,
                  train spacing, speeds, per kind), and the cut-away sections:
@@ -697,11 +735,15 @@ Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, hei
     path, and the transit tracks, stations and El columns;
   - delete or move them yourself (see the recipes).
   Philadelphia's riverfront loop and all its piers DO re-route at load time.
+- Philadelphia has terrain: build new things at ground level (y = 0 is "on the ground") and
+  let seat() put them on it, or set userData.terrain = 'done' and add surface(x, z) yourself
+  (import it from the terrain chunk). A tall object placed by hand at y = 0 on a hillside
+  ends up buried, and one placed at a real height ends up floating.
 - Performance budget: about 3-4M triangles and 1,000-1,500 draw calls when the whole city is
   in view (far city tiles draw only roofs). Merge or instance new geometry; don't add
   thousands of separate meshes. Instanced meshes must have frustumCulled = false (or manage
   their own visibility, as city.js does), because three.js r128 culls them by their origin.
-- The file is about 28 MB (Philadelphia about 16, New York about 11). The gzip blocks hold most
+- The file is about 36 MB (Philadelphia about 24, 8 of it the terrain; New York about 11). The gzip blocks hold most
   of the data; keep new bulky data in a gzip block rather than JSON.
 - Keep each city's attribution line (CITY.credit). Philadelphia: map data (c) OpenStreetMap
   contributors, ODbL; building data (c) City of Philadelphia. New York: buildings NYC Open

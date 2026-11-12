@@ -4,6 +4,7 @@ import { pairs } from '../data.js';
 import { M } from './materials.js';
 import { Builder, addPolygon, addRibbon } from './geometry.js';
 import { seasonalGrass } from './season.js';
+import { terrain, surface, TOL_LAWN } from './terrain.js';
 import { onPromenade } from './phl/promenade.js';
 import { CITY } from '../cities.js';
 // Colours sampled to match summer aerial imagery: mown grass, darker park woodland, asphalt,
@@ -99,7 +100,7 @@ function countryside(cover, size = 30000, cell = 250) {
  */
 export function buildGround(scene, data, river, capRings = [], { sea = false, paved = [] } = {}) {
   const cap = capRings.map(pairs);
-  if (!sea) {
+  if (!sea && !terrain.on) {   // with terrain, city.js lays the ground mesh (paved and country) instead
     const outer = new THREE.Mesh(countryside(paved.map(pairs)), seasonalGrass(M(COUNTRY, { roughness: 1, side: THREE.FrontSide })));
     outer.receiveShadow = true; scene.add(outer);
 
@@ -116,7 +117,7 @@ export function buildGround(scene, data, river, capRings = [], { sea = false, pa
   gb.forEach((b, k) => {
     if (!b.count) return;
     const m = new THREE.Mesh(b.geometry(), seasonalGrass(M(GREEN[k], { side: THREE.FrontSide })));
-    m.position.y = .3 + k * .02; m.receiveShadow = true; scene.add(m);
+    m.position.y = .3 + k * .02; m.receiveShadow = true; m.userData.drapeTol = TOL_LAWN; scene.add(m);
   });
 
   const { bridgeSegs } = drawLines(scene, data.lines, { cap, wet: (x, z) => { const r = river.riverInfo(x, z); return Math.abs(r.d) < r.w / 2 - 4; } });
@@ -168,7 +169,9 @@ export function drawLines(scene, lines, { cap = [], wet = () => false, tile = 0 
       bridgeSegs.push([ax, az, bx, bz]);
     }
     P.push(br.pts[br.pts.length - 1]); S.push(s);
-    const Y = S.map(d => Math.min(top, .8 + .15 * Math.min(d, s - d)));
+    // on terrain a deck runs straight between the ground at its two ends
+    const e0 = surface(P[0][0], P[0][1]), e1 = surface(P[P.length - 1][0], P[P.length - 1][1]);
+    const Y = S.map(d => Math.min(top, .8 + .15 * Math.min(d, s - d)) + e0 + (e1 - e0) * d / Math.max(1e-6, s));
     const hw = br.w / 2 + (br.k === 2 ? .6 : 1);
     for (let i = 0; i < P.length - 1; i++) {
       const [ax, az] = P[i], [bx, bz] = P[i + 1]; let dx = bx - ax, dz = bz - az; const L = Math.hypot(dx, dz); if (L < .01) continue;
@@ -191,8 +194,9 @@ export function drawLines(scene, lines, { cap = [], wet = () => false, tile = 0 
       b.v(ax + nx, ya - 1.6, az + nz, 0, -1, 0); b.v(ax - nx, ya - 1.6, az - nz, 0, -1, 0); b.v(bx + nx, yb - 1.6, bz + nz, 0, -1, 0); b.v(bx - nx, yb - 1.6, bz - nz, 0, -1, 0);
       b.tri(q, q + 1, q + 2); b.tri(q + 1, q + 3, q + 2);
       // piers every ~36 m over the river
-      if (Math.floor(S[i] / 36) !== Math.floor(S[i + 1] / 36) && ya > 6) {
-        if (wet(ax, az)) piers.push({ x: ax, z: az, h: ya - 1.6, w: br.w * .8, ry: Math.atan2(-dz, dx) });
+      const foot = surface(ax, az);
+      if (Math.floor(S[i] / 36) !== Math.floor(S[i + 1] / 36) && ya - foot > 6) {
+        if (wet(ax, az)) piers.push({ x: ax, y: foot, z: az, h: ya - 1.6 - foot, w: br.w * .8, ry: Math.atan2(-dz, dx) });
       }
     }
   }
@@ -207,13 +211,13 @@ export function drawLines(scene, lines, { cap = [], wet = () => false, tile = 0 
       if (!b.count && tile) return;
       const m = add(new THREE.Mesh(b.geometry(), lineMat[c])); m.position.y = y; m.receiveShadow = true; flat.push(m);
     });
-    [[t.bc, conc], [t.bd, dark], [t.bg, greenDeck]].forEach(([b, m]) => { if (!b.count) return; const mesh = add(new THREE.Mesh(b.geometry(), m)); mesh.castShadow = mesh.receiveShadow = true; });
+    [[t.bc, conc], [t.bd, dark], [t.bg, greenDeck]].forEach(([b, m]) => { if (!b.count) return; const mesh = add(new THREE.Mesh(b.geometry(), m)); mesh.castShadow = mesh.receiveShadow = true; mesh.userData.terrain = 'done'; });
   }
   if (piers.length) {
     const g = new THREE.BoxGeometry(1, 1, 1); g.translate(0, .5, 0);
     const im = new THREE.InstancedMesh(g, conc, piers.length), o = new THREE.Object3D();
-    piers.forEach((p, i) => { o.position.set(p.x, 0, p.z); o.rotation.y = p.ry; o.scale.set(4, p.h, p.w); o.updateMatrix(); im.setMatrixAt(i, o.matrix); });
-    im.castShadow = true; im.frustumCulled = false; scene.add(im); meshes.push(im);
+    piers.forEach((p, i) => { o.position.set(p.x, p.y || 0, p.z); o.rotation.y = p.ry; o.scale.set(4, p.h, p.w); o.updateMatrix(); im.setMatrixAt(i, o.matrix); });
+    im.castShadow = true; im.frustumCulled = false; im.userData.terrain = 'done'; scene.add(im); meshes.push(im);
   }
   return { bridgeSegs, meshes, flat };
 }

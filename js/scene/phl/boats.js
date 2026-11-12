@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import { pairs } from '../../data.js';
 import { litMats } from '../materials.js';
+import { terrain, water } from '../terrain.js';
 
 const WATER_Y = .6, LEN = 22, BEAM = 6.2, VMAX = 9, DWELL = 18;
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -81,7 +82,7 @@ export function buildBoats(scene, data) {
   };
   const slots = [], lines = [], routes = [], labels = [], fleet = [], seen = new Set();
   for (const ln of data.lines) {
-    const P = pairs(ln.p).map(([x, z]) => V(x, WATER_Y, z)), run = loopRun(P), id = 'boat:' + ln.id;
+    const P = pairs(ln.p).map(([x, z]) => V(x, terrain.on ? water(x, z) + .6 : WATER_Y, z)), run = loopRun(P), id = 'boat:' + ln.id;
     // stops on the way out and the way back, in loop order (the next-stop sign and line diagram)
     run.stops = [...ln.stops.map(s => ({ s: Math.min(s.s, run.half - .01), t: s.t })), ...ln.stops.slice(0, -1).reverse().map(s => ({ s: run.L - s.s, t: s.t }))].sort((a, b) => a.s - b.s);
     // the line diagram (subway.js rideStrip): out to the last stop and back, known exactly
@@ -98,7 +99,7 @@ export function buildBoats(scene, data) {
     // boats spread evenly round the loop, one per 6 km of route (at least one)
     const n = Math.max(1, Math.round(run.half / 6000));
     for (let k = 0; k < n; k++) {
-      const model = boatModel(ln.color, winMat); scene.add(model);
+      const model = boatModel(ln.color, winMat); model.userData.terrain = 'done'; scene.add(model);
       const sl = { line: id, lineName: name, led: ln.name, color: ln.color, k, c: 0, run, s: run.L * k / n, dwell: 0, pos: V(0, 0, 0), dir: V(0, 0, 1), q: new THREE.Quaternion(), hidden: false,
         model, bob: k * 1.7, sync() {}, onBoard(on) { model.userData.shell.forEach(m => { m.visible = !on; }); } };   // aboard: the walkable cabin replaces the outer walls; hull and deck stay
       slots.push(sl); fleet.push(sl);
@@ -109,7 +110,7 @@ export function buildBoats(scene, data) {
   function place(sl) {
     const r = sl.run;
     r.at(sl.s + 5, a); r.at(sl.s - 5, b); sl.dir.subVectors(a, b).setY(0); if (sl.dir.lengthSq() < 1e-6) sl.dir.set(0, 0, 1); sl.dir.normalize();
-    r.at(sl.s, sl.pos); sl.pos.y = WATER_Y - .15 + Math.sin(t * 1.3 + sl.bob) * .06;
+    r.at(sl.s, sl.pos); sl.pos.y = (terrain.on ? water(sl.pos.x, sl.pos.z) : WATER_Y - .15) + Math.sin(t * 1.3 + sl.bob) * .06;   // afloat on the real water level
     sl.q.setFromUnitVectors(fwd, sl.dir);
     sl.model.position.copy(sl.pos); sl.model.quaternion.copy(sl.q);
     sl.model.rotateZ(Math.sin(t * .9 + sl.bob) * .012);   // a gentle roll

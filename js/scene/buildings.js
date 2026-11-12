@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { pairs } from '../data.js';
 import { worldWinMat, WIN_W, WIN_H, roofColor, M, addDisplay } from './materials.js';
 import { Builder, addPrism, addLoft, colorOf } from './geometry.js';
+import { footprint } from './terrain.js';
 
 // Facade colours by style, weighted toward what Philadelphia (where they were tuned) is made of: red brick
 // rowhouses (some painted, stuccoed or Formstone), brick and limestone commercial blocks,
@@ -36,15 +37,16 @@ function ringArea(r) { let a = 0; for (let i = 0; i < r.length; i++) { const p =
  * Rooftop plant on a tall building: a penthouse (and a second, smaller one on towers) inset
  * from the footprint, plus where its aviation light goes. Adds to b (plain, vertex-coloured).
  */
-export function addRooftop(b, ring, h, wall, r, lights) {
+/** base: the ground the building stands on (its roof is at base + h) */
+export function addRooftop(b, ring, h, wall, r, lights, base = 0) {
   const c = ring.reduce((s, p) => [s[0] + p[0] / ring.length, s[1] + p[1] / ring.length], [0, 0]);
   const inset = f => ring.map(([x, z]) => [c[0] + (x - c[0]) * f, c[1] + (z - c[1]) * f]);
   const col = new THREE.Color(wall).multiplyScalar(.82), roof = new THREE.Color(roofColor(r));
   const h1 = h + 3 + Math.min(6, h * .025);
-  addPrism(b, [inset(.58 + r * .1)], h, h1, 0, 1, 1, col, roof);
+  addPrism(b, [inset(.58 + r * .1)], base + h, base + h1, 0, 1, 1, col, roof);
   let top = h1;
-  if (h > 110) { top = h1 + 4; addPrism(b, [inset(.3)], h1, top, 0, 1, 1, col, roof); }
-  if (h > 90 && lights) lights.push(c[0], top + 1.5, c[1]);
+  if (h > 110) { top = h1 + 4; addPrism(b, [inset(.3)], base + h1, base + top, 0, 1, 1, col, roof); }
+  if (h > 90 && lights) lights.push(c[0], base + top + 1.5, c[1]);
 }
 
 /** Red aviation lights on the tallest roofs (shown at night). */
@@ -87,13 +89,14 @@ export function buildBuildings(scene, data) {
     if (style) {
       kind = styles[style].kind; color = styles[style].color;
       const id = styles[style].id;
-      if (id === 'cira') shells.push(displayShell(outer, 8, h));
-      if (id === 'fmc') shells.push(displayShell(outer, h - 14, h + 7));
+      const f = footprint(outer, h);   // the display lights ride on the building, wherever its ground is
+      if (id === 'cira') shells.push(displayShell(outer, f.mid + 8, f.top));
+      if (id === 'fmc') shells.push(displayShell(outer, f.top - 14, f.top + 7));
     }
     else {
       const rowhouse = h < 16 && Math.abs(ringArea(outer)) < 320;
       kind = facadeKind(rowhouse, h, hash(i + 11)); color = facadeColor(kind, hash(i));
-      if (!rowhouse && h > 40) addRooftop(top, outer, h, color, hash(i + 5), lights);
+      if (!rowhouse && h > 40) addRooftop(top, outer, h, color, hash(i + 5), lights, footprint(outer, h).mid);
     }
     const [cx, cz] = outer[0];
     const key = Math.floor(cx / TILE) + ',' + Math.floor(cz / TILE) + ',' + kind;
@@ -105,14 +108,15 @@ export function buildBuildings(scene, data) {
     const b = new Builder({ uv: true, color: true });
     for (const [i, color] of t.items) {
       const [hdm, , ...flat] = data.b[i];
-      addPrism(b, flat.map(pairs), 0, hdm / 10, hash(i + 7) * 4, WIN_W, WIN_H, colorOf(color), colorOf(roofColor(hash(i + 3))));
+      const rings = flat.map(pairs), f = footprint(rings[0], hdm / 10);   // base at the lowest ground under it, roof level
+      addPrism(b, rings, f.y0, f.top, hash(i + 7) * 4, WIN_W, WIN_H, colorOf(color), colorOf(roofColor(hash(i + 3))), f.mid);
     }
     const m = new THREE.Mesh(b.geometry(), worldWinMat(t.kind));
-    m.castShadow = m.receiveShadow = true; scene.add(m); meshes.push(m);
+    m.castShadow = m.receiveShadow = true; m.userData.terrain = 'done'; scene.add(m); meshes.push(m);
   });
   const roofs = new THREE.Mesh(top.geometry(), M('#ffffff', { vertexColors: true, roughness: .85 }));
-  roofs.castShadow = roofs.receiveShadow = true; scene.add(roofs);
-  const beacons = aviationLights(lights); scene.add(beacons);
-  shells.forEach(m => scene.add(m));
+  roofs.castShadow = roofs.receiveShadow = true; roofs.userData.terrain = 'done'; scene.add(roofs);
+  const beacons = aviationLights(lights); beacons.userData.terrain = 'done'; scene.add(beacons);
+  shells.forEach(m => { m.userData.terrain = 'done'; scene.add(m); });
   return { meshes, count: data.b.length, nightOnly: [beacons, ...shells] };
 }

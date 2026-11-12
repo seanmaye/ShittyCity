@@ -17,6 +17,7 @@ All of Philadelphia out to the city limits, with every rail transit line and our
   - Walnut Street as a car-free brick shopping street, from 22nd to Front, busy with people who stroll, shop and sit for a coffee
   - the Market Street subway cut-away
 - **The rest of the city** surrounds the core without changing anything in it: about 500k more buildings, plus streets, parks, creeks and park trees.
+- **Real terrain.** The ground is the USGS 3DEP bare-earth elevation at 10 m, from the tidal flats by the Navy Yard to the 130 m hills of Chestnut Hill and the Wissahickon gorge. The rivers sit at their real levels: the tidal Delaware and lower Schuylkill, and the higher pools above the Fairmount and Flat Rock dams. Every building stands on the ground under it: its walls reach down to the lowest point of its footprint, so none floats on a slope, and its roof is its LiDAR height above the middle. Streets, parks, bridges, trees, people and the proposals follow the ground. At-grade track lies on it, the Els keep their height above it, and tunnels keep their depth below it.
 - **Every rail transit line** is modelled, and "Show transit lines" highlights them all:
   - the L and the B1-B3 Broad Street Line
   - the G1 and T1-T5 trolleys
@@ -181,6 +182,14 @@ python -I tools/phl/build_city.py
 python -I tools/phl/build_metro.py
 ```
 
+```bash
+python -I tools/phl/fetch_dem.py
+```
+
+```bash
+python -I tools/phl/build_terrain.py
+```
+
 What each step does:
 - `fetch_city.py` downloads the 546k building footprints (about 210 MB, resumable) and the city boundary.
 - `build_city.py` keeps everything outside the core and inside the city limits, so the core's data is never touched. It takes about 5 minutes.
@@ -188,6 +197,8 @@ What each step does:
   - `build_city.py` leaves out the footprints inside the landmark outlines and the bridge decks.
   - `build_metro.py` lays PATCO on the Ben Franklin Bridge deck.
 - `build_metro.py` builds every line's track, stations and out-and-back route. It reuses the Center City L and trolley geometry exactly, and blends the new track into it at the edge of the core.
+- `fetch_dem.py` downloads the 3DEP elevation for the city's box plus 600 m, at 10 m, as four float32 GeoTIFFs (about 40 MB) from the USGS National Map elevation service.
+- `build_terrain.py` resamples it onto the scene grid and lowers a riverbed under the water the scene draws, so run it after `build_city.py`. It takes under a minute and writes `terrain.bin.gz` (about 6 MB). The ground everything else stands on is worked out when the page loads, so nothing else needs rebuilding when the terrain changes.
 
 | Tool | What it does |
 | --- | --- |
@@ -207,6 +218,8 @@ What each step does:
 | `extract_bridges.py` | the Delaware bridge decks and Memorial Hall (merged into the same file) |
 | `build_landmarks.py` | fits the landmark models (`city_landmarks.json`) |
 | `build_boats.py` | routes the river boats mid-channel through the water (`boats.json`), from `city.json.gz` and `river.json` |
+| `fetch_dem.py` | downloads the USGS 3DEP bare-earth elevation (10 m GeoTIFFs) |
+| `build_terrain.py` | the ground heights and water levels (`terrain.bin.gz`) |
 
 ## Sources
 
@@ -219,6 +232,7 @@ What each step does:
 | Streets, trails, rail, bridges | OpenStreetMap `highway` / `railway` ways |
 | Rail transit: tracks, stations, platforms, entrances | OpenStreetMap route relations; tunnel depths and El heights are estimates |
 | City limits | OpenStreetMap relation 188022 |
+| Terrain | USGS 3D Elevation Program (3DEP) bare-earth DEM, 1/3 arc-second, from the National Map elevation service (public domain) |
 | 1953 streetcars | The Philadelphia Transportation Company map of January 1953, and Harold E. Cox, *Surface Cars of Philadelphia 1911-1965* |
 
 Map data © OpenStreetMap contributors, ODbL. Building data © City of Philadelphia.

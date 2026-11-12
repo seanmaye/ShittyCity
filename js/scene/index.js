@@ -29,14 +29,67 @@ import { buildPromenade } from './phl/promenade.js';
 import { buildPedestrians } from './phl/pedestrians.js';
 import { buildBoats } from './phl/boats.js';
 import { buildAnglers } from './phl/anglers.js';
+import { setTerrain, terrain, seat, surface, profile } from './terrain.js';
 // let the status line paint between build steps (a timer, so it also works in background tabs)
 const nextFrame = () => new Promise(r => setTimeout(r, 16));
 // what a feature contributes when the city doesn't have it (another city's landmarks, say)
 const none = () => ({ labels: [], views: [], nightOnly: [], duskOnly: [], boatLines: [], curves: [], trains: [], lines: [], slots: [], legend: [], update() {}, setOverlay() {} });
 
+/** the rail yard's floor under the park deck (median of the ground inside its outline) */
+function yardFloor(yp) {
+  const r = pairs(yp.rings[0]), xs = r.map(p => p[0]), zs = r.map(p => p[1]), h = [];
+  const inside = (x, z) => { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [xi, zi] = r[i], [xj, zj] = r[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; };
+  for (let x = Math.min(...xs); x <= Math.max(...xs); x += 15) for (let z = Math.min(...zs); z <= Math.max(...zs); z += 15) if (inside(x, z)) h.push(surface(x, z));
+  h.sort((a, b) => a - b); return h.length ? h[h.length >> 1] : 0;
+}
+
+/**
+ * Raise the transit data onto the terrain before the subway builds from it. Each track and run is
+ * first split to points at most STEP m apart, then lifted: track at street level by the ground
+ * right under it (so it lies in the street, which is draped the same way), Els and tunnels by the
+ * ground smoothed over 60 m either side (so a viaduct or tunnel doesn't follow every kerb), blending
+ * between the two on the ramps; across water both run straight from bank to bank (terrain.js
+ * profile). Each piece keeps its lift per point in `g` (dm), so subway.js can still tell street,
+ * El and tunnel apart by height above the ground. Platforms follow the track beside them, and El
+ * columns stretch from the ground to the deck.
+ */
+function liftTransit(T) {
+  const STEP = 5, hash = new Map(), key = (x, z) => Math.floor(x / 50) + ',' + Math.floor(z / 50);
+  const lift = flat => {
+    const P = [], H = [];   // points (m) and their height above the ground in the data
+    for (let i = 0; i < flat.length; i += 3) {
+      const x = flat[i] / 10, z = flat[i + 1] / 10, y = flat[i + 2] / 10;
+      if (P.length) {
+        const a = P[P.length - 1], h0 = H[H.length - 1], n = Math.ceil(Math.hypot(x - a.x, z - a.z) / STEP);
+        for (let k = 1; k < n; k++) { P.push({ x: a.x + (x - a.x) * k / n, z: a.z + (z - a.z) * k / n }); H.push(h0 + (y - h0) * k / n); }
+      }
+      P.push({ x, z }); H.push(y);
+    }
+    const exact = profile(P, 0), smooth = profile(P, 60), out = [], g = [];
+    P.forEach((p, k) => {
+      const w = Math.min(1, Math.max(0, (Math.abs(H[k]) - 1.5) / 3)), off = exact[k] + (smooth[k] - exact[k]) * w;
+      out.push(Math.round(p.x * 10), Math.round(p.z * 10), Math.round((H[k] + off) * 10)); g.push(Math.round(off * 10));
+      const h = key(p.x, p.z); (hash.get(h) || hash.set(h, []).get(h)).push([p.x, p.z, off]);
+    });
+    return { p: out, g };
+  };
+  T.tracks = T.tracks.map(t => ({ ...t, ...lift(t.p) }));
+  T.runs = T.runs.map(r => ({ ...r, ...lift(r.p) }));
+  const near = (x, z) => {   // the lift of the nearest track point within 80 m, else the ground
+    let best = null, bd = 80 * 80;
+    for (let a = -2; a <= 2; a++) for (let b = -2; b <= 2; b++) for (const q of hash.get((Math.floor(x / 50) + a) + ',' + (Math.floor(z / 50) + b)) || []) { const d = (q[0] - x) ** 2 + (q[1] - z) ** 2; if (d < bd) { bd = d; best = q[2]; } }
+    return best ?? surface(x, z);
+  };
+  T.platforms = T.platforms.map(p => ({ ...p, y: p.y + near(p.x, p.z) }));
+  if (T.columns) { const C = T.columns.slice(); for (let i = 0; i < C.length; i += 3) { const x = C[i] / 10, z = C[i + 1] / 10; C[i + 2] = Math.max(10, Math.round(C[i + 2] + (near(x, z) - surface(x, z)) * 10)); } T.columns = C; }
+}
+
 export async function buildScene(canvas, data, status = () => {}) {
+  // the real ground under everything, where the city has it (data/<city>/terrain.bin.gz)
+  setTerrain(data.terrain || null);
   const core = createCore(canvas);
   const { scene, camera, controls, renderer, sun, hemi } = core;
+  if (terrain.on) { const g = surface(core.HOME_TGT.x, core.HOME_TGT.z); core.HOME_POS.y += g; core.HOME_TGT.y += g; }
 
   status('Shaping the river…'); await nextFrame();
   const river = buildRiver(scene, data.river);
@@ -73,7 +126,13 @@ export async function buildScene(canvas, data, status = () => {}) {
   const updateShells = data.landmarks ? buildShells(scene, river) : () => {};
   let sports = none(), yard = none();
   if (data.sports) { status('Building the sports parks…'); await nextFrame(); sports = buildSports(scene, data.sports, river, ground.bridgeSegs, data.ground.lines); }
-  if (data.yardpark) { status('Capping the rail yard…'); await nextFrame(); yard = buildYardPark(scene, data.yardpark, [monorail.curve, ...sports.curves].filter(Boolean)); }
+  if (data.yardpark) {
+    status('Capping the rail yard…'); await nextFrame();
+    const from = scene.children.length;
+    yard = buildYardPark(scene, data.yardpark, [monorail.curve, ...sports.curves].filter(Boolean));
+    // the deck stays level: all of it rises together, by the floor of the yard it covers
+    if (terrain.on) { const y = yardFloor(data.yardpark); scene.children.slice(from).forEach(o => { o.userData.terrain = { y }; }); yard.labels.forEach(l => { l.pos.y += y; l.abs = true; }); }
+  }
   status('Laying the transit network…'); await nextFrame();
   // the city's transit; Philadelphia also has its citywide network in data/phl/metro.json.gz,
   // whose full-length runs replace the Center City runs of the lines they extend
@@ -90,8 +149,10 @@ export async function buildScene(canvas, data, status = () => {}) {
     runs: [...T.runs.filter(r => !replace.has(r.line)), ...Mt.runs],
     platforms: [...T.platforms, ...Mt.platforms], stations: [...T.stations, ...Mt.stations], entrances: [...(T.entrances || []), ...(Mt.entrances || [])],
   };
+  if (terrain.on) liftTransit(transit);   // tracks, platforms and El columns onto the ground
   const before = new Set(scene.children);
   const subway = buildSubway(scene, transit, river);
+  if (terrain.on) scene.children.filter(o => !before.has(o)).forEach(o => { if (!o.userData.terrain) o.userData.terrain = 'done'; });
   const old53 = data.trolley1953 ? buildOldTrolleys(scene, data.trolley1953, renderer) : none();   // 1953 streetcar track and cars
   // no snow on the rail network (tunnels, stations, cars and their insides) or on the rivers
   scene.children.filter(o => !before.has(o)).forEach(o => o.traverse(m => { if (m.material) [].concat(m.material).forEach(x => { x.userData.noSnow = true; }); }));
@@ -114,6 +175,8 @@ export async function buildScene(canvas, data, status = () => {}) {
   if (boats.slots.length) subway.registerFleet('boat', boats.spec, boats.slots);
   // people fishing along the Schuylkill: click one to be asked to fish with them (js/fishing.js)
   const anglers = isPhl ? buildAnglers(scene, river, data.boats, [...data.river.water, ...data.city.water]) : { update() {}, pick: () => null, info: () => null, views: [] };
+  // everything else onto the ground: drape the flat ground pieces, set the rest down on it (terrain.js)
+  if (terrain.on) { status('Setting the city on its hills…'); await nextFrame(); seat(scene); }
   // cut-aways: clip every material by the section plane, except what the subway marks noClip
   // winter snow on whatever faces the sky (roofs, ground, parks, decks, conifers): season.js
   scene.traverse(o => { if (o.isMesh) [].concat(o.material).forEach(m => addSnow(m, m.userData.snowAmt ?? 1)); });
@@ -130,6 +193,8 @@ export async function buildScene(canvas, data, status = () => {}) {
     return { text: l.t, pos: new THREE.Vector3(l.x, l.y, l.z) };
   }).concat(sports.labels, yard.labels, subway.labels, marks.labels, old53.labels, boats.labels, nyc.labels.filter(l => !nycBridges.some(b => b.id === l.text)), nycMono.labels,
     nycBridges.map(b => ({ text: b.id, far: 3700, pos: new THREE.Vector3((b.a[0] + b.b[0]) / 2, b.labelHeight, (b.a[1] + b.b[1]) / 2) })));
+  // tags float the same height above the ground as they did above the flat model
+  if (terrain.on) for (const l of labels) if (!l.abs && l.pos) l.pos.y += surface(l.pos.x, l.pos.z);
   // instanced meshes hold instances far from their own origin: never let three cull them as a whole,
   // except those that carry the bounds of their instances (geometry.js withBounds)
   scene.traverse(o => { if (o.isInstancedMesh && !o.userData.bounded) o.frustumCulled = false; });
@@ -210,6 +275,8 @@ export async function buildScene(canvas, data, status = () => {}) {
   // the river boats at Penn's Landing, from over Columbus Boulevard
   const rsp = data.boats && data.boats.lines.flatMap(l => l.stops).find(st => st.t === 'Race Street Pier');
   if (rsp) views.push({ id: 'boats', name: 'River boats', pos: V(rsp.x - 300, 150, rsp.z + 300), target: V(rsp.x + 80, 0, rsp.z - 40) });
+  // camera presets look at the ground where it really is (the home view is lifted with HOME_TGT)
+  if (terrain.on) for (const v of views) if (!v.abs && v.id !== 'home') { const g = surface(v.target.x, v.target.z); v.pos = v.pos.clone(); v.target = v.target.clone(); v.pos.y += g; v.target.y += g; v.abs = true; }
   // while a section is cut open the camera may look level into it (normally it stays above the horizon)
   function setCut(id) {
     const r = subway.setCut(id);
@@ -233,7 +300,7 @@ export async function buildScene(canvas, data, status = () => {}) {
     setCreative(false);
     if (riding !== false) setRiding(false, true);
     if (aboard()) leaveCar(true);
-    const off = camera.position.clone().sub(controls.target), t1 = new THREE.Vector3(x, 0, z);
+    const off = camera.position.clone().sub(controls.target), t1 = new THREE.Vector3(x, surface(x, z), z);
     if (off.y < 150) off.multiplyScalar(150 / Math.max(1, off.y));
     fly = { t: 0, dur: 1.8, p0: camera.position.clone(), t0: controls.target.clone(), p1: t1.clone().add(off), t1, lift: Math.min(450, camera.position.distanceTo(t1) * .12) };
   }
@@ -332,11 +399,12 @@ export async function buildScene(canvas, data, status = () => {}) {
     side.set(-fwd.z, 0, fwd.x);
     mv.set(0, 0, 0).addScaledVector(fwd, flyKeys.f).addScaledVector(side, flyKeys.s); if (mv.lengthSq() > 1) mv.normalize();
     mv.y = flyKeys.u; mv.multiplyScalar(speed * dt);
-    if (camera.position.y + mv.y < 3) mv.y = 3 - camera.position.y;
+    const floor = surface(camera.position.x + mv.x, camera.position.z + mv.z) + 3;   // never below the ground
+    if (camera.position.y + mv.y < floor) mv.y = floor - camera.position.y;
     camera.position.add(mv);
     if (creative) return;
     controls.target.x += mv.x; controls.target.z += mv.z;
-    controls.target.y = Math.max(0, controls.target.y + mv.y);
+    controls.target.y = Math.max(surface(controls.target.x, controls.target.z), controls.target.y + mv.y);
   }
   // click a train car to board it, or a cafe chair or bench on Walnut St to sit down
   const pickCar = (x, y) => { camera.updateMatrixWorld(); const w = canvas.clientWidth, h = canvas.clientHeight; return subway.pick(camera, x, y, w, h) || peds.pickPerson(camera, x, y, w, h) || walnut.pickSeat(camera, x, y, w, h); };

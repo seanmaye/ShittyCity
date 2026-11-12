@@ -78,7 +78,7 @@ export function addRibbon(b, pts, w, y) {
 
 /** Extrude a footprint (outer ring CCW-positive-area + holes) from y0 to y1 with window UVs.
  *  The roof gets roofColor and UV (-1, -1), which facade materials map to a blank patch. */
-export function addPrism(b, rings, y0, y1, uOff, tileW, tileH, color, roofColor = color) {
+export function addPrism(b, rings, y0, y1, uOff, tileW, tileH, color, roofColor = color, vBase = 0) {   // vBase: where window rows count from (the ground)
   for (const r of rings) {
     let u = uOff;
     for (let i = 0; i < r.length; i++) {
@@ -86,8 +86,9 @@ export function addPrism(b, rings, y0, y1, uOff, tileW, tileH, color, roofColor 
       const ex = bx - ax, ez = bz - az, L = Math.hypot(ex, ez); if (L < .05) continue;
       const nx = ez / L, nz = -ex / L; // outward for positive-area rings, inward-facing courtyards for holes
       const u1 = u + L / tileW;
-      const a0 = b.v(ax, y0, az, nx, 0, nz, u, y0 / tileH, color), b0 = b.v(bx, y0, bz, nx, 0, nz, u1, y0 / tileH, color);
-      const b1 = b.v(bx, y1, bz, nx, 0, nz, u1, y1 / tileH, color), a1 = b.v(ax, y1, az, nx, 0, nz, u, y1 / tileH, color);
+      const v0 = (y0 - vBase) / tileH, v1 = (y1 - vBase) / tileH;
+      const a0 = b.v(ax, y0, az, nx, 0, nz, u, v0, color), b0 = b.v(bx, y0, bz, nx, 0, nz, u1, v0, color);
+      const b1 = b.v(bx, y1, bz, nx, 0, nz, u1, v1, color), a1 = b.v(ax, y1, az, nx, 0, nz, u, v1, color);
       b.tri(a0, b1, b0); b.tri(a0, a1, b1);
       u = u1;
     }
