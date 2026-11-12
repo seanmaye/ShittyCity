@@ -15,6 +15,7 @@ import * as THREE from 'three';
 import { geo, pose } from './people.js';
 import { makeProfile, SHOPS } from './profiles.js';
 import { pullBack } from './promenade.js';
+import { LIGHT, makeRenderer } from '../../three-setup.js';
 
 const LANE = [2.4, 3.5];          // walking lanes (|o|): clear of the streetcar and of the kerb furniture
 const SPEED = [1.05, 1.5];        // walking speeds, m/s
@@ -425,11 +426,11 @@ export function buildPedestrians(scene, nav, count = 200) {
     const P = people[i]; if (!P) return null;
     if (!pr) {
       const canvas = document.createElement('canvas');
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+      const renderer = makeRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(28, 1, .05, 10);
-      sc.add(new THREE.HemisphereLight('#fff4e6', '#4a5560', .85));
-      const key = new THREE.DirectionalLight('#ffffff', .75); key.position.set(.6, 1.2, 1.4); sc.add(key);
+      sc.add(new THREE.HemisphereLight('#fff4e6', '#4a5560', .85 * LIGHT));
+      const key = new THREE.DirectionalLight('#ffffff', .75 * LIGHT); key.position.set(.6, 1.2, 1.4); sc.add(key);
       const bust = new THREE.Group(); sc.add(bust);
       pr = { canvas, renderer, sc, cam, bust };
     }

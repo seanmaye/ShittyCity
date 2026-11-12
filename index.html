@@ -10,8 +10,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script type="importmap">
-{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js",
-               "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/" } }
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+               "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/" } }
 </script>
 </head>
 <body>
@@ -41,12 +41,14 @@
 <div class="legend" id="legend" hidden></div>
 <div class="lines" id="lines" role="group" aria-label="Choose a line" hidden></div>
 <div class="views" id="views" role="group" aria-labelledby="views-h"><span class="views-h" id="views-h">Go to</span><div class="row" id="view-btns"></div></div>
+<div class="views eats" id="eats" role="group" aria-labelledby="eats-h" hidden><span class="views-h" id="eats-h">Restaurants <span class="sky-name">djour’s starred picks</span></span><div class="row eats-ctl"><button id="eat-lbl" type="button" class="ghost" aria-pressed="true">Hide restaurant labels</button><select id="eat-hood" aria-label="Show the restaurants in a neighbourhood"></select></div><div class="row eat-list" id="eat-list"></div></div>
 </div>
 </div></div>
 <div class="minimap" id="minimap" hidden><canvas id="mm" aria-label="Map of the city showing where you are. Click to fly there."></canvas>
 <div class="mm-ctl"><button type="button" id="mm-in" aria-label="Zoom the map in" title="Zoom in">+</button><button type="button" id="mm-out" aria-label="Zoom the map out" title="Zoom out">−</button></div>
 <span class="mm-scale" id="mm-scale" aria-hidden="true"></span></div>
 <aside class="persona" id="persona" aria-live="polite" hidden><div class="pe-face" id="pe-face" role="img"></div><h2 id="pe-name"></h2><dl class="pe-facts"><div><dt>Age</dt><dd id="pe-age"></dd></div><div><dt>Sex</dt><dd id="pe-sex"></dd></div><div><dt>Height</dt><dd id="pe-h"></dd></div><div><dt>Weight</dt><dd id="pe-w"></dd></div></dl><p class="pe-now"><span>Now</span> <b id="pe-now"></b></p><p class="pe-bio" id="pe-bio"></p></aside>
+<aside class="eatcard" id="eatcard" aria-live="polite" hidden><button type="button" class="eat-x" id="eat-x" aria-label="Close">×</button><h2 id="eat-name"></h2><p class="eat-stars" id="eat-stars"></p><p class="eat-meta" id="eat-meta"></p><p class="eat-tags" id="eat-tags"></p><blockquote class="eat-note" id="eat-note" hidden></blockquote><p class="eat-src">From <a href="https://www.djourformore.com/" target="_blank" rel="noopener">djour’s Philly food map</a></p></aside>
 <div class="actions" id="actions" role="group" aria-label="Things to do" hidden></div>
 <div class="ridebar" id="ridebar" role="status" aria-live="off" hidden><div class="rb-h"><span class="rb-dot" id="rb-dot" aria-hidden="true"></span><b id="rb-name"></b><span class="rb-to" id="rb-to"></span><span class="rb-next" id="rb-next"></span></div><svg id="rb-svg" viewBox="0 0 1000 120" preserveAspectRatio="xMidYMax meet" aria-hidden="true"></svg></div>
 <p class="credit" id="credit"></p>

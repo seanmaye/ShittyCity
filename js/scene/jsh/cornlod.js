@@ -171,8 +171,8 @@ export function buildCornLOD(scene, fields, seed = null, late = null) {
     // only the part of each buffer in use goes to the GPU
     near.count = tas.count = nN; mid.count = nM;
     for (const [m, n] of [[near, nN], [tas, nN], [mid, nM]]) {
-      m.instanceMatrix.updateRange.count = n * 16; m.instanceMatrix.needsUpdate = true;
-      if (m.instanceColor && m !== tas) { m.instanceColor.updateRange.count = n * 3; m.instanceColor.needsUpdate = true; }
+      m.instanceMatrix.clearUpdateRanges(); m.instanceMatrix.addUpdateRange(0, n * 16); m.instanceMatrix.needsUpdate = true;
+      if (m.instanceColor && m !== tas) { m.instanceColor.clearUpdateRanges(); m.instanceColor.addUpdateRange(0, n * 3); m.instanceColor.needsUpdate = true; }
     }
   }
   const stats = () => ({ near: nN, mid: nM, squares: cache.size, hole: CORN_HOLE.value.z });

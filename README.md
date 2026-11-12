@@ -4,7 +4,7 @@ Interactive three.js models of whole cities, built from real map data, with prop
 
 | City | What's in it | More |
 | --- | --- | --- |
-| **Philadelphia** (`phl`) | Philadelphia out to the city limits on its real terrain (USGS 3DEP elevation); every rail transit line (SEPTA Metro, Regional Rail, PATCO, NJ Transit); the 1953 streetcars; stadiums, Independence Hall and the Delaware bridges. Proposals: a Schuylkill riverfront monorail loop, expressway sports parks, a rail yard park and a bowl, and Walnut Street as a brick promenade busy with people you can see through the eyes of, and a Chinatown night market whose arcade stall has games you can play. Chinatown is modelled in detail, Friendship Gate and all. Cut-away: under Market Street. | [docs/PHL.md](docs/PHL.md) |
+| **Philadelphia** (`phl`) | Philadelphia out to the city limits on its real terrain (USGS 3DEP elevation); every rail transit line (SEPTA Metro, Regional Rail, PATCO, NJ Transit); the 1953 streetcars; stadiums, Independence Hall and the Delaware bridges. Proposals: a Schuylkill riverfront monorail loop, expressway sports parks, a rail yard park and a bowl, and Walnut Street as a brick promenade busy with people you can see through the eyes of, djour's 265 starred restaurants modelled as storefronts on their real buildings with their own labels and cards, and a Chinatown night market whose arcade stall has games you can play. Chinatown is modelled in detail, Friendship Gate and all. Cut-away: under Market Street. | [docs/PHL.md](docs/PHL.md) |
 | **New York** (`nyc`) | Manhattan, Brooklyn and Queens; the four East River bridges; Manhattan's towers, the Wonder Wheel, the Unisphere and Citi Field; 11 subway lines. Proposal: an East River monorail loop. Cut-away: under Times Square. | [docs/NYC.md](docs/NYC.md) |
 | **Jersey Shore, PA** (`jsh`) | Jersey Shore borough and its neighbours on the West Branch of the Susquehanna: about 4,100 buildings, every street, the river round the island, Pine Creek, and Bald Eagle Mountain and the hills, on real terrain, with crop fields that grow and are harvested through the year, barns and silos, and in July a detasseling crew in the seed corn whose eyes you can see through. Proposal: the West Branch monorail loop via the river island and Antes Fort. | [docs/JSH.md](docs/JSH.md) |
 
@@ -49,7 +49,7 @@ python -I tools/perf/perf.py run --quick
 python -I tools/bundle.py
 ```
 
-This rebuilds `city-models.html` at the repo root (about 39 MB), the file you send people. It has the CSS, every script and every city's data inline, so it opens with a double-click and needs no server. three.js and the font still load from their CDNs, so viewers need an internet connection.
+This rebuilds `city-models.html` at the repo root (about 41 MB), the file you send people. It has the CSS, every script and every city's data inline, so it opens with a double-click and needs no server. three.js and the font still load from their CDNs, so viewers need an internet connection.
 
 **Workflow.** Edit the sources (`js/`, `css/`, `data/`, `index.html`) and check them with the local server. Then run the bundler and commit the sources and the rebuilt HTML together.
 
@@ -78,8 +78,9 @@ Shared code sits at the top level. Each city has a folder of the same name in `d
 
 ```
 city-models.html      the shareable single-file build (generated: run tools/bundle.py)
-index.html            page shell, start menu, HUD markup, import map for three.js 0.128
+index.html            page shell, start menu, HUD markup, import map for three.js 0.186
 css/style.css         HUD, menu and label styles
+js/three-setup.js     three.js settings that keep the r128-tuned look (colours, light scale)
 js/main.js            entry point: city menu -> load data -> build scene -> start UI
 js/cities.js          every city's settings (projection, data files, home view, sun, page text)
 js/data.js            data loader + lat/lon -> scene projection
@@ -104,6 +105,7 @@ js/scene/
   materials.js        shared materials, lit-window textures, skyline lights
   geometry.js         polygon / ribbon / footprint-extrusion builders
   phl/                Philadelphia's hand-built parts: landmarks, citymarks (stadiums, halls,
+                      djour's restaurants (restaurants.js),
                       bridges), people and frisbee, the riverfront monorail, the river boats,
                       the sports parks,
                       the rail yard park, the Walnut St promenade with its pedestrians and their

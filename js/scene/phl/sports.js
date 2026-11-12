@@ -2,7 +2,7 @@
 // (tennis, basketball, five-a-side, volleyball) with a shuttle monorail overhead.
 // Court positions come from data/phl/sports.json (tools/phl/proposal.py).
 import * as THREE from 'three';
-import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { pairs } from '../../data.js';
 import { M, litMats } from '../materials.js';
 import { Builder } from '../geometry.js';
@@ -125,7 +125,7 @@ function buildCourts(scene, data) {
     add(surf, new THREE.MeshStandardMaterial({ map: canvas(t.w, t.d, g => SURFACE[t.name](g, t.w, t.d)), roughness: .9 }), false);
     const groups = {};
     for (const [geo, key] of EQUIP[t.name](t.w, t.d)) (groups[key] = groups[key] || []).push(geo.toNonIndexed());
-    for (const [key, geos] of Object.entries(groups)) add(BufferGeometryUtils.mergeBufferGeometries(geos), mats[key], key !== 'fence' && key !== 'net');
+    for (const [key, geos] of Object.entries(groups)) add(BufferGeometryUtils.mergeGeometries(geos), mats[key], key !== 'fence' && key !== 'net');
   });
   return boxes;
 }

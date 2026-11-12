@@ -30,7 +30,7 @@ export const CITIES = {
     files: [
       ['buildings', 'buildings.json'], ['river', 'river.json'], ['ground', 'ground.json'], ['trees', 'trees.json'],
       ['landmarks', 'landmarks.json'], ['sports', 'sports.json'], ['yardpark', 'yardpark.json'], ['transit', 'transit.json'],
-      ['trolley1953', 'trolley1953.json'], ['city', 'city.json.gz'], ['cityBuildings', 'city_buildings.bin.gz'], ['metro', 'metro.json.gz'], ['cityMarks', 'city_landmarks.json'], ['boats', 'boats.json'], ['terrain', 'terrain.bin.gz'],
+      ['trolley1953', 'trolley1953.json'], ['city', 'city.json.gz'], ['cityBuildings', 'city_buildings.bin.gz'], ['metro', 'metro.json.gz'], ['cityMarks', 'city_landmarks.json'], ['boats', 'boats.json'], ['terrain', 'terrain.bin.gz'], ['restaurants', 'restaurants.json'],
     ],
     home: { pos: [39.9425, -75.1935, 430], target: [39.9560, -75.1730, 70] },   // [lat, lon, height]
     sunTarget: [39.9575, -75.1760], sun: { lat: 39.952, lon: -75.164 },
@@ -42,7 +42,7 @@ export const CITIES = {
     hint: 'All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill. Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom. Click any train to ride inside it.',
     cutButton: 'Cut away Market St',
     cutHint: 'Market Street cut open: the L (blue) and the T1–T5 trolleys (green) in the subway below. Tunnels that turn away from Market are drawn see-through. Track positions are from OpenStreetMap; depths are estimates.',
-    credit: 'Buildings: City of Philadelphia LI footprints · River, parks, streets, transit: © OpenStreetMap contributors',
+    credit: 'Buildings: City of Philadelphia LI footprints · River, parks, streets, transit: © OpenStreetMap contributors · Restaurant picks and notes: djour (djourformore.com)',
     building: 'Building out the rest of Philadelphia…',
     groups: ['SEPTA Metro', 'Regional Rail', 'PATCO', 'NJ Transit'],
     stationLines: septaLines,

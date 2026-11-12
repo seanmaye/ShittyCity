@@ -1,5 +1,7 @@
 // Entry point: pick a city (start menu, or ?city=phl / ?city=nyc) -> load its data -> build the
 // scene -> wire up the UI -> run. One city per page load: "Change city" reloads to the menu.
+// first: three.js settings, before any module makes a colour
+import { LIGHT } from './three-setup.js';
 import { CITIES, setCity } from './cities.js';
 import { loadData } from './data.js';
 import { buildScene } from './scene/index.js';

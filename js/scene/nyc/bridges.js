@@ -3,7 +3,7 @@
 // Queensboro cantilever. Ported from the NYC City Model (js/scene/bridges.js). The OSM decks of
 // these four are left out of the street data (tools/nyc/import_nyc.py), so nothing is drawn twice.
 import * as THREE from 'three';
-import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 // Bridge centrelines in the NYC frame (metres), anchored to the mapped approaches and shorelines.
 const groups = {
   deck: [], steel: [], cable: [], stone: []
@@ -111,6 +111,6 @@ export function buildBridges(scene){
   for(const key of Object.keys(groups))groups[key]=[];
   const spans=[];
   for(const s of specs){const f=makeFrame(s);deck(s,f);if(s.type==='queensboro')queensboro(s,f);else suspension(s,f);spans.push({id:s.id,a:[...s.a],b:[...s.b],labelHeight:Math.max(s.towerH,s.height+30)+8});}
-  for(const key of Object.keys(groups))if(groups[key].length){const merged=BufferGeometryUtils.mergeBufferGeometries(groups[key],false);const mesh=new THREE.Mesh(merged,mats[key]);mesh.name=`Curated bridge ${key}`;mesh.castShadow=mesh.receiveShadow=true;scene.add(mesh);for(const g of groups[key])g.dispose();}
+  for(const key of Object.keys(groups))if(groups[key].length){const merged=BufferGeometryUtils.mergeGeometries(groups[key],false);const mesh=new THREE.Mesh(merged,mats[key]);mesh.name=`Curated bridge ${key}`;mesh.castShadow=mesh.receiveShadow=true;scene.add(mesh);for(const g of groups[key])g.dispose();}
   return {bridgeSpans:spans};
 }

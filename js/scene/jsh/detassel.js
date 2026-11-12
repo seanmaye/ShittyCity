@@ -19,6 +19,7 @@ import { groundAt } from './terrain.js';
 import { onSeason } from '../season.js';
 import { stage, cutHole, CORN_HOLE } from './farms.js';
 import { detasselerProfile, bossProfile } from './crewprofiles.js';
+import { LIGHT, makeRenderer } from '../../three-setup.js';
 
 export const SEASON = [186, 218];   // July 5 to August 6: when the tassels are out
 const HOURS = [6, 15], DEW = 10.5;  // working hours; trash bags until the dew is off
@@ -313,11 +314,11 @@ export function buildDetassel(scene, seed, { hour = () => 9 } = {}) {
     const P = crew[i]; if (!P) return null;
     if (!pr) {
       const canvas = document.createElement('canvas');
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+      const renderer = makeRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(28, 1, .05, 10);
-      sc.add(new THREE.HemisphereLight('#fff4e6', '#4a5560', .85));
-      const key = new THREE.DirectionalLight('#ffffff', .75); key.position.set(.6, 1.2, 1.4); sc.add(key);
+      sc.add(new THREE.HemisphereLight('#fff4e6', '#4a5560', .85 * LIGHT));
+      const key = new THREE.DirectionalLight('#ffffff', .75 * LIGHT); key.position.set(.6, 1.2, 1.4); sc.add(key);
       pr = { canvas, renderer, sc, cam, bust: null };
     }
     pr.renderer.setSize(size, size, false);

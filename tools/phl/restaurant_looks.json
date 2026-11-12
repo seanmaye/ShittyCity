@@ -1,0 +1,2771 @@
+{
+ "about": "Exterior looks of djour's three-star picks, researched from photos (Nov 2026) for js/scene/phl/restaurants.js; build_restaurants.py merges them into data/phl/restaurants.json by name (and hood for Human Robot). address: the street address found in research (looked up on OSM by fetch_eats.py); indoor: no street front of its own.",
+ "places": [
+  {
+   "name": "a.kitchen",
+   "address": "135 South 18th Street",
+   "confidence": "medium",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 16,
+     "material": "stone",
+     "color": "#d8ccb4",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 4,
+     "frame_color": "#1e1e1e",
+     "frame_material": "metal",
+     "windows": "large plate glass",
+     "window_tint": "clear",
+     "door": {
+      "color": "#1e1e1e",
+      "position": "right",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "shed",
+     "color": "#1f2f5a",
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "patio",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "board",
+      "text": "a.kitchen",
+      "bg": "#3a3a3a",
+      "fg": "#ffffff",
+      "where": "on wall",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Ground floor of the AKA Rittenhouse hotel at 18th & Walnut (135 S 18th St): cream limestone base, run of navy-blue fabric shed awnings over tall dark-framed glass bays, sidewalk cafe tables with boxwood planters. Floor count of the tower is approximate.",
+   "sources": [
+    "https://www.bing.com/images/search?q=a.kitchen+philadelphia+exterior+135+S+18th+St",
+    "https://www.thrillist.com/",
+    "https://www.styleandeat.com/"
+   ]
+  },
+  {
+   "name": "Chengdu",
+   "address": "3635 Lancaster Avenue",
+   "confidence": "medium",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#8a4a36",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 4,
+     "frame_color": "#f2f0ea",
+     "frame_material": "painted wood",
+     "windows": "multi-pane",
+     "window_tint": "clear",
+     "door": {
+      "color": "#f2f0ea",
+      "position": "right",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "board",
+      "text": "Chengdu Famous Food",
+      "bg": "#1a1a1a",
+      "fg": "#f2e6c8",
+      "where": "above windows",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Trades as Chengdu Famous Food at 3635-3637 Lancaster Ave. White-painted multi-pane storefront with red-painted end pilasters, long black sign board with the name and a small red logo; window AC units in the upper sash.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Chengdu+restaurant+3635+Lancaster+Avenue+Philadelphia+exterior",
+    "https://www.loopnet.com/",
+    "https://www.yelp.com/"
+   ]
+  },
+  {
+   "name": "Doro Bet",
+   "confidence": "medium",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 2,
+     "material": "wood",
+     "color": "#efe2b4",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 3,
+     "frame_color": "#f4f2ec",
+     "frame_material": "painted wood",
+     "windows": "large plate glass",
+     "window_tint": "clear",
+     "door": {
+      "color": "#f4f2ec",
+      "position": "left",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "blade",
+      "text": "DORO BET",
+      "bg": "#f4f2ec",
+      "fg": "#222222",
+      "where": "projecting",
+      "lit": true
+     },
+     {
+      "type": "window lettering",
+      "text": "Ethiopian Chicken House",
+      "bg": null,
+      "fg": "#ffffff",
+      "where": "on window",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Small Victorian storefront: pale-yellow clapboard bay window with white trim and a bracketed cornice above, tan-brick side wall. Row of dark-green gooseneck barn lamps over the white glass front; square lightbox blade sign with a red/yellow/green chicken logo. Neighbour's 'Diamond Nails' blade sign hangs above.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Doro+Bet+4533+Baltimore+Avenue+Philadelphia+exterior",
+    "https://www.theinfatuation.com/philadelphia",
+    "https://www.yelp.com/"
+   ]
+  },
+  {
+   "name": "Farina di Vita",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#a54a30",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 4,
+     "frame_color": "#1c1c1c",
+     "frame_material": "metal",
+     "windows": "large plate glass",
+     "window_tint": "dark",
+     "door": {
+      "color": "#1c1c1c",
+      "position": "corner",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "shed",
+     "color": "#b5533a",
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": true,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "blade",
+      "text": "Farina di Vita",
+      "bg": "#d9d2c4",
+      "fg": "#ffffff",
+      "where": "projecting",
+      "lit": false
+     },
+     {
+      "type": "window lettering",
+      "text": "Farina di Vita",
+      "bg": null,
+      "fg": "#c0302a",
+      "where": "on window",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Modern red-brick corner building with a black standing-seam metal box bay cantilevered over the corner entrance (black steel column at the corner). Terracotta clay-tile shed awnings on both faces with bulb string lights under them; copper-framed hanging boards with a white hand logo, and red-circle hand logos on the windows.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Farina+di+Vita+Philadelphia+Queen+Village+storefront",
+    "https://www.theinfatuation.com/philadelphia/reviews/farina-di-vita"
+   ]
+  },
+  {
+   "name": "Hiroki",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 1,
+     "material": "concrete",
+     "color": "#d2cdc3",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 1,
+     "frame_color": "#3b2c22",
+     "frame_material": "painted wood",
+     "windows": "none",
+     "window_tint": "clear",
+     "door": {
+      "color": "#3b2c22",
+      "position": "center",
+      "glass": false
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "letters",
+      "text": "HIROKI",
+      "bg": null,
+      "fg": "#2a2a2a",
+      "where": "on wall",
+      "lit": false
+     },
+     {
+      "type": "board",
+      "text": "HIROKI",
+      "bg": "#2a2622",
+      "fg": "#ffffff",
+      "where": "on wall",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Windowless one-storey box of pale board-formed concrete with a huge circular dark-stained timber door (moon gate) and tiny name letters beside it; a dark wood vertical-slat screen rises above the parapet like a second storey. Sits on Front St under the Market-Frankford El, next to a red-brick rowhouse.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Hiroki+omakase+Fishtown+Philadelphia+exterior+Front+Street",
+    "https://www.dosagemagazine.com/"
+   ]
+  },
+  {
+   "name": "John's Roast Pork",
+   "confidence": "medium",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 1,
+     "material": "stucco",
+     "color": "#a0583f",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 2,
+     "frame_color": "#1f7fc4",
+     "frame_material": "metal",
+     "windows": "counter window",
+     "window_tint": "clear",
+     "door": {
+      "color": "#5a5a5a",
+      "position": "left",
+      "glass": false
+     }
+    },
+    "awning": {
+     "type": "flat canopy",
+     "color": "#1f6fc0",
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "few tables",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "board",
+      "text": "John's Roast Pork",
+      "bg": "#1f86c8",
+      "fg": "#ffffff",
+      "where": "above windows",
+      "lit": false
+     },
+     {
+      "type": "board",
+      "text": "ROAST PORK",
+      "bg": "#ffffff",
+      "fg": "#c0262d",
+      "where": "corner",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Free-standing one-storey shack: rough brick-red stucco walls, a sky-blue fascia band reading the name with 'Established 1930', and a blue canopy over the walk-up order windows with roll-down grilles. Rooftop cut-out pig mascot sign (white pig with red gingham bib) on a pole; red picnic tables outside.",
+   "sources": [
+    "https://www.bing.com/images/search?q=John%27s+Roast+Pork+14+E+Snyder+Ave+Philadelphia+exterior",
+    "https://www.phillymag.com/foobooz/",
+    "https://www.yelp.com/"
+   ]
+  },
+  {
+   "name": "Machine Shop",
+   "address": "1901 South 9th Street",
+   "indoor": true,
+   "confidence": "low",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 8,
+     "material": "brick",
+     "color": "#d9c9a8",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 1,
+     "frame_color": "#c8b48e",
+     "frame_material": "stone",
+     "windows": "multi-pane",
+     "window_tint": "clear",
+     "door": {
+      "color": "#9a6a3a",
+      "position": "center",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "blade",
+      "text": "BOK",
+      "bg": "#1a1a1a",
+      "fg": "#ffffff",
+      "where": "projecting",
+      "lit": false
+     },
+     {
+      "type": "board",
+      "text": "MACHINE SHOP",
+      "bg": "#f2c935",
+      "fg": "#1a1a1a",
+      "where": "above door",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Inside the Bok Building (1901 S 9th St), a huge buff-brick and limestone Art Deco former school; no own street storefront seen. Model the Bok entrance with its stacked black B-O-K cube sign; the bakery itself shows a yellow MACHINE SHOP board over a counter window inside.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Machine+Shop+Boulangerie+Philadelphia+storefront+exterior",
+    "https://www.bing.com/images/search?q=Machine+Shop+bakery+Bok+building+entrance+9th+street",
+    "https://www.machineshopphilly.com"
+   ]
+  },
+  {
+   "name": "Midnight & Wicked",
+   "address": "1500 Sansom Street",
+   "confidence": "low",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 4,
+     "material": "brick",
+     "color": "#9a4a36",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 2,
+     "frame_color": "#f2f0ea",
+     "frame_material": "painted wood",
+     "windows": "multi-pane",
+     "window_tint": "dark",
+     "door": {
+      "color": "#4a3624",
+      "position": "left",
+      "glass": false
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "board",
+      "text": "MIDNIGHT & The Wicked",
+      "bg": "#1a1a1a",
+      "fg": "#c9a24a",
+      "where": "on wall",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Actually at 1500 Sansom St (15th & Sansom, Rittenhouse edge, not the Gayborhood); an underground 1920s-style lounge with only a street door. Outside, a black shield-shaped board with gold crest and lettering is mounted on red brick beside white-framed windows, above a barre3 studio sign. Floor count is a guess.",
+   "sources": [
+    "https://www.bing.com/images/search?q=%22Midnight+%26+Wicked%22+Philadelphia+bar+exterior",
+    "https://midnightandthewicked.com/contact-us",
+    "https://www.yelp.com/"
+   ]
+  },
+  {
+   "name": "Parc",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 24,
+     "material": "brick",
+     "color": "#c9a46f",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 6,
+     "frame_color": "#a31d2a",
+     "frame_material": "painted wood",
+     "windows": "multi-pane",
+     "window_tint": "clear",
+     "door": {
+      "color": "#b98a3e",
+      "position": "corner",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "retractable",
+     "color": "#c8202e",
+     "stripes": false,
+     "text": "CAFÉ • BAR"
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "patio",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "board",
+      "text": "P·A·R·C",
+      "bg": "#3a3f42",
+      "fg": "#d8c48a",
+      "where": "corner",
+      "lit": true
+     },
+     {
+      "type": "awning text",
+      "text": "CAFÉ • BAR",
+      "bg": "#c8202e",
+      "fg": "#ffffff",
+      "where": "on awning",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Parisian bistro at the base of a tall tan-brick tower at 18th & Locust facing Rittenhouse Square: chamfered corner entrance with honey-varnished wooden double doors and tall carved wood panels, slate name board with gooseneck lamps above it, red-framed folding windows under red awnings on both streets, and a sidewalk cafe of wicker bistro chairs. Tower height approximate.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Parc+restaurant+Rittenhouse+Square+227+S+18th+exterior",
+    "https://www.alamy.com/"
+   ]
+  },
+  {
+   "name": "Royal Izayaka",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#7a5a3e",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 3,
+     "frame_color": "#f2f2ee",
+     "frame_material": "painted wood",
+     "windows": "multi-pane",
+     "window_tint": "frosted",
+     "door": {
+      "color": "#1f3ca8",
+      "position": "center",
+      "glass": false
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "lightbox",
+      "text": "ROYAL IZAYAKA",
+      "bg": "#d42a24",
+      "fg": "#ffffff",
+      "where": "projecting",
+      "lit": true
+     }
+    ]
+   },
+   "notes": "Plain brown-brick building at 2nd & Fulton St with a tan stone stringcourse over the ground floor: two tall glass-block windows flank a cobalt-blue panelled door with a white frame and small-pane transom. The only sign is a red paper lantern with white kanji hanging beside the door; no name sign.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Royal+Izakaya+780+S+2nd+St+Philadelphia+exterior",
+    "https://www.theinfatuation.com/philadelphia/reviews/royal-izakaya",
+    "https://www.yelp.com/"
+   ]
+  },
+  {
+   "name": "Scampi",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#8a4a3a",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 2,
+     "frame_color": "#f0c8cf",
+     "frame_material": "painted wood",
+     "windows": "large plate glass",
+     "window_tint": "curtained",
+     "door": {
+      "color": "#1e6b4a",
+      "position": "left",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "bench",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "painted wall",
+      "text": "SCAMPI",
+      "bg": null,
+      "fg": "#1a1a1a",
+      "where": "above door",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Whole storefront painted pastel pink, with an ornate egg-and-dart cornice; recessed green glass door on the left under black letters arched in a curve, a ceiling globe lamp in the recess, and one big window on the right with a white half-height cafe curtain and plants. Wooden bench on the sidewalk; black iron security gate on the neighbouring door.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Scampi+restaurant+Queen+Village+Philadelphia+BYOB+exterior",
+    "https://www.theinfatuation.com/philadelphia/reviews/scampi"
+   ]
+  },
+  {
+   "name": "Vernick Fish",
+   "address": "1800 Arch Street",
+   "indoor": true,
+   "confidence": "low",
+   "found": false,
+   "look": {
+    "building": {
+     "floors": 60,
+     "material": "glass",
+     "color": "#8e9aa3",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 6,
+     "frame_color": "#2a2a2a",
+     "frame_material": "metal",
+     "windows": "large plate glass",
+     "window_tint": "clear",
+     "door": {
+      "color": "#2a2a2a",
+      "position": "center",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "letters",
+      "text": "VERNICK FISH",
+      "bg": null,
+      "fg": "#ffffff",
+      "where": "above windows",
+      "lit": true
+     }
+    ]
+   },
+   "notes": "Ground floor of the Comcast Technology Center / Four Seasons tower at 1800 Arch St; only interior shots found, showing floor-to-ceiling glass with dark mullions behind a pale-gray stone base. Sign and door details are inferred, not seen.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Vernick+Fish+Comcast+Technology+Center+exterior+entrance",
+    "https://www.bing.com/images/search?q=%22Vernick+Fish%22+exterior+Four+Seasons+Philadelphia+Arch+Street"
+   ]
+  },
+  {
+   "name": "Angelo's Pizzeria",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#8e4a36",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 2,
+     "frame_color": "#1c1c1c",
+     "frame_material": "metal",
+     "windows": "large plate glass",
+     "window_tint": "clear",
+     "door": {
+      "color": "#1c1c1c",
+      "position": "right",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "shed",
+     "color": "#161616",
+     "stripes": false,
+     "text": "Angelo's Pizzeria"
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "bench",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "awning text",
+      "text": "Angelo's Pizzeria",
+      "bg": "#161616",
+      "fg": "#f2f2f2",
+      "where": "on awning",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Narrow red-brick rowhouse with one long black shed awning spanning the whole front, white script name on its valance; bright red stools/small tables on the sidewalk and a red brick bulkhead under the window.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Angelo%27s+Pizzeria+736+South+9th+Street+philadelphia+exterior",
+    "https://everafterinthewoods.com/wp-content/uploads/Angelos-Pizzeria-South-Philly.jpg"
+   ]
+  },
+  {
+   "name": "Circles + Squares",
+   "confidence": "medium",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#9a4a3a",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 3,
+     "frame_color": "#f4f1ea",
+     "frame_material": "painted wood",
+     "windows": "multi-pane",
+     "window_tint": "clear",
+     "door": {
+      "color": "#f4f1ea",
+      "position": "corner",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "shed",
+     "color": "#f2c230",
+     "stripes": true,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "few tables",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "blade",
+      "text": "CIRCLES SQUARES",
+      "bg": "#f4f4f4",
+      "fg": "#1a1a1a",
+      "where": "projecting",
+      "lit": false
+     },
+     {
+      "type": "window lettering",
+      "text": "CIRCLES SQUARES",
+      "bg": null,
+      "fg": "#1a1a1a",
+      "where": "on window",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Red-brick corner rowhouse whose ground floor is painted white; a yellow-and-white striped scalloped awning wraps the corner. Square white sign with a black circle-in-square logo; wooden picnic table and teal chairs on the sidewalk.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Circles+%2B+Squares+pizza+Kensington+philadelphia+exterior+storefront",
+    "https://philly.eater.com/ (Pizza Gutt to open as Circles + Squares in permanent location)",
+    "https://www.theinfatuation.com/philadelphia (20 best pizza places)"
+   ]
+  },
+  {
+   "name": "Elixr",
+   "address": "207 South Sydenham Street",
+   "confidence": "medium",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#8a4634",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 3,
+     "frame_color": "#1f2a26",
+     "frame_material": "painted wood",
+     "windows": "large plate glass",
+     "window_tint": "clear",
+     "door": {
+      "color": "#1a1a1a",
+      "position": "center",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "shed",
+     "color": "#1a1a1a",
+     "stripes": true,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "window lettering",
+      "text": "ELIXR",
+      "bg": null,
+      "fg": "#f2f2f2",
+      "where": "on window",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Symmetric red-brick front: two angled projecting bay windows, each under a small black-and-white striped awning, flank a recessed central black glass door. Pale grey painted bulkhead/base; urn planter by the door. Photo is from Elixr's own site; assumed to be the Sydenham St cafe.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Elixr+coffee+207+South+Sydenham+Street+philadelphia+exterior",
+    "https://cdn.shopify.com/s/files/1/2565/6836/files/Screen_Shot_2022-01-18_at_10.24.02_AM_1024x1024.png"
+   ]
+  },
+  {
+   "name": "Fri Sat Sun",
+   "address": "261 South 21st Street",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 4,
+     "material": "brick",
+     "color": "#a3402e",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 2,
+     "frame_color": "#111111",
+     "frame_material": "painted wood",
+     "windows": "large plate glass",
+     "window_tint": "clear",
+     "door": {
+      "color": "#9a6a2a",
+      "position": "left",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "shed",
+     "color": "#151515",
+     "stripes": true,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "window lettering",
+      "text": "FRI SAT SUN",
+      "bg": null,
+      "fg": "#d8b45a",
+      "where": "on window",
+      "lit": false
+     },
+     {
+      "type": "board",
+      "text": "FRIDAY SATURDAY SUNDAY",
+      "bg": "#141a2e",
+      "fg": "#f2f2f2",
+      "where": "above door",
+      "lit": false
+     },
+     {
+      "type": "blade",
+      "text": "FRI SAT SUN",
+      "bg": "#b0202a",
+      "fg": "#f2e0b0",
+      "where": "projecting",
+      "lit": true
+     }
+    ]
+   },
+   "notes": "Bright red brick rowhouse at 261 S 21st with black-framed storefront: golden varnished wooden double doors (No. 261 in gilt on the transom) at left, big window with gilt FRI SAT SUN at right, black-and-white striped awning. In cold months a navy entry vestibule box painted FRIDAY SATURDAY SUNDAY stands in front of the door.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Friday+Saturday+Sunday+restaurant+261+South+21st+Street+philadelphia+exterior",
+    "https://media.phillyvoice.com/media/images/Friday_Saturday_Sunday.width-704.jpg",
+    "https://res.cloudinary.com/the-infatuation/image/upload/images/Friday_Saturday_Sunday_Exterior_Nicole_Guglielmo_Philly-8_gmd17c"
+   ]
+  },
+  {
+   "name": "Human Robot",
+   "hood": "Brewerytown",
+   "confidence": "low",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#9a5038",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 3,
+     "frame_color": "#2a2a2a",
+     "frame_material": "painted wood",
+     "windows": "multi-pane",
+     "window_tint": "clear",
+     "door": {
+      "color": "#2a2a2a",
+      "position": "right",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "few tables",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "board",
+      "text": "HUMAN ROBOT",
+      "bg": "#1a1a1a",
+      "fg": "#f2f2f2",
+      "where": "above windows",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Building photo (listing, ~1 yr old) still shows the former Crime & Punishment Brewing front: red-brick 3-storey Victorian with a two-storey sage-grey pressed-metal bay window over a dark charcoal storefront with multi-pane transoms; a stone Gothic church stands right next door. Human Robot sign wording/colours inferred from their other taprooms (white on black board), not seen at this address.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Human+Robot+brewery+2711+West+Girard+Avenue+Brewerytown+philadelphia+exterior",
+    "https://www.bing.com/images/search?q=%22Human+Robot%22+Girard+Avenue+taproom+Brewerytown+opening",
+    "https://dlajgvw9htjpb.cloudfront.net/cms/565e419c-ef83-4fba-8702-a352f7d6ca18/PAPH2440472/3072323180713335046.jpg"
+   ]
+  },
+  {
+   "name": "Kalaya",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 1,
+     "material": "painted brick",
+     "color": "#f1f0ec",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 6,
+     "frame_color": "#2f5a3e",
+     "frame_material": "brick",
+     "windows": "arched",
+     "window_tint": "clear",
+     "door": {
+      "color": "#2f5a3e",
+      "position": "center",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "blade",
+      "text": "Kalaya",
+      "bg": "#c79a4a",
+      "fg": "#3a2a14",
+      "where": "projecting",
+      "lit": false
+     },
+     {
+      "type": "painted wall",
+      "text": "Kalaya",
+      "bg": "#f1f0ec",
+      "fg": "#d9d6cf",
+      "where": "on wall",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Tall one-storey former industrial building painted white with a dark forest-green painted brick base band about a quarter of the wall high; a row of tall round-arched multi-pane windows with white muntins and green lower panels. Brass lantern sconces between arches, round gold medallion blade signs, and large potted plants/vines along the wall.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Kalaya+4+West+Palmer+Street+Fishtown+philadelphia+exterior",
+    "https://www.inquirer.com/ (Kalaya Thai restaurant's new location is 4 times the size, with a bar)"
+   ]
+  },
+  {
+   "name": "Mawn",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#9a4a38",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 2,
+     "frame_color": "#6f8fa6",
+     "frame_material": "painted wood",
+     "windows": "large plate glass",
+     "window_tint": "clear",
+     "door": {
+      "color": "#f2f2f2",
+      "position": "left",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "shed",
+     "color": "#151515",
+     "stripes": false,
+     "text": "764"
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "blade",
+      "text": "mawn",
+      "bg": "#efe4cc",
+      "fg": "#4a2a18",
+      "where": "projecting",
+      "lit": false
+     },
+     {
+      "type": "awning text",
+      "text": "764",
+      "bg": "#151515",
+      "fg": "#f2f2f2",
+      "where": "on awning",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Red-brick rowhouse with a dusty slate-blue painted wood storefront and a black shed awning printed 764 in white; round cream blade sign with mawn in brown script at the door side. White globe pendant lights under the awning and a flower box below the big window.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Mawn+Cambodian+764+South+9th+Street+philadelphia+exterior",
+    "https://res.cloudinary.com/the-infatuation/image/upload/Mawn_Exterior_GabBonghi_Philadelphia-004_qoezzi"
+   ]
+  },
+  {
+   "name": "Mighty Bread",
+   "confidence": "medium",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 2,
+     "material": "brick",
+     "color": "#8e4434",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 2,
+     "frame_color": "#141414",
+     "frame_material": "metal",
+     "windows": "large plate glass",
+     "window_tint": "clear",
+     "door": {
+      "color": "#141414",
+      "position": "center",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "shed",
+     "color": "#141414",
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": true,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "patio",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "blade",
+      "text": "MIGHTY BREAD",
+      "bg": "#141414",
+      "fg": "#f2f2f2",
+      "where": "projecting",
+      "lit": false
+     },
+     {
+      "type": "window lettering",
+      "text": "MIGHTY BREAD BAKERY & CAFE",
+      "bg": null,
+      "fg": "#f2f2f2",
+      "where": "on window",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Plain red-brick building with black-framed glass double doors lettered in white, a round black blade sign, and a narrow brick side courtyard with small black awnings, cafe tables and plants. Address not given; matched by name only.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Mighty+Bread+bakery+philadelphia+exterior+storefront",
+    "https://www.checkle.com/ (Mighty Bread Company, updated October 2025)"
+   ]
+  },
+  {
+   "name": "Pietramala",
+   "confidence": "medium",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#8e4434",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 2,
+     "frame_color": "#22302e",
+     "frame_material": "painted wood",
+     "windows": "multi-pane",
+     "window_tint": "clear",
+     "door": {
+      "color": "#22302e",
+      "position": "left",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "shed",
+     "color": "#3a3f44",
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": false
+    },
+    "signs": []
+   },
+   "notes": "Understated: a dark grey shingled pent roof over a wide black-green multi-pane window grid (about 3 rows by 6) on a red brick bulkhead, glass door at left with a small green globe lamp; a bright blue residential door sits to the right. Warm red-orange glow inside at night; no prominent name sign.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Pietramala+614+North+2nd+Street+philadelphia+exterior",
+    "https://www.foodandwine.com/ (Pietramala)",
+    "https://everafterinthewoods.com/wp-content/uploads/Murph-1.jpg"
+   ]
+  },
+  {
+   "name": "Royal Tavern",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#8a4434",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 2,
+     "frame_color": "#1f45c8",
+     "frame_material": "brick",
+     "windows": "small",
+     "window_tint": "dark",
+     "door": {
+      "color": "#5a1e1a",
+      "position": "right",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "blade",
+      "text": "ROYAL TAVERN",
+      "bg": "#1f45c8",
+      "fg": "#ffffff",
+      "where": "projecting",
+      "lit": false
+     },
+     {
+      "type": "window lettering",
+      "text": "Royal TAVERN",
+      "bg": null,
+      "fg": "#d4a640",
+      "where": "on window",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Ground floor brick painted vivid cobalt blue with white horizontal pinstripes along the top, a single dark-wood-framed window lettered Royal TAVERN in gold, a dark red-brown wooden door at right with a lantern sconce. Upper floors bare red brick; blue blade sign with white letters and a gold lion.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Royal+Tavern+937+East+Passyunk+Avenue+philadelphia+exterior",
+    "https://res.cloudinary.com/the-infatuation/image/upload/images/Royal_Tavern_Exterior_Nicole_Guglielmo_Philly-15_z8rq1f"
+   ]
+  },
+  {
+   "name": "Smalls Provisions",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#9a4a38",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 3,
+     "frame_color": "#121212",
+     "frame_material": "painted wood",
+     "windows": "large plate glass",
+     "window_tint": "clear",
+     "door": {
+      "color": "#121212",
+      "position": "corner",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "bench",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "blade",
+      "text": "SMALLS",
+      "bg": "#efe6d2",
+      "fg": "#121212",
+      "where": "corner",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Classic Philly corner store: red-brick rowhouse with an all-black painted wood storefront and bracketed black cornice, angled entrance cut into the corner up a stone step, and a small cream hanging sign reading SMALLS above the corner door.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Smalls+Provisions+Kensington+philadelphia+exterior+storefront",
+    "https://pbs.twimg.com/media/HD8MDx_XkAA2ipN.jpg"
+   ]
+  },
+  {
+   "name": "Vetri",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 4,
+     "material": "brick",
+     "color": "#8e3e30",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 3,
+     "frame_color": "#f2efe8",
+     "frame_material": "stone",
+     "windows": "multi-pane",
+     "window_tint": "curtained",
+     "door": {
+      "color": "#6a3a1e",
+      "position": "left",
+      "glass": false
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "board",
+      "text": "VETRI",
+      "bg": "#c9a24a",
+      "fg": "#2a1a0a",
+      "where": "on wall",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Not a storefront: a Federal-style red-brick townhouse with a white marble arched doorway and fanlight over a varnished wood door (small brass oval plaque), white marble steps, and two tall 6-over-6 windows with rust-brown wooden shutters and gooseneck lamps; dense potted plants crowd the front.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Vetri+Cucina+1312+Spruce+Street+philadelphia+exterior",
+    "https://res.cloudinary.com/the-infatuation/image/upload/images/VetriCucina_Exterior_GabBonghi_Philadelphia-002_cziu3k"
+   ]
+  },
+  {
+   "name": "Backyard Cravings",
+   "address": "1429 Wolf Street",
+   "confidence": "medium",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 2,
+     "material": "painted brick",
+     "color": "#f1efe8",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 3,
+     "frame_color": "#1f8a4c",
+     "frame_material": "painted wood",
+     "windows": "multi-pane",
+     "window_tint": "clear",
+     "door": {
+      "color": "#1f8a4c",
+      "position": "center",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "shed",
+     "color": "#1f8a4c",
+     "stripes": true,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "board",
+      "text": "BACKYARD CRAVINGS",
+      "bg": "#2a2a2e",
+      "fg": "#ffffff",
+      "where": "above door",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "New shop (opened Oct 2026) at 1429 Wolf St, South Philly, in a row of red-brick rowhouses: white-painted facade with bright green pilasters, cornice and door, and two small green-and-white striped awnings over the windows either side of the door. The board in the opening photo reads 'Bottega Creations' with a round green 'BC' logo on the door glass (same BC initials); sign wording is uncertain.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Backyard+Cravings+South+Philadelphia+storefront",
+    "https://philadelphia.today/2026/11/backyard-cravings-opens-south-philly-restaurant/",
+    "https://philadelphia.today/wp-content/uploads/sites/8/2026/11/Bottega-Creations-Team-Photo.jpg.webp"
+   ]
+  },
+  {
+   "name": "DiNic's",
+   "address": "1136 Arch Street",
+   "indoor": true,
+   "confidence": "medium",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 1,
+     "material": "wood",
+     "color": "#7a4a2a",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 3,
+     "frame_color": "#b3242a",
+     "frame_material": "metal",
+     "windows": "counter window",
+     "window_tint": "clear",
+     "door": {
+      "color": "#b3242a",
+      "position": "corner",
+      "glass": false
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": true
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "board",
+      "text": "ROAST PORK AND BEEF",
+      "bg": "#f2d27a",
+      "fg": "#c0262d",
+      "where": "projecting",
+      "lit": true
+     },
+     {
+      "type": "board",
+      "text": "TOMMY DINIC'S",
+      "bg": "#5a3a22",
+      "fg": "#f3e6c4",
+      "where": "above windows",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Not a street storefront: an indoor counter stall inside Reading Terminal Market (1136 Arch St) with red counter stools and stainless/wood-plank counter. Signature is a big round sign: cream/yellow centre with red 'ROAST PORK AND BEEF' and a pig, ringed in red reading 'TOMMY DINIC'S SINCE 1954', plus a long wooden 'TOMMY DINIC'S' signboard and a red neon accent.",
+   "sources": [
+    "https://www.bing.com/images/search?q=DiNic%27s+roast+pork+Reading+Terminal+Market+counter+sign"
+   ]
+  },
+  {
+   "name": "Emily Wilson Pastry",
+   "address": "4500 Worth Street",
+   "indoor": true,
+   "confidence": "low",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#8e3f2c",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 4,
+     "frame_color": "#3a3a3a",
+     "frame_material": "metal",
+     "windows": "multi-pane",
+     "window_tint": "clear",
+     "door": {
+      "color": "#3a3a3a",
+      "position": "center",
+      "glass": false
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": false
+    },
+    "signs": []
+   },
+   "notes": "No retail storefront: Em Wilson is a micro-bakery working from a production kitchen at 4500 Worth St Unit A206 (the Globe Dye Works mill complex, Frankford/Bridesburg edge), selling by pre-order, pop-ups and markets. Model as a 19th-century red-brick mill with rows of multi-pane industrial windows and no signage; no photo of the bakery's own frontage exists.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Emily+Wilson+Pastry+Port+Richmond+Philadelphia+bakery+storefront",
+    "https://www.bing.com/search?q=%22Em+Wilson%22+pastry+Port+Richmond+storefront+address",
+    "https://www.bing.com/images/search?q=%224500+Worth+St%22+Philadelphia+building"
+   ]
+  },
+  {
+   "name": "Her Place Supper Club",
+   "address": "1740 Sansom Street",
+   "confidence": "medium",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 4,
+     "material": "painted brick",
+     "color": "#d9d5cc",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 2,
+     "frame_color": "#1c1c1c",
+     "frame_material": "painted wood",
+     "windows": "large plate glass",
+     "window_tint": "curtained",
+     "door": {
+      "color": "#1c1c1c",
+      "position": "right",
+      "glass": false
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": true
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "neon",
+      "text": "her place",
+      "bg": null,
+      "fg": "#b45cff",
+      "where": "on window",
+      "lit": true
+     }
+    ]
+   },
+   "notes": "1740 Sansom St: tiny ground floor faced in dark brown brick (#5a3b30) with one wide black-framed window (half café curtain) on the left and a black door up a few stone steps on the right; flower window box under the window, three small pink-red gooseneck lamps above, and a small purple neon 'her place' script in the window. The neighbouring wall to the left carries a black-and-white line-drawing mural.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Her+Place+Supper+Club+1740+Sansom+Street+exterior"
+   ]
+  },
+  {
+   "name": "Human Robot",
+   "hood": "Fishtown",
+   "address": "1710 North 5th Street",
+   "confidence": "medium",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#8a3a2a",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 3,
+     "frame_color": "#1e1e1e",
+     "frame_material": "metal",
+     "windows": "garage roll-up",
+     "window_tint": "clear",
+     "door": {
+      "color": "#1e1e1e",
+      "position": "left",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "few tables",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "blade",
+      "text": "HUMAN ROBOT",
+      "bg": "#1e1e1e",
+      "fg": "#ffffff",
+      "where": "projecting",
+      "lit": false
+     },
+     {
+      "type": "board",
+      "text": "HUMAN ROBOT",
+      "bg": "#1e1e1e",
+      "fg": "#d0d0d0",
+      "where": "above door",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Kensington/Fishtown taproom at 1710 N 5th St (the only non-Brewerytown Philly-north location found): old red-brick industrial building with arched-top windows, a tall vertical black blade sign spelling HUMAN ROBOT in white, a black fascia board over a glass entry, and a metal roll-up shutter covered in colourful graffiti art. Inside, a glowing dachshund 'HUMAN ROBOT' sign is the brand mark.",
+   "sources": [
+    "https://www.bing.com/search?q=Human+Robot+brewery+Fishtown+address",
+    "https://www.bing.com/images/search?q=Human+Robot+1710+N+5th+St+Philadelphia+brewery+building"
+   ]
+  },
+  {
+   "name": "Liberty Kitchen",
+   "address": "1400 North Front Street",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 2,
+     "material": "painted brick",
+     "color": "#f0ede4",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 4,
+     "frame_color": "#1c1c1c",
+     "frame_material": "metal",
+     "windows": "multi-pane",
+     "window_tint": "clear",
+     "door": {
+      "color": "#1c1c1c",
+      "position": "corner",
+      "glass": false
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "bench",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "board",
+      "text": "LIBERTY KITCHEN",
+      "bg": "#22335c",
+      "fg": "#ffffff",
+      "where": "corner",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "1400 N Front St, directly under the elevated Market-Frankford El tracks (green steel columns): a plain cream-white painted brick corner box with black multi-pane windows, black gooseneck lamps, small blue window boxes, and a navy rectangular board 'LIBERTY KITCHEN / DELI · MARKET · CAFE' in white mounted on the wall near the corner.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Liberty+Kitchen+Fishtown+Philadelphia+hoagie+shop+exterior",
+    "https://www.bing.com/search?q=Liberty+Kitchen+Fishtown+Philadelphia+deli+market+cafe+address"
+   ]
+  },
+  {
+   "name": "Middle Child",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 4,
+     "material": "brick",
+     "color": "#9a4a36",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 3,
+     "frame_color": "#1a1a1a",
+     "frame_material": "metal",
+     "windows": "multi-pane",
+     "window_tint": "clear",
+     "door": {
+      "color": "#1a1a1a",
+      "position": "right",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "few tables",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "board",
+      "text": "MIDDLE CHILD",
+      "bg": "#f2f0ea",
+      "fg": "#2e7a4e",
+      "where": "above windows",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Red-brick rowhouse with white-trimmed sash windows above; the ground floor has a wide off-white fascia band with big green block letters MIDDLE CHILD, black gooseneck lamps over it, and black-framed multi-pane glass below. Green metal bistro chairs/tables and a bench on the sidewalk.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Middle+Child+248+South+11th+Street+Philadelphia+storefront"
+   ]
+  },
+  {
+   "name": "Ogawa",
+   "address": "310 Market Street",
+   "confidence": "medium",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 4,
+     "material": "brick",
+     "color": "#8a4a38",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 3,
+     "frame_color": "#1a1a1a",
+     "frame_material": "metal",
+     "windows": "large plate glass",
+     "window_tint": "dark",
+     "door": {
+      "color": "#1a1a1a",
+      "position": "center",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "shed",
+     "color": "#151515",
+     "stripes": false,
+     "text": "Ogawa"
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "awning text",
+      "text": "Ogawa",
+      "bg": "#c8202a",
+      "fg": "#ffffff",
+      "where": "on awning",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Ogawa Sushi & Kappo at 310 Market St: a black storefront in an Old City brick commercial block, with a black shed awning whose face carries a big red circle (ensō-style) and white brush-script 'Ogawa'. Dark glass and a recessed glass door; minimalist.",
+   "sources": [
+    "https://www.bing.com/search?q=Ogawa+sushi+Old+City+Philadelphia+address",
+    "https://www.bing.com/images/search?q=Ogawa+omakase+Old+City+Philadelphia+exterior+storefront"
+   ]
+  },
+  {
+   "name": "Porco's Porchetteria",
+   "address": "2204 Washington Avenue",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 1,
+     "material": "painted brick",
+     "color": "#5db4d4",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 3,
+     "frame_color": "#1e2a3a",
+     "frame_material": "metal",
+     "windows": "counter window",
+     "window_tint": "clear",
+     "door": {
+      "color": "#1e2a3a",
+      "position": "left",
+      "glass": false
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "painted wall",
+      "text": "Porco's",
+      "bg": "#ffffff",
+      "fg": "#c8312b",
+      "where": "on wall",
+      "lit": false
+     },
+     {
+      "type": "painted wall",
+      "text": "Small Oven",
+      "bg": "#5db4d4",
+      "fg": "#ffffff",
+      "where": "on wall",
+      "lit": false
+     },
+     {
+      "type": "painted wall",
+      "text": "ORDER",
+      "bg": "#5db4d4",
+      "fg": "#c8312b",
+      "where": "on wall",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Shares a low one-storey building with Small Oven Pastry Shop at 2204 Washington Ave. Whole exterior is painted as a mural: sky-blue walls with bold white diagonal stripes, white script 'Small Oven', red script 'Porco's' with a red arrow and 'ORDER' pointing at a small walk-up counter window, plus a dark roll-up gate.",
+   "sources": [
+    "https://www.bing.com/search?q=Porco%27s+Porchetteria+Philadelphia+address",
+    "https://www.bing.com/images/search?q=Porco%27s+Porchetteria+Philadelphia+storefront+exterior"
+   ]
+  },
+  {
+   "name": "Sakana",
+   "address": "616 South 2nd Street",
+   "confidence": "medium",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#8e4433",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 2,
+     "frame_color": "#ece9e2",
+     "frame_material": "stone",
+     "windows": "large plate glass",
+     "window_tint": "clear",
+     "door": {
+      "color": "#3a2a22",
+      "position": "left",
+      "glass": false
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "blade",
+      "text": "SAKANA",
+      "bg": "#ffffff",
+      "fg": "#c41e2a",
+      "where": "projecting",
+      "lit": true
+     }
+    ]
+   },
+   "notes": "Sakana Omakase at 616 S 2nd St (Queen Village/Society Hill edge): red-brick rowhouse whose ground floor is clad in smooth white/cream stucco-stone with an arched dark wood door and a large window; a white box sign with red 'SAKANA' lettering projects above the entry.",
+   "sources": [
+    "https://www.bing.com/search?q=Sakana+omakase+BYOB+Old+City+Philadelphia+address",
+    "https://www.bing.com/images/search?q=Sakana+omakase+Old+City+Philadelphia+exterior+sign"
+   ]
+  },
+  {
+   "name": "Suraya",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "painted brick",
+     "color": "#3c3d40",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 5,
+     "frame_color": "#b5302d",
+     "frame_material": "metal",
+     "windows": "multi-pane",
+     "window_tint": "clear",
+     "door": {
+      "color": "#b5302d",
+      "position": "center",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "few tables",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "letters",
+      "text": "Suraya",
+      "bg": null,
+      "fg": "#f4f2ee",
+      "where": "above windows",
+      "lit": true
+     }
+    ]
+   },
+   "notes": "Wide, charcoal-grey painted brick building with black steel industrial multi-pane windows upstairs; a huge white flowing script 'Suraya' spans the facade above the ground floor, which is a row of red-framed multi-pane glass doors/windows. Red bistro chairs and greenery out front.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Suraya+1528+Frankford+Avenue+Fishtown+exterior"
+   ]
+  },
+  {
+   "name": "Zahav",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 1,
+     "material": "brick",
+     "color": "#4d3a34",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 4,
+     "frame_color": "#2a2a2a",
+     "frame_material": "metal",
+     "windows": "large plate glass",
+     "window_tint": "clear",
+     "door": {
+      "color": "#2a2a2a",
+      "position": "right",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "shed",
+     "color": "#1f2a44",
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "patio",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "letters",
+      "text": "zahav",
+      "bg": null,
+      "fg": "#c9c8c2",
+      "where": "above windows",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Low, single-storey dark chocolate-brown brick pavilion at the foot of the Society Hill Towers (a concrete high-rise looms behind). Big brushed-aluminium lowercase 'zahav' letters on the blank brick parapet above a band of dark-framed glass; entry up a short flight of steps under a navy shed awning; lots of ivy and trees around, plus a small patio.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Zahav+restaurant+237+St+James+Place+philadelphia+exterior"
+   ]
+  },
+  {
+   "name": "Caphe Roasters",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 4,
+     "material": "brick",
+     "color": "#8a3f2e",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 3,
+     "frame_color": "#1b1b1b",
+     "frame_material": "metal",
+     "windows": "multi-pane",
+     "window_tint": "dark",
+     "door": {
+      "color": "#1b1b1b",
+      "position": "center",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "patio",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "board",
+      "text": "CÀPHÊ ROASTERS PHILA.",
+      "bg": "#2a2a2a",
+      "fg": "#f2f2f2",
+      "where": "above door",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Converted red-brick mill building (J-Centrel) with tall black steel multi-pane industrial windows; a wide black sign band with white serif lettering spans over black-framed glass doors. Courtyard patio with tables beside it.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Caphe+Roasters+philadelphia+exterior+3400+J+Street"
+   ]
+  },
+  {
+   "name": "Dolores 2nd St",
+   "address": "1841 South 2nd Street",
+   "confidence": "low",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#9a4a3a",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 2,
+     "frame_color": "#8a1f24",
+     "frame_material": "painted wood",
+     "windows": "large plate glass",
+     "window_tint": "clear",
+     "door": {
+      "color": "#8a1f24",
+      "position": "left",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "flat canopy",
+     "color": "#1e1e1e",
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "board",
+      "text": "Dolores",
+      "bg": "#8a2a2a",
+      "fg": "#f4ece0",
+      "where": "above windows",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Corner-deli rowhouse at 1841 S 2nd St: red brick with white upper window frames; a dark red board with cream script 'Dolores' sits on a black flat canopy over a cream storefront with red-framed door and window. Only a partial (older) selfie photo seen.",
+   "sources": [
+    "https://www.bing.com/search?q=Dolores+2Street+Philadelphia+address+chicken+cutlet",
+    "https://www.bing.com/images/search?q=Dolores+deli+1841+S+2nd+St+Philadelphia"
+   ]
+  },
+  {
+   "name": "Emmett",
+   "address": "161 West Girard Avenue",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "painted brick",
+     "color": "#e6e2da",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 3,
+     "frame_color": "#1f3a4f",
+     "frame_material": "painted wood",
+     "windows": "large plate glass",
+     "window_tint": "dark",
+     "door": {
+      "color": "#c8c8c8",
+      "position": "corner",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": true
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "neon",
+      "text": "emmett",
+      "bg": "#1f5a3a",
+      "fg": "#f2f2f2",
+      "where": "above door",
+      "lit": true
+     },
+     {
+      "type": "painted wall",
+      "text": "161",
+      "bg": "#1f3a4f",
+      "fg": "#f2f2f2",
+      "where": "corner",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Clipped-corner entrance at 161 W Girard: whole ground floor painted deep navy with a heavy cornice, white script '161' on the corner fascia, a green glowing 'emmett' script sign in the transom over silver double glass doors, and window boxes of greenery on tan sills. Cream painted brick above.",
+   "sources": [
+    "https://www.bing.com/search?q=Emmett+restaurant+Northern+Liberties+Philadelphia+address",
+    "https://www.bing.com/images/search?q=Emmett+161+W+Girard+Ave+Philadelphia+restaurant+exterior"
+   ]
+  },
+  {
+   "name": "High Street",
+   "address": "101 South 9th Street",
+   "confidence": "medium",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 10,
+     "material": "stone",
+     "color": "#d9d2c3",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 4,
+     "frame_color": "#1b1b1b",
+     "frame_material": "metal",
+     "windows": "large plate glass",
+     "window_tint": "clear",
+     "door": {
+      "color": "#1b1b1b",
+      "position": "center",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "shed",
+     "color": "#1b1b1b",
+     "stripes": false,
+     "text": "HIGH STREET"
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "few tables",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "awning text",
+      "text": "HIGH STREET",
+      "bg": "#1b1b1b",
+      "fg": "#ffffff",
+      "where": "on awning",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Ground floor of the limestone Franklin Building at 101 S 9th St (9th and Chestnut): a row of black shed awnings with spaced white 'HIGH STREET' lettering over black-framed plate glass, with ornate green-glass lanterns on brackets between bays.",
+   "sources": [
+    "https://www.bing.com/search?q=High+Street+Philly+Ellen+Yin+new+location+101+South+9th+Street",
+    "https://www.bing.com/images/search?q=High+Street+bakery+Philadelphia+101+S+9th+St+exterior",
+    "https://www.bing.com/images/search?q=High+Street+restaurant+Franklin+Building+9th+Chestnut+Philadelphia+storefront"
+   ]
+  },
+  {
+   "name": "JG Skyhigh",
+   "indoor": true,
+   "confidence": "medium",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 60,
+     "material": "glass",
+     "color": "#8fa3b3",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 6,
+     "frame_color": "#9a9ea2",
+     "frame_material": "metal",
+     "windows": "large plate glass",
+     "window_tint": "clear",
+     "door": {
+      "color": "#9a9ea2",
+      "position": "center",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "flat canopy",
+     "color": "#9a9ea2",
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": true
+    },
+    "signs": []
+   },
+   "notes": "Bar is on the 60th floor of the Comcast Technology Center (Four Seasons, 19th and Arch); at street level it is the tower's tall glass atrium base screened by vertical grey metal fins, with no storefront signage of its own.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Four+Seasons+Philadelphia+Comcast+Technology+Center+19th+Street+entrance"
+   ]
+  },
+  {
+   "name": "Lil Nick's",
+   "address": "1311 West Moyamensing Avenue",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 2,
+     "material": "brick",
+     "color": "#9a4a38",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 3,
+     "frame_color": "#2a2a2a",
+     "frame_material": "metal",
+     "windows": "large plate glass",
+     "window_tint": "clear",
+     "door": {
+      "color": "#2a2a2a",
+      "position": "corner",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "shed",
+     "color": "#7a1f2a",
+     "stripes": false,
+     "text": "Lil' Nick's"
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "few tables",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "awning text",
+      "text": "Lil' Nick's",
+      "bg": "#7a1f2a",
+      "fg": "#ffffff",
+      "where": "on awning",
+      "lit": false
+     },
+     {
+      "type": "blade",
+      "text": "LIL' NICK'S",
+      "bg": "#ffffff",
+      "fg": "#b02a2a",
+      "where": "projecting",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Corner deli at 1311 W Moyamensing Ave: red-brick rowhouse with a white-sided bay above, maroon shed awnings wrapping both street faces with white lettering ('Lil' Nick's', 'We Deliver'), a white projecting board sign, and a café table with a blue umbrella out front.",
+   "sources": [
+    "https://www.bing.com/search?q=Lil+Nick%27s+South+Philadelphia+chicken+cutlet+address",
+    "https://www.bing.com/images/search?q=Lil+Nick%27s+deli+1311+W+Moyamensing+Ave+Philadelphia"
+   ]
+  },
+  {
+   "name": "Middle Child Clubhouse",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 4,
+     "material": "brick",
+     "color": "#9a4632",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 4,
+     "frame_color": "#1f4a3a",
+     "frame_material": "metal",
+     "windows": "multi-pane",
+     "window_tint": "clear",
+     "door": {
+      "color": "#1f4a3a",
+      "position": "right",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": true
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "letters",
+      "text": "Middle Child",
+      "bg": "#1f4a3a",
+      "fg": "#ffffff",
+      "where": "above windows",
+      "lit": false
+     },
+     {
+      "type": "neon",
+      "text": "CLUBHOUSE",
+      "bg": null,
+      "fg": "#3ddc84",
+      "where": "on window",
+      "lit": true
+     }
+    ]
+   },
+   "notes": "Ground floor of a red-brick apartment building on N Front St: a deep green fascia with white serif 'Middle Child' over green steel multi-pane window walls between white-painted brick piers, a green glass entry vestibule, and a green neon 'CLUBHOUSE' sign glowing inside.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Middle+Child+Clubhouse+1232+N+Front+St+Fishtown+exterior"
+   ]
+  },
+  {
+   "name": "Paesano's",
+   "confidence": "medium",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#8a4a36",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 3,
+     "frame_color": "#9a5a2a",
+     "frame_material": "painted wood",
+     "windows": "multi-pane",
+     "window_tint": "clear",
+     "door": {
+      "color": "#9a5a2a",
+      "position": "center",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "shed",
+     "color": "#3a4a42",
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "board",
+      "text": "PAESANO'S PHILLY STYLE",
+      "bg": "#d8d2b8",
+      "fg": "#3a2a1e",
+      "where": "above windows",
+      "lit": false
+     },
+     {
+      "type": "window lettering",
+      "text": "PAESANO'S",
+      "bg": "#c0262a",
+      "fg": "#ffffff",
+      "where": "on window",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Recessed entry with varnished warm-wood window frames, black tile bulkhead and a black-and-white checkerboard tile vestibule floor, under the Italian Market's metal stall canopy on 9th St; a cream board with dark lettering and a red window banner carry the name.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Paesano%27s+1017+S+9th+St+Italian+Market+storefront",
+    "https://www.bing.com/images/search?q=Paesano%27s+Philly+Style+9th+Street+Italian+Market+sign+exterior"
+   ]
+  },
+  {
+   "name": "ReAnimator",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#8e3e30",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 1,
+     "frame_color": "#1b1b1b",
+     "frame_material": "metal",
+     "windows": "small",
+     "window_tint": "clear",
+     "door": {
+      "color": "#1b1b1b",
+      "position": "corner",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "none",
+     "color": null,
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "few tables",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "board",
+      "text": "REANIMATOR COFFEE ROASTERS",
+      "bg": "#e4e6e6",
+      "fg": "#2e3a40",
+      "where": "above door",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Narrow wedge-shaped red-brick corner building; the short end holds a single tall black-framed glass door flanked by two small sconces, with a pale grey board sign above it. Small café tables and potted plants line the side sidewalk.",
+   "sources": [
+    "https://www.bing.com/images/search?q=ReAnimator+Coffee+1523+E+Susquehanna+Ave+Fishtown+exterior"
+   ]
+  },
+  {
+   "name": "Sang Kee",
+   "confidence": "high",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#8e4a38",
+     "corner": true
+    },
+    "storefront": {
+     "width_bays": 4,
+     "frame_color": "#1b1b1b",
+     "frame_material": "metal",
+     "windows": "large plate glass",
+     "window_tint": "dark",
+     "door": {
+      "color": "#1b1b1b",
+      "position": "center",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "barrel",
+     "color": "#c9b48a",
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": false,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": false
+    },
+    "signs": [
+     {
+      "type": "blade",
+      "text": "Sang Kee Peking Duck House",
+      "bg": "#f4f4ee",
+      "fg": "#2a7a3a",
+      "where": "projecting",
+      "lit": false
+     },
+     {
+      "type": "board",
+      "text": "0688",
+      "bg": "#1f5a3a",
+      "fg": "#f2e6c8",
+      "where": "above windows",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Red-brick building with a curved tan bamboo/thatch-style awning over dark-tinted plate glass, a dark green fascia band, and a white projecting sign with green lettering, red Chinese characters and a duck logo. Green awnings continue around the side street.",
+   "sources": [
+    "https://www.bing.com/images/search?q=Sang+Kee+Peking+Duck+House+238+N+9th+St+Philadelphia+exterior"
+   ]
+  },
+  {
+   "name": "Trattoria @ Heavy Metal Sausage",
+   "address": "1527 West Porter Street",
+   "confidence": "medium",
+   "found": true,
+   "look": {
+    "building": {
+     "floors": 3,
+     "material": "brick",
+     "color": "#8a4434",
+     "corner": false
+    },
+    "storefront": {
+     "width_bays": 2,
+     "frame_color": "#1c1c1c",
+     "frame_material": "painted wood",
+     "windows": "multi-pane",
+     "window_tint": "clear",
+     "door": {
+      "color": "#1c1c1c",
+      "position": "left",
+      "glass": true
+     }
+    },
+    "awning": {
+     "type": "shed",
+     "color": "#3a3a3c",
+     "stripes": false,
+     "text": null
+    },
+    "lights": {
+     "string_lights": false,
+     "sconces": true,
+     "neon": false
+    },
+    "outdoor": {
+     "seating": "none",
+     "planters": true
+    },
+    "signs": [
+     {
+      "type": "window lettering",
+      "text": "HEAVY METAL SPECIALTY MEATS SAUSAGE CO.",
+      "bg": null,
+      "fg": "#ffffff",
+      "where": "on window",
+      "lit": false
+     }
+    ]
+   },
+   "notes": "Rowhouse butcher shop at 1527 W Porter St (the trattoria is its BYOB dinner): black-painted storefront with a large black multi-pane window over a red-brick bulkhead, a dark shingled pent roof above, white window lettering, and a green glass globe lamp by the door.",
+   "sources": [
+    "https://www.bing.com/search?q=Heavy+Metal+Sausage+Trattoria+Philadelphia+address",
+    "https://www.bing.com/images/search?q=Heavy+Metal+Sausage+Co+1527+W+Porter+St+Philadelphia+storefront"
+   ]
+  }
+ ]
+}

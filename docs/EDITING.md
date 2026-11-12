@@ -3,7 +3,7 @@ EDITING GUIDE: City models (single-file build)
 
 This guide is for an AI assistant (or a person) who has only this HTML file and wants to
 change a city. Everything the page needs is inside the file: styles, all scripts, and
-all map data and loading illustrations. three.js r128 loads from the jsDelivr CDN.
+all map data and loading illustrations. three.js r186 (0.186.1) loads from the jsDelivr CDN.
 
 The page holds several cities on one engine: today Philadelphia (id "phl"), New York
 (id "nyc") and Jersey Shore, PA (id "jsh"). It opens on a start menu (#menu) to pick one, or
@@ -19,7 +19,7 @@ Python helper below.
 1. What is in the file (top to bottom)
 --------------------------------------
 
-  <head>      <style> (HUD, labels, start menu) and an import map that maps "three" to three@0.128.0
+  <head>      <style> (HUD, labels, start menu) and an import map that maps "three" to three@0.186.1
   <body>      HUD markup: #ride, #transit, #lbl, #cut, #getoff, #switch-city buttons, #xhair
               (creative-mode crosshair), #modehint, #time slider (+ #time-out), #legend,
               #lines picker, #view-btns (Go to), #heading, #hint, #tags, #credit;
@@ -254,6 +254,24 @@ data-phl-boats          river boat lines (tools/phl/build_boats.py; all but Rive
          from; s = distance along p. p runs mid-channel through the real water; dams are
          barriers. Boats run out and back (phl/boats.js), one per 6 km, dwelling DWELL s a stop.
 
+data-phl-restaurants    djour's starred food spots (tools/phl/build_restaurants.py; js/scene/phl/restaurants.js)
+  { source, credit, stars: {"2": meaning, "3": meaning},
+    places: [{n, x, z, ry, w, h, sd, v, f, k, s, hood, c, p?, d?, soon?, club?, look?}] }
+  n name; x, z the middle of its shop front on the building wall (m); ry the wall's outward
+  direction (three.js rotation.y: local +z points into the street); w the wall's length (0 = not
+  against a building: a menu board on a post); h the building's height (m); sd how far the
+  street's centreline is; v [x, z, height] where its camera view stands (in the street with a
+  clear line of sight, or 34 m up over the roofs); f [x, z] a spot straight in front of the shop
+  front with a clear view (null if none: then v is used); k "restaurant" | "bar" | "cafe" | "bakery" |
+  "brewery" | "truck" | "market" (picks the model); s stars (2 or 3); hood neighbourhood; c djour's
+  tags as words; p price ("$".."$$$$$"); d djour's note, word for word; soon 1 = not open yet;
+  club 1 = a supper club; look = the three-star picks' researched exterior (from
+  tools/phl/restaurant_looks.json): building {floors, material, color}, storefront {width_bays,
+  frame_color, windows, window_tint, door {color, position, glass}}, awning {type, color, stripes,
+  text}, signs [{type, text, bg, fg, where, lit}], lights {string_lights, sconces, neon}, outdoor
+  {seating, planters}, indoor (no street front: only its sign at the entrance).
+  Rebuild with the tool rather than editing by hand; to change a look, edit restaurant_looks.json.
+
 data-phl-terrain        (gzip binary "TER1", little endian) the ground, from USGS 3DEP bare earth
   int32 x0_dm, z0_dm, cell_dm, W, H   first sample, spacing (10 m), samples per row and rows
   int16 ground[W*H]   decimetres; under rivers and lakes the bed (up to 2.5 m below the water)
@@ -332,6 +350,11 @@ Shared engine:
 js/cities.js     CITIES (per city: projection frame, data folder and files, home view, sun
                  position, page text, transit groups, station-tag text, skyline presets, `sea`)
                  and CITY, the active one (section 8)
+js/three-setup.js  three.js settings that keep the look tuned under r128: colour management
+                 off, LIGHT (= PI, multiply every light intensity by it), makeRenderer()
+                 (linear output), single-pass transparent materials (as in r128;
+                 three.js would draw double-sided ones twice and re-check their shader
+                 every frame), restoreAnisotropy() for nearest-magnified textures. main.js imports it first, before any colour is made.
 js/main.js       the start menu, then setCity -> loadData -> buildScene -> createUI -> start.
                  Exposes window.__city.
 js/data.js       projection (G(lat,lon), latOf, using CITY.frame) and the data loader
@@ -457,6 +480,7 @@ js/ui.js         buttons, line picker, floating labels, keys (inside a car KEYMA
 js/minimap.js    top-right map (#minimap): base map of limits, parks, water and rail drawn once
                  from api.mapData; LEVELS = metres across per zoom step; you as a view cone, or
                  the train and its line in bold when riding; a click calls api.flyToPoint(x, z).
+                 createMinimap(api, { eats }): eats() returns the restaurants to dot (or null).
 js/fishing.js    the fishing minigame (a dialog over the city): invitation, then cast (power meter),
                  wait (nibbles that look like bites), bite (strike window, shorter for rarer
                  catches), reel (hold: tension vs. progress, line gained only in the green band;
@@ -519,6 +543,21 @@ chinatown.js     Chinatown dressed in detail (buildChinatown(scene, { buildings 
                  lights, a pavilion and the Lucky Arcade stall: pickStall / stallView, wired as
                  api.pickStall and api.viewStall; ui.js opens js/arcade.js on a click. Static
                  pieces are merged into one mesh per material (batch / mergeGeos).
+restaurants.js   djour's starred restaurants from data-phl-restaurants
+                 (buildRestaurants(scene, data.restaurants) -> { places, labels, credit, stars }).
+                 A storefront on the wall at (x, z) facing ry, sized by w and h: frame, shop window
+                 (glassMat, a warm room after dark), door, striped awning, a sign board from one
+                 canvas atlas (signAtlas: each place's name and stars), by kind lanterns, bistro
+                 tables, a blade sign, a roll-up door; trucks, market tents, a post for loose ones.
+                 Everything is merged into one mesh per material (batch). Each place gets a label
+                 (layer 'eat', far 1600 m for three stars, 800 m for two) and a view (near: 6, so
+                 the orbit controls let the camera come that close): straight in front of the shop
+                 front at eye height (f), else from up the street (v). lookFront builds a researched
+                 look instead of the generic storefront: the building's own wall and upper windows,
+                 its frame, windows, door, awning, signs, lights and seating. ui.js lists them under
+                 "Restaurants" (#eats: #eat-lbl switches their labels, #eat-hood picks a
+                 neighbourhood) and shows the card (#eatcard); a label's or button's click flies to
+                 the view and opens the card (goEat); minimap.js draws them as dots.
 boats.js         river boats from data-phl-boats: piers (deck, pilings, float, shelter), boat
                  models, fleets easing into each stop. Registered with subway.registerFleet as
                  kind 'boat' (CAR_IN.boat is the walkable cabin; aboard, only the model's outer
@@ -627,7 +666,7 @@ harvest.js       the last corn standing: pickLateField(farms, eye, blockers) cho
                  binoculars aim at while it is in the field, null outside the window
 
 Debug handle in the browser console: window.__city
-  { scene, camera, controls, renderer, labels, lines, views, flyTo(viewId),
+  { scene, camera, controls, renderer, labels, lines, views, restaurants, flyTo(viewId or a view),
     setTime(hours 0-24), getTime(), sunset, setMood('day'|'dusk'), getMood(),
     boardLine(id: a "Ride a line" entry, e.g. 'loop', 0, 'm:L', 'm:AIR' in Philadelphia;
               'm:7', 'm:mono:east-river-loop' in New York),
@@ -850,8 +889,11 @@ Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, hei
   ends the block.
 - `import` lines may only appear at the very top of the module script. Chunks must not
   contain `import` or `export`: export by adding a name to the chunk's final `return {...}`.
-- three.js is r128: use BufferGeometryUtils.mergeBufferGeometries (an object), not the
-  newer mergeGeometries.
+- three.js is r186. BufferGeometryUtils is imported as a namespace
+  (import * as BufferGeometryUtils) and merges with mergeGeometries. Colour management is off
+  and lights are scaled by LIGHT (js/three-setup.js): a new light's intensity is
+  "r128 value * LIGHT", and colours are written as plain hex. A shader hook (onBeforeCompile)
+  sets each map's own UV varying (vMapUv, vEmissiveMapUv), not vUv.
 - Units: most arrays are decimetres, landmark boxes and labels are metres. Mixing them up
   puts things 10x out of place. Each city has its own frame: never copy coordinates between
   cities.
@@ -866,9 +908,12 @@ Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, hei
   ends up buried, and one placed at a real height ends up floating.
 - Performance budget: about 3-4M triangles and 1,000-1,500 draw calls when the whole city is
   in view (far city tiles draw only roofs). Merge or instance new geometry; don't add
-  thousands of separate meshes. Instanced meshes must have frustumCulled = false (or manage
-  their own visibility, as city.js does), because three.js r128 culls them by their origin.
-- The file is about 39 MB (Philadelphia about 24, 8 of it the terrain; New York about 11). The gzip blocks hold most
+  thousands of separate meshes. Instanced meshes made while the scene is built are drawn
+  unculled (frustumCulled = false) unless they carry their instances' sphere from
+  withBounds(mesh, centre, radius) (geometry chunk), as city.js's tiles and the trees do. One
+  made later is culled by a sphere three.js works out on its first draw: if its instances move
+  after that, call mesh.computeBoundingSphere() or set frustumCulled = false.
+- The file is about 41 MB (Philadelphia about 24, 8 of it the terrain; New York about 11; Jersey Shore about 2). The gzip blocks hold most
   of the data; keep new bulky data in a gzip block rather than JSON.
 - Keep each city's attribution line (CITY.credit). Philadelphia: map data (c) OpenStreetMap
   contributors, ODbL; building data (c) City of Philadelphia. New York: buildings NYC Open

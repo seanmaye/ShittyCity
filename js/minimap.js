@@ -5,7 +5,7 @@
 const LEVELS = [0, 14000, 6000, 2500, 1100];   // metres across the map (0 = the whole city)
 const COUNTRY = '#dfe3d6', CITY = '#f2efe9', PARK = '#bcd8a4', WATER = '#8dbad6', EDGE = '#6b7a86';
 
-export function createMinimap(api) {
+export function createMinimap(api, { eats = () => null } = {}) {
   const wrap = document.getElementById('minimap'), cv = document.getElementById('mm'), ctx = cv.getContext('2d');
   const scaleEl = document.getElementById('mm-scale');
   const D = api.mapData, [bx0, bz0, bx1, bz1] = D.bbox.map(v => v / 10);
@@ -53,6 +53,15 @@ export function createMinimap(api) {
       for (const pass of [0, 1]) {
         if (pass) { ctx.strokeStyle = ride.color; ctx.lineWidth = 3.5 * dpr; }
         for (const r of rideRoutes) { ctx.beginPath(); r.P.forEach((p, i) => { const [x, y] = px(p.x, p.z); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke(); }
+      }
+    }
+    // djour's restaurants (while their labels are on): gold dots, bigger for three stars
+    const E = eats();
+    if (E) {
+      ctx.fillStyle = '#c8901c'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.2 * dpr;
+      for (const p of E) {
+        const [ex, ey] = px(p.x, p.z); if (ex < -6 || ey < -6 || ex > W + 6 || ey > W + 6) continue;
+        ctx.beginPath(); ctx.arc(ex, ey, (p.s >= 3 ? 3.4 : 2.4) * dpr, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       }
     }
     // you: a view cone (flying) or the train (riding)
