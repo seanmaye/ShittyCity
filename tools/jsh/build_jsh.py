@@ -13,7 +13,7 @@ Writes, in the shared formats (docs/EDITING.md section 3):
                        West Branch of the Susquehanna, Pine Creek and smaller streams, trees
   city_buildings.bin.gz  empty (every footprint is in buildings.json)
 and, for this city only:
-  terrain.bin.gz       elevation grid the scene drapes everything over (js/scene/terrain.js)
+  terrain.bin.gz       elevation grid the scene drapes everything over (js/scene/jsh/terrain.js)
   places.json          labels and "Go to" views (js/scene/jsh/places.js)
   farms.json.gz        crop fields (USDA Cropland Data Layer), barns and silos (js/scene/jsh/farms.js)
 """
@@ -260,7 +260,7 @@ cover = np.where(wet, 2, forest.astype(int)).astype(np.uint8)   # 2 = water bed
 
 
 def h_at(x, z_):
-    """terrain height (m above BASE) as the scene computes it (js/scene/terrain.js): the grid's triangles"""
+    """terrain height (m above BASE) as the scene computes it (js/scene/jsh/terrain.js): the grid's triangles"""
     u, v = (x + HALF) / CELL, (z_ + HALF) / CELL
     i, j = min(N - 2, max(0, int(u))), min(N - 2, max(0, int(v)))
     fu, fv = u - i, v - j

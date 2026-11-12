@@ -11,6 +11,7 @@ import * as THREE from 'three';
 import { litMats } from './materials.js';
 import { Builder } from './geometry.js';
 import { CITY } from '../cities.js';
+import { terrain, surface, water } from './terrain.js';
 export const SPEC = {
   // hw/h: tunnel half-width and height above the rail; car: length, width, height; cars per train;
   // km: route length per train; speed m/s
@@ -33,8 +34,14 @@ const TOP = .15;         // the cut face's top edge (city plate height)
 const noClip = m => { m.userData.noClip = true; return m; };
 const mat = (color, o = {}) => noClip(new THREE.MeshStandardMaterial(Object.assign({ color, roughness: .9, side: THREE.DoubleSide }, o)));
 
-/** flat [x, z, y] decimetres -> [Vector3] metres */
-function pts3(f) { const o = []; for (let i = 0; i < f.length; i += 3) o.push(new THREE.Vector3(f[i] / 10, f[i + 2] / 10, f[i + 1] / 10)); return o; }
+/** flat [x, z, y] decimetres -> [Vector3] metres. Each point also gets h, its height above the
+ *  ground: g is how far index.js lifted each point onto the terrain (dm; none on flat ground).
+ *  Street, El and tunnel are told apart by h, never by y. */
+function pts3(f, g) {
+  const o = [];
+  for (let i = 0; i < f.length; i += 3) { const v = new THREE.Vector3(f[i] / 10, f[i + 2] / 10, f[i + 1] / 10); v.h = v.y - (g ? g[i / 3] / 10 : 0); o.push(v); }
+  return o;
+}
 /** unit left-of-travel normals (x, z) per point */
 function normals(P) {
   return P.map((_, i) => {
@@ -95,15 +102,16 @@ function runner(P) {
   function at(s, out) {
     s = ((s % L) + L) % L; let lo = 0, hi = S.length - 1;
     while (hi - lo > 1) { const m = (lo + hi) >> 1; if (S[m] <= s) lo = m; else hi = m; }
-    return out.lerpVectors(P[lo], P[hi], (s - S[lo]) / ((S[hi] - S[lo]) || 1));
+    const u = (s - S[lo]) / ((S[hi] - S[lo]) || 1); out.lerpVectors(P[lo], P[hi], u);
+    out.h = P[lo].h + (P[hi].h - P[lo].h) * u; return out;
   }
   return { L, at, P, S };
 }
 
 export function buildSubway(scene, data, river) {
   const LINES = Object.fromEntries(data.lines.map(l => [l.id, l]));
-  const tracks = data.tracks.map(t => { const P = pts3(t.p); return { k: t.k, P, N: normals(P) }; });
-  const under = (P, i) => P[i].y < -1 && P[i + 1].y < -1;
+  const tracks = data.tracks.map(t => { const P = pts3(t.p, t.g); return { k: t.k, P, N: normals(P) }; });
+  const under = (P, i) => P[i].h < -1 && P[i + 1].h < -1;
 
   // --- rails and track beds. Underground ones are never clipped (they stay visible in front of a
   // cut); street-running track belongs to the city and is clipped with it.
@@ -111,7 +119,7 @@ export function buildSubway(scene, data, river) {
   // the ground hides it from any camera above it unless a cut is open, so it is only drawn then.
   const bedD = new Builder(), railD = new Builder(), bedU = new Builder(), railU = new Builder(), bedS = new Builder(), railS = new Builder();
   for (const { P, N } of tracks) for (let i = 0; i < P.length - 1; i++) {
-    const d = under(P, i), u = P[i].y < .3 || P[i + 1].y < .3, bd = d ? bedD : u ? bedU : bedS, rl = d ? railD : u ? railU : railS;
+    const d = under(P, i), u = P[i].h < .3 || P[i + 1].h < .3, bd = d ? bedD : u ? bedU : bedS, rl = d ? railD : u ? railU : railS;
     band(bd, P, N, i, i + 1, 0, 2.8, .02);
     band(rl, P, N, i, i + 1, GAUGE / 2, .14, .17); band(rl, P, N, i, i + 1, -GAUGE / 2, .14, .17);
   }
@@ -132,7 +140,7 @@ export function buildSubway(scene, data, river) {
     for (const { k, P, N } of tracks) {
       if (!['metro', 'broad', 'patco', 'nycsub'].includes(k)) continue;
       for (let i = 0; i < P.length - 1; i++) {
-        if (P[i].y < 2.5 || P[i + 1].y < 2.5) continue;
+        if (P[i].h < 2.5 || P[i + 1].h < 2.5) continue;
         band(deck, P, N, i, i + 1, 0, 4.6, -.22);
         const p = P[i], q = P[i + 1], m = N[i], n = N[i + 1];
         for (const s of [1, -1]) {
@@ -150,7 +158,7 @@ export function buildSubway(scene, data, river) {
       const g = new THREE.BoxGeometry(.9, 1, .9); g.translate(0, .5, 0);
       const im = new THREE.InstancedMesh(g, steel, C.length / 3), o = new THREE.Object3D();
       for (let i = 0; i < C.length; i += 3) { o.position.set(C[i] / 10, 0, C[i + 1] / 10); o.scale.set(1, C[i + 2] / 10, 1); o.updateMatrix(); im.setMatrixAt(i / 3, o.matrix); }
-      im.castShadow = true; im.frustumCulled = false; scene.add(im);
+      im.castShadow = true; im.frustumCulled = false; im.userData.terrain = 'instances'; scene.add(im);   // stood on the ground in index.js's seat()
     }
   }
 
@@ -266,7 +274,9 @@ export function buildSubway(scene, data, river) {
       const [x, , z] = W(u, 0, 0);
       const ri = Math.abs(u) < 15000 ? river.riverInfo(x, z) : null;
       const wet = ri && Math.abs(ri.d) < ri.w / 2;
-      const top = wet ? -1.5 - 4 * (1 - (2 * ri.d / ri.w) ** 2) : TOP;
+      // the ground (or the river bed under the water surface) along the cut
+      const lvl = terrain.on ? water(x, z) : .6;
+      const top = wet ? lvl - 2.1 - 4 * (1 - (2 * ri.d / ri.w) ** 2) : TOP + surface(x, z);
       const c = Number.isInteger(u / COL) ? cols.get(u / COL) : undefined;
       return { u, top, wet, c };
     });
@@ -294,7 +304,7 @@ export function buildSubway(scene, data, river) {
           quad(lb, W(u, 0, f), W(u + s * LINE, 0, f), W(u + s * LINE, 0, r), W(u, 0, r), toward);
         }
       }
-      if (A.wet && B.wet) quad(wb, W(A.u, 0, A.top), W(B.u, 0, B.top), W(B.u, 0, .6), W(A.u, 0, .6), toward);
+      if (A.wet && B.wet) { const la = terrain.on ? water(...[W(A.u, 0, 0)].map(p => [p[0], p[2]])[0]) + .15 : .6, lb_ = terrain.on ? water(...[W(B.u, 0, 0)].map(p => [p[0], p[2]])[0]) + .15 : .6; quad(wb, W(A.u, 0, A.top), W(B.u, 0, B.top), W(B.u, 0, lb_), W(A.u, 0, la), toward); }
     }
 
     const group = new THREE.Group(); group.visible = false; scene.add(group);
@@ -312,7 +322,7 @@ export function buildSubway(scene, data, river) {
     return {
       id: sec.id, name: sec.name, group, n, c: -(n.x * px + n.z * pz), O, band: BAND,
       view: { id: 'cut-' + sec.id, name: 'Under ' + sec.name, cut: sec.id, pos: new THREE.Vector3(...pos), target: new THREE.Vector3(...tgt) },
-      labelAt: (x, z, y) => { const u = U(x, z); return new THREE.Vector3(...W(u, 0, y)); },
+      labelAt: (x, z, y) => { const u = U(x, z), p = W(u, 0, y); return new THREE.Vector3(p[0], y + surface(p[0], p[2]), p[2]); },
     };
   }
 
@@ -340,12 +350,12 @@ export function buildSubway(scene, data, river) {
     else { const parts = []; if (s.k.includes('metro')) parts.push('L'); if (s.k.includes('trolley')) parts.push(range(s.T || [])); text = `${s.t} · ${parts.join(' · ')}`; }
     const under = (s.u || []).length > 0;
     const secs = under ? sections.filter(sec => Math.abs(sec.O(s.x, s.z)) <= 200) : [];
-    for (const sec of secs) labels.push({ text, pos: sec.labelAt(s.x, s.z, 3), section: sec.id });
+    for (const sec of secs) labels.push({ text, pos: sec.labelAt(s.x, s.z, 3), section: sec.id, abs: true });
     // tag colour: the first rapid-transit kind here; street stops (trolleys at grade) are 'stop'
     const k = ['metro', 'broad', 'patco', 'regional', 'nycsub'].find(q => s.k.includes(q));
     const stn = under || k ? (k || (s.k.includes('pcc') ? 'pcc' : 'trolley')) : 'stop';
-    const y = Math.max(7, ...(data.platforms.filter(p => Math.abs(p.x - s.x) < 120 && Math.abs(p.z - s.z) < 120).map(p => p.y + 5)));
-    labels.push({ text, pos: new THREE.Vector3(s.x, y, s.z), stn, far: STN_FAR, cutHide: secs.map(sec => sec.id) });
+    const y = Math.max(7 + surface(s.x, s.z), ...(data.platforms.filter(p => Math.abs(p.x - s.x) < 120 && Math.abs(p.z - s.z) < 120).map(p => p.y + 5)));
+    labels.push({ text, pos: new THREE.Vector3(s.x, y, s.z), stn, far: STN_FAR, cutHide: secs.map(sec => sec.id), abs: true });
   }
 
   // --- street markers: a sign post at every station and stop (blue square for the L, green for
@@ -362,7 +372,7 @@ export function buildSubway(scene, data, river) {
     // street-level track, hashed in 50 m cells (the network is citywide)
     const SG = new Map(), sk = (x, z) => Math.floor(x / 50) + ',' + Math.floor(z / 50);
     for (const t of tracks) for (let i = 0; i < t.P.length - 1; i++) {
-      const a = t.P[i]; if (a.y < -.5 || a.y > 2) continue;
+      const a = t.P[i]; if (a.h < -.5 || a.h > 2) continue;
       const k = sk(a.x, a.z); (SG.get(k) || SG.set(k, []).get(k)).push([t, i]);
     }
     const nearSeg = (x, z) => { const o = []; const cx = Math.floor(x / 50), cz = Math.floor(z / 50); for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { const l = SG.get((cx + a) + ',' + (cz + b)); if (l) o.push(...l); } return o; };
@@ -371,7 +381,7 @@ export function buildSubway(scene, data, river) {
       let best = null;
       const surf = nearSeg(s.x, s.z).map(([t, i]) => t.P[i]);
       for (const [t, i] of nearSeg(s.x, s.z)) {
-        const a = t.P[i], b = t.P[i + 1]; if (a.y < -.5) continue;
+        const a = t.P[i], b = t.P[i + 1]; if (a.h < -.5) continue;
         const ex = b.x - a.x, ez = b.z - a.z, L2 = ex * ex + ez * ez; if (L2 < 1e-6) continue;
         const u = Math.max(0, Math.min(1, ((s.x - a.x) * ex + (s.z - a.z) * ez) / L2)), px = a.x + ex * u, pz = a.z + ez * u;
         const d = Math.hypot(s.x - px, s.z - pz);
@@ -388,11 +398,12 @@ export function buildSubway(scene, data, river) {
       post(e.x + Math.sin(GRID) * 2.6, e.z + Math.cos(GRID) * 2.6, e.k);
     }
     const postMat = new THREE.MeshStandardMaterial({ color: '#4a4d50', roughness: .6, metalness: .4 });
-    scene.add(new THREE.Mesh(postB.geometry(), postMat));
-    if (stairB.count) scene.add(new THREE.Mesh(stairB.geometry(), new THREE.MeshStandardMaterial({ color: '#1d1c1a', roughness: 1 })));
+    const onGround = m => { m.userData.terrain = 'drape'; return m; };   // posts, signs and stairs stand on the street
+    scene.add(onGround(new THREE.Mesh(postB.geometry(), postMat)));
+    if (stairB.count) scene.add(onGround(new THREE.Mesh(stairB.geometry(), new THREE.MeshStandardMaterial({ color: '#1d1c1a', roughness: 1 }))));
     for (const k of Object.keys(signB)) if (signB[k].count) {
       const c = data.lines.find(l => l.kind === k).color;
-      scene.add(new THREE.Mesh(signB[k].geometry(), new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: .45, roughness: .5 })));
+      scene.add(onGround(new THREE.Mesh(signB[k].geometry(), new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: .45, roughness: .5 }))));
     }
   }
 
@@ -743,7 +754,7 @@ export function buildSubway(scene, data, river) {
   // a lit tunnel around every underground track, shown only while riding
   function buildRideTunnel() {
     const H = new Map(), key = (x, z) => Math.floor(x / 10) + ',' + Math.floor(z / 10);
-    tracks.forEach((t, ti) => t.P.forEach((p, i) => { if (p.y < -1) { const k = key(p.x, p.z); if (!H.has(k)) H.set(k, []); H.get(k).push({ p, ti, i }); } }));
+    tracks.forEach((t, ti) => t.P.forEach((p, i) => { if (p.h < -1) { const k = key(p.x, p.z); if (!H.has(k)) H.set(k, []); H.get(k).push({ p, ti, i }); } }));
     const near = (x, z) => { const o = [], cx = Math.floor(x / 10), cz = Math.floor(z / 10); for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { const l = H.get((cx + a) + ',' + (cz + b)); if (l) o.push(...l); } return o; };
     const conc = new Builder(), wall = new Builder(), tile = new Builder(), roof = new Builder(), lamp = new Builder(), cols = new Builder();
     tracks.forEach((t, ti) => {
@@ -767,11 +778,11 @@ export function buildSubway(scene, data, river) {
         return { e: sp.hw, wall: true, tile: false };
       }));
       for (let i = 0; i < P.length - 1; i++) {
-        const p = P[i], q = P[i + 1]; if (p.y > -.6 || q.y > -.6) continue;
+        const p = P[i], q = P[i + 1]; if (p.h > -.6 || q.h > -.6) continue;
         const m = N[i], k = N[i + 1], [La, Ra] = ext[i], [Lb, Rb] = ext[i + 1];
         const c = (s, o, y, nn) => [s.x + nn[0] * o, s.y + y, s.z + nn[1] * o];
         // near a portal the track is too shallow for a roof: an open trench with walls up to the street
-        const covered = p.y + sp.h < -.3 && q.y + sp.h < -.3, hp = Math.min(sp.h, -p.y + .05), hq = Math.min(sp.h, -q.y + .05);
+        const covered = p.h + sp.h < -.3 && q.h + sp.h < -.3, hp = Math.min(sp.h, -p.h + .05), hq = Math.min(sp.h, -q.h + .05);
         quad(conc, c(p, La.e, -.35, m), c(p, -Ra.e, -.35, m), c(q, -Rb.e, -.35, k), c(q, Lb.e, -.35, k), [0, 1, 0]);
         if (covered) quad(roof, c(p, La.e, sp.h, m), c(p, -Ra.e, sp.h, m), c(q, -Rb.e, sp.h, k), c(q, Lb.e, sp.h, k), [0, -1, 0]);
         for (const [A, B, s] of [[La, Lb, 1], [Ra, Rb, -1]]) {
@@ -789,7 +800,7 @@ export function buildSubway(scene, data, river) {
     for (const t of tracks) {
       const sp = SPEC[t.k], P = t.P, N = t.N;
       for (const i of [0, P.length - 1]) {
-        const p = P[i], m = N[i]; if (p.y > -1) continue;
+        const p = P[i], m = N[i]; if (p.h > -1) continue;
         const near = t.P.length > 1 && tracks.some(o => o !== t && o.P.some(q => q.distanceTo(p) < 3));
         if (near) continue;   // joins another piece of track, not a map edge
         const w = 9;
@@ -827,7 +838,7 @@ export function buildSubway(scene, data, river) {
     for (const [kind, fl] of Object.entries(fleets)) if (CAR_IN[kind]) fl.slots.forEach((sl, i) => {   // only cars with an interior can be boarded
       if (sl.hidden || (ride && ride.sl === sl) || !sl.pos) return;
       const p = sl.pos;
-      if (!(p.y > -1 || (active && active.O(p.x, p.z) <= active.band + 3))) return;   // underground: only inside an open cut
+      if (!((sl.h ?? p.y) > -1 || (active && active.O(p.x, p.z) <= active.band + 3))) return;   // underground: only inside an open cut
       const half = fl.sp.car / 2;
       tmpA.copy(p).addScaledVector(sl.dir, half).y += 2.2; tmpB.copy(p).addScaledVector(sl.dir, -half).y += 2.2;
       tmpA.project(camera); tmpB.project(camera);
@@ -861,7 +872,7 @@ export function buildSubway(scene, data, river) {
   function getRide() {
     if (!ride) return null;
     const l = LINES[ride.sl.line];
-    return { line: ride.sl.line, lineName: ride.sl.lineName || (l && l.name) || ride.sl.line, kind: ride.kind, model: CAR_IN[ride.kind].model, next: ride.next, under: ride.sl.pos.y < -1 };
+    return { line: ride.sl.line, lineName: ride.sl.lineName || (l && l.name) || ride.sl.line, kind: ride.kind, model: CAR_IN[ride.kind].model, next: ride.next, under: (ride.sl.h ?? ride.sl.pos.y) < -1 };
   }
   /**
    * Where the ride is along its line, for the line diagram: { name, color, x, z, dx, dz,
@@ -929,7 +940,7 @@ export function buildSubway(scene, data, river) {
     const sp = SPEC[kind], slots = [];
     data.runs.forEach((r, ri) => {
       const line = LINES[r.line]; if (line.kind !== kind) return;
-      const run = runner(pts3(r.p)); if (run.L < 300) return;
+      const run = runner(pts3(r.p, r.g)); if (run.L < 300) return;
       const nT = Math.max(1, Math.round(run.L / (sp.km * 1000))), s0 = (ri * 977) % run.L;
       for (let k = 0; k < nT; k++) for (let c = 0; c < sp.cars; c++) slots.push({ run, k, c, s: s0 + k * run.L / nT - c * (sp.car + .9), line: r.line, pos: new THREE.Vector3(), dir: new THREE.Vector3(0, 0, 1) });
     });
@@ -960,11 +971,11 @@ export function buildSubway(scene, data, river) {
         // (bogies are clamped to the run, so a car never straddles the loop's wrap-around)
         const L = sl.run.L, sm = ((sl.s % L) + L) % L, o = sp.car * .35;
         sl.run.at(Math.min(sm + o, L - .01), p); sl.run.at(Math.max(sm - o, 0), q);
-        sl.pos.addVectors(p, q).multiplyScalar(.5); sl.dir.subVectors(p, q);
+        sl.pos.addVectors(p, q).multiplyScalar(.5); sl.h = (p.h + q.h) / 2; sl.dir.subVectors(p, q);
         if (sl.dir.lengthSq() < 1e-6) sl.dir.set(0, 0, 1); sl.dir.normalize();
         dummy.position.copy(sl.pos); dummy.lookAt(sl.pos.x + sl.dir.x, sl.pos.y + sl.dir.y, sl.pos.z + sl.dir.z);
         // street-running cars on the removed side of a cut would float in mid-air: hide them
-        sl.hidden = !!(active && sl.pos.y > -1 && active.O(sl.pos.x, sl.pos.z) < 0);
+        sl.hidden = !!(active && sl.h > -1 && active.O(sl.pos.x, sl.pos.z) < 0);
         const mine = ride && ride.sl === sl; if (mine) ride.q.copy(dummy.quaternion);
         dummy.scale.setScalar(sl.hidden || mine ? 0 : 1); dummy.updateMatrix();
         parts.forEach(m => m.setMatrixAt(i, dummy.matrix));
@@ -973,7 +984,7 @@ export function buildSubway(scene, data, river) {
     }
     if (ride && camera) rideFrame(dt, camera);
     // deep track shows through an open cut, or to a camera that is itself below the street
-    if (camera) deepTrack.visible = !!active || camera.position.y < 1;
+    if (camera) deepTrack.visible = !!active || camera.position.y < surface(camera.position.x, camera.position.z) + 1;
   }
 
   // "Ride a line": board the lead car of the line's first train (same as clicking it)
@@ -988,7 +999,7 @@ export function buildSubway(scene, data, river) {
   /** add cars positioned by another module (the monorails): slots {line, lineName, color, pos, dir, q, sync(), onBoard(on)} */
   function registerFleet(kind, sp, slots) { fleets[kind] = { sp, slots, parts: [], external: true }; }
   /** every line's route (its out-and-back loop), for the highlight overlay */
-  const routes = data.runs.map(r => ({ id: r.line, color: (LINES[r.line] || {}).color || '#ffffff', kind: (LINES[r.line] || {}).kind, P: pts3(r.p) }));
+  const routes = data.runs.map(r => ({ id: r.line, color: (LINES[r.line] || {}).color || '#ffffff', kind: (LINES[r.line] || {}).kind, P: pts3(r.p, r.g) }));
   update(0);
 
   return { planes: [plane], setCut, getCut: () => (active ? active.id : false), update, labels, views: sections.map(s => s.view),

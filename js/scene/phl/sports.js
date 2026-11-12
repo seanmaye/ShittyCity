@@ -6,7 +6,7 @@ import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtil
 import { pairs } from '../../data.js';
 import { M, litMats } from '../materials.js';
 import { Builder } from '../geometry.js';
-import { beam, piers, station, train } from './monorail.js';
+import { beam, piers, station, train, liftCurve } from './monorail.js';
 import { seasonalGrass } from '../season.js';
 export const H2 = 26; // above the riverfront loop (18 m) so the lines can cross
 
@@ -170,7 +170,7 @@ function corridor(scene, route) {
 /** Elevated shuttle over one corridor: beam, piers between the courts, stations, a train running end to end. */
 function shuttle(scene, route, ctx) {
   const all = pairs(route.p), ctrl = all.filter((_, i) => i % 3 === 0 || i === all.length - 1);
-  const curve = new THREE.CatmullRomCurve3(ctrl.map(([x, z]) => new THREE.Vector3(x, H2, z)), false, 'centripetal');
+  const curve = liftCurve(new THREE.CatmullRomCurve3(ctrl.map(([x, z]) => new THREE.Vector3(x, H2, z)), false, 'centripetal'), H2);
   const L = curve.getLength();
   beam(scene, curve, L);
   const clear = p => {

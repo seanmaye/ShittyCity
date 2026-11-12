@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { formatHour } from './scene/sky.js';
 import { createMinimap } from './minimap.js';
 import { createRidebar } from './ridebar.js';
+import { createFishing } from './fishing.js';
+import { createArcade } from './arcade.js';
 import { CITY } from './cities.js';
 // remembered per viewer and city (browser storage may be unavailable: then nothing is remembered)
 const store = { get: k => { try { return localStorage.getItem(CITY.storage + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(CITY.storage + k, v); } catch (e) { /* ignore */ } } };
@@ -92,7 +94,7 @@ export function createUI(api) {
   // 24-hour clock slider (sun position for today's date in the city)
   const timeIn = document.getElementById('time'), timeOut = document.getElementById('time-out');
   const showTime = h => { timeOut.textContent = formatHour(h); timeIn.setAttribute('aria-valuetext', formatHour(h)); };
-  timeIn.value = String(Math.round(api.getTime() * 4) / 4); showTime(api.getTime());
+  timeIn.value = String(api.getTime()); showTime(api.getTime());
   timeIn.addEventListener('input', () => showTime(api.setTime(+timeIn.value)));
   // day/night speed: frozen at the left end; to the right the clock runs ever faster, up to a
   // whole day in 4 seconds (cubic, so the slow end has room: real time sits near 4%)
@@ -118,6 +120,7 @@ export function createUI(api) {
   // time of year: snow in winter, blossom and flower beds in spring, autumn colour, bare trees
   const dayIn = document.getElementById('day'), dayOut = document.getElementById('day-out');
   const showDay = d => { dayOut.textContent = api.formatDay(d); dayIn.setAttribute('aria-valuetext', api.formatDay(d)); };
+  dayIn.max = String(api.lastDay);
   dayIn.value = String(api.getDay()); showDay(api.getDay());
   let dayPending = false;   // recolouring every tree is a lot of work: once per frame at most
   dayIn.addEventListener('input', () => {
@@ -178,7 +181,7 @@ export function createUI(api) {
   // A cafe chair or bench on Walnut St works the same way: click to sit, Esc to stand up.
   const canvas = api.renderer.domElement, offBtn = document.getElementById('getoff');
   let down = null, carOn = false, hoverPending = false;
-  // creative mode: clicking the view captures the mouse (pointer lock); the mouse then turns the
+  // creative mode: right-clicking the view captures the mouse (pointer lock); the mouse then turns the
   // camera directly (or looks around inside a car), a crosshair marks the centre, Esc lets go
   const xhair = document.getElementById('xhair');
   let locked = false, speedTimer = 0;
@@ -245,7 +248,7 @@ export function createUI(api) {
     }
     if (e.buttons || e.pointerType !== 'mouse' || hoverPending) return;   // hover cursor over a clickable car
     hoverPending = true;
-    requestAnimationFrame(() => { hoverPending = false; if (!carOn) canvas.style.cursor = api.pickCar(...rel(e)) ? 'pointer' : ''; });
+    requestAnimationFrame(() => { hoverPending = false; if (!carOn) canvas.style.cursor = api.pickCar(...rel(e)) || anglerAt(...rel(e)) != null || stallAt(...rel(e)) ? 'pointer' : ''; });
   });
   // standing somewhere as yourself (the overlook), where there is still someone to click on
   const spectating = () => { const c = carOn && api.getCar(); return !!c && c.kind === 'vista'; };
@@ -253,6 +256,9 @@ export function createUI(api) {
     const d = down; down = null;
     if (d && d.lockedClick) {   // mouse captured: click the train under the crosshair
       if ((carOn && !spectating()) || e.type !== 'pointerup') return;
+      const ai = anglerAt(canvas.clientWidth / 2, canvas.clientHeight / 2);   // someone fishing under the crosshair
+      if (ai != null) { document.exitPointerLock(); fishing.open(ai); return; }
+      if (stallAt(canvas.clientWidth / 2, canvas.clientHeight / 2)) { document.exitPointerLock(); arcade.open(); return; }   // the arcade stall
       const hit = api.pickCar(canvas.clientWidth / 2, canvas.clientHeight / 2); if (!hit) return;
       if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; openPicker(false); }
       api.boardCar(hit); syncCar(); syncCut(); return;
@@ -266,10 +272,19 @@ export function createUI(api) {
     }
     if (!click) return;
     if (d.button === 2) { lockMouse(); return; }   // right-click (not a right-drag pan): creative mode
-    const hit = api.pickCar(...rel(e)); if (!hit) { if (!riding) lockMouse(); return; }
+    const ai = anglerAt(...rel(e));   // someone fishing on the Schuylkill: they ask you to join them
+    if (ai != null) { if (riding) { riding = false; api.setRiding(false, true); rideBtn.textContent = 'Ride a line'; openPicker(false); } fishing.open(ai); return; }
+    if (stallAt(...rel(e))) { if (riding) { riding = false; api.setRiding(false, true); rideBtn.textContent = 'Ride a line'; openPicker(false); } arcade.open(); return; }   // Chinatown's Lucky Arcade
+    const hit = api.pickCar(...rel(e)); if (!hit) return;   // only a right-click enters creative mode
     if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; openPicker(false); }
     api.boardCar(hit); syncCar(); syncCut();
   };
+  // fishing (Philadelphia): the anglers on the Schuylkill banks, and the minigame
+  const fishing = api.pickAngler ? createFishing(api) : { open() {}, active: () => false };
+  const anglerAt = (x, y) => (api.pickAngler ? api.pickAngler(x, y) : null);
+  // the arcade stall in Chinatown's night market (Philadelphia): its games (js/arcade.js)
+  const arcade = api.pickStall ? createArcade(api) : { open() {}, active: () => false };
+  const stallAt = (x, y) => (api.pickStall ? api.pickStall(x, y) : false);
   canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointercancel', endDrag);
   // keys: inside a car W A S D / arrows walk the aisle; otherwise they fly the camera over the
   // city, with Space to rise and Shift to sink
@@ -280,7 +295,7 @@ export function createUI(api) {
   const applyKeys = () => api.moveCar((keys.has('f') ? 1 : 0) - (keys.has('b') ? 1 : 0), (keys.has('r') ? 1 : 0) - (keys.has('l') ? 1 : 0));
   const applyFly = () => api.setFly((flyKeys.has('f') ? 1 : 0) - (flyKeys.has('b') ? 1 : 0), (flyKeys.has('r') ? 1 : 0) - (flyKeys.has('l') ? 1 : 0), (flyKeys.has('u') ? 1 : 0) - (flyKeys.has('d') ? 1 : 0));
   window.addEventListener('keydown', e => {
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.ctrlKey || e.metaKey || e.altKey || fishing.active() || arcade.active()) return;   // the fishing and arcade dialogs have the keys
     const t = e.target, typing = t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'range'));
     if (typing) return;
     if (carOn) {

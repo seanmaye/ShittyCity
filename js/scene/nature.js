@@ -4,8 +4,10 @@
 // April some blossom pink and white and flower beds bloom beneath them. Conifers stay green.
 import * as THREE from 'three';
 import { onSeason } from './season.js';
+import { terrain, water, surface } from './terrain.js';
 import { withBounds } from './geometry.js';
-import { groundAt } from './terrain.js';
+// Jersey Shore's grid (0 elsewhere)
+import { groundAt } from './jsh/terrain.js';
 
 const C = h => new THREE.Color(h);
 const SUMMER = ['#4f7d45', '#5d8c4c', '#3f6b3c', '#6b9a4e', '#628f4a'].map(C), FRESH = C('#93c45a');
@@ -54,22 +56,26 @@ function treeParts() {
   return treeKit = { trunk, round, cone, bed, twig: twigs(), bark: new THREE.MeshStandardMaterial({ color: '#6b5444', roughness: 1 }) };
 }
 
-export function buildTrees(scene, flat, y = 0) {
-  const n = flat.length / 2, dm = new THREE.Object3D();
+/** instanced trees at flat [x, z] dm, standing at height y. onGround: on terrain, each tree (and
+ *  flower bed) stands on the ground under it, placed here rather than by seat(), because the
+ *  season pass rebuilds the crowns from the matrices saved now. Pass false for trees on a deck
+ *  that is lifted as a whole (the yard park). */
+export function buildTrees(scene, flat, y = 0, onGround = true) {
+  const n = flat.length / 2, dm = new THREE.Object3D(), lift = terrain.on && onGround;
+  const gy = (x, z) => y + (lift ? surface(x, z) : 0) + (onGround ? groundAt(x, z) : 0);
   const { trunk, round, cone, bed, twig, bark } = treeParts();
   const kinds = Array.from({ length: n }, () => Math.random() < .78 ? 0 : 1);
   const nR = kinds.filter(k => k === 0).length, nC = n - nR;
   const wm = () => new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .95, flatShading: true });
   // the sphere around all of these trees and their flower beds (a tree reaches 24 m up and 7 m
   // out at the largest scale, a bed sits up to 8 m from its tree)
-  // each tree stands on the terrain where the city has one (terrain.js; 0 elsewhere)
-  const gy = new Float32Array(n);
-  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity, g0 = Infinity, g1 = -Infinity;
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  const base = new Float32Array(n);
   for (let i = 0; i < n; i++) {
     const x = flat[i * 2] / 10, z = flat[i * 2 + 1] / 10; x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z);
-    gy[i] = groundAt(x, z); g0 = Math.min(g0, gy[i]); g1 = Math.max(g1, gy[i]);
+    base[i] = gy(x, z); y0 = Math.min(y0, base[i]); y1 = Math.max(y1, base[i]);
   }
-  const centre = n ? new THREE.Vector3((x0 + x1) / 2, y + 12 + (g0 + g1) / 2, (z0 + z1) / 2) : new THREE.Vector3(0, y, 0), reach = n ? Math.hypot(x1 - x0, z1 - z0, g1 - g0) / 2 + 30 : 0;
+  const centre = n ? new THREE.Vector3((x0 + x1) / 2, (y0 + y1) / 2 + 12, (z0 + z1) / 2) : new THREE.Vector3(0, y, 0), reach = n ? Math.hypot(x1 - x0, z1 - z0, y1 - y0) / 2 + 30 : 0;
   const mesh = (g, m, count) => { const im = new THREE.InstancedMesh(withBounds(g, centre, reach), m, count); im.userData.bounded = true; return im; };
   const it = mesh(trunk, bark, n), ir = mesh(round, wm(), nR), icn = mesh(cone, wm(), nC);
   const twigMat = new THREE.MeshStandardMaterial({ color: '#9c8774', map: twigTex, alphaTest: .4, side: THREE.DoubleSide, roughness: 1 });
@@ -81,20 +87,20 @@ export function buildTrees(scene, flat, y = 0) {
   let a = 0, b = 0;
   for (let i = 0; i < n; i++) {
     const sc = .8 + Math.random() * .6;
-    dm.position.set(flat[i * 2] / 10, y + gy[i], flat[i * 2 + 1] / 10); dm.rotation.set(0, Math.random() * 6.28, 0); dm.scale.set(sc, sc, sc); dm.updateMatrix();
+    dm.position.set(flat[i * 2] / 10, base[i], flat[i * 2 + 1] / 10); dm.rotation.set(0, Math.random() * 6.28, 0); dm.scale.set(sc, sc, sc); dm.updateMatrix();
     it.setMatrixAt(i, dm.matrix);
     if (kinds[i] === 0) {
       ir.setMatrixAt(a, dm.matrix); ib.setMatrixAt(a, dm.matrix); dm.matrix.toArray(mats, a * 16);
       rnd.set([Math.random(), Math.random(), Math.random(), Math.random()], a * 4); a++;
     } else { icn.setMatrixAt(b, dm.matrix); icn.setColorAt(b, col.copy(SUMMER[Math.floor(Math.random() * 5)]).multiplyScalar(.85)); b++; }
     // a flower bed near about one tree in six
-    if (Math.random() < .17) { const ang = Math.random() * 6.28, r = 4 + Math.random() * 4, bx = flat[i * 2] / 10 + Math.cos(ang) * r, bz = flat[i * 2 + 1] / 10 + Math.sin(ang) * r; beds.push(bx, bz, groundAt(bx, bz)); }
+    if (Math.random() < .17) { const ang = Math.random() * 6.28, r = 4 + Math.random() * 4, bx = flat[i * 2] / 10 + Math.cos(ang) * r, bz = flat[i * 2 + 1] / 10 + Math.sin(ang) * r; beds.push(bx, bz); }
   }
   ir.setColorAt(0, col); ib.setColorAt(0, col);   // allocate instance colours
-  const fb = mesh(bed, new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .9 }), Math.max(1, beds.length / 3));
+  const fb = mesh(bed, new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: .9 }), Math.max(1, beds.length / 2));
   if (!beds.length) fb.setMatrixAt(0, new THREE.Matrix4().makeScale(0, 0, 0));
-  for (let k = 0; k < beds.length / 3; k++) {
-    dm.position.set(beds[k * 3], y + .5 + beds[k * 3 + 2], beds[k * 3 + 1]); dm.rotation.set(0, Math.random() * 6.28, 0); dm.scale.setScalar(.7 + Math.random() * .7); dm.updateMatrix();
+  for (let k = 0; k < beds.length / 2; k++) {
+    dm.position.set(beds[k * 2], gy(beds[k * 2], beds[k * 2 + 1]) + .5, beds[k * 2 + 1]); dm.rotation.set(0, Math.random() * 6.28, 0); dm.scale.setScalar(.7 + Math.random() * .7); dm.updateMatrix();
     fb.setMatrixAt(k, dm.matrix); fb.setColorAt(k, FLOWERS[Math.floor(Math.random() * FLOWERS.length)]);
   }
   fb.material.userData.noSnow = true;
@@ -123,6 +129,7 @@ export function buildTrees(scene, flat, y = 0) {
   ib.customDepthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking, map: twigTex, alphaTest: .4 });
   ib.castShadow = true; scene.add(ib);
   fb.receiveShadow = true; scene.add(fb);
+  if (lift) [it, ir, icn, ib, fb].forEach(m => { m.userData.terrain = 'done'; });
   return [it, ir, icn, ib, fb];
 }
 
@@ -135,7 +142,7 @@ export function buildShells(scene, river) {
   const shells = [[-25, .1, 1.6], [18, .35, 1.2], [-5, .6, 1.4], [30, .85, 1.0]].map(([off, f, sp]) => {
     const g = new THREE.Group(); g.add(new THREE.Mesh(hull, hm));
     for (let k = 0; k < 8; k++) { const r = new THREE.Mesh(rw, rm); r.position.set(0, .65, -7 + k * 1.9); g.add(r); }
-    g.traverse(o => { if (o.isMesh) o.castShadow = true; }); scene.add(g);
+    g.traverse(o => { if (o.isMesh) o.castShadow = true; }); g.userData.terrain = 'done'; scene.add(g);
     return { g, off, f: i0 + f * (i1 - i0), sp };
   });
   function rsAt(f) { const i = Math.max(0, Math.min(NS - 2, Math.floor(f))), fr = f - i; return { p: RS[i].p.clone().lerp(RS[i + 1].p, fr), n: RS[i].n, t: RS[i].t, w: RS[i].w }; }
@@ -143,7 +150,8 @@ export function buildShells(scene, river) {
     shells.forEach(s => {
       s.f += s.sp * dt * 4 / sampSp; if (s.f > i1) s.f = i0;
       const r = rsAt(s.f), off = Math.max(-r.w / 2 + 12, Math.min(r.w / 2 - 12, s.off));
-      s.g.position.set(r.p.x + r.n.x * off, .8, r.p.z + r.n.z * off); s.g.lookAt(s.g.position.x + r.t.x, .8, s.g.position.z + r.t.z);
+      const x = r.p.x + r.n.x * off, z = r.p.z + r.n.z * off, y = terrain.on ? water(x, z) + .35 : .8;
+      s.g.position.set(x, y, z); s.g.lookAt(x + r.t.x, y, z + r.t.z);
     });
   };
 }

@@ -7,7 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231d2b36'/%3E%3Crect x='10' y='18' width='44' height='20' rx='8' fill='%23d6452f'/%3E%3Crect x='16' y='23' width='8' height='7' rx='1.5' fill='%23fff6e8'/%3E%3Crect x='28' y='23' width='8' height='7' rx='1.5' fill='%23fff6e8'/%3E%3Crect x='40' y='23' width='8' height='7' rx='1.5' fill='%23fff6e8'/%3E%3Crect x='6' y='41' width='52' height='5' rx='2' fill='%23eef2f5'/%3E%3Crect x='29' y='46' width='6' height='12' fill='%23eef2f5'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js",
@@ -15,6 +15,7 @@
 </script>
 </head>
 <body>
+<main id="city-view" tabindex="-1" inert>
 <canvas id="c" aria-label="3D city model"></canvas>
 <div id="tags" aria-hidden="true"></div>
 <div id="binoc" aria-hidden="true" hidden><svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet"><defs><filter id="bn-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="7"/></filter><mask id="bn-mask" maskUnits="userSpaceOnUse" x="-4000" y="-4000" width="9600" height="8900"><rect x="-4000" y="-4000" width="9600" height="8900" fill="#fff"/><g filter="url(#bn-soft)"><circle cx="540" cy="450" r="405"/><circle cx="1060" cy="450" r="405"/></g></mask></defs><rect x="-4000" y="-4000" width="9600" height="8900" mask="url(#bn-mask)"/></svg><p id="binoc-cap"></p></div>
@@ -33,7 +34,7 @@
 <button id="getoff" type="button" hidden>Get off</button>
 <button id="switch-city" type="button" class="ghost">Change city</button>
 </div>
-<div class="clock"><label for="time">Time</label><input type="range" id="time" min="0" max="24" step="0.25" value="17" disabled><output id="time-out" for="time">5:00 PM</output></div>
+<div class="clock"><label for="time">Time</label><input type="range" id="time" min="0" max="24" step="any" value="0" disabled><output id="time-out" for="time"></output></div>
 <div class="clock"><label for="speed">Speed</label><input type="range" id="speed" min="0" max="1000" step="1" value="0" disabled aria-describedby="speed-out"><output id="speed-out" class="wide" for="speed">Frozen</output></div>
 <div class="clock"><label for="day">Season</label><input type="range" id="day" min="0" max="364" step="1" value="0" disabled><output id="day-out" class="wide" for="day"></output></div>
 <div class="skyline" role="group" aria-labelledby="sky-h"><span class="views-h" id="sky-h">Skyline lights <span class="sky-name" id="sky-name">Classic white</span></span><div class="swatches" id="swatches"><label class="swatch custom" title="Your own colour"><input type="color" id="sky-color" value="#7fd0ff" aria-label="Your own colour for the skyline lights"></label></div></div>
@@ -41,7 +42,6 @@
 <div class="lines" id="lines" role="group" aria-label="Choose a line" hidden></div>
 <div class="views" id="views" role="group" aria-labelledby="views-h"><span class="views-h" id="views-h">Go to</span><div class="row" id="view-btns"></div></div>
 </div>
-<p class="status" id="status" role="status">Loading map data…</p>
 </div></div>
 <div class="minimap" id="minimap" hidden><canvas id="mm" aria-label="Map of the city showing where you are. Click to fly there."></canvas>
 <div class="mm-ctl"><button type="button" id="mm-in" aria-label="Zoom the map in" title="Zoom in">+</button><button type="button" id="mm-out" aria-label="Zoom the map out" title="Zoom out">−</button></div>
@@ -50,6 +50,16 @@
 <div class="actions" id="actions" role="group" aria-label="Things to do" hidden></div>
 <div class="ridebar" id="ridebar" role="status" aria-live="off" hidden><div class="rb-h"><span class="rb-dot" id="rb-dot" aria-hidden="true"></span><b id="rb-name"></b><span class="rb-to" id="rb-to"></span><span class="rb-next" id="rb-next"></span></div><svg id="rb-svg" viewBox="0 0 1000 120" preserveAspectRatio="xMidYMax meet" aria-hidden="true"></svg></div>
 <p class="credit" id="credit"></p>
+</main>
+<section class="city-loading" id="city-loading" aria-labelledby="loading-city" hidden>
+<img class="loading-art" id="loading-art" alt="" fetchpriority="high" hidden>
+<div class="loading-copy">
+<h1 id="loading-city" tabindex="-1"></h1>
+<progress id="loading-progress" max="100" value="0" aria-label="City loading progress"></progress>
+<p id="status" role="status">Loading map data…</p>
+<button id="loading-back" type="button" hidden>Change city</button>
+</div>
+</section>
 <div class="menu" id="menu" hidden><div class="menu-card" role="dialog" aria-labelledby="menu-h"><h1 id="menu-h"><span aria-hidden="true"></span>City models</h1>
 <p>Pick a city to explore in 3D: real buildings, streets, parks and transit, with proposals of our own. You can switch cities at any time.</p>
 <div class="cities" id="cities"></div></div></div>

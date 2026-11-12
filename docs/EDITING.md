@@ -3,7 +3,7 @@ EDITING GUIDE: City models (single-file build)
 
 This guide is for an AI assistant (or a person) who has only this HTML file and wants to
 change a city. Everything the page needs is inside the file: styles, all scripts, and
-all map data. three.js r128 loads from the jsDelivr CDN.
+all map data and loading illustrations. three.js r128 loads from the jsDelivr CDN.
 
 The page holds several cities on one engine: today Philadelphia (id "phl"), New York
 (id "nyc") and Jersey Shore, PA (id "jsh"). It opens on a start menu (#menu) to pick one, or
@@ -22,15 +22,18 @@ Python helper below.
   <head>      <style> (HUD, labels, start menu) and an import map that maps "three" to three@0.128.0
   <body>      HUD markup: #ride, #transit, #lbl, #cut, #getoff, #switch-city buttons, #xhair
               (creative-mode crosshair), #modehint, #time slider (+ #time-out), #legend,
-              #lines picker, #view-btns (Go to), #heading, #hint, #status, #tags, #credit;
+              #lines picker, #view-btns (Go to), #heading, #hint, #tags, #credit;
               the #persona card (someone inhabited: Walnut St, the detasseling crew, the hunter);
               #actions (what the person you are inside can do) and #binoc (their binocular mask);
-              the start menu #menu with #cities
+              the start menu #menu with #cities and the #city-loading screen with #status
   data blocks, city by city, one per file in the city's data folder:
               <script type="application/json" id="data-<city>-NAME" data-file="<city>/FILE">...</script>
               <script type="application/gzip-base64" id="data-<city>-NAME" data-file="<city>/FILE">base64</script>
               NAME is the file name without .json / .json.gz / .bin.gz. Which blocks a city
               has is listed in section 3 and in its `files` entry in js/cities.js.
+              Loading art uses application/webp-base64 and id="art-<city>-NAME", where NAME
+              is the file name without .webp. The city lists each file and its progress bar
+              gradient colors in `loadingArt`.
   1 <script type="module"> holding all the code:
       - import lines at the very top (THREE, OrbitControls, BufferGeometryUtils, Line2,
         LineMaterial, LineGeometry)
@@ -54,7 +57,11 @@ instead of editing this file. If you only have this file, edit it directly as de
   Every city has its own local frame (js/cities.js `frame`), with the same axes:
   x       metres EAST   = (lon - LON0) * MX
   z       metres SOUTH  = -(lat - LAT0) * 111000      (north is -z)
-  y       metres UP
+  y       metres UP. New York is flat (ground at y = 0). Philadelphia has real terrain
+          (data-phl-terrain, NAVD88 metres): heights in the data are ABOVE THE GROUND
+          (building, El and label heights; tunnel depths below it), and the page sets
+          everything on the ground as it loads (js/scene/terrain.js, section 4).
+          Jersey Shore has terrain of its own kind (data-jsh-terrain, js/scene/jsh/terrain.js).
 
   City           LAT0      LON0       MX         origin
   Philadelphia   39.9560   -75.1760   85390      near 22nd and Arch Streets
@@ -91,8 +98,9 @@ instead of editing this file. If you only have this file, edit it directly as de
         Astoria, Flushing, Jamaica); outside the land outlines is water (the city's `sea` flag).
   Philadelphia's street grid is rotated about -9.3 degrees from true north (-0.162 rad).
   Jersey Shore has no separate core: every footprint is in data-jsh-buildings and
-  data-jsh-city_buildings is empty. It is the one city on terrain (data-jsh-terrain): y = 0 is
-  the river by town, and everything is laid onto the hills at load time (section 4, terrain.js),
+  data-jsh-city_buildings is empty. It has its own elevation grid (data-jsh-terrain, a different
+  format from Philadelphia's, loaded as data.grid): y = 0 is the river by town, and everything
+  is laid onto the hills at load time (section 4, jsh/terrain.js),
   so its data stays flat like any other city's.
 
 
@@ -246,6 +254,17 @@ data-phl-boats          river boat lines (tools/phl/build_boats.py; all but Rive
          from; s = distance along p. p runs mid-channel through the real water; dams are
          barriers. Boats run out and back (phl/boats.js), one per 6 km, dwelling DWELL s a stop.
 
+data-phl-terrain        (gzip binary "TER1", little endian) the ground, from USGS 3DEP bare earth
+  int32 x0_dm, z0_dm, cell_dm, W, H   first sample, spacing (10 m), samples per row and rows
+  int16 ground[W*H]   decimetres; under rivers and lakes the bed (up to 2.5 m below the water)
+  int16 water[W*H]    water surface minus ground, decimetres: set in the water and 120 m onto
+                      the land beside it, 0 elsewhere
+  Each row of both grids is delta-coded (first value, then differences). The grid covers the
+  city's bbox plus 200 m; beyond it the edge heights carry on. Built by
+  tools/phl/build_terrain.py from tools/phl/fetch_dem.py's download. Water levels are real
+  (3DEP is hydro-flattened): tidal Delaware and lower Schuylkill about -1.5 m, the pool above
+  the Fairmount Dam about 3.3 m.
+
 data-phl-yardpark       PROPOSAL: deck over the 30th Street rail yard
   h:      deck height (m)
   rings:  [outer_ring_dm, hole_ring_dm, ...]; a hole lets a tall building stand through
@@ -273,13 +292,14 @@ data-nyc-monorail       PROPOSAL: the East River Loop
 
 Jersey Shore only:
 
-data-jsh-terrain        (gzip binary "TER1") the elevation grid
+data-jsh-terrain        (gzip binary "TER1", but NOT data-phl-terrain's layout) the elevation grid; the
+  page loads it as data.grid (cities.js), never as data.terrain, so js/scene/terrain.js leaves it alone
   "TER1", n u32, half f32, cell f32, base f32, then (little endian) heights i16[n*n] in dm above
   base, row-major from the north-west corner (row = z, column = x; vertex (i, j) is at
   x = -half + i*cell, z = -half + j*cell), then cover u8[n*n]: 0 open, 1 forest, 2 river bed,
   3 cropland.
   Today n = 501, cell = 40 m, half = 10 km; base = 156.8 m above sea level. Each cell is split
-  into two triangles from its north-west to its south-east corner; groundAt(x, z) in terrain.js
+  into two triangles from its north-west to its south-east corner; groundAt(x, z) in jsh/terrain.js
   interpolates on those triangles.
 data-jsh-places         labels [{t, x, z, y (m above the ground there), far?}] and views
                         [{id, name, pos: [x, y, z], target: [x, y, z]}] (y already includes the ground).
@@ -334,14 +354,14 @@ js/scene/materials.js  M(color) quick material; litMats = materials that glow at
                  Display lights: addDisplay(apply) registers a coloured skyline light;
                  setDisplayColors(colors) deals a scheme's colours out to them in turn;
                  DISPLAY_PRESETS = every scheme (a city shows the ids in CITY.presets).
-js/scene/terrain.js    a city's elevation grid (data-<city>-terrain; only Jersey Shore has one):
+js/scene/jsh/terrain.js  Jersey Shore's elevation grid (data-jsh-terrain, as data.grid; with CITY.grid):
                  loadTerrain, groundAt(x, z) and groundBase(ring) (the lowest ground under a
                  footprint, where buildings.js stands it; nature.js stands trees on groundAt),
                  buildTerrain (the surface in 2 km tiles, coloured by cover, plus flat country
                  beyond) and drape(objects): every flat mesh built before it (paving, parks, water,
                  streets, bridges) is cut along the grid's triangle edges and lifted, so it lies
                  exactly on the terrain; instanced meshes are lifted per instance. Objects with
-                 userData.draped or userData.grounded are left alone. With CITY.terrain, ground.js
+                 userData.draped or userData.grounded are left alone. With CITY.grid, ground.js
                  and city.js draw no countryside of their own.
 js/scene/geometry.js   Builder (merged meshes); addPolygon, addRibbon, addPrism (extruded
                  footprint, separate roof colour), addLoft (tapering tower section)
@@ -355,11 +375,35 @@ js/scene/nature.js     trees (instanced) and rowing shells (on a river centrelin
                  the season: crown colours (SUMMER, FRESH, AUTUMN, BLOSSOM), leaf drop (crowns
                  scaled to zero, bare-branch planes shown), and flower beds (FLOWERS) near one tree
                  in six. Returned meshes with userData.season === false stay hidden in city tiles.
-js/scene/season.js     time of year: setSeason(day 0-364) evaluates CURVES (snow, bare, fall, bloom,
+js/scene/season.js     time of year: setSeason(day of year starting at 0) evaluates CURVES (snow, bare, fall, bloom,
                  flowers, fresh, dormant) and calls every onSeason(fn) listener. addSnow(mat,
                  amount) whitens up-facing surfaces by the SNOW uniform (index.js applies it to
                  every mesh once built; userData.noSnow opts out, userData.snowAmt scales it:
                  roads .3). seasonalGrass(mat) browns grass over winter.
+js/scene/terrain.js    the ground (data-<city>-terrain; without it terrain.on is false and every
+                 lookup returns 0, so a flat city needs nothing). Lookups: ground(x,z),
+                 water(x,z), surface(x,z) = max of the two, isWet, normalAt, profile(points)
+                 (surface smoothed along a line and level across water: tracks, guideways,
+                 bridges). footprint(ring, h) -> {y0, top, mid}: walls from the lowest
+                 ground under the ring, roof h above the ground at its middle (city.js,
+                 buildings.js). buildTerrain draws the ground mesh (1 km tiles at 20 m near,
+                 80 m far, 4 km blocks in one mesh each once a whole block is far, and a skirt
+                 to the horizon). seat(scene) runs once everything is
+                 built and sets each object on the ground by its userData.terrain:
+                   'done'  placed by its own module      'water'  drape onto the water
+                   'drape' bend onto the ground          'rigid'  lift as one by footing()
+                   {y}     lift as one by y              (none)   instanced meshes per
+                   instance, meshes wider than 80 m drape, the rest lift as one.
+                 Draping splits a flat piece only where the ground under it bends more than
+                 its tolerance (default 10 cm either way; userData.drapeTol = [below, above]:
+                 TOL_LAWN for parks, TOL_WATER for water), so flat ground costs no triangles.
+                 index.js also lifts the transit data first (liftTransit: track split to
+                 points 5 m apart; street-level track onto the ground right under it, Els
+                 and tunnels by profile; each piece keeps its lift per point in `g`, and
+                 subway.js tells street, El and tunnel apart by height above the ground,
+                 point.h, never by y; platforms by their track, El columns stretched to the
+                 deck), the yard park deck (level, on the yard's median floor), labels and
+                 "Go to" views.
 js/scene/subway.js     every rail line (data-<city>-transit, plus data-phl-metro): rails, platforms,
                  El decks and columns, looping instanced trains (SPEC: car sizes, cars per train,
                  train spacing, speeds, per kind), and the cut-away sections:
@@ -387,7 +431,7 @@ js/scene/index.js      builds everything in order, each city's parts only when i
                  follow the camera)
 js/ui.js         buttons, line picker, floating labels, keys (inside a car KEYMAP walks; otherwise
                  FLYMAP flies the camera; Space up, Shift down)
-                 Creative mode: a right-click (or a click off any train) on the view captures the
+                 Creative mode: a right-click (only a right-click) on the view captures the
                  mouse (pointer lock), and the #modehint pill at the bottom says so; the mouse
                  then turns the camera (setCreative/creativeLook in index.js, orbit controls off),
                  W A S D fly along the view, the wheel sets the speed, a click boards the train
@@ -406,6 +450,26 @@ js/ui.js         buttons, line picker, floating labels, keys (inside a car KEYMA
 js/minimap.js    top-right map (#minimap): base map of limits, parks, water and rail drawn once
                  from api.mapData; LEVELS = metres across per zoom step; you as a view cone, or
                  the train and its line in bold when riding; a click calls api.flyToPoint(x, z).
+js/fishing.js    the fishing minigame (a dialog over the city): invitation, then cast (power meter),
+                 wait (nibbles that look like bites), bite (strike window, shorter for rarer
+                 catches), reel (hold: tension vs. progress, line gained only in the green band;
+                 the fish runs, shakes its head and tires; snap over the top, slack shakes the
+                 hook), result. HARD holds every difficulty number (tuned by simulation). ITEMS = the catch table
+                 (fish draw params, or a glyph for trash and treasure; lb range, fight, note,
+                 when(ctx) multiplier for season and hour), RARITY weights; rollCatch(ctx) picks
+                 one, favouring rarer ones on long casts. drawCatch() paints a fish or glyph.
+                 The catch log is kept in localStorage (CITY.storage + 'creel'). Snap the line and
+                 the angler yells at you (YELLS, in a speech bubble), then always gives you one
+                 more try (ONE_MORE; the button becomes "One more try").
+js/arcade.js     Lucky Arcade (a dialog over the city), opened by a click on the stall in Chinatown's
+                 night market: a menu of GAMES, each make() -> { update(dt, inp), draw(g), score,
+                 over, result, help } on one 480 x 480 canvas. pingPong (first to 7 against a CPU
+                 paddle; score = longest rally), skySwarm (fixed shooter: bugs enter on curves,
+                 hold a swaying formation, dive and drop bombs; BUGS = kinds and points),
+                 dumplingDash (maze chase on MAZE: '#' wall, '.' seed, 'o' fortune cookie, '-' pen
+                 door, 'C' pen, ' ' void except the row-9 tunnel, '_' eaten; four CATS with their
+                 own chase targets on a scatter/chase SCHEDULE). Best scores in localStorage
+                 (CITY.storage + 'arcade').
 js/ridebar.js    line diagram (#ridebar) while riding, from api.rideStrip() (subway.js): stops
                  evenly spaced, the train between them, passed stops greyed, the next in bold.
 
@@ -432,6 +496,22 @@ monorail.js      riverfront LOOP. Settings: H = 18 (height); EAST = 58 and WEST 
                  few hundred metres (setbacks/ease), the spline takes every third point, and
                  each end crosses the river on a rounded turn (turn(): a cubic Bezier along
                  each bank line's heading), so the beam has no kinks or hairpins.
+anglers.js       people fishing the Schuylkill (buildAnglers(scene, river, boats, water)): BANK_SPOTS
+                 on the river centreline and PIER_SPOTS by the boat piers, each stood at the real
+                 water's edge (walked out from the water to the bank); figure, rod, line, bobber,
+                 bucket, cooler. pick() / info(i) (name, hello, spot, view); wired as api.pickAngler,
+                 anglerInfo, viewAngler; ui.js opens js/fishing.js on a click.
+chinatown.js     Chinatown dressed in detail (buildChinatown(scene, { buildings })). Streets are OSM
+                 centrelines in metres (RACE, TENTH, NINTH, ELEVENTH, ARCH; CROSSINGS keep things
+                 back from the corners). Facades 5-26 m tall that face a street get a lit board
+                 (BOARDS), a blade sign (BLADES; both from one canvas atlas, signAtlas) and an
+                 awning per bay. Lantern strings cross Race, 10th and 9th; pagoda-topped lamps line
+                 their kerbs. The Friendship Gate spans 10th at GATE_S. A dragon dance loops along
+                 Race (loopAt). OUR ADDITION: a night market on the open lot east of 10th between
+                 Race and Cherry (LOT_S; lot frame u east, v south), with stalls, tables, string
+                 lights, a pavilion and the Lucky Arcade stall: pickStall / stallView, wired as
+                 api.pickStall and api.viewStall; ui.js opens js/arcade.js on a click. Static
+                 pieces are merged into one mesh per material (batch / mergeGeos).
 boats.js         river boats from data-phl-boats: piers (deck, pilings, float, shelter), boat
                  models, fleets easing into each stop. Registered with subway.registerFleet as
                  kind 'boat' (CAR_IN.boat is the walkable cabin; aboard, only the model's outer
@@ -750,8 +830,8 @@ Add another rail line
     3. Every new material that must stay visible inside a cut needs userData.noClip = true.
 
 Change the sky and light by time of day: KEYS and LIGHT in the js/scene/sky.js chunk
-(keyed by sun elevation in degrees). The slider opens at sunset minus 20 minutes
-(setTime(sky.sunset - .35) in index.js).
+(keyed by sun elevation in degrees). The time and season open at the browser's
+current local date and time, set in js/scene/index.js.
 Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, height]).
 
 
@@ -773,11 +853,15 @@ Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, hei
     path, and the transit tracks, stations and El columns;
   - delete or move them yourself (see the recipes).
   Philadelphia's riverfront loop and all its piers DO re-route at load time.
+- Philadelphia has terrain: build new things at ground level (y = 0 is "on the ground") and
+  let seat() put them on it, or set userData.terrain = 'done' and add surface(x, z) yourself
+  (import it from the terrain chunk). A tall object placed by hand at y = 0 on a hillside
+  ends up buried, and one placed at a real height ends up floating.
 - Performance budget: about 3-4M triangles and 1,000-1,500 draw calls when the whole city is
   in view (far city tiles draw only roofs). Merge or instance new geometry; don't add
   thousands of separate meshes. Instanced meshes must have frustumCulled = false (or manage
   their own visibility, as city.js does), because three.js r128 culls them by their origin.
-- The file is about 28 MB (Philadelphia about 16, New York about 11). The gzip blocks hold most
+- The file is about 39 MB (Philadelphia about 24, 8 of it the terrain; New York about 11). The gzip blocks hold most
   of the data; keep new bulky data in a gzip block rather than JSON.
 - Keep each city's attribution line (CITY.credit). Philadelphia: map data (c) OpenStreetMap
   contributors, ODbL; building data (c) City of Philadelphia. New York: buildings NYC Open
@@ -806,8 +890,10 @@ A city entry holds:
                                where the sun is computed for (sky.js)
   sea                          true: everything outside data-<city>-city `limits` is water;
                                false: it is countryside
-  terrain                      true: the city has data-<city>-terrain and everything is laid onto
-                               it (terrain.js); its countryside is the terrain surface
+  grid                         true (Jersey Shore): data-jsh-terrain is loaded as data.grid and
+                               everything is laid onto it (jsh/terrain.js); its countryside is
+                               the grid's surface. (Philadelphia's terrain needs no flag: a
+                               `terrain` file is enough, js/scene/terrain.js.)
   storage                      localStorage prefix (folded panel, skyline lights)
   title, heading, hint, canvasLabel, cutButton, cutHint, credit, building   page text
   groups                       the "Ride a line" networks in order (a line without `group` is

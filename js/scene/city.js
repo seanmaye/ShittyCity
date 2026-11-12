@@ -12,6 +12,7 @@ import { Builder, addPolygon, addRibbon, addPrism, withBounds, colorOf } from '.
 import { drawLines, GREEN, GROUND, COUNTRY, groundMat } from './ground.js';
 import { buildTrees } from './nature.js';
 import { seasonalGrass } from './season.js';
+import { terrain, surface, footprint, buildTerrain, TOL_LAWN } from './terrain.js';
 import { facadeKind, facadeColor, hash, addRooftop, aviationLights } from './buildings.js';
 import { CITY } from '../cities.js';
 
@@ -58,7 +59,7 @@ function rectInRing(ring, [x0, z0, x1, z1]) {
 /** clear: rings ([[x, z], ...]) kept free of park trees (playing fields);
  *  sea: everything outside the land outlines (city.limits) is water, not countryside;
  *  core: the Center City extent [x0, z0, x1, z1] in metres, which buildGround paves itself */
-export function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea = false, core = null }) {
+export async function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea = false, core = null }) {
   const city = data.city, B = decode(data.cityBuildings);
   const tiles = new Map();   // key -> { cx, cz, r, full: [], roof: [], trees: [] }
   const tileOf = (x, z) => {
@@ -73,10 +74,24 @@ export function buildCity(scene, data, { waterMat, status = () => {}, clear = []
   // before they are shaded here (the logarithmic depth buffer writes depth per pixel), so every
   // full layer stacked under the city used to cost a screenful of lighting and shadow lookups.
   const limits = city.limits.map(pairs);
-  if (sea) {
+  let ground = null;   // with terrain: the ground mesh, paved inside the city limits, country outside
+  if (terrain.on) {
+    // inside the limits on a 50 m lattice (even-odd fill along rows), for the paving's colour
+    const C = 50, gx0 = terrain.x0, gz0 = terrain.z0, gw = Math.ceil((terrain.W - 1) * terrain.cell / C) + 1, gh = Math.ceil((terrain.H - 1) * terrain.cell / C) + 1, inside = new Uint8Array(gw * gh);
+    for (let j = 0; j < gh; j++) {
+      const z = gz0 + j * C, xs = [];
+      for (const r of limits) for (let i = 0, k = r.length - 1; i < r.length; k = i++) { const [xi, zi] = r[i], [xk, zk] = r[k]; if ((zi > z) !== (zk > z)) xs.push(xi + (z - zi) * (xk - xi) / (zk - zi)); }
+      xs.sort((a, b) => a - b);
+      for (let q = 0; q + 1 < xs.length; q += 2) for (let i = Math.max(0, Math.ceil((xs[q] - gx0) / C)); i < gw && gx0 + i * C < xs[q + 1]; i++) inside[j * gw + i] = 1;
+    }
+    const pave = colorOf(GROUND), country = colorOf(COUNTRY);
+    const colorAt = (x, z, out) => { const i = Math.round((x - gx0) / C), j = Math.round((z - gz0) / C); return out.copy(i >= 0 && j >= 0 && i < gw && j < gh && inside[j * gw + i] ? pave : country); };
+    const mat = groundMat('#ffffff', THREE.FrontSide); mat.vertexColors = true;
+    ground = buildTerrain(scene, mat, colorAt);
+  } else if (sea) {
     const outer = new THREE.Mesh(new THREE.PlaneGeometry(400000, 400000), waterMat);
     outer.rotation.x = -Math.PI / 2; outer.position.y = -.05; outer.receiveShadow = true; scene.add(outer);
-  } else if (!CITY.terrain) {   // a city with terrain has its own country (terrain.js)
+  } else if (!CITY.grid) {   // Jersey Shore's grid terrain has its own country (jsh/terrain.js)
     const FAR = 200000, HOLE = 14500;   // buildGround's countryside plane (30 km square, y = 0) covers the middle
     const ob = new Builder(), ub = new Builder();
     const quad = (b, x0, z0, x1, z1, up) => {
@@ -95,20 +110,22 @@ export function buildCity(scene, data, { waterMat, status = () => {}, clear = []
   // the paved plate, without the middle of Center City, where buildGround's own paving lies on it
   const hole = core && limits.length === 1 && rectInRing(limits[0], core)
     ? [[[core[0] + 100, core[1] + 100], [core[2] - 100, core[1] + 100], [core[2] - 100, core[3] - 100], [core[0] + 100, core[3] - 100]]] : [];
-  const pb = new Builder({ uv: true }); limits.forEach(r => addPolygon(pb, [r, ...hole], 0, (x, z) => [x / 400, z / 400]));
-  const plate = new THREE.Mesh(pb.geometry(), groundMat(GROUND, THREE.FrontSide));
-  plate.position.y = .14; plate.receiveShadow = true; scene.add(plate);
+  if (!terrain.on) {
+    const pb = new Builder({ uv: true }); limits.forEach(r => addPolygon(pb, [r, ...hole], 0, (x, z) => [x / 400, z / 400]));
+    const plate = new THREE.Mesh(pb.geometry(), groundMat(GROUND, THREE.FrontSide));
+    plate.position.y = .14; plate.receiveShadow = true; scene.add(plate);
+  }
   const edge = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(limits[0].map(([x, z]) => new THREE.Vector3(x, .6, z))),
     new THREE.LineBasicMaterial({ color: '#4a5a46', transparent: true, opacity: .7 }));
   if (!sea) scene.add(edge);   // the city limits (a waterfront city's land outlines are its shoreline)
 
   const gb = GREEN.map(() => new Builder());
   for (const [k, ...rings] of city.green) addPolygon(gb[k], rings.map(pairs), 0);
-  gb.forEach((b, k) => { if (!b.count) return; const m = new THREE.Mesh(b.geometry(), seasonalGrass(M(GREEN[k], { side: THREE.FrontSide }))); m.position.y = .3 + k * .02; m.receiveShadow = true; scene.add(m); });
+  gb.forEach((b, k) => { if (!b.count) return; const m = new THREE.Mesh(b.geometry(), seasonalGrass(M(GREEN[k], { side: THREE.FrontSide }))); m.position.y = .3 + k * .02; m.receiveShadow = true; m.userData.drapeTol = TOL_LAWN; scene.add(m); });
   const wb = new Builder(), water = city.water.map(p => p.map(pairs));
   water.forEach(p => addPolygon(wb, p, 0));
   for (const s of city.streams) addRibbon(wb, pairs(s.p), s.w, 0);
-  const wm = new THREE.Mesh(wb.geometry(), waterMat); wm.position.y = .6; wm.receiveShadow = true; scene.add(wm);
+  const wm = new THREE.Mesh(wb.geometry(), waterMat); wm.position.y = terrain.on ? .15 : .6; wm.receiveShadow = true; wm.userData.terrain = 'water'; scene.add(wm);
   const db = new Builder(); for (const d of city.dams) addRibbon(db, pairs(d), 5, 0);
   if (db.count) { const dmesh = new THREE.Mesh(db.geometry(), M('#e8eef0')); dmesh.position.y = 1.2; scene.add(dmesh); }
 
@@ -126,10 +143,19 @@ export function buildCity(scene, data, { waterMat, status = () => {}, clear = []
   const { bridgeSegs, flat: streets } = drawLines(scene, city.lines, { wet, tile: 2000 });
 
   // ---- buildings
-  status(`Raising ${(B.nB + B.nP).toLocaleString()} more buildings…`);
+  await status(`Raising ${(B.nB + B.nP).toLocaleString()} more buildings…`);
   // one instanced mesh per facade style per tile up close, one roof-only mesh per tile far away
   const per = new Map();   // tile -> { style: [indices] }
   const lights = [];
+  // on terrain: each box from the lowest ground under its corners to its height above the middle
+  const base = new Float32Array(B.nB), roofY = new Float32Array(B.nB);
+  for (let i = 0; i < B.nB; i++) {
+    const h = B.bh[i] / 10;
+    if (!terrain.on) { roofY[i] = h; continue; }
+    const a = B.br[i] / 65535 * Math.PI, c = Math.cos(a), s = Math.sin(a), w = B.bw[i] / 20, d = B.bd[i] / 20, x = B.bx[i] / 10, z = B.bz[i] / 10;
+    const f = footprint([[x + c * w + s * d, z - s * w + c * d], [x - c * w + s * d, z + s * w + c * d], [x - c * w - s * d, z + s * w - c * d], [x + c * w - s * d, z - s * w - c * d]], h);
+    base[i] = f.y0; roofY[i] = f.top;
+  }
   for (let i = 0; i < B.nB; i++) {
     const x = B.bx[i] / 10, z = B.bz[i] / 10, t = tileOf(x, z), h = B.bh[i] / 10;
     let l = per.get(t); if (!l) per.set(t, l = {});
@@ -138,7 +164,7 @@ export function buildCity(scene, data, { waterMat, status = () => {}, clear = []
   }
   const geoBox = unitBox(), geoRoof = unitRoof(), plantMat = M('#ffffff', { roughness: .85 }), plantVC = M('#ffffff', { roughness: .85, vertexColors: true });
   const col = new THREE.Color();
-  const place = (mat4, j, i, sx = 1, sy = 1, y0 = 0, hh = B.bh[i] / 10) => {
+  const place = (mat4, j, i, sx = 1, sy = 1, y0 = base[i], hh = roofY[i] - base[i]) => {
     const a = B.br[i] / 65535 * Math.PI, c = Math.cos(a), s = Math.sin(a), w = B.bw[i] / 10 * sx, d = B.bd[i] / 10 * sx;
     const o = j * 16;   // the rest of the matrix stays 0
     mat4[o] = c * w; mat4[o + 2] = -s * w; mat4[o + 5] = hh * sy; mat4[o + 8] = s * d; mat4[o + 10] = c * d;
@@ -149,16 +175,16 @@ export function buildCity(scene, data, { waterMat, status = () => {}, clear = []
   const instanced = (geo, mat, mat4, cols, bounds = null) => {
     const m = new THREE.InstancedMesh(bounds ? withBounds(geo, ...bounds) : geo, mat, mat4.length / 16);
     m.instanceMatrix = new THREE.InstancedBufferAttribute(mat4, 16); m.instanceColor = new THREE.InstancedBufferAttribute(cols, 3);
-    m.frustumCulled = !!bounds; m.userData.bounded = !!bounds; m.receiveShadow = true; m.userData.tiled = true; scene.add(m); return m;
+    m.frustumCulled = !!bounds; m.userData.bounded = !!bounds; m.receiveShadow = true; m.userData.tiled = true; m.userData.terrain = 'done'; scene.add(m); return m;
   };
   for (const [t, kinds] of per) {
     const all = Object.values(kinds).flat(), rm4 = new Float32Array(all.length * 16), plant = [];
-    let reach = 0, high = 0;   // how far from the tile's centre, and how high (with rooftop plant), these boxes get
+    let reach = 0, high = 0, low = 0;   // how far from the tile's centre, and how high (with rooftop plant), these boxes get
     all.forEach((i, j) => {
       place(rm4, j, i);
-      reach = Math.max(reach, Math.hypot(B.bx[i] / 10 - t.cx, B.bz[i] / 10 - t.cz) + Math.hypot(B.bw[i], B.bd[i]) / 20); high = Math.max(high, B.bh[i] / 10 + 10);
+      reach = Math.max(reach, Math.hypot(B.bx[i] / 10 - t.cx, B.bz[i] / 10 - t.cz) + Math.hypot(B.bw[i], B.bd[i]) / 20); high = Math.max(high, roofY[i] + 10); low = Math.min(low, base[i]);
     });
-    const bounds = [new THREE.Vector3(t.cx, high / 2, t.cz), Math.hypot(reach, high / 2)];
+    const bounds = [new THREE.Vector3(t.cx, (high + low) / 2, t.cz), Math.hypot(reach, (high - low) / 2)];
     t.roof.push(instanced(geoRoof, instancedWinMat('office'), rm4, new Float32Array(all.length * 3).fill(1)));
     for (const [kind, list] of Object.entries(kinds)) {
       const mat4 = new Float32Array(list.length * 16), cols = new Float32Array(list.length * 3);
@@ -171,9 +197,9 @@ export function buildCity(scene, data, { waterMat, status = () => {}, clear = []
     if (plant.length) {   // rooftop plant on buildings over 40 m, and aviation lights over 90 m
       const m4 = new Float32Array(plant.length * 16), cl = new Float32Array(plant.length * 3);
       plant.forEach((i, j) => {
-        const h = B.bh[i] / 10; place(m4, j, i, .55 + hash(i + 5) * .1, 1, h, 3 + Math.min(6, h * .025));
+        const h = B.bh[i] / 10; place(m4, j, i, .55 + hash(i + 5) * .1, 1, roofY[i], 3 + Math.min(6, h * .025));
         col.set(roofColor(hash(i + 5))).multiplyScalar(.9); cl.set([col.r, col.g, col.b], j * 3);
-        if (h > 90) lights.push(B.bx[i] / 10, h + 5 + Math.min(6, h * .025), B.bz[i] / 10);
+        if (h > 90) lights.push(B.bx[i] / 10, roofY[i] + 5 + Math.min(6, h * .025), B.bz[i] / 10);
       });
       const pm = instanced(geoBox, plantMat, m4, cl, bounds); pm.castShadow = true; t.full.push(pm);
     }
@@ -187,15 +213,15 @@ export function buildCity(scene, data, { waterMat, status = () => {}, clear = []
     v += n;
     const t = tileOf(ring[0][0], ring[0][1]);
     let pk = pBuild.get(t); if (!pk) pBuild.set(t, pk = {});
-    const h = B.ph[i] / 10, fk = facadeKind(B.pk[i] === 0, h, hash(i + 11)), color = facadeColor(fk, hash(i + 3));
-    addPrism(pk[fk] || (pk[fk] = new Builder({ uv: true, color: true })), [ring], 0, h, hash(i + 7) * 4, WIN_W, WIN_H, colorOf(color), colorOf(roofColor(hash(i + 9))));
-    if (B.pk[i] && h > 40) addRooftop(pk.plant || (pk.plant = new Builder({ color: true })), ring, h, color, hash(i + 5), lights);
+    const h = B.ph[i] / 10, fk = facadeKind(B.pk[i] === 0, h, hash(i + 11)), color = facadeColor(fk, hash(i + 3)), f = footprint(ring, h);
+    addPrism(pk[fk] || (pk[fk] = new Builder({ uv: true, color: true })), [ring], f.y0, f.top, hash(i + 7) * 4, WIN_W, WIN_H, colorOf(color), colorOf(roofColor(hash(i + 9))), f.mid);
+    if (B.pk[i] && h > 40) addRooftop(pk.plant || (pk.plant = new Builder({ color: true })), ring, h, color, hash(i + 5), lights, f.mid);
     t.top = Math.max(t.top, h);
   }
   for (const [t, bs] of pBuild) for (const [kind, b] of Object.entries(bs)) {
     if (!b.count) continue;
     const m = new THREE.Mesh(b.geometry(), kind === 'plant' ? plantVC : worldWinMat(kind));
-    m.castShadow = m.receiveShadow = true; scene.add(m); t.always.push(m);
+    m.castShadow = m.receiveShadow = true; m.userData.terrain = 'done'; scene.add(m); t.always.push(m);
   }
 
   // ---- park trees, tiled with a draw distance
@@ -209,19 +235,33 @@ export function buildCity(scene, data, { waterMat, status = () => {}, clear = []
 
   // ---- per-frame: frustum + distance per tile
   const frustum = new THREE.Frustum(), pm = new THREE.Matrix4(), sph = new THREE.Sphere(), tl = [...tiles.values()], fwd = new THREE.Vector3();
-  tl.forEach(t => { t.r = Math.hypot(TILE * .75, t.top); });
+  tl.forEach(t => { t.base = surface(t.cx, t.cz); t.r = Math.hypot(TILE * .75, t.top + 40); });
   function update(camera, fogFar) {
     pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frustum.setFromProjectionMatrix(pm);
     const cp = camera.position;
     for (const t of tl) {
-      sph.center.set(t.cx, t.top / 2, t.cz); sph.radius = t.r;
-      const d = Math.hypot(cp.x - t.cx, cp.y - t.top / 2, cp.z - t.cz);
+      sph.center.set(t.cx, t.base + t.top / 2, t.cz); sph.radius = t.r;
+      const d = Math.hypot(cp.x - t.cx, cp.y - t.base - t.top / 2, cp.z - t.cz);
       const vis = d - t.r < fogFar && frustum.intersectsSphere(sph);
       const near = vis && d - t.r < FULL;
       t.full.forEach(m => { m.visible = near; });
       t.roof.forEach(m => { m.visible = vis && !near; });
       t.always.forEach(m => { m.visible = vis; });
       t.trees.forEach(m => { m.visible = vis && d - t.r < TREE_FAR && m.userData.season !== false; });   // bare branches and flower beds only in season
+    }
+    // the ground mesh: fine tiles near, coarse ones further off, whole blocks in one mesh once
+    // all of a block is far, none past the fog or off screen
+    if (ground) for (const B of ground.blocks) {
+      sph.center.set(B.cx, B.cy, B.cz); sph.radius = B.r;
+      const dB = Math.hypot(cp.x - B.cx, cp.y - B.cy, cp.z - B.cz) - B.r, inView = dB < fogFar && frustum.intersectsSphere(sph);
+      const whole = inView && dB >= 3000;
+      B.mesh.visible = whole;
+      for (const g of B.tiles) {
+        if (!inView || whole) { g.near.visible = g.far.visible = false; continue; }
+        sph.center.set(g.cx, g.cy, g.cz); sph.radius = g.r;
+        const d = Math.hypot(cp.x - g.cx, cp.y - g.cy, cp.z - g.cz) - g.r, vis = d < fogFar && frustum.intersectsSphere(sph);
+        g.near.visible = vis && d < 3000; g.far.visible = vis && d >= 3000;
+      }
     }
     // Street, rail and trail ribbons wholly past the fog (by view depth, which is what the fog goes
     // by) come out exactly the fog's colour, the same as the paving they lie on: don't draw them.
@@ -235,6 +275,6 @@ export function buildCity(scene, data, { waterMat, status = () => {}, clear = []
   // the whole city from above, north up
   const [x0, z0, x1, z1] = city.bbox.map(v => v / 10), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
   const view = { id: 'city', name: 'Whole city', pos: new THREE.Vector3(cx, 26000, cz + 16000), target: new THREE.Vector3(cx, 0, cz - 1500) };
-  const beacons = aviationLights(lights); scene.add(beacons);
+  const beacons = aviationLights(lights); beacons.userData.terrain = 'done'; scene.add(beacons);
   return { update, view, bridgeSegs, wet, bounds: { x0, z0, x1, z1 }, buildingCount: B.nB + B.nP, nightOnly: [beacons], boxes: B };
 }

@@ -13,7 +13,7 @@ import { pairs } from '../../data.js';
 import { M } from '../materials.js';
 import { Builder, addPolygon } from '../geometry.js';
 import { onSeason } from '../season.js';
-import { groundAt, groundBase } from '../terrain.js';
+import { groundAt, groundBase } from './terrain.js';
 
 /** where real corn plants stand in for the canopy slab (cornlod.js sets it each frame): x, z, radius */
 export const CORN_HOLE = { value: new THREE.Vector3(0, 0, 0) };

@@ -1,6 +1,7 @@
 // The proposed monorail: a loop up the east bank and back down the west bank,
 // offset from the real shoreline, with stations and a four-car train.
 import * as THREE from 'three';
+import { terrain, surface, profile } from '../terrain.js';
 export const H = 18;               // guideway height (m)
 const EAST = 58, WEST = 65;        // set-back from the water's edge (m)
 const SOUTH_LAT = 39.9452, NORTH_LAT = 39.9752;
@@ -125,6 +126,7 @@ export function buildMonorail(scene, river, bridgeSegs, buildings, lm, onCourt =
     S.idx.forEach((si, i) => { const d = Math.abs(samples[si].lat - lat); if (d < bd) { bd = d; bi = i; } });
     return S.pts[bi].clone();
   };
+  liftCurve(curve, H);
   const L = curve.getLength();
 
   // guideway beam
@@ -171,13 +173,24 @@ export function buildMonorail(scene, river, bridgeSegs, buildings, lm, onCourt =
 }
 
 /** Platforms, canopy and stair tower at parameter u along a guideway curve of height h. */
+/** raise a guideway's control points to height h above the ground under them (smoothed along the
+ *  line, straight across water: terrain.js profile) */
+export function liftCurve(curve, h, smooth = 150) {
+  if (!terrain.on) return curve;
+  const off = profile(curve.points, smooth);
+  curve.points.forEach((p, i) => { p.y = h + off[i]; });
+  curve.updateArcLengths(); return curve;
+}
+
 export function station(scene, curve, u, h, canopyMat, platMat) {
   const p = curve.getPointAt(u), t = curve.getTangentAt(u);
-  const g = new THREE.Group(); g.position.copy(p); g.rotation.y = Math.atan2(t.x, t.z); scene.add(g);
+  const g = new THREE.Group(); g.position.copy(p); g.rotation.y = Math.atan2(t.x, t.z); g.userData.terrain = 'done'; scene.add(g);   // p is on the lifted beam already
   [-1, 1].forEach(k => { const b = new THREE.Mesh(new THREE.BoxGeometry(4.5, 1, 75), platMat); b.position.set(k * 4.6, -.3, 0); b.castShadow = b.receiveShadow = true; g.add(b); });
   const c = new THREE.Mesh(new THREE.BoxGeometry(15, .7, 78), canopyMat); c.position.y = 7.5; c.castShadow = true; g.add(c);
   [[-6.5, -30], [6.5, -30], [-6.5, 0], [6.5, 0], [-6.5, 30], [6.5, 30]].forEach(([x, z]) => { const q = new THREE.Mesh(new THREE.CylinderGeometry(.4, .4, 8, 8), platMat); q.position.set(x, 3.5, z); g.add(q); });
-  const st = new THREE.Mesh(new THREE.BoxGeometry(6, h, 6), platMat); st.position.set(9, -h / 2, 0); st.castShadow = true; g.add(st);
+  const drop = Math.max(2, p.y - surface(p.x + Math.cos(g.rotation.y) * 9, p.z - Math.sin(g.rotation.y) * 9));   // the stair tower reaches the ground
+  const st = new THREE.Mesh(new THREE.BoxGeometry(6, drop, 6), platMat); st.position.set(9, -drop / 2, 0); st.castShadow = true; g.add(st);
+  g.userData.terrain = 'done';
   return g;
 }
 
@@ -198,7 +211,7 @@ export function train(scene, nc, stripe) {
       const nose = new THREE.Mesh(new THREE.SphereGeometry(1.6, 20, 14), shellMat); nose.scale.set(1, .98, 2.4); nose.position.z = sg * CAR / 2; g.add(nose);
       const nw = new THREE.Mesh(new THREE.SphereGeometry(1.62, 20, 14, 0, Math.PI * 2, 0, Math.PI * .42), trainWinMat); nw.scale.set(1, .98, 2.4); nw.rotation.x = sg * Math.PI / 2; nw.position.set(0, .2, sg * CAR / 2); g.add(nw);
     }
-    g.traverse(o => { if (o.isMesh) o.castShadow = true; }); scene.add(g); cars.push(g);
+    g.traverse(o => { if (o.isMesh) o.castShadow = true; }); g.userData.terrain = 'done'; scene.add(g); cars.push(g);
   }
   return { cars, trainWinMat, CAR, GAP };
 }
@@ -207,7 +220,7 @@ export function train(scene, nc, stripe) {
 export function beam(scene, curve, L) {
   const sq = new THREE.Shape(); sq.moveTo(-.9, -.8); sq.lineTo(.9, -.8); sq.lineTo(.9, .8); sq.lineTo(-.9, .8); sq.lineTo(-.9, -.8);
   const m = new THREE.Mesh(new THREE.ExtrudeGeometry(sq, { steps: Math.round(L / 5), bevelEnabled: false, extrudePath: curve }), new THREE.MeshStandardMaterial({ color: '#e4e7ea', roughness: .5 }));
-  m.castShadow = m.receiveShadow = true; scene.add(m); return m;
+  m.castShadow = m.receiveShadow = true; m.userData.terrain = 'done'; scene.add(m); return m;
 }
 
 /** Instanced piers of height h at the given points. */
@@ -217,6 +230,8 @@ export function piers(scene, spots, h) {
   const cg = new THREE.BoxGeometry(3.6, 1, 3.6); cg.translate(0, h - 1.3, 0);
   const mat = new THREE.MeshStandardMaterial({ color: '#d4d9dc', roughness: .6 });
   const ip = new THREE.InstancedMesh(pgm, mat, spots.length), ic = new THREE.InstancedMesh(cg, mat, spots.length);
-  spots.forEach((p, i) => { dm.position.set(p.x, 0, p.z); dm.updateMatrix(); ip.setMatrixAt(i, dm.matrix); ic.setMatrixAt(i, dm.matrix); });
+  // each pier from the ground up to the beam (spots carry the beam's height when on terrain)
+  spots.forEach((p, i) => { const g0 = surface(p.x, p.z), top = terrain.on ? p.y : h; dm.position.set(p.x, g0, p.z); dm.scale.set(1, (top - g0) / h, 1); dm.updateMatrix(); ip.setMatrixAt(i, dm.matrix); ic.setMatrixAt(i, dm.matrix); });
+  ip.userData.terrain = ic.userData.terrain = 'done';
   ip.castShadow = ic.castShadow = true; scene.add(ip, ic);
 }

@@ -17,6 +17,7 @@ All of Philadelphia out to the city limits, with every rail transit line and our
   - Walnut Street as a car-free brick shopping street, from 22nd to Front, busy with people who stroll, shop and sit for a coffee
   - the Market Street subway cut-away
 - **The rest of the city** surrounds the core without changing anything in it: about 500k more buildings, plus streets, parks, creeks and park trees.
+- **Real terrain.** The ground is the USGS 3DEP bare-earth elevation at 10 m, from the tidal flats by the Navy Yard to the 130 m hills of Chestnut Hill and the Wissahickon gorge. The rivers sit at their real levels: the tidal Delaware and lower Schuylkill, and the higher pools above the Fairmount and Flat Rock dams. Every building stands on the ground under it: its walls reach down to the lowest point of its footprint, so none floats on a slope, and its roof is its LiDAR height above the middle. Streets, parks, bridges, trees, people and the proposals follow the ground. At-grade track lies on it, the Els keep their height above it, and tunnels keep their depth below it.
 - **Every rail transit line** is modelled, and "Show transit lines" highlights them all:
   - the L and the B1-B3 Broad Street Line
   - the G1 and T1-T5 trolleys
@@ -35,6 +36,9 @@ All of Philadelphia out to the city limits, with every rail transit line and our
   - Lincoln Financial Field, Citizens Bank Park and Xfinity Mobile Arena
   - Independence Hall and Memorial Hall
   - the Ben Franklin and Walt Whitman bridges
+- **Go fishing.** People fish the Schuylkill at its real spots: below the Fairmount Dam, the Schuylkill Banks boardwalk, Kelly and MLK Drives, Bartram's Garden, Grays Ferry, Strawberry Mansion, East Falls and Manayunk. Click one and they ask you to join them. Then cast (farther out is deeper, with rarer catches), wait out the nibbles, strike on the bite (quickly: rarer catches give you less time) and reel, keeping the line tension in the green band while the fish runs, shakes its head and slowly tires. It's hard on purpose. There are 48 things to catch, from bluegill and catfish to striped bass, shad, snakehead and the legendary Atlantic sturgeon, plus trash and treasure, at five levels of rarity. Snap their line and they'll yell at you (with some colourful language) before giving you one more try. Shad run in spring and catfish bite at night. Your catch log is kept in your browser.
+- **Chinatown** in detail ("Go to" Chinatown). The Friendship Gate spans 10th Street at Arch, with its 費城華埠 plaque, tiled roofs and stone lions. Shops along Race, 10th, 9th, 11th and Arch have signs, blade signs and awnings (the shops are made up), red lanterns are strung across Race, 10th and 9th, pagoda-topped lamps line the kerbs, and a dragon dance winds up and down Race Street. Signs, lanterns and lamps light up after dark.
+- **The Chinatown night market** (our addition, "Go to" Chinatown night market) fills the open lot on 10th Street between Race and Cherry: food stalls, tables, string lights and a pavilion. Click the **Lucky Arcade** stall to play three games: Ping-Pong, Sky Swarm (a fixed shooter) and Dumpling Dash (a maze chase). Your best scores are kept in your browser.
 - **Easter eggs.** A pickup ultimate game runs on the Belmont & Edgley cricket ground in West Fairmount Park, and something is waiting on the arena plaza.
 - **Signature towers** are modelled with their real setbacks and crowns.
 - **Skyline lights** colour these for the Birds, the Phillies, the Sixers, the Flyers, the Union, the holidays and more:
@@ -180,6 +184,14 @@ python -I tools/phl/build_city.py
 python -I tools/phl/build_metro.py
 ```
 
+```bash
+python -I tools/phl/fetch_dem.py
+```
+
+```bash
+python -I tools/phl/build_terrain.py
+```
+
 What each step does:
 - `fetch_city.py` downloads the 546k building footprints (about 210 MB, resumable) and the city boundary.
 - `build_city.py` keeps everything outside the core and inside the city limits, so the core's data is never touched. It takes about 5 minutes.
@@ -187,6 +199,8 @@ What each step does:
   - `build_city.py` leaves out the footprints inside the landmark outlines and the bridge decks.
   - `build_metro.py` lays PATCO on the Ben Franklin Bridge deck.
 - `build_metro.py` builds every line's track, stations and out-and-back route. It reuses the Center City L and trolley geometry exactly, and blends the new track into it at the edge of the core.
+- `fetch_dem.py` downloads the 3DEP elevation for the city's box plus 600 m, at 10 m, as four float32 GeoTIFFs (about 40 MB) from the USGS National Map elevation service.
+- `build_terrain.py` resamples it onto the scene grid and lowers a riverbed under the water the scene draws, so run it after `build_city.py`. It takes under a minute and writes `terrain.bin.gz` (about 6 MB). The ground everything else stands on is worked out when the page loads, so nothing else needs rebuilding when the terrain changes.
 
 | Tool | What it does |
 | --- | --- |
@@ -206,6 +220,8 @@ What each step does:
 | `extract_bridges.py` | the Delaware bridge decks and Memorial Hall (merged into the same file) |
 | `build_landmarks.py` | fits the landmark models (`city_landmarks.json`) |
 | `build_boats.py` | routes the river boats mid-channel through the water (`boats.json`), from `city.json.gz` and `river.json` |
+| `fetch_dem.py` | downloads the USGS 3DEP bare-earth elevation (10 m GeoTIFFs) |
+| `build_terrain.py` | the ground heights and water levels (`terrain.bin.gz`) |
 
 ## Sources
 
@@ -218,6 +234,7 @@ What each step does:
 | Streets, trails, rail, bridges | OpenStreetMap `highway` / `railway` ways |
 | Rail transit: tracks, stations, platforms, entrances | OpenStreetMap route relations; tunnel depths and El heights are estimates |
 | City limits | OpenStreetMap relation 188022 |
+| Terrain | USGS 3D Elevation Program (3DEP) bare-earth DEM, 1/3 arc-second, from the National Map elevation service (public domain) |
 | 1953 streetcars | The Philadelphia Transportation Company map of January 1953, and Harold E. Cox, *Surface Cars of Philadelphia 1911-1965* |
 
 Map data © OpenStreetMap contributors, ODbL. Building data © City of Philadelphia.

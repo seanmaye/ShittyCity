@@ -7,11 +7,13 @@ import { makeFigure, pose } from './people.js';
 import { pairs } from '../../data.js';
 import { Builder, addPolygon } from '../geometry.js';
 import { seasonalGrass } from '../season.js';
+import { terrain, surface, drape } from '../terrain.js';
 
 const LEN = 100, WID = 37, EZ = 18;   // regulation field: 64 m playing field plus two 18 m end zones
 
 export function buildFrisbee(scene, f) {
-  const g = new THREE.Group(); g.position.set(f.x, 0, f.z); g.rotation.y = f.ry; scene.add(g);
+  const g = new THREE.Group(); g.position.set(f.x, 0, f.z); g.rotation.y = f.ry; g.userData.terrain = 'done'; scene.add(g);
+  const cr = Math.cos(f.ry), sr = Math.sin(f.ry), gy = (lx, lz) => surface(f.x + lx * cr + lz * sr, f.z - lx * sr + lz * cr);   // the ground under a field point
   // the mown grass of the whole ground, from its real outline
   const ob = new Builder(); addPolygon(ob, [pairs(f.outline)], .42);
   const lawn = new THREE.Mesh(ob.geometry(), seasonalGrass(new THREE.MeshStandardMaterial({ color: '#6aa451', roughness: 1 }))); lawn.receiveShadow = true; scene.add(lawn);
@@ -27,6 +29,7 @@ export function buildFrisbee(scene, f) {
     for (const z of [-.11, 0, .11]) { const s = new THREE.Mesh(new THREE.CylinderGeometry(.018, .018, .71, 5), chalk); s.position.set(x, .8, off + z); g.add(s); }
   }
 
+  if (terrain.on) { g.updateMatrixWorld(true); [...g.children].forEach(o => { if (o.isMesh && o.geometry.type === 'PlaneGeometry') drape(o, surface, 10); else if (o.isMesh) o.position.y += gy(o.position.x, o.position.z); }); }
   const disc = new THREE.Mesh(new THREE.CylinderGeometry(.135, .12, .03, 16), new THREE.MeshStandardMaterial({ color: '#f2f04a', roughness: .5 }));
   disc.castShadow = true; g.add(disc);
   const SKIN = ['#8d5a3c', '#c99370', '#e0b48f', '#6b4430', '#b07a55', '#f0c9a6'], HAIR = ['#1d1410', '#3a2a20', '#6b4a2b', '#2a1d16', '#a07a4a'];
@@ -73,7 +76,7 @@ export function buildFrisbee(scene, f) {
       const t = Math.min(1, flight.t), pos = flight.from.clone().lerp(flight.to, t), n = new THREE.Vector2(-(flight.to.y - flight.from.y), flight.to.x - flight.from.x).normalize();
       pos.addScaledVector(n, Math.sin(Math.PI * t) * flight.curve);
       const y = flight.drop && t > .7 ? 1.2 * (1 - (t - .7) / .3) + .5 : 1.2 + Math.sin(Math.PI * t) * flight.high;
-      disc.position.set(pos.x, Math.max(.5, y), pos.y); disc.rotation.set(.12, disc.rotation.y + dt * 30, -.08);
+      disc.position.set(pos.x, Math.max(.5, y) + gy(pos.x, pos.y), pos.y); disc.rotation.set(.12, disc.rotation.y + dt * 30, -.08);
       if (t >= 1) {
         if (flight.drop) {   // turnover: the nearest defender picks it up and their team attacks the other way
           attack = 1 - attack; dir = -dir;
@@ -103,7 +106,7 @@ export function buildFrisbee(scene, f) {
       P.v.lerp(d.normalize().multiplyScalar(want), Math.min(1, dt * 4));
       P.p.addScaledVector(P.v, dt);
       const sp = P.v.length(); P.ph += sp * dt * 1.6;
-      P.F.root.position.set(P.p.x, .4, P.p.y);
+      P.F.root.position.set(P.p.x, .4 + gy(P.p.x, P.p.y), P.p.y);
       const face = isHolder && flight == null ? Math.atan2(dir, 0) : sp > .3 ? Math.atan2(P.v.x, P.v.y) : Math.atan2(holder >= 0 ? players[holder].p.x - P.p.x : 0, holder >= 0 ? players[holder].p.y - P.p.y : 1);
       P.F.root.rotation.y += Math.atan2(Math.sin(face - P.F.root.rotation.y), Math.cos(face - P.F.root.rotation.y)) * Math.min(1, dt * 8);
       pose(P.F, P.ph, sp);

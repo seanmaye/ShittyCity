@@ -6,6 +6,7 @@
 // the middle, so the centre stays clear.
 import * as THREE from 'three';
 import { litMats } from '../materials.js';
+import { terrain, surface, drape } from '../terrain.js';
 
 /** Walnut Street centreline, 22nd St -> Front St (metres; the OSM road vertices). */
 export const WALNUT = [[-112.4, 556.4], [-44.7, 567], [21.6, 578.5], [179, 603.7], [201.6, 607.8], [277.8, 619.7], [320.6, 626.8],
@@ -265,11 +266,21 @@ export function buildPromenade(scene, { buildings, cityB, roads, trees }) {
     im.castShadow = name !== 'window'; im.receiveShadow = true; im.frustumCulled = false; group.add(im);
   }
 
+  // on terrain: the paving drapes over the street's real slope, every fixture stands on it
+  if (terrain.on) {
+    group.updateMatrixWorld(true);
+    for (const o of [...group.children]) {
+      if (o.isInstancedMesh) { const a = o.instanceMatrix.array; for (let i = 0; i < o.count; i++) a[i * 16 + 13] += surface(a[i * 16 + 12], a[i * 16 + 14]); o.instanceMatrix.needsUpdate = true; }
+      else if (o.isMesh) drape(o, surface, 10);
+    }
+    for (const st of seats) st.g = surface(st.x, st.z);
+  }
+  group.userData.terrain = 'done';
   // a view east down the shops from above the street at the corner of Rittenhouse Square
   const a = at(600, 0), b = at(860, 0);
   const view = { id: 'walnut', name: 'Walnut St promenade', pos: new THREE.Vector3(a.x, 26, a.z), target: new THREE.Vector3(b.x, 1, b.z) };
   // what the people on the street (pedestrians.js) need to find their way
-  const nav = { at, project, length: WALNUT_LENGTH, seats, doors, obst, pave: PAVE_Y, clear: CLEAR, kerb: KERB, shopMat };
+  const nav = { at, project, length: WALNUT_LENGTH, seats, doors, obst, pave: PAVE_Y, ground: surface, clear: CLEAR, kerb: KERB, shopMat };
   return { group, view, nav, count: Object.fromEntries([...kinds].map(([n, k]) => [n, k.m.length])), ...seating(seats) };
 }
 
@@ -292,8 +303,8 @@ function seating(seats) {
     let best = null;
     seats.forEach((st, i) => {
       if (seat && seat.i === i) return;
-      const dist = Math.hypot(st.x - cp.x, PAVE_Y + SEAT_Y - cp.y, st.z - cp.z); if (dist > 250) return;
-      v.set(st.x, PAVE_Y + SEAT_Y + .1, st.z).project(camera); if (v.z > 1) return;
+      const gy = st.g || 0, dist = Math.hypot(st.x - cp.x, gy + PAVE_Y + SEAT_Y - cp.y, st.z - cp.z); if (dist > 250) return;
+      v.set(st.x, gy + PAVE_Y + SEAT_Y + .1, st.z).project(camera); if (v.z > 1) return;
       const d = Math.hypot((v.x + 1) / 2 * w - x, (1 - v.y) / 2 * h - y), tol = Math.max(10, f * .6 / dist);
       if (d < tol && (!best || d / tol < best.r)) best = { seat: i, r: d / tol };
     });
@@ -310,7 +321,7 @@ function seating(seats) {
   function stand() {
     if (!seat) return null;
     const st = seats[seat.i]; st.user = false; if (seats.onUserStand) seats.onUserStand(seat.i); seat = null;
-    return { p: new THREE.Vector3(st.x, PAVE_Y, st.z), dir: new THREE.Vector3(Math.sin(st.ry), 0, Math.cos(st.ry)), cam: pullBack(st.x, st.z, st.ry) };
+    return { p: new THREE.Vector3(st.x, (st.g || 0) + PAVE_Y, st.z), dir: new THREE.Vector3(Math.sin(st.ry), 0, Math.cos(st.ry)), cam: pullBack(st.x, st.z, st.ry) };
   }
   const getSeat = () => seat && { kind: 'seat', seat: seats[seat.i].kind };
   const lookSeat = (dx, dy) => { if (!seat) return; seat.yaw = Math.max(-2.6, Math.min(2.6, seat.yaw - dx * .0045)); seat.pitch = Math.max(-1.2, Math.min(1.2, seat.pitch - dy * .0045)); };
@@ -318,7 +329,7 @@ function seating(seats) {
     if (!seat) return;
     const st = seats[seat.i], a = st.ry + seat.yaw, cp = Math.cos(seat.pitch);
     const ox = Math.cos(st.ry) * seat.off, oz = -Math.sin(st.ry) * seat.off;   // along the seat (a bench has two places)
-    camera.position.set(st.x + ox - Math.sin(st.ry) * .05, PAVE_Y + EYE, st.z + oz - Math.cos(st.ry) * .05);
+    camera.position.set(st.x + ox - Math.sin(st.ry) * .05, (st.g || 0) + PAVE_Y + EYE, st.z + oz - Math.cos(st.ry) * .05);
     look.set(camera.position.x + Math.sin(a) * cp, camera.position.y + Math.sin(seat.pitch), camera.position.z + Math.cos(a) * cp);
     camera.up.set(0, 1, 0); camera.lookAt(look);
   }

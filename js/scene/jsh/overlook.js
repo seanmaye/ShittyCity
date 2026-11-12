@@ -19,7 +19,7 @@
 // "car" you are aboard); js/ui.js draws the buttons and the binocular mask from that state.
 import * as THREE from 'three';
 import { geo } from '../phl/people.js';
-import { groundAt } from '../terrain.js';
+import { groundAt } from './terrain.js';
 import { buildTrees } from '../nature.js';
 
 const CANS = 40, EMPTY = 6;          // cans in the case when he got here; how many he is through already

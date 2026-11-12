@@ -14,7 +14,7 @@
 // by its stage (farms.js stage()), so they grow, turn and are harvested with the slab.
 import * as THREE from 'three';
 import { pairs } from '../../data.js';
-import { groundAt } from '../terrain.js';
+import { groundAt } from './terrain.js';
 import { onSeason } from '../season.js';
 import { stage, CORN_HOLE } from './farms.js';
 import { plantGeometry, tasselGeometry } from './detassel.js';

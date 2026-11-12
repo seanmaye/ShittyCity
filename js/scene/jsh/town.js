@@ -22,7 +22,7 @@ import * as THREE from 'three';
 import { pairs } from '../../data.js';
 import { worldWinMat, WIN_W, WIN_H, M } from '../materials.js';
 import { Builder, addPolygon, colorOf } from '../geometry.js';
-import { groundBase } from '../terrain.js';
+import { groundBase } from './terrain.js';
 import { hash } from '../buildings.js';
 
 const TILE = 700;

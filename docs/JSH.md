@@ -1,10 +1,10 @@
 # Jersey Shore, PA
 
-Jersey Shore borough in Lycoming County and the country around it: the town on the West Branch of the Susquehanna, the island across from Allegheny Street, Pine Creek coming in from the west, Avis, Antes Fort, and the hills that close in the valley, with Bald Eagle Mountain to the south. It is the first city here with real terrain: the streets, parks, river and buildings all lie on the hills. Its farm fields grow and are harvested through the year. It has no rail transit to ride and no proposal yet.
+Jersey Shore borough in Lycoming County and the country around it: the town on the West Branch of the Susquehanna, the island across from Allegheny Street, Pine Creek coming in from the west, Avis, Antes Fort, and the hills that close in the valley, with Bald Eagle Mountain to the south. It was the first city here with real terrain: the streets, parks, river and buildings all lie on the hills. Its farm fields grow and are harvested through the year. It has no rail transit to ride and no proposal yet.
 
 - City id: `jsh`. Open it with `?city=jsh`.
 - Data: `data/jsh/`.
-- Hand-built scene parts: `js/scene/jsh/` (labels and views; farms; the seed corn and its detasseling crew; the overlook on Bald Eagle Mountain and the late harvest below it); the terrain is shared engine code, `js/scene/terrain.js`.
+- Hand-built scene parts: `js/scene/jsh/` (labels and views; farms; the seed corn and its detasseling crew; the overlook on Bald Eagle Mountain and the late harvest below it); its terrain is its own module, `js/scene/jsh/terrain.js` (an elevation grid with land cover, a different format from Philadelphia's lidar terrain in `js/scene/terrain.js`).
 - Data tools: `tools/jsh/`.
 
 ## What's in it
@@ -49,7 +49,7 @@ Jersey Shore borough in Lycoming County and the country around it: the town on t
 
 ## How terrain works
 
-Each city's data is still built flat, in the shared formats. A city with `terrain: true` in `js/cities.js` and a `terrain.bin.gz` file gets laid onto its hills as the scene is built (`js/scene/terrain.js`):
+Each city's data is still built flat, in the shared formats. Jersey Shore has `grid: true` in `js/cities.js`, and its `terrain.bin.gz` is loaded as `data.grid` (not `data.terrain`, which is Philadelphia's format). Everything gets laid onto its hills as the scene is built (`js/scene/jsh/terrain.js`):
 
 - **Buildings** stand at the lowest ground under their footprint, so no wall floats on a slope. Their roofs stay level.
 - **Trees** stand on the ground at their own spot.

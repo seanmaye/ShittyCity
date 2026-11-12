@@ -20,7 +20,7 @@ import { pairs } from '../../data.js';
 import { M } from '../materials.js';
 import { Builder, addPolygon } from '../geometry.js';
 import { onSeason } from '../season.js';
-import { groundAt } from '../terrain.js';
+import { groundAt } from './terrain.js';
 import { stage, rows, cutHole, CORN_HOLE } from './farms.js';
 
 export const HARVEST = [286, 334];   // October 14 to December 1

@@ -16,6 +16,10 @@ function septaLines(s, LINES) {
 export const CITIES = {
   phl: {
     id: 'phl', name: 'Philadelphia',
+    loadingArt: [
+      { file: 'loading-waterfront.webp', colors: ['#f5703b', '#f9da70'] },
+      { file: 'loading-street.webp', colors: ['#a28cc3', '#ffb853'] },
+    ],
     blurb: 'All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill.',
     // projection: x metres east, z metres south of (LAT0, LON0); MX is metres per degree of longitude here
     frame: { LAT0: 39.9560, LON0: -75.1760, MX: 85390, MZ: 111000 },
@@ -24,7 +28,7 @@ export const CITIES = {
     files: [
       ['buildings', 'buildings.json'], ['river', 'river.json'], ['ground', 'ground.json'], ['trees', 'trees.json'],
       ['landmarks', 'landmarks.json'], ['sports', 'sports.json'], ['yardpark', 'yardpark.json'], ['transit', 'transit.json'],
-      ['trolley1953', 'trolley1953.json'], ['city', 'city.json.gz'], ['cityBuildings', 'city_buildings.bin.gz'], ['metro', 'metro.json.gz'], ['cityMarks', 'city_landmarks.json'], ['boats', 'boats.json'],
+      ['trolley1953', 'trolley1953.json'], ['city', 'city.json.gz'], ['cityBuildings', 'city_buildings.bin.gz'], ['metro', 'metro.json.gz'], ['cityMarks', 'city_landmarks.json'], ['boats', 'boats.json'], ['terrain', 'terrain.bin.gz'],
     ],
     home: { pos: [39.9425, -75.1935, 430], target: [39.9560, -75.1730, 70] },   // [lat, lon, height]
     sunTarget: [39.9575, -75.1760], sun: { lat: 39.952, lon: -75.164 },
@@ -44,6 +48,10 @@ export const CITIES = {
   },
   nyc: {
     id: 'nyc', name: 'New York',
+    loadingArt: [
+      { file: 'loading-waterfront.webp', colors: ['#ea72a8', '#febe81'] },
+      { file: 'loading-street.webp', colors: ['#5ea7ec', '#fda449'] },
+    ],
     blurb: 'Manhattan, Brooklyn and Queens, the East River bridges, eleven subway lines and a proposed East River monorail loop.',
     frame: { LAT0: 40.745, LON0: -73.984, MX: 84096.03595426386, MZ: 111000 },
     dir: 'data/nyc', prefix: 'nyc-',
@@ -76,13 +84,13 @@ export const CITIES = {
     files: [
       ['buildings', 'buildings.json'], ['river', 'river.json'], ['ground', 'ground.json'], ['trees', 'trees.json'],
       ['transit', 'transit.json'], ['city', 'city.json.gz'], ['cityBuildings', 'city_buildings.bin.gz'],
-      ['terrain', 'terrain.bin.gz'], ['places', 'places.json'], ['farms', 'farms.json.gz'],
+      ['grid', 'terrain.bin.gz'], ['places', 'places.json'], ['farms', 'farms.json.gz'],
     ],
     // from the hill above town, looking south over Allegheny St and the river to Bald Eagle Mountain
     home: { pos: [41.2190, -77.2640, 520], target: [41.1965, -77.2560, 20] },
     sunTarget: [41.2025, -77.2560], sun: { lat: 41.2025, lon: -77.2536 },
     sea: false,
-    terrain: true,   // data/jsh/terrain.bin.gz: everything is laid onto the hills (js/scene/terrain.js)
+    grid: true,   // data/jsh/terrain.bin.gz (as data.grid): everything is laid onto the hills (js/scene/jsh/terrain.js)
     storage: 'jsh3d:',
     title: 'Jersey Shore, PA: a river town on the West Branch',
     heading: 'Jersey Shore, on the West Branch',

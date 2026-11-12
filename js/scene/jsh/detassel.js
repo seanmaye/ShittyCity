@@ -15,7 +15,7 @@
 // phl/pedestrians.js, so js/scene/index.js and js/ui.js use it in that one's place.
 import * as THREE from 'three';
 import { geo, pose } from '../phl/people.js';
-import { groundAt } from '../terrain.js';
+import { groundAt } from './terrain.js';
 import { onSeason } from '../season.js';
 import { stage, cutHole, CORN_HOLE } from './farms.js';
 import { detasselerProfile, bossProfile } from './crewprofiles.js';
