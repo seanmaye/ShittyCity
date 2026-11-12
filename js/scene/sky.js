@@ -2,6 +2,7 @@
 // follows from it (sky gradient, fog, sun/moon light, ambient light, stars, lit windows).
 import * as THREE from 'three';
 import { CITY } from '../cities.js';
+import { LIGHT as PI_LIGHT } from '../three-setup.js';
 
 const RAD = Math.PI / 180;
 
@@ -95,13 +96,13 @@ export function createSky({ scene, sun, hemi, litMats, nightOnly, onChange }) {
     if (sunUp >= moon * .25) {
       dir.set(Math.cos(el * RAD) * Math.sin(az * RAD), Math.max(.06, Math.sin(el * RAD)), -Math.cos(el * RAD) * Math.cos(az * RAD)).normalize();
       sun.color.copy(tmp.set('#ff9a5c').lerp(ca.set('#ffb27a'), smooth(-1, 5, el)).lerp(cb.set('#fff6e8'), smooth(8, 30, el)));
-      sun.intensity = .95 * sunUp - .15 * smooth(15, 50, el);
+      sun.intensity = (.95 * sunUp - .15 * smooth(15, 50, el)) * PI_LIGHT;
     } else {
       dir.set(-.45, .7, .55).normalize();
-      sun.color.set('#9fb4dd'); sun.intensity = .22 * moon;
+      sun.color.set('#9fb4dd'); sun.intensity = .22 * moon * PI_LIGHT;
     }
     sun.position.copy(sun.target.position).addScaledVector(dir, 4000);
-    hemi.color.copy(lerpKeys(LIGHT, el, 1, tmp)); hemi.groundColor.copy(lerpKeys(LIGHT, el, 2, tmp)); hemi.intensity = lerpKeys(LIGHT, el, 3);
+    hemi.color.copy(lerpKeys(LIGHT, el, 1, tmp)); hemi.groundColor.copy(lerpKeys(LIGHT, el, 2, tmp)); hemi.intensity = lerpKeys(LIGHT, el, 3) * PI_LIGHT;
     starMat.opacity = .9 * (1 - smooth(-14, -5, el));
 
     // how dark it is: 0 in daylight, about .7 at the original dusk look, 1 at night

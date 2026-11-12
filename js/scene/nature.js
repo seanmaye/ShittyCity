@@ -74,7 +74,7 @@ export function buildTrees(scene, flat, y = 0, onGround = true) {
     base[i] = gy(x, z); y0 = Math.min(y0, base[i]); y1 = Math.max(y1, base[i]);
   }
   const centre = n ? new THREE.Vector3((x0 + x1) / 2, (y0 + y1) / 2 + 12, (z0 + z1) / 2) : new THREE.Vector3(0, y, 0), reach = n ? Math.hypot(x1 - x0, z1 - z0, y1 - y0) / 2 + 30 : 0;
-  const mesh = (g, m, count) => { const im = new THREE.InstancedMesh(withBounds(g, centre, reach), m, count); im.userData.bounded = true; return im; };
+  const mesh = (g, m, count) => withBounds(new THREE.InstancedMesh(g, m, count), centre, reach);
   const it = mesh(trunk, bark, n), ir = mesh(round, wm(), nR), icn = mesh(cone, wm(), nC);
   const twigMat = new THREE.MeshStandardMaterial({ color: '#9c8774', map: twigTex, alphaTest: .4, side: THREE.DoubleSide, roughness: 1 });
   const ib = mesh(twig, twigMat, nR); twigMat.userData.noSnow = true;

@@ -1,6 +1,7 @@
 // Assembles the whole scene from the loaded data and exposes what the UI needs.
 import * as THREE from 'three';
 import { createCore } from './core.js';
+import { restoreAnisotropy } from '../three-setup.js';
 import { pairs } from '../data.js';
 import { CITY } from '../cities.js';
 import { litMats, setWindowHour, DISPLAY_PRESETS, setDisplayColors } from './materials.js';
@@ -455,7 +456,7 @@ export async function buildScene(canvas, data, status = () => {}) {
     return added;
   }
 
-  const clock = new THREE.Clock(), sunOff = new THREE.Vector3();
+  const clock = new THREE.Timer(), sunOff = new THREE.Vector3(); clock.connect(document); // no huge step after a hidden tab
   // shadows are the costliest part of a frame: redraw the shadow map at once when the sun moves
   // (time of day, or re-centring on the camera below), otherwise only every few frames so moving
   // trains and people still drag their shadows along
@@ -463,8 +464,9 @@ export async function buildScene(canvas, data, status = () => {}) {
   let shadowTick = 0;
   renderer.shadowMap.autoUpdate = false;
   function start(onFrame) {
+    restoreAnisotropy(renderer, scene);
     function frame() {
-      const dt = Math.min(clock.getDelta(), .05);
+      clock.update(); const dt = Math.min(clock.getDelta(), .05);
       monorail.update(dt, riding === 'loop', camera); old53.update(dt); boats.update(dt); anglers.update(dt); subway.update(dt, camera); updateShells(dt); sports.update(dt, riding, camera); yard.update(dt); marks.update(dt); nycMono.update(dt); chinatown.update(dt, camera);
       if (fly) stepFly(dt);
       peds.update(dt, camera); walnut.seatFrame(camera); peds.inhabitFrame(camera);

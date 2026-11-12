@@ -77,8 +77,9 @@ Shared code sits at the top level. Each city has a folder of the same name in `d
 
 ```
 city-models.html      the shareable single-file build (generated: run tools/bundle.py)
-index.html            page shell, start menu, HUD markup, import map for three.js 0.128
+index.html            page shell, start menu, HUD markup, import map for three.js 0.186
 css/style.css         HUD, menu and label styles
+js/three-setup.js     three.js settings that keep the r128-tuned look (colours, light scale)
 js/main.js            entry point: city menu -> load data -> build scene -> start UI
 js/cities.js          every city's settings (projection, data files, home view, sun, page text)
 js/data.js            data loader + lat/lon -> scene projection

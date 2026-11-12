@@ -34,7 +34,6 @@ PROBE = os.path.join(HERE, 'probe.js')
 CACHE = os.path.join(HERE, '.cache')
 OUT = os.path.join(HERE, 'out')
 CDN = re.compile(r'^https://(cdn\.jsdelivr\.net|fonts\.googleapis\.com|fonts\.gstatic\.com)/')
-THREE_MODULE = 'three@0.128.0/build/three.module.js'
 FIXED_DATE = '2026-10-15T12:00:00-04:00'   # the sun's path depends on the date: pin it
 MB = 1048576
 
@@ -122,9 +121,10 @@ def cdn_handler(tag_three):
                     f.write(body)
                 with open(mp, 'w', encoding='utf-8') as f:
                     json.dump(meta, f)
-        if url.endswith(THREE_MODULE):
-            # three draws four random numbers for every object's uuid. Give those their own stream, so
-            # creating one object more or fewer doesn't reshuffle the app's seeded Math.random (tree
+        if '/three@' in url and '/build/' in url and b'function generateUUID() {' in body:
+            # three's core file (three.module.js up to r170, three.core.js since). three draws four
+            # random numbers for every object's uuid. Give those their own stream, so creating one
+            # object more or fewer doesn't reshuffle the app's seeded Math.random (tree
             # shapes and colours): screenshots then stay comparable across code changes.
             body = body.replace(b'function generateUUID() {', b'function generateUUID() { const Math = { random: globalThis.__perfUuidRandom || globalThis.Math.random };', 1)
             if tag_three:

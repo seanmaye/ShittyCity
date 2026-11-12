@@ -172,7 +172,7 @@ export async function buildCity(scene, data, { waterMat, status = () => {}, clea
   // bounds: [centre, radius] of the instances, so the mesh can be frustum-culled (and, by the
   // sun's shadow box, skipped in the shadow pass) like any mesh; see geometry.js withBounds
   const instanced = (geo, mat, mat4, cols, bounds = null) => {
-    const m = new THREE.InstancedMesh(bounds ? withBounds(geo, ...bounds) : geo, mat, mat4.length / 16);
+    const m = new THREE.InstancedMesh(geo, mat, mat4.length / 16); if (bounds) withBounds(m, ...bounds);
     m.instanceMatrix = new THREE.InstancedBufferAttribute(mat4, 16); m.instanceColor = new THREE.InstancedBufferAttribute(cols, 3);
     m.frustumCulled = !!bounds; m.userData.bounded = !!bounds; m.receiveShadow = true; m.userData.tiled = true; m.userData.terrain = 'done'; scene.add(m); return m;
   };
