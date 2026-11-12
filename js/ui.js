@@ -10,11 +10,16 @@ import { CITY } from './cities.js';
 const store = { get: k => { try { return localStorage.getItem(CITY.storage + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(CITY.storage + k, v); } catch (e) { /* ignore */ } } };
 export function createUI(api) {
   const tagsEl = document.getElementById('tags');
-  const LABELS = api.labels.map(({ text, pos, section, stn, far, cutHide, layer }) => {
+  const LABELS = api.labels.map(({ text, pos, section, stn, far, cutHide, layer, stars, eat }) => {
     const el = document.createElement('div'); el.className = section ? 'tag sub' : stn ? 'tag stn ' + stn : layer ? 'tag ' + layer : 'tag'; el.textContent = text; tagsEl.appendChild(el);
+    if (layer === 'eat') {   // a restaurant: its stars before the name, and a click opens its card
+      const st = document.createElement('span'); st.className = 'st'; st.textContent = '★'.repeat(stars); el.prepend(st);
+      if (stars >= 3) el.classList.add('s3');
+      el.addEventListener('click', () => goEat(eat));   // fly to the front of it, and show its card
+    }
     return { el, v: pos, section, layer, far: far || 6500, cutHide: cutHide || [] };
   });
-  let showTags = true; const pv = new THREE.Vector3();
+  let showTags = true, showEats = true; const pv = new THREE.Vector3();
   // the card for someone you're inhabiting on Walnut St
   const persona = document.getElementById('persona'), peNow = document.getElementById('pe-now');
   let personaOn = null;
@@ -68,11 +73,14 @@ export function createUI(api) {
     if (carOn && personaOn !== null) { const c = car; if (c && c.kind === 'person') { if (c.id !== personaOn) syncCar(); else if (c.now !== peNow.textContent) peNow.textContent = c.now; } }
     syncActions(car);
     const now = performance.now(); minimap.update(camera, now); ridebar.update(now);
-    const w = window.innerWidth, h = window.innerHeight, placed = [], noTags = !showTags || (carOn && !(car && car.labels));   // (from the overlook the place names help)
+    const w = window.innerWidth, h = window.innerHeight, placed = [], inCar = carOn && !(car && car.labels);   // (from the overlook the place names help)
+    const noTags = !showTags || inCar, noEats = !showEats || inCar;   // restaurant labels have their own switch
+    // near the ground only nearby labels: far ones would pile up along the horizon over the street
+    const lift = camera.position.y - (api.groundAt ? api.groundAt(camera.position.x, camera.position.z) : 0), reach = Math.max(250, lift * 20);
     LABELS.forEach(l => {
-      if (noTags || (l.section && l.section !== api.getCut()) || l.cutHide.includes(api.getCut()) || (l.layer === 't53' && !api.getTransitMap())) { l.el.style.display = 'none'; return; }
+      if ((l.layer === 'eat' ? noEats : noTags) || (l.section && l.section !== api.getCut()) || l.cutHide.includes(api.getCut()) || (l.layer === 't53' && !api.getTransitMap())) { l.el.style.display = 'none'; return; }
       pv.copy(l.v).project(camera);
-      if (pv.z > 1 || pv.x < -1.1 || pv.x > 1.1 || pv.y < -1.1 || pv.y > 1.1 || camera.position.distanceTo(l.v) > l.far) { l.el.style.display = 'none'; return; }
+      if (pv.z > 1 || pv.x < -1.1 || pv.x > 1.1 || pv.y < -1.1 || pv.y > 1.1 || camera.position.distanceTo(l.v) > Math.min(l.far, reach)) { l.el.style.display = 'none'; return; }
       if (!l.wd) { l.el.style.display = 'block'; l.wd = l.el.offsetWidth || 120; }
       const x = (pv.x + 1) / 2 * w; let y = (1 - pv.y) / 2 * h - 8;
       for (let k = 0; k < 6; k++) { const hit = placed.some(r => Math.abs(r.x - x) < (r.w + l.wd) / 2 + 4 && Math.abs(r.y - y) < 24); if (!hit) break; y -= 26; }
@@ -170,6 +178,54 @@ export function createUI(api) {
   });
   markView('home');
   api.controls.addEventListener('start', () => markView(null)); // free look: no preset is current
+
+  // "Restaurants": djour's starred picks (js/scene/phl/restaurants.js): their labels' own switch, a
+  // neighbourhood picker and a button per place; a place's button or label flies there and opens its card
+  const EATS = (api.restaurants && api.restaurants.places) || [], eatsEl = document.getElementById('eats');
+  const eatCard = document.getElementById('eatcard'), eatBtn = document.getElementById('eat-lbl');
+  const hoodSel = document.getElementById('eat-hood'), eatList = document.getElementById('eat-list');
+  const STAR_WORDS = (api.restaurants && api.restaurants.stars) || {};
+  const KIND_WORD = { restaurant: 'Restaurant', bar: 'Bar', cafe: 'Café', bakery: 'Bakery', brewery: 'Brewery', truck: 'Food truck', market: 'Farmers market' };
+  let eatOn = null;
+  function openEat(i) {
+    const p = EATS[i]; if (!p) return;
+    eatOn = i; eatCard.hidden = false;
+    document.getElementById('eat-name').textContent = p.n;
+    document.getElementById('eat-stars').textContent = `${'★'.repeat(p.s)} ${STAR_WORDS[p.s] || ''}`.trim();
+    document.getElementById('eat-meta').textContent = [p.soon ? 'Coming soon' : null, p.club ? 'Supper club' : KIND_WORD[p.k], p.p, p.hood].filter(Boolean).join(' · ');
+    document.getElementById('eat-tags').textContent = p.c.join(' · ');
+    const note = document.getElementById('eat-note'); note.hidden = !p.d; note.textContent = p.d || '';
+    LABELS.forEach(l => l.el.classList.toggle('on', l.layer === 'eat' && l.el === eatTag[i]));
+  }
+  function goEat(i) {
+    const p = EATS[i]; if (!p) return;
+    if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; hint.textContent = HINT0; }
+    openPicker(false); api.flyTo(p.view); markView(null); openEat(i);
+  }
+  // the card's link to djour opens in a new tab (also from inside the single-file build)
+  eatCard.querySelector('.eat-src a').addEventListener('click', e => { e.preventDefault(); window.open(e.currentTarget.href, '_blank', 'noopener'); });
+  const eatTag = []; LABELS.forEach((l, k) => { if (l.layer === 'eat') eatTag[api.labels[k].eat] = l.el; });
+  document.getElementById('eat-x').addEventListener('click', () => { eatCard.hidden = true; eatOn = null; LABELS.forEach(l => l.el.classList.remove('on')); });
+  if (EATS.length) {
+    eatsEl.hidden = false;
+    eatBtn.addEventListener('click', () => {
+      showEats = !showEats; eatBtn.textContent = showEats ? 'Hide restaurant labels' : 'Show restaurant labels'; eatBtn.setAttribute('aria-pressed', String(showEats));
+    });
+    const hoods = {}; EATS.forEach(p => { hoods[p.hood || 'Elsewhere'] = (hoods[p.hood || 'Elsewhere'] || 0) + 1; });
+    hoodSel.append(new Option(`Three-star picks (${EATS.filter(p => p.s >= 3).length})`, '★3'), new Option(`All (${EATS.length})`, ''),
+      ...Object.keys(hoods).sort().map(h => new Option(`${h} (${hoods[h]})`, h)));
+    const fill = () => {
+      const v = hoodSel.value, list = EATS.filter(p => (v === '★3' ? p.s >= 3 : !v || (p.hood || 'Elsewhere') === v))
+        .sort((a, b) => b.s - a.s || a.n.localeCompare(b.n));
+      eatList.replaceChildren(...list.map(p => {
+        const b = document.createElement('button'), st = document.createElement('span');
+        b.type = 'button'; b.className = 'ghost'; st.className = 'st'; st.textContent = '★'.repeat(p.s); b.append(st, p.n);
+        b.addEventListener('click', () => goEat(p.i));
+        return b;
+      }));
+    };
+    hoodSel.addEventListener('change', fill); fill();
+  }
   cutBtn.addEventListener('click', () => {
     if (api.getCut()) api.setCut(false);
     else if (CUT_VIEW) { if (riding) rideBtn.click(); api.flyTo(CUT_VIEW.id); markView(CUT_VIEW.id); }
@@ -378,7 +434,7 @@ export function createUI(api) {
   else if (sk.startsWith('custom:')) { skyColor.value = sk.slice(7); setScheme('custom', [skyColor.value], 'Your colour', true); }
   else setScheme(pre ? pre.id : 'white', (pre || api.displayPresets[0]).colors, (pre || api.displayPresets[0]).name, true);
 
-  const minimap = createMinimap(api), ridebar = createRidebar(api);
+  const minimap = createMinimap(api, { eats: () => (showEats && EATS.length ? EATS : null) }), ridebar = createRidebar(api);
   [timeIn, speedIn, dayIn, lblBtn, rideBtn, cutBtn, trBtn].forEach(b => b.disabled = false);
 
   return { placeTags };

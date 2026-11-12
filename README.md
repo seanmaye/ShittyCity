@@ -4,7 +4,7 @@ Interactive three.js models of whole cities, built from real map data, with prop
 
 | City | What's in it | More |
 | --- | --- | --- |
-| **Philadelphia** (`phl`) | Philadelphia out to the city limits on its real terrain (USGS 3DEP elevation); every rail transit line (SEPTA Metro, Regional Rail, PATCO, NJ Transit); the 1953 streetcars; stadiums, Independence Hall and the Delaware bridges. Proposals: a Schuylkill riverfront monorail loop, expressway sports parks, a rail yard park and a bowl, and Walnut Street as a brick promenade busy with people you can see through the eyes of, and a Chinatown night market whose arcade stall has games you can play. Chinatown is modelled in detail, Friendship Gate and all. Cut-away: under Market Street. | [docs/PHL.md](docs/PHL.md) |
+| **Philadelphia** (`phl`) | Philadelphia out to the city limits on its real terrain (USGS 3DEP elevation); every rail transit line (SEPTA Metro, Regional Rail, PATCO, NJ Transit); the 1953 streetcars; stadiums, Independence Hall and the Delaware bridges. Proposals: a Schuylkill riverfront monorail loop, expressway sports parks, a rail yard park and a bowl, and Walnut Street as a brick promenade busy with people you can see through the eyes of, djour's 265 starred restaurants modelled as storefronts on their real buildings with their own labels and cards, and a Chinatown night market whose arcade stall has games you can play. Chinatown is modelled in detail, Friendship Gate and all. Cut-away: under Market Street. | [docs/PHL.md](docs/PHL.md) |
 | **New York** (`nyc`) | Manhattan, Brooklyn and Queens; the four East River bridges; Manhattan's towers, the Wonder Wheel, the Unisphere and Citi Field; 11 subway lines. Proposal: an East River monorail loop. Cut-away: under Times Square. | [docs/NYC.md](docs/NYC.md) |
 | **Jersey Shore, PA** (`jsh`) | Jersey Shore borough and its neighbours on the West Branch of the Susquehanna: about 4,100 buildings, every street, the river round the island, Pine Creek, and Bald Eagle Mountain and the hills, on real terrain, with crop fields that grow and are harvested through the year, barns and silos, and in July a detasseling crew in the seed corn whose eyes you can see through. No rail transit or proposal yet. | [docs/JSH.md](docs/JSH.md) |
 
@@ -105,6 +105,7 @@ js/scene/
   materials.js        shared materials, lit-window textures, skyline lights
   geometry.js         polygon / ribbon / footprint-extrusion builders
   phl/                Philadelphia's hand-built parts: landmarks, citymarks (stadiums, halls,
+                      djour's restaurants (restaurants.js),
                       bridges), people and frisbee, the riverfront monorail, the river boats,
                       the sports parks,
                       the rail yard park, the Walnut St promenade with its pedestrians and their

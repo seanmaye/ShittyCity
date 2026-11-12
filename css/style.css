@@ -249,3 +249,24 @@ button.arc-pick:hover{border-color:var(--accent)}
 .arc-cv:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .arc-msg{margin:10px 0 0;min-height:42px;color:var(--ink)}
 .arc-row{margin-top:8px}
+
+/* djour's restaurants (js/scene/phl/restaurants.js): their labels, the panel section and the card */
+.tag.eat{pointer-events:auto;cursor:pointer;border-color:#b5832a;font-weight:600}
+.tag.eat .st{color:#c8901c;margin-right:4px;letter-spacing:-1px;font-size:10px}
+.tag.eat.s3{border-width:1.5px;border-color:#c8901c}
+.tag.eat:hover,.tag.eat.on{background:#c8901c;color:#fff;border-color:#c8901c}.tag.eat:hover .st,.tag.eat.on .st{color:#fff}
+.eats-ctl{gap:6px;align-items:center}
+.eats select{font:inherit;font-size:12.5px;padding:5px 8px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink);max-width:100%}
+.eat-list{gap:6px;margin-top:8px;max-height:168px;overflow:auto;padding:2px}
+.eat-list button .st{color:#c8901c;margin-right:4px;font-size:10px}
+.eatcard{position:fixed;top:calc(env(safe-area-inset-top,0px) + 228px);right:calc(env(safe-area-inset-right,0px) + 14px);width:min(300px,calc(100vw - 28px));max-height:calc(100vh - 300px);overflow:auto;box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px 6px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--ink)}
+.eatcard[hidden]{display:none}
+.eatcard h2{font-size:17px;line-height:1.25;margin:0 26px 4px 0}
+.eatcard p{font-size:13px;margin:0 0 8px}
+.eat-stars{color:#b5832a;font-weight:600}
+.eat-tags{color:var(--muted)}
+.eat-note{margin:0 0 8px;padding:6px 10px;border-left:3px solid #c8901c;font-size:13px;line-height:1.45;white-space:pre-line;color:var(--ink)}
+.eat-note[hidden]{display:none}
+.eat-src{font-size:11.5px!important}.eat-src a{color:var(--ink)}
+.eat-x{position:absolute;top:6px;right:8px;background:transparent;color:var(--ink);border:0;font-size:20px;line-height:1;padding:4px 6px;cursor:pointer}
+@media (max-width:640px){.eatcard{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);left:16px;right:16px;width:auto;max-height:40vh}}

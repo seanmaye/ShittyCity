@@ -39,6 +39,7 @@ All of Philadelphia out to the city limits, with every rail transit line and our
 - **Go fishing.** People fish the Schuylkill at its real spots: below the Fairmount Dam, the Schuylkill Banks boardwalk, Kelly and MLK Drives, Bartram's Garden, Grays Ferry, Strawberry Mansion, East Falls and Manayunk. Click one and they ask you to join them. Then cast (farther out is deeper, with rarer catches), wait out the nibbles, strike on the bite (quickly: rarer catches give you less time) and reel, keeping the line tension in the green band while the fish runs, shakes its head and slowly tires. It's hard on purpose. There are 48 things to catch, from bluegill and catfish to striped bass, shad, snakehead and the legendary Atlantic sturgeon, plus trash and treasure, at five levels of rarity. Snap their line and they'll yell at you (with some colourful language) before giving you one more try. Shad run in spring and catfish bite at night. Your catch log is kept in your browser.
 - **Chinatown** in detail ("Go to" Chinatown). The Friendship Gate spans 10th Street at Arch, with its 費城華埠 plaque, tiled roofs and stone lions. Shops along Race, 10th, 9th, 11th and Arch have signs, blade signs and awnings (the shops are made up), red lanterns are strung across Race, 10th and 9th, pagoda-topped lamps line the kerbs, and a dragon dance winds up and down Race Street. Signs, lanterns and lamps light up after dark.
 - **The Chinatown night market** (our addition, "Go to" Chinatown night market) fills the open lot on 10th Street between Race and Cherry: food stalls, tables, string lights and a pavilion. Click the **Lucky Arcade** stall to play three games: Ping-Pong, Sky Swarm (a fixed shooter) and Dumpling Dash (a maze chase). Your best scores are kept in your browser.
+- **Restaurants: djour's starred picks.** The 265 places inside the city limits that the [djour Philly food map](https://www.djourformore.com/) gives two or three stars ("worth a commute", "must hit"). Each stands where it really is: OpenStreetMap's point for it where OSM has the place by name (131 of them; the rest at djour's own point), with its storefront on the wall of its building that faces the street in its address (or the nearest street). The storefront has a painted frame, shop windows and a door, an awning in its colours and a sign board with its name and stars; the signs and windows light up after dark. Bars get lanterns instead of an awning, cafés and bakeries bistro tables outside, three-star places a blade sign and planters, breweries a roll-up door and picnic tables; food trucks park at the kerb and farmers markets are rows of tents. Each has its own label (with its stars) and a gold dot on the minimap. The panel's **Restaurants** section switches their labels on and off separately from the other labels, lists them by neighbourhood (or the three-star picks), and flies to one: the camera stands in its street and its card shows djour's stars, the kind of place, price, neighbourhood, djour's tags and djour's note where it has one (word for word). Clicking a restaurant's label flies you to just in front of it and opens the same card; the card's link to djour opens in a new tab. The 47 three-star picks are rebuilt from photos of their real exteriors: the building's own wall (brick, stone or render, in its colour) with its upper windows, the shop front's frame, windows (plate glass, multi-pane, arched, a counter window, a roll-up door), door, awning (shed, canopy, barrel, marquee) and their actual signs (boards, loose letters, blade signs, neon, lettering on the glass, painted walls), sconces, string lights and seating. Five of them have no street front of their own (DiNic's in Reading Terminal Market, Machine Shop in the Bok Building, JG Skyhigh and Vernick Fish in the Comcast Technology Center, Emily Wilson Pastry in the Globe Dye Works mill) and show only their sign at the entrance.
 - **Easter eggs.** A pickup ultimate game runs on the Belmont & Edgley cricket ground in West Fairmount Park, and something is waiting on the arena plaza.
 - **Signature towers** are modelled with their real setbacks and crowns.
 - **Skyline lights** colour these for the Birds, the Phillies, the Sixers, the Flyers, the Union, the holidays and more:
@@ -185,6 +186,14 @@ python -I tools/phl/build_metro.py
 ```
 
 ```bash
+python -I tools/phl/fetch_eats.py
+```
+
+```bash
+python -I tools/phl/build_restaurants.py
+```
+
+```bash
 python -I tools/phl/fetch_dem.py
 ```
 
@@ -199,6 +208,7 @@ What each step does:
   - `build_city.py` leaves out the footprints inside the landmark outlines and the bridge decks.
   - `build_metro.py` lays PATCO on the Ben Franklin Bridge deck.
 - `build_metro.py` builds every line's track, stations and out-and-back route. It reuses the Center City L and trolley geometry exactly, and blends the new track into it at the edge of the core.
+- The restaurants: djour's starred places are read from the map on its page into `tools/phl/raw/djour/markers.json` (name, position, stars, tags, neighbourhood and note; there is no download script, since the page loads them itself). `fetch_eats.py` downloads OpenStreetMap's named food and drink places (one Overpass query, about 1.5 MB), and the OSM objects at the street addresses in `restaurant_looks.json`. `restaurant_looks.json` (in git) holds the researched exteriors of the three-star picks, written from photos of each one (its sources are listed with it); edit it to change a look. `build_restaurants.py` merges djour's repeated rows, leaves out the closed ones and those outside the city limits, moves each to its OSM namesake within 250 m (or, for a researched one, to its street address), finds the wall it fronts (the street in its OSM address, else the nearest one) and a camera spot in that street with a clear view of it, and writes `restaurants.json`. It needs `city.json.gz`, `city_buildings.bin.gz` and the raw OSM roads, so run it after `build_city.py`.
 - `fetch_dem.py` downloads the 3DEP elevation for the city's box plus 600 m, at 10 m, as four float32 GeoTIFFs (about 40 MB) from the USGS National Map elevation service.
 - `build_terrain.py` resamples it onto the scene grid and lowers a riverbed under the water the scene draws, so run it after `build_city.py`. It takes under a minute and writes `terrain.bin.gz` (about 6 MB). The ground everything else stands on is worked out when the page loads, so nothing else needs rebuilding when the terrain changes.
 
@@ -220,6 +230,9 @@ What each step does:
 | `extract_bridges.py` | the Delaware bridge decks and Memorial Hall (merged into the same file) |
 | `build_landmarks.py` | fits the landmark models (`city_landmarks.json`) |
 | `build_boats.py` | routes the river boats mid-channel through the water (`boats.json`), from `city.json.gz` and `river.json` |
+| `fetch_eats.py` | downloads OpenStreetMap's named food and drink places, to check djour's points against |
+| `build_restaurants.py` | djour's starred restaurants, placed and faced (`restaurants.json`) |
+| `restaurant_looks.json` | the researched exteriors of the three-star picks, merged in by `build_restaurants.py` |
 | `fetch_dem.py` | downloads the USGS 3DEP bare-earth elevation (10 m GeoTIFFs) |
 | `build_terrain.py` | the ground heights and water levels (`terrain.bin.gz`) |
 
@@ -234,6 +247,7 @@ What each step does:
 | Streets, trails, rail, bridges | OpenStreetMap `highway` / `railway` ways |
 | Rail transit: tracks, stations, platforms, entrances | OpenStreetMap route relations; tunnel depths and El heights are estimates |
 | City limits | OpenStreetMap relation 188022 |
+| Restaurants | djour's Philly food map, [djourformore.com](https://www.djourformore.com/): the two- and three-star picks, their tags and notes (quoted word for word with permission); positions checked against OpenStreetMap's named food and drink places |
 | Terrain | USGS 3D Elevation Program (3DEP) bare-earth DEM, 1/3 arc-second, from the National Map elevation service (public domain) |
 | 1953 streetcars | The Philadelphia Transportation Company map of January 1953, and Harold E. Cox, *Surface Cars of Philadelphia 1911-1965* |
 

@@ -31,6 +31,7 @@ import { buildPedestrians } from './phl/pedestrians.js';
 import { buildBoats } from './phl/boats.js';
 import { buildAnglers } from './phl/anglers.js';
 import { buildChinatown } from './phl/chinatown.js';
+import { buildRestaurants } from './phl/restaurants.js';
 import { setTerrain, terrain, seat, surface, profile } from './terrain.js';
 // Jersey Shore: its own elevation grid (not Philadelphia's lidar format), and everything laid onto it
 import { loadTerrain as loadGrid, buildTerrain as buildGrid, drape as drapeGrid } from './jsh/terrain.js';
@@ -169,6 +170,8 @@ export async function buildScene(canvas, data, status = () => {}) {
   // Chinatown: the Friendship Gate, signs, lanterns, a dragon dance and the night market's arcade stall
   const chinatown = isPhl ? buildChinatown(scene, { buildings: data.buildings })
     : { update() {}, pickStall: () => false, stallView: null, labels: [], views: [] };
+  // djour's starred restaurants: a storefront on each one's building, and its label (the panel's "Restaurants")
+  const eats = data.restaurants ? buildRestaurants(scene, data.restaurants) : { places: [], labels: [], credit: null };
   const updateShells = data.landmarks ? buildShells(scene, river) : () => {};
   let sports = none(), yard = none();
   if (data.sports) { status('Building the sports parks…', 82); await nextFrame(); sports = buildSports(scene, data.sports, river, ground.bridgeSegs, data.ground.lines); }
@@ -237,7 +240,7 @@ export async function buildScene(canvas, data, status = () => {}) {
     if (l.t === 'City Hall') return { text: l.t, pos: lm.cityhall.clone().setY(l.y) };
     if (l.river !== undefined) return { text: l.t, pos: river.atLat(39.9575).p.clone().setY(l.y) };
     return { text: l.t, pos: new THREE.Vector3(l.x, l.y, l.z) };
-  }).concat(sports.labels, yard.labels, subway.labels, marks.labels, old53.labels, boats.labels, chinatown.labels, nyc.labels.filter(l => !nycBridges.some(b => b.id === l.text)), nycMono.labels, places.labels,
+  }).concat(sports.labels, yard.labels, subway.labels, marks.labels, old53.labels, boats.labels, chinatown.labels, eats.labels, nyc.labels.filter(l => !nycBridges.some(b => b.id === l.text)), nycMono.labels, places.labels,
     nycBridges.map(b => ({ text: b.id, far: 3700, pos: new THREE.Vector3((b.a[0] + b.b[0]) / 2, b.labelHeight, (b.a[1] + b.b[1]) / 2) })));
   // tags float the same height above the ground as they did above the flat model
   if (terrain.on) for (const l of labels) if (!l.abs && l.pos) l.pos.y += surface(l.pos.x, l.pos.z);
@@ -340,6 +343,7 @@ export async function buildScene(canvas, data, status = () => {}) {
     if (riding !== false) setRiding(false, true);
     if (aboard()) leaveCar(true);
     if (v.cut) setCut(v.cut);
+    controls.minDistance = v.near || 40;   // close-up views (a restaurant's shop front) may come nearer than orbiting allows
     fly = { t: 0, dur: 2.2, p0: camera.position.clone(), t0: controls.target.clone(), p1: v.pos, t1: v.target,
             lift: Math.min(450, camera.position.distanceTo(v.pos) * .22), then: v.arrive };
   }
@@ -348,6 +352,7 @@ export async function buildScene(canvas, data, status = () => {}) {
     setCreative(false);
     if (riding !== false) setRiding(false, true);
     if (aboard()) leaveCar(true);
+    controls.minDistance = 40;
     const off = camera.position.clone().sub(controls.target), t1 = new THREE.Vector3(x, surface(x, z), z);
     if (off.y < 150) off.multiplyScalar(150 / Math.max(1, off.y));
     fly = { t: 0, dur: 1.8, p0: camera.position.clone(), t0: controls.target.clone(), p1: t1.clone().add(off), t1, lift: Math.min(450, camera.position.distanceTo(t1) * .12) };
@@ -558,7 +563,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   if (mono.length) legend.push({ name: 'Proposed monorails', color: '#d6452f' });
   for (const l of boats.lines) legend.push({ name: l.name, color: l.color });
 
-  return { scene, camera, controls, renderer, labels, lines, views, flyTo, boardLine, setFly, setCreative, getCreative: () => creative, creativeLook, creativeSpeed, setTransitMap: on => { old53.setOverlay(on); return tmap.set(on); }, getTransitMap: tmap.get, legend, oldTrolleyLegend: old53.legend, cityBuildings: city.buildingCount, setTime, getTime: sky.getTime, get sunset() { return sky.sunset; }, setDay, getDay: () => getSeason().day, lastDay, formatDay: day => formatDay(day, year), setMood, getMood, setRiding, setCut, getCut: subway.getCut, pickCar, boardCar, leaveCar, getCar: aboard, rideStrip: subway.rideStrip,
+  return { scene, camera, controls, renderer, labels, lines, views, restaurants: eats, groundAt: (x, z) => (terrain.on ? surface(x, z) : 0), flyTo, boardLine, setFly, setCreative, getCreative: () => creative, creativeLook, creativeSpeed, setTransitMap: on => { old53.setOverlay(on); return tmap.set(on); }, getTransitMap: tmap.get, legend, oldTrolleyLegend: old53.legend, cityBuildings: city.buildingCount, setTime, getTime: sky.getTime, get sunset() { return sky.sunset; }, setDay, getDay: () => getSeason().day, lastDay, formatDay: day => formatDay(day, year), setMood, getMood, setRiding, setCut, getCut: subway.getCut, pickCar, boardCar, leaveCar, getCar: aboard, rideStrip: subway.rideStrip,
     pickAngler: (x, y) => { camera.updateMatrixWorld(); return anglers.pick(camera, x, y, canvas.clientWidth, canvas.clientHeight); }, anglerInfo: anglers.info,
     viewAngler: i => { const a = anglers.info(i); if (a) flyTo(a.view); },
     pickStall: isPhl ? (x, y) => { camera.updateMatrixWorld(); return chinatown.pickStall(camera, x, y, canvas.clientWidth, canvas.clientHeight); } : null,

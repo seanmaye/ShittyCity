@@ -254,6 +254,24 @@ data-phl-boats          river boat lines (tools/phl/build_boats.py; all but Rive
          from; s = distance along p. p runs mid-channel through the real water; dams are
          barriers. Boats run out and back (phl/boats.js), one per 6 km, dwelling DWELL s a stop.
 
+data-phl-restaurants    djour's starred food spots (tools/phl/build_restaurants.py; js/scene/phl/restaurants.js)
+  { source, credit, stars: {"2": meaning, "3": meaning},
+    places: [{n, x, z, ry, w, h, sd, v, f, k, s, hood, c, p?, d?, soon?, club?, look?}] }
+  n name; x, z the middle of its shop front on the building wall (m); ry the wall's outward
+  direction (three.js rotation.y: local +z points into the street); w the wall's length (0 = not
+  against a building: a menu board on a post); h the building's height (m); sd how far the
+  street's centreline is; v [x, z, height] where its camera view stands (in the street with a
+  clear line of sight, or 34 m up over the roofs); f [x, z] a spot straight in front of the shop
+  front with a clear view (null if none: then v is used); k "restaurant" | "bar" | "cafe" | "bakery" |
+  "brewery" | "truck" | "market" (picks the model); s stars (2 or 3); hood neighbourhood; c djour's
+  tags as words; p price ("$".."$$$$$"); d djour's note, word for word; soon 1 = not open yet;
+  club 1 = a supper club; look = the three-star picks' researched exterior (from
+  tools/phl/restaurant_looks.json): building {floors, material, color}, storefront {width_bays,
+  frame_color, windows, window_tint, door {color, position, glass}}, awning {type, color, stripes,
+  text}, signs [{type, text, bg, fg, where, lit}], lights {string_lights, sconces, neon}, outdoor
+  {seating, planters}, indoor (no street front: only its sign at the entrance).
+  Rebuild with the tool rather than editing by hand; to change a look, edit restaurant_looks.json.
+
 data-phl-terrain        (gzip binary "TER1", little endian) the ground, from USGS 3DEP bare earth
   int32 x0_dm, z0_dm, cell_dm, W, H   first sample, spacing (10 m), samples per row and rows
   int16 ground[W*H]   decimetres; under rivers and lakes the bed (up to 2.5 m below the water)
@@ -455,6 +473,7 @@ js/ui.js         buttons, line picker, floating labels, keys (inside a car KEYMA
 js/minimap.js    top-right map (#minimap): base map of limits, parks, water and rail drawn once
                  from api.mapData; LEVELS = metres across per zoom step; you as a view cone, or
                  the train and its line in bold when riding; a click calls api.flyToPoint(x, z).
+                 createMinimap(api, { eats }): eats() returns the restaurants to dot (or null).
 js/fishing.js    the fishing minigame (a dialog over the city): invitation, then cast (power meter),
                  wait (nibbles that look like bites), bite (strike window, shorter for rarer
                  catches), reel (hold: tension vs. progress, line gained only in the green band;
@@ -517,6 +536,21 @@ chinatown.js     Chinatown dressed in detail (buildChinatown(scene, { buildings 
                  lights, a pavilion and the Lucky Arcade stall: pickStall / stallView, wired as
                  api.pickStall and api.viewStall; ui.js opens js/arcade.js on a click. Static
                  pieces are merged into one mesh per material (batch / mergeGeos).
+restaurants.js   djour's starred restaurants from data-phl-restaurants
+                 (buildRestaurants(scene, data.restaurants) -> { places, labels, credit, stars }).
+                 A storefront on the wall at (x, z) facing ry, sized by w and h: frame, shop window
+                 (glassMat, a warm room after dark), door, striped awning, a sign board from one
+                 canvas atlas (signAtlas: each place's name and stars), by kind lanterns, bistro
+                 tables, a blade sign, a roll-up door; trucks, market tents, a post for loose ones.
+                 Everything is merged into one mesh per material (batch). Each place gets a label
+                 (layer 'eat', far 1600 m for three stars, 800 m for two) and a view (near: 6, so
+                 the orbit controls let the camera come that close): straight in front of the shop
+                 front at eye height (f), else from up the street (v). lookFront builds a researched
+                 look instead of the generic storefront: the building's own wall and upper windows,
+                 its frame, windows, door, awning, signs, lights and seating. ui.js lists them under
+                 "Restaurants" (#eats: #eat-lbl switches their labels, #eat-hood picks a
+                 neighbourhood) and shows the card (#eatcard); a label's or button's click flies to
+                 the view and opens the card (goEat); minimap.js draws them as dots.
 boats.js         river boats from data-phl-boats: piers (deck, pilings, float, shelter), boat
                  models, fleets easing into each stop. Registered with subway.registerFleet as
                  kind 'boat' (CAR_IN.boat is the walkable cabin; aboard, only the model's outer
@@ -627,7 +661,7 @@ harvest.js       the last corn standing: pickLateField(farms, eye, blockers) cho
                  binoculars aim at while it is in the field, null outside the window
 
 Debug handle in the browser console: window.__city
-  { scene, camera, controls, renderer, labels, lines, views, flyTo(viewId),
+  { scene, camera, controls, renderer, labels, lines, views, restaurants, flyTo(viewId or a view),
     setTime(hours 0-24), getTime(), sunset, setMood('day'|'dusk'), getMood(),
     boardLine(id: a "Ride a line" entry, e.g. 'loop', 0, 'm:L', 'm:AIR' in Philadelphia;
               'm:7', 'm:mono:east-river-loop' in New York),
