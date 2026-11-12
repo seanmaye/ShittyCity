@@ -39,19 +39,25 @@ export async function buildScene(canvas, data, status = () => {}) {
   const core = createCore(canvas);
   const { scene, camera, controls, renderer, sun, hemi } = core;
 
-  status('Shaping the river…'); await nextFrame();
+  status('Shaping the river…', 50); await nextFrame();
   const river = buildRiver(scene, data.river);
-  status('Laying out parks and streets…'); await nextFrame();
+  status('Laying out parks and streets…', 55); await nextFrame();
   const ground = buildGround(scene, data.ground, river, data.yardpark ? data.yardpark.rings : [], { sea: CITY.sea, paved: data.city.limits });
-  status(`Raising ${data.buildings.b.length.toLocaleString()} buildings…`); await nextFrame();
+  status(`Raising ${data.buildings.b.length.toLocaleString()} buildings…`, 60); await nextFrame();
   const blds = buildBuildings(scene, data.buildings);
   // the rest of the city out to the city limits (outside the original extent, its own data)
-  status(CITY.building); await nextFrame();
+  status(CITY.building, 67); await nextFrame();
   // playing fields that the park trees must keep off (the Edgley frisbee and cricket ground)
   const clear = ((data.cityMarks || {}).fields || []).map(f => pairs(f.outline));
-  const city = buildCity(scene, data, { waterMat: river.waterMat, status, clear, sea: CITY.sea, core: CITY.sea ? null : data.ground.bbox.map(v => v / 10) });
+  const city = await buildCity(scene, data, {
+    waterMat: river.waterMat,
+    status: async message => { status(message, 73); await nextFrame(); },
+    clear,
+    sea: CITY.sea,
+    core: CITY.sea ? null : data.ground.bbox.map(v => v / 10),
+  });
   camera.far = 200000; camera.updateProjectionMatrix(); controls.maxDistance = 45000;
-  status('Placing landmarks and the monorail…'); await nextFrame();
+  status('Placing landmarks and the monorail…', 79); await nextFrame();
   // Philadelphia: stadiums, Independence Hall, Memorial Hall and the Delaware bridges (data/phl/city_landmarks.json)
   const marks = data.cityMarks ? buildCityMarks(scene, data.cityMarks) : none();
   // Philadelphia's styled landmarks, riverfront monorail and rowing shells (they follow the Schuylkill)
@@ -76,9 +82,9 @@ export async function buildScene(canvas, data, status = () => {}) {
     : { update() {}, pickStall: () => false, stallView: null, labels: [], views: [] };
   const updateShells = data.landmarks ? buildShells(scene, river) : () => {};
   let sports = none(), yard = none();
-  if (data.sports) { status('Building the sports parks…'); await nextFrame(); sports = buildSports(scene, data.sports, river, ground.bridgeSegs, data.ground.lines); }
-  if (data.yardpark) { status('Capping the rail yard…'); await nextFrame(); yard = buildYardPark(scene, data.yardpark, [monorail.curve, ...sports.curves].filter(Boolean)); }
-  status('Laying the transit network…'); await nextFrame();
+  if (data.sports) { status('Building the sports parks…', 82); await nextFrame(); sports = buildSports(scene, data.sports, river, ground.bridgeSegs, data.ground.lines); }
+  if (data.yardpark) { status('Capping the rail yard…', 85); await nextFrame(); yard = buildYardPark(scene, data.yardpark, [monorail.curve, ...sports.curves].filter(Boolean)); }
+  status('Laying the transit network…', 88); await nextFrame();
   // the city's transit; Philadelphia also has its citywide network in data/phl/metro.json.gz,
   // whose full-length runs replace the Center City runs of the lines they extend
   const T = data.transit, Mt = data.metro || { lines: [], tracks: [], runs: [], platforms: [], stations: [] }, replace = new Set(Mt.replaceRuns || []);
@@ -345,10 +351,17 @@ export async function buildScene(canvas, data, status = () => {}) {
   // click a train car to board it, or a cafe chair or bench on Walnut St to sit down
   const pickCar = (x, y) => { camera.updateMatrixWorld(); const w = canvas.clientWidth, h = canvas.clientHeight; return subway.pick(camera, x, y, w, h) || peds.pickPerson(camera, x, y, w, h) || walnut.pickSeat(camera, x, y, w, h); };
   const aboard = () => subway.getRide() || walnut.getSeat() || peds.getInhabited();
-  // time of year: today's date to begin with; the sun's path follows the date too
-  function setDay(day) { const st = setSeason(day); sky.setDate(dateOfDay(st.day)); return st.day; }
-  setDay(dayOfYear(new Date()));
-  setTime(sky.sunset - .35);   // open at dusk, the original look
+  // Start the season and lighting from the same local date and time.
+  const now = new Date();
+  const year = now.getFullYear();
+  const lastDay = dayOfYear(new Date(year, 11, 31));
+  function setDay(day) {
+    const st = setSeason(day, year);
+    sky.setDate(dateOfDay(st.day, year));
+    return st.day;
+  }
+  setDay(dayOfYear(now));
+  setTime(now.getHours() + now.getMinutes() / 60);
 
   // Shadow casters that cannot matter this frame. A block of buildings darkens something in view
   // only if the volume its shadow sweeps (from the block, away from the sun, down to the lowest
@@ -405,7 +418,16 @@ export async function buildScene(canvas, data, status = () => {}) {
       renderer.render(scene, camera); onFrame(camera);
       requestAnimationFrame(frame);
     }
-    requestAnimationFrame(frame);
+    return new Promise((resolve, reject) => {
+      requestAnimationFrame(() => {
+        try {
+          frame();
+          resolve();
+        } catch (error) {
+          reject(error);
+        }
+      });
+    });
   }
 
   // legend for the transit highlight: one entry per service (the trolleys and B lines grouped)
@@ -421,7 +443,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   if (mono.length) legend.push({ name: 'Proposed monorails', color: '#d6452f' });
   for (const l of boats.lines) legend.push({ name: l.name, color: l.color });
 
-  return { scene, camera, controls, renderer, labels, lines, views, flyTo, boardLine, setFly, setCreative, getCreative: () => creative, creativeLook, creativeSpeed, setTransitMap: on => { old53.setOverlay(on); return tmap.set(on); }, getTransitMap: tmap.get, legend, oldTrolleyLegend: old53.legend, cityBuildings: city.buildingCount, setTime, getTime: sky.getTime, get sunset() { return sky.sunset; }, setDay, getDay: () => getSeason().day, formatDay, setMood, getMood, setRiding, setCut, getCut: subway.getCut, pickCar, boardCar, leaveCar, getCar: aboard, rideStrip: subway.rideStrip,
+  return { scene, camera, controls, renderer, labels, lines, views, flyTo, boardLine, setFly, setCreative, getCreative: () => creative, creativeLook, creativeSpeed, setTransitMap: on => { old53.setOverlay(on); return tmap.set(on); }, getTransitMap: tmap.get, legend, oldTrolleyLegend: old53.legend, cityBuildings: city.buildingCount, setTime, getTime: sky.getTime, get sunset() { return sky.sunset; }, setDay, getDay: () => getSeason().day, lastDay, formatDay: day => formatDay(day, year), setMood, getMood, setRiding, setCut, getCut: subway.getCut, pickCar, boardCar, leaveCar, getCar: aboard, rideStrip: subway.rideStrip,
     pickAngler: (x, y) => { camera.updateMatrixWorld(); return anglers.pick(camera, x, y, canvas.clientWidth, canvas.clientHeight); }, anglerInfo: anglers.info,
     viewAngler: i => { const a = anglers.info(i); if (a) flyTo(a.view); },
     pickStall: isPhl ? (x, y) => { camera.updateMatrixWorld(); return chinatown.pickStall(camera, x, y, canvas.clientWidth, canvas.clientHeight); } : null,

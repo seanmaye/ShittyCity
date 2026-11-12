@@ -22,8 +22,8 @@ EXTERNALS = [  # (import line, how to tell a module uses it), in the order bundl
     ("import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';", re.compile(r"\bLineMaterial\b")),
     ("import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';", re.compile(r"\bLineGeometry\b")),
 ]
-# gzip data files are embedded as base64, with their file name
-GZBLOCK = re.compile(r'^<script type="application/gzip-base64" id="data-([\w-]+)" data-file="([^"]+)">(.*?)</script>\n', re.S | re.M)
+# Gzip data and WebP illustrations are embedded as base64, with their file name.
+BINARY_BLOCK = re.compile(r'^<script type="application/(?:gzip|webp)-base64" id="((?:data|art)-[\w-]+)" data-file="([^"]+)">(.*?)</script>\n', re.S | re.M)
 CHUNK = re.compile(r'// ---- (\S+)\n__mods\["\1"\] = await \(async \(\) => \{\n(.*?)\nreturn \{ ?(.*?) ?\};\n\}\)\(\);\n', re.S)
 # a data block starts a line (the editing guide quotes the tag mid-line, which must not match)
 # (each block names its file, e.g. data-file="nyc/transit.json"; bundles from before the
@@ -87,10 +87,10 @@ def unbundle(src_html, out):
     m = re.search(r"<style>\n(.*?)</style>", html, re.S)
     files["css/style.css"] = m.group(1)
     html = html[:m.start()] + '<link rel="stylesheet" href="css/style.css">' + html[m.end():]
-    # data blocks: JSON as text, gzip files as base64
-    blocks = sorted(list(BLOCK.finditer(html)) + list(GZBLOCK.finditer(html)), key=lambda b: b.start())
+    # data blocks: JSON as text, binary files as base64
+    blocks = sorted(list(BLOCK.finditer(html)) + list(BINARY_BLOCK.finditer(html)), key=lambda b: b.start())
     for b in blocks:
-        if b.re is GZBLOCK:
+        if b.re is BINARY_BLOCK:
             files[f"data/{b.group(2)}"] = base64.b64decode(b.group(3))
             continue
         body = b.group(3).replace("<\\/", "</")
@@ -117,9 +117,9 @@ def unbundle(src_html, out):
 
 
 def blocks_of(html):
-    data = {m.group(1): m.group(3) for m in BLOCK.finditer(html)}
-    data.update({m.group(1): m.group(3) for m in GZBLOCK.finditer(html)})
-    rest = GZBLOCK.sub("", BLOCK.sub("", html))
+    data = {f"data-{m.group(1)}": m.group(3) for m in BLOCK.finditer(html)}
+    data.update({m.group(1): m.group(3) for m in BINARY_BLOCK.finditer(html)})
+    rest = BINARY_BLOCK.sub("", BLOCK.sub("", html))
     return data, rest
 
 

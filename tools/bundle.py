@@ -3,9 +3,9 @@
   python -I tools/bundle.py [out.html]
 
 Inlines css/style.css, every module under js/, and every city's data folder (data/<city>/, see
-js/cities.js): each .json file as JSON and each .gz file as base64, in a block with the id
-"data-<city>-<name>" that names its file in data-file. three.js still loads from the CDN through
-the page's import map. The result opens straight from disk.
+js/cities.js): each .json file as JSON, and each .gz and .webp file as base64. Each block names
+its file in data-file. three.js still loads from the CDN through the page's import map.
+The result opens straight from disk.
 """
 import base64, json, os, re, sys
 
@@ -134,10 +134,14 @@ for sub, prefix in dirs:
         if name.endswith(".json"):
             body = read("data/" + sub + name).replace("</", "<\\/")
             data_tags += f'<script type="application/json" id="data-{prefix}{name[:-5]}" data-file="{sub}{name}">{body}</script>\n'
-        elif name.endswith(".gz"):   # gzip data: base64, decoded by js/data.js
+        elif name.endswith((".gz", ".webp")):
             with open(os.path.join(ROOT, "data", sub, name), "rb") as f:
                 b64 = base64.b64encode(f.read()).decode("ascii")
-            data_tags += f'<script type="application/gzip-base64" id="data-{prefix}{name.split(".")[0]}" data-file="{sub}{name}">{b64}</script>\n'
+            if name.endswith(".webp"):
+                mime, block_id = "application/webp-base64", f"art-{prefix}{name[:-5]}"
+            else:
+                mime, block_id = "application/gzip-base64", f"data-{prefix}{name.split('.')[0]}"
+            data_tags += f'<script type="{mime}" id="{block_id}" data-file="{sub}{name}">{b64}</script>\n'
 loader = re.search(r'<script type="module">\s*import\(\'\./js/main\.js\'\).*?</script>', html, re.S)
 html = html.replace(loader.group(0), data_tags + f'<script type="module">\n{imports}try {{\n{bundle}\n}} catch (e) {{ console.error(e); document.getElementById(\'err\').style.display = \'flex\'; }}\n</script>')
 # the editing guide rides along as a comment right after the doctype, so whoever opens

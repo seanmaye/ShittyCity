@@ -65,7 +65,7 @@ export function createUI(api) {
   // 24-hour clock slider (sun position for today's date in the city)
   const timeIn = document.getElementById('time'), timeOut = document.getElementById('time-out');
   const showTime = h => { timeOut.textContent = formatHour(h); timeIn.setAttribute('aria-valuetext', formatHour(h)); };
-  timeIn.value = String(Math.round(api.getTime() * 4) / 4); showTime(api.getTime());
+  timeIn.value = String(api.getTime()); showTime(api.getTime());
   timeIn.addEventListener('input', () => showTime(api.setTime(+timeIn.value)));
   // day/night speed: frozen at the left end; to the right the clock runs ever faster, up to a
   // whole day in 4 seconds (cubic, so the slow end has room: real time sits near 4%)
@@ -91,6 +91,7 @@ export function createUI(api) {
   // time of year: snow in winter, blossom and flower beds in spring, autumn colour, bare trees
   const dayIn = document.getElementById('day'), dayOut = document.getElementById('day-out');
   const showDay = d => { dayOut.textContent = api.formatDay(d); dayIn.setAttribute('aria-valuetext', api.formatDay(d)); };
+  dayIn.max = String(api.lastDay);
   dayIn.value = String(api.getDay()); showDay(api.getDay());
   let dayPending = false;   // recolouring every tree is a lot of work: once per frame at most
   dayIn.addEventListener('input', () => {

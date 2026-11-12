@@ -3,7 +3,7 @@ EDITING GUIDE: City models (single-file build)
 
 This guide is for an AI assistant (or a person) who has only this HTML file and wants to
 change a city. Everything the page needs is inside the file: styles, all scripts, and
-all map data. three.js r128 loads from the jsDelivr CDN.
+all map data and loading illustrations. three.js r128 loads from the jsDelivr CDN.
 
 The page holds several cities on one engine: today Philadelphia (id "phl") and New York
 (id "nyc"). It opens on a start menu (#menu) to pick one, or goes straight to one with
@@ -22,14 +22,16 @@ Python helper below.
   <head>      <style> (HUD, labels, start menu) and an import map that maps "three" to three@0.128.0
   <body>      HUD markup: #ride, #transit, #lbl, #cut, #getoff, #switch-city buttons, #xhair
               (creative-mode crosshair), #modehint, #time slider (+ #time-out), #legend,
-              #lines picker, #view-btns (Go to), #heading, #hint, #status, #tags, #credit;
+              #lines picker, #view-btns (Go to), #heading, #hint, #tags, #credit;
               the #persona card (someone inhabited on Philadelphia's Walnut St);
-              the start menu #menu with #cities
+              the start menu #menu with #cities and the #city-loading screen with #status
   data blocks, city by city, one per file in the city's data folder:
               <script type="application/json" id="data-<city>-NAME" data-file="<city>/FILE">...</script>
               <script type="application/gzip-base64" id="data-<city>-NAME" data-file="<city>/FILE">base64</script>
               NAME is the file name without .json / .json.gz / .bin.gz. Which blocks a city
               has is listed in section 3 and in its `files` entry in js/cities.js.
+              Loading art uses application/webp-base64 and id="art-<city>-NAME", where NAME
+              is the file name without .webp. The city lists its two files in `loadingArt`.
   1 <script type="module"> holding all the code:
       - import lines at the very top (THREE, OrbitControls, BufferGeometryUtils, Line2,
         LineMaterial, LineGeometry)
@@ -313,7 +315,7 @@ js/scene/nature.js     trees (instanced) and rowing shells (on a river centrelin
                  the season: crown colours (SUMMER, FRESH, AUTUMN, BLOSSOM), leaf drop (crowns
                  scaled to zero, bare-branch planes shown), and flower beds (FLOWERS) near one tree
                  in six. Returned meshes with userData.season === false stay hidden in city tiles.
-js/scene/season.js     time of year: setSeason(day 0-364) evaluates CURVES (snow, bare, fall, bloom,
+js/scene/season.js     time of year: setSeason(day of year starting at 0) evaluates CURVES (snow, bare, fall, bloom,
                  flowers, fresh, dormant) and calls every onSeason(fn) listener. addSnow(mat,
                  amount) whitens up-facing surfaces by the SNOW uniform (index.js applies it to
                  every mesh once built; userData.noSnow opts out, userData.snowAmt scales it:
@@ -694,8 +696,8 @@ Add another rail line
     3. Every new material that must stay visible inside a cut needs userData.noClip = true.
 
 Change the sky and light by time of day: KEYS and LIGHT in the js/scene/sky.js chunk
-(keyed by sun elevation in degrees). The slider opens at sunset minus 20 minutes
-(setTime(sky.sunset - .35) in index.js).
+(keyed by sun elevation in degrees). The time and season open at the browser's
+current local date and time, set in js/scene/index.js.
 Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, height]).
 
 
