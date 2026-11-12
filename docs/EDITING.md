@@ -371,6 +371,15 @@ js/fishing.js    the fishing minigame (a dialog over the city): invitation, then
                  The catch log is kept in localStorage (CITY.storage + 'creel'). Snap the line and
                  the angler yells at you (YELLS, in a speech bubble), then always gives you one
                  more try (ONE_MORE; the button becomes "One more try").
+js/arcade.js     Lucky Arcade (a dialog over the city), opened by a click on the stall in Chinatown's
+                 night market: a menu of GAMES, each make() -> { update(dt, inp), draw(g), score,
+                 over, result, help } on one 480 x 480 canvas. pingPong (first to 7 against a CPU
+                 paddle; score = longest rally), skySwarm (fixed shooter: bugs enter on curves,
+                 hold a swaying formation, dive and drop bombs; BUGS = kinds and points),
+                 dumplingDash (maze chase on MAZE: '#' wall, '.' seed, 'o' fortune cookie, '-' pen
+                 door, 'C' pen, ' ' void except the row-9 tunnel, '_' eaten; four CATS with their
+                 own chase targets on a scatter/chase SCHEDULE). Best scores in localStorage
+                 (CITY.storage + 'arcade').
 js/ridebar.js    line diagram (#ridebar) while riding, from api.rideStrip() (subway.js): stops
                  evenly spaced, the train between them, passed stops greyed, the next in bold.
 
@@ -402,6 +411,17 @@ anglers.js       people fishing the Schuylkill (buildAnglers(scene, river, boats
                  water's edge (walked out from the water to the bank); figure, rod, line, bobber,
                  bucket, cooler. pick() / info(i) (name, hello, spot, view); wired as api.pickAngler,
                  anglerInfo, viewAngler; ui.js opens js/fishing.js on a click.
+chinatown.js     Chinatown dressed in detail (buildChinatown(scene, { buildings })). Streets are OSM
+                 centrelines in metres (RACE, TENTH, NINTH, ELEVENTH, ARCH; CROSSINGS keep things
+                 back from the corners). Facades 5-26 m tall that face a street get a lit board
+                 (BOARDS), a blade sign (BLADES; both from one canvas atlas, signAtlas) and an
+                 awning per bay. Lantern strings cross Race, 10th and 9th; pagoda-topped lamps line
+                 their kerbs. The Friendship Gate spans 10th at GATE_S. A dragon dance loops along
+                 Race (loopAt). OUR ADDITION: a night market on the open lot east of 10th between
+                 Race and Cherry (LOT_S; lot frame u east, v south), with stalls, tables, string
+                 lights, a pavilion and the Lucky Arcade stall: pickStall / stallView, wired as
+                 api.pickStall and api.viewStall; ui.js opens js/arcade.js on a click. Static
+                 pieces are merged into one mesh per material (batch / mergeGeos).
 boats.js         river boats from data-phl-boats: piers (deck, pilings, float, shelter), boat
                  models, fleets easing into each stop. Registered with subway.registerFleet as
                  kind 'boat' (CAR_IN.boat is the walkable cabin; aboard, only the model's outer
