@@ -49,7 +49,7 @@ python -I tools/perf/perf.py run --quick
 python -I tools/bundle.py
 ```
 
-This rebuilds `city-models.html` at the repo root (about 39 MB), the file you send people. It has the CSS, every script and every city's data inline, so it opens with a double-click and needs no server. three.js and the font still load from their CDNs, so viewers need an internet connection.
+This rebuilds `city-models.html` at the repo root (about 41 MB), the file you send people. It has the CSS, every script and every city's data inline, so it opens with a double-click and needs no server. three.js and the font still load from their CDNs, so viewers need an internet connection.
 
 **Workflow.** Edit the sources (`js/`, `css/`, `data/`, `index.html`) and check them with the local server. Then run the bundler and commit the sources and the rebuilt HTML together.
 
@@ -78,8 +78,9 @@ Shared code sits at the top level. Each city has a folder of the same name in `d
 
 ```
 city-models.html      the shareable single-file build (generated: run tools/bundle.py)
-index.html            page shell, start menu, HUD markup, import map for three.js 0.128
+index.html            page shell, start menu, HUD markup, import map for three.js 0.186
 css/style.css         HUD, menu and label styles
+js/three-setup.js     three.js settings that keep the r128-tuned look (colours, light scale)
 js/main.js            entry point: city menu -> load data -> build scene -> start UI
 js/cities.js          every city's settings (projection, data files, home view, sun, page text)
 js/data.js            data loader + lat/lon -> scene projection

@@ -121,16 +121,14 @@ export function addLoft(b, ring, y0, y1, s0, s1, tileW, tileH, color, cap = true
 }
 
 /**
- * A geometry that shares g's buffers but has its own bounding sphere. An
- * InstancedMesh is culled by its geometry's sphere, which knows nothing of where the instances
- * are; with the sphere of its instances it can be frustum-culled like any mesh, in the main pass
- * and, by the sun's shadow box, in the shadow pass. Mark the mesh userData.bounded.
+ * Give an InstancedMesh the sphere around all its instances, worked out by the caller, so it is
+ * frustum-culled like any mesh, in the main pass and, by the sun's shadow box, in the shadow
+ * pass. (three.js would otherwise compute the sphere itself, instance by instance, the first
+ * time it is drawn.) Marks the mesh userData.bounded; returns it.
  */
-export function withBounds(g, center, radius) {
-  const out = new THREE.BufferGeometry();
-  for (const k in g.attributes) out.setAttribute(k, g.attributes[k]);
-  out.setIndex(g.index); out.boundingSphere = new THREE.Sphere(center, radius);
-  return out;
+export function withBounds(mesh, center, radius) {
+  mesh.boundingSphere = new THREE.Sphere(center, radius); mesh.userData.bounded = true;
+  return mesh;
 }
 
 /** One shared THREE.Color per colour string (palette entries), not one per building. Don't modify it. */

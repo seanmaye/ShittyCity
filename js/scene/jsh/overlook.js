@@ -21,6 +21,7 @@ import * as THREE from 'three';
 import { geo } from '../phl/people.js';
 import { groundAt } from './terrain.js';
 import { buildTrees } from '../nature.js';
+import { LIGHT, makeRenderer } from '../../three-setup.js';
 
 const CANS = 40, EMPTY = 6;          // cans in the case when he got here; how many he is through already
 const SEAT = .43, EYE = 1.72;        // the chair's seat and the visitor's eye, above the ground (m)
@@ -511,10 +512,10 @@ export function buildOverlook(scene, site, { night = () => 0, spot = () => null 
   let pr = null;
   function portrait(size = 176) {
     if (!pr) {
-      const canvas = document.createElement('canvas'), renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+      const canvas = document.createElement('canvas'), renderer = makeRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.setSize(size, size, false);
       const sc = new THREE.Scene(), pc = new THREE.PerspectiveCamera(28, 1, .05, 10), B = hunter(T);
-      sc.add(new THREE.HemisphereLight('#fff4e6', '#4a5560', .85)); const key = new THREE.DirectionalLight('#ffffff', .75); key.position.set(.6, 1.2, 1.4); sc.add(key);
+      sc.add(new THREE.HemisphereLight('#fff4e6', '#4a5560', .85 * LIGHT)); const key = new THREE.DirectionalLight('#ffffff', .75 * LIGHT); key.position.set(.6, 1.2, 1.4); sc.add(key);
       sc.add(B.root); B.root.updateMatrixWorld(true);
       const hd = B.head.getWorldPosition(new THREE.Vector3()); pc.position.set(hd.x + .06, hd.y - .02, hd.z + .78); pc.lookAt(hd.x, hd.y - .1, hd.z);
       renderer.render(sc, pc); pr = canvas;

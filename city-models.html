@@ -5,7 +5,7 @@ EDITING GUIDE: City models (single-file build)
 
 This guide is for an AI assistant (or a person) who has only this HTML file and wants to
 change a city. Everything the page needs is inside the file: styles, all scripts, and
-all map data and loading illustrations. three.js r128 loads from the jsDelivr CDN.
+all map data and loading illustrations. three.js r186 (0.186.1) loads from the jsDelivr CDN.
 
 The page holds several cities on one engine: today Philadelphia (id "phl"), New York
 (id "nyc") and Jersey Shore, PA (id "jsh"). It opens on a start menu (#menu) to pick one, or
@@ -21,7 +21,7 @@ Python helper below.
 1. What is in the file (top to bottom)
 --------------------------------------
 
-  <head>      <style> (HUD, labels, start menu) and an import map that maps "three" to three@0.128.0
+  <head>      <style> (HUD, labels, start menu) and an import map that maps "three" to three@0.186.1
   <body>      HUD markup: #ride, #transit, #lbl, #cut, #getoff, #switch-city buttons, #xhair
               (creative-mode crosshair), #modehint, #time slider (+ #time-out), #legend,
               #lines picker, #view-btns (Go to), #heading, #hint, #tags, #credit;
@@ -329,6 +329,11 @@ Shared engine:
 js/cities.js     CITIES (per city: projection frame, data folder and files, home view, sun
                  position, page text, transit groups, station-tag text, skyline presets, `sea`)
                  and CITY, the active one (section 8)
+js/three-setup.js  three.js settings that keep the look tuned under r128: colour management
+                 off, LIGHT (= PI, multiply every light intensity by it), makeRenderer()
+                 (linear output), single-pass transparent materials (as in r128;
+                 three.js would draw double-sided ones twice and re-check their shader
+                 every frame), restoreAnisotropy() for nearest-magnified textures. main.js imports it first, before any colour is made.
 js/main.js       the start menu, then setCity -> loadData -> buildScene -> createUI -> start.
                  Exposes window.__city.
 js/data.js       projection (G(lat,lon), latOf, using CITY.frame) and the data loader
@@ -845,8 +850,11 @@ Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, hei
   ends the block.
 - `import` lines may only appear at the very top of the module script. Chunks must not
   contain `import` or `export`: export by adding a name to the chunk's final `return {...}`.
-- three.js is r128: use BufferGeometryUtils.mergeBufferGeometries (an object), not the
-  newer mergeGeometries.
+- three.js is r186. BufferGeometryUtils is imported as a namespace
+  (import * as BufferGeometryUtils) and merges with mergeGeometries. Colour management is off
+  and lights are scaled by LIGHT (js/three-setup.js): a new light's intensity is
+  "r128 value * LIGHT", and colours are written as plain hex. A shader hook (onBeforeCompile)
+  sets each map's own UV varying (vMapUv, vEmissiveMapUv), not vUv.
 - Units: most arrays are decimetres, landmark boxes and labels are metres. Mixing them up
   puts things 10x out of place. Each city has its own frame: never copy coordinates between
   cities.
@@ -861,9 +869,12 @@ Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, hei
   ends up buried, and one placed at a real height ends up floating.
 - Performance budget: about 3-4M triangles and 1,000-1,500 draw calls when the whole city is
   in view (far city tiles draw only roofs). Merge or instance new geometry; don't add
-  thousands of separate meshes. Instanced meshes must have frustumCulled = false (or manage
-  their own visibility, as city.js does), because three.js r128 culls them by their origin.
-- The file is about 39 MB (Philadelphia about 24, 8 of it the terrain; New York about 11). The gzip blocks hold most
+  thousands of separate meshes. Instanced meshes made while the scene is built are drawn
+  unculled (frustumCulled = false) unless they carry their instances' sphere from
+  withBounds(mesh, centre, radius) (geometry chunk), as city.js's tiles and the trees do. One
+  made later is culled by a sphere three.js works out on its first draw: if its instances move
+  after that, call mesh.computeBoundingSphere() or set frustumCulled = false.
+- The file is about 41 MB (Philadelphia about 24, 8 of it the terrain; New York about 11; Jersey Shore about 2). The gzip blocks hold most
   of the data; keep new bulky data in a gzip block rather than JSON.
 - Keep each city's attribution line (CITY.credit). Philadelphia: map data (c) OpenStreetMap
   contributors, ODbL; building data (c) City of Philadelphia. New York: buildings NYC Open
@@ -1173,8 +1184,8 @@ button.arc-pick:hover{border-color:var(--accent)}
 .arc-row{margin-top:8px}
 </style>
 <script type="importmap">
-{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js",
-               "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/" } }
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+               "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/" } }
 </script>
 </head>
 <body>
@@ -1269,7 +1280,7 @@ button.arc-pick:hover{border-color:var(--accent)}
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
@@ -1277,6 +1288,59 @@ import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
 try {
 const __mods = {};
+// ---- js/three-setup.js
+__mods["js/three-setup.js"] = await (async () => {
+// three.js settings that keep the look the city was tuned with under three.js r128.
+// main.js imports this first, so it runs before any module creates a colour.
+
+// Colours are used as written (r128 had no colour management): '#ffb27a' goes to the shader
+// as those numbers, not converted from sRGB to linear first. Renderers pair this with
+// outputColorSpace = LinearSRGBColorSpace, so the shaded result is written to the screen as is.
+THREE.ColorManagement.enabled = false;
+
+// r128's lights were "legacy" lights: the shader multiplied every light's intensity by PI.
+// three.js dropped that factor (r155), so intensities tuned for r128 are multiplied by this.
+const LIGHT = Math.PI;
+
+// Transparent double-sided materials draw in one pass, as in r128. three.js (r150+) draws them
+// twice by default, back faces then front, and flips material.side and needsUpdate on each pass,
+// which sends every such object through the shader-program lookup twice a frame. The Material
+// constructor assigns forceSinglePass, so this accessor covers every material, made at any time.
+Object.defineProperty(THREE.Material.prototype, 'forceSinglePass', { get: () => true, set() {}, configurable: true });
+
+/**
+ * Anisotropic filtering on textures that magnify with NearestFilter (the facade windows: crisp
+ * up close). r128 applied texture.anisotropy to them; three.js now skips it for nearest-magnified
+ * textures, which blurs the windows on walls seen at a slant. Sets it on every such texture in
+ * the scene. Call once the scene is built, before the first frame.
+ */
+function restoreAnisotropy(renderer, scene) {
+  if (!renderer.extensions.has('EXT_texture_filter_anisotropic')) return;
+  const ext = renderer.extensions.get('EXT_texture_filter_anisotropic'), gl = renderer.getContext();
+  const max = renderer.capabilities.getMaxAnisotropy(), seen = new Set();
+  scene.traverse(o => {
+    for (const m of [].concat(o.material || [])) for (const k in m) {
+      const t = m[k];
+      if (!t || !t.isTexture || seen.has(t) || t.isCubeTexture || t.isData3DTexture || t.isDataArrayTexture) continue;
+      seen.add(t);
+      if (t.magFilter !== THREE.NearestFilter || t.anisotropy <= 1 || !t.image) continue;
+      renderer.initTexture(t);   // uploads it if need be (and unbinds it again)
+      renderer.state.bindTexture(gl.TEXTURE_2D, renderer.properties.get(t).__webglTexture, gl.TEXTURE0);
+      gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(t.anisotropy, max));
+    }
+  });
+  renderer.state.unbindTexture();
+}
+
+/** a WebGLRenderer configured like the r128 ones the scene was tuned for */
+function makeRenderer(opts) {
+  const r = new THREE.WebGLRenderer(opts);
+  r.outputColorSpace = THREE.LinearSRGBColorSpace;
+  return r;
+}
+
+return { restoreAnisotropy, makeRenderer, LIGHT };
+})();
 // ---- js/cities.js
 __mods["js/cities.js"] = await (async () => {
 // The cities this model can show, and the active one. Everything that differs between cities
@@ -1460,10 +1524,11 @@ __mods["js/scene/core.js"] = await (async () => {
 
 const { G } = __mods["js/data.js"];
 const { CITY } = __mods["js/cities.js"];
+const { LIGHT, makeRenderer } = __mods["js/three-setup.js"];
 function createCore(canvas) {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, logarithmicDepthBuffer: true });
+  const renderer = makeRenderer({ canvas, antialias: true, logarithmicDepthBuffer: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap; // filtered by sun.shadow.radius
 
   const scene = new THREE.Scene();
   scene.fog = new THREE.Fog('#e9a888', 2200, 9000);
@@ -1476,8 +1541,8 @@ function createCore(canvas) {
   controls.target.copy(HOME_TGT); controls.enableDamping = true; controls.dampingFactor = .08;
   controls.maxPolarAngle = Math.PI / 2.1; controls.minDistance = 40; controls.maxDistance = 7000;
 
-  const hemi = new THREE.HemisphereLight('#f6c29a', '#3e4f3a', .55); scene.add(hemi);
-  const sun = new THREE.DirectionalLight('#ffb27a', .95); sun.castShadow = true;
+  const hemi = new THREE.HemisphereLight('#f6c29a', '#3e4f3a', .55 * LIGHT); scene.add(hemi);
+  const sun = new THREE.DirectionalLight('#ffb27a', .95 * LIGHT); sun.castShadow = true; sun.shadow.radius = 1.5;
   const big = renderer.capabilities.maxTextureSize >= 4096 ? 4096 : 2048; sun.shadow.mapSize.set(big, big);
   Object.assign(sun.shadow.camera, { left: -2900, right: 2900, top: 2900, bottom: -2900, near: 10, far: 9000 });
   sun.shadow.bias = -.0004; sun.shadow.normalBias = 1.5; scene.add(sun);
@@ -1791,24 +1856,31 @@ function hook(m, rep = [1, 1], off = [0, 0], inst = false) {
   m.onBeforeCompile = sh => {
     sh.uniforms.uWinCut = WIN_CUT;
     sh.uniforms.uRep = { value: new THREE.Vector2(...rep) }; sh.uniforms.uOff = { value: new THREE.Vector2(...off) };
-    sh.vertexShader = 'uniform vec2 uRep, uOff;\n' + sh.vertexShader.replace('#include <uv_vertex>', inst ? `
-#ifdef USE_UV
-  vec3 sc = vec3(length(instanceMatrix[0].xyz), length(instanceMatrix[1].xyz), length(instanceMatrix[2].xyz));
-  float along = abs(normal.x) > .5 ? (position.z + .5) * sc.z : (position.x + .5) * sc.x;
-  float jit = fract(instanceMatrix[3].x * .0131 + instanceMatrix[3].z * .0173);
-  vUv = abs(normal.y) > .5 ? ${R} : vec2(along / ${WIN_W.toFixed(1)} + jit, position.y * sc.y / ${WIN_H.toFixed(2)});
-#endif` : `
-#ifdef USE_UV
-  vUv = uv.x < -.5 ? ${R} : uv * uRep + uOff;
+    // three.js gives each map its own UV varying: the day texture (map) and the lit windows
+    // (emissiveMap) both take the facade UV worked out here
+    sh.vertexShader = 'uniform vec2 uRep, uOff;\n' + sh.vertexShader.replace('#include <uv_vertex>', `#include <uv_vertex>
+#if defined(USE_MAP) || defined(USE_EMISSIVEMAP)
+  {
+${inst ? `    vec3 sc = vec3(length(instanceMatrix[0].xyz), length(instanceMatrix[1].xyz), length(instanceMatrix[2].xyz));
+    float along = abs(normal.x) > .5 ? (position.z + .5) * sc.z : (position.x + .5) * sc.x;
+    float jit = fract(instanceMatrix[3].x * .0131 + instanceMatrix[3].z * .0173);
+    vec2 fUv = abs(normal.y) > .5 ? ${R} : vec2(along / ${WIN_W.toFixed(1)} + jit, position.y * sc.y / ${WIN_H.toFixed(2)});`
+  : `    vec2 fUv = uv.x < -.5 ? ${R} : uv * uRep + uOff;`}
+#ifdef USE_MAP
+    vMapUv = fUv;
+#endif
+#ifdef USE_EMISSIVEMAP
+    vEmissiveMapUv = fUv;
+#endif
+  }
 #endif`);
     if (inst) sh.vertexShader = sh.vertexShader.replace('#include <color_vertex>', `#include <color_vertex>
 #ifdef USE_INSTANCING_COLOR
-  if (abs(normal.y) > .5) { float rh = fract(sin(dot(instanceMatrix[3].xz, vec2(12.9898, 78.233))) * 43758.5453); vColor = ${glslRoof}; }
+  if (abs(normal.y) > .5) { float rh = fract(sin(dot(instanceMatrix[3].xz, vec2(12.9898, 78.233))) * 43758.5453); vColor.rgb = ${glslRoof}; }
 #endif`);
     sh.fragmentShader = 'uniform float uWinCut;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>', `
 #ifdef USE_EMISSIVEMAP
-  vec4 emissiveColor = texture2D(emissiveMap, vUv);
-  emissiveColor.rgb = emissiveMapTexelToLinear(emissiveColor).rgb;
+  vec4 emissiveColor = texture2D(emissiveMap, vEmissiveMapUv);
   totalEmissiveRadiance *= emissiveColor.rgb * step(uWinCut, emissiveColor.a) * (1.0 - .3 * uWinCut);
 #endif`);
   };
@@ -2004,16 +2076,14 @@ function addLoft(b, ring, y0, y1, s0, s1, tileW, tileH, color, cap = true, uOff 
 }
 
 /**
- * A geometry that shares g's buffers but has its own bounding sphere. An
- * InstancedMesh is culled by its geometry's sphere, which knows nothing of where the instances
- * are; with the sphere of its instances it can be frustum-culled like any mesh, in the main pass
- * and, by the sun's shadow box, in the shadow pass. Mark the mesh userData.bounded.
+ * Give an InstancedMesh the sphere around all its instances, worked out by the caller, so it is
+ * frustum-culled like any mesh, in the main pass and, by the sun's shadow box, in the shadow
+ * pass. (three.js would otherwise compute the sphere itself, instance by instance, the first
+ * time it is drawn.) Marks the mesh userData.bounded; returns it.
  */
-function withBounds(g, center, radius) {
-  const out = new THREE.BufferGeometry();
-  for (const k in g.attributes) out.setAttribute(k, g.attributes[k]);
-  out.setIndex(g.index); out.boundingSphere = new THREE.Sphere(center, radius);
-  return out;
+function withBounds(mesh, center, radius) {
+  mesh.boundingSphere = new THREE.Sphere(center, radius); mesh.userData.bounded = true;
+  return mesh;
 }
 
 /** One shared THREE.Color per colour string (palette entries), not one per building. Don't modify it. */
@@ -3948,7 +4018,7 @@ function buildTrees(scene, flat, y = 0, onGround = true) {
     base[i] = gy(x, z); y0 = Math.min(y0, base[i]); y1 = Math.max(y1, base[i]);
   }
   const centre = n ? new THREE.Vector3((x0 + x1) / 2, (y0 + y1) / 2 + 12, (z0 + z1) / 2) : new THREE.Vector3(0, y, 0), reach = n ? Math.hypot(x1 - x0, z1 - z0, y1 - y0) / 2 + 30 : 0;
-  const mesh = (g, m, count) => { const im = new THREE.InstancedMesh(withBounds(g, centre, reach), m, count); im.userData.bounded = true; return im; };
+  const mesh = (g, m, count) => withBounds(new THREE.InstancedMesh(g, m, count), centre, reach);
   const it = mesh(trunk, bark, n), ir = mesh(round, wm(), nR), icn = mesh(cone, wm(), nC);
   const twigMat = new THREE.MeshStandardMaterial({ color: '#9c8774', map: twigTex, alphaTest: .4, side: THREE.DoubleSide, roughness: 1 });
   const ib = mesh(twig, twigMat, nR); twigMat.userData.noSnow = true;
@@ -4159,7 +4229,7 @@ function buildCourts(scene, data) {
     add(surf, new THREE.MeshStandardMaterial({ map: canvas(t.w, t.d, g => SURFACE[t.name](g, t.w, t.d)), roughness: .9 }), false);
     const groups = {};
     for (const [geo, key] of EQUIP[t.name](t.w, t.d)) (groups[key] = groups[key] || []).push(geo.toNonIndexed());
-    for (const [key, geos] of Object.entries(groups)) add(BufferGeometryUtils.mergeBufferGeometries(geos), mats[key], key !== 'fence' && key !== 'net');
+    for (const [key, geos] of Object.entries(groups)) add(BufferGeometryUtils.mergeGeometries(geos), mats[key], key !== 'fence' && key !== 'net');
   });
   return boxes;
 }
@@ -4296,7 +4366,7 @@ const { M, litMats } = __mods["js/scene/materials.js"];
 const { Builder, addPolygon, addRibbon } = __mods["js/scene/geometry.js"];
 const { buildTrees } = __mods["js/scene/nature.js"];
 const { seasonalGrass } = __mods["js/scene/season.js"];
-const merge = geos => BufferGeometryUtils.mergeBufferGeometries(geos.map(g => (g.index ? g.toNonIndexed() : g)));
+const merge = geos => BufferGeometryUtils.mergeGeometries(geos.map(g => (g.index ? g.toNonIndexed() : g)));
 
 function deck(scene, data) {
   const h = data.h, rings = data.rings.map(pairs);
@@ -5461,6 +5531,7 @@ __mods["js/scene/sky.js"] = await (async () => {
 // follows from it (sky gradient, fog, sun/moon light, ambient light, stars, lit windows).
 
 const { CITY } = __mods["js/cities.js"];
+const { LIGHT: PI_LIGHT } = __mods["js/three-setup.js"];
 const RAD = Math.PI / 180;
 
 /** US daylight saving: second Sunday of March to first Sunday of November. */
@@ -5553,13 +5624,13 @@ function createSky({ scene, sun, hemi, litMats, nightOnly, onChange }) {
     if (sunUp >= moon * .25) {
       dir.set(Math.cos(el * RAD) * Math.sin(az * RAD), Math.max(.06, Math.sin(el * RAD)), -Math.cos(el * RAD) * Math.cos(az * RAD)).normalize();
       sun.color.copy(tmp.set('#ff9a5c').lerp(ca.set('#ffb27a'), smooth(-1, 5, el)).lerp(cb.set('#fff6e8'), smooth(8, 30, el)));
-      sun.intensity = .95 * sunUp - .15 * smooth(15, 50, el);
+      sun.intensity = (.95 * sunUp - .15 * smooth(15, 50, el)) * PI_LIGHT;
     } else {
       dir.set(-.45, .7, .55).normalize();
-      sun.color.set('#9fb4dd'); sun.intensity = .22 * moon;
+      sun.color.set('#9fb4dd'); sun.intensity = .22 * moon * PI_LIGHT;
     }
     sun.position.copy(sun.target.position).addScaledVector(dir, 4000);
-    hemi.color.copy(lerpKeys(LIGHT, el, 1, tmp)); hemi.groundColor.copy(lerpKeys(LIGHT, el, 2, tmp)); hemi.intensity = lerpKeys(LIGHT, el, 3);
+    hemi.color.copy(lerpKeys(LIGHT, el, 1, tmp)); hemi.groundColor.copy(lerpKeys(LIGHT, el, 2, tmp)); hemi.intensity = lerpKeys(LIGHT, el, 3) * PI_LIGHT;
     starMat.opacity = .9 * (1 - smooth(-14, -5, el));
 
     // how dark it is: 0 in daylight, about .7 at the original dusk look, 1 at night
@@ -5760,7 +5831,7 @@ async function buildCity(scene, data, { waterMat, status = () => {}, clear = [],
   // bounds: [centre, radius] of the instances, so the mesh can be frustum-culled (and, by the
   // sun's shadow box, skipped in the shadow pass) like any mesh; see geometry.js withBounds
   const instanced = (geo, mat, mat4, cols, bounds = null) => {
-    const m = new THREE.InstancedMesh(bounds ? withBounds(geo, ...bounds) : geo, mat, mat4.length / 16);
+    const m = new THREE.InstancedMesh(geo, mat, mat4.length / 16); if (bounds) withBounds(m, ...bounds);
     m.instanceMatrix = new THREE.InstancedBufferAttribute(mat4, 16); m.instanceColor = new THREE.InstancedBufferAttribute(cols, 3);
     m.frustumCulled = !!bounds; m.userData.bounded = !!bounds; m.receiveShadow = true; m.userData.tiled = true; m.userData.terrain = 'done'; scene.add(m); return m;
   };
@@ -6991,7 +7062,7 @@ function buildBridges(scene){
   for(const key of Object.keys(groups))groups[key]=[];
   const spans=[];
   for(const s of specs){const f=makeFrame(s);deck(s,f);if(s.type==='queensboro')queensboro(s,f);else suspension(s,f);spans.push({id:s.id,a:[...s.a],b:[...s.b],labelHeight:Math.max(s.towerH,s.height+30)+8});}
-  for(const key of Object.keys(groups))if(groups[key].length){const merged=BufferGeometryUtils.mergeBufferGeometries(groups[key],false);const mesh=new THREE.Mesh(merged,mats[key]);mesh.name=`Curated bridge ${key}`;mesh.castShadow=mesh.receiveShadow=true;scene.add(mesh);for(const g of groups[key])g.dispose();}
+  for(const key of Object.keys(groups))if(groups[key].length){const merged=BufferGeometryUtils.mergeGeometries(groups[key],false);const mesh=new THREE.Mesh(merged,mats[key]);mesh.name=`Curated bridge ${key}`;mesh.castShadow=mesh.receiveShadow=true;scene.add(mesh);for(const g of groups[key])g.dispose();}
   return {bridgeSpans:spans};
 }
 
@@ -7474,6 +7545,7 @@ __mods["js/scene/phl/pedestrians.js"] = await (async () => {
 const { geo, pose } = __mods["js/scene/phl/people.js"];
 const { makeProfile, SHOPS } = __mods["js/scene/phl/profiles.js"];
 const { pullBack } = __mods["js/scene/phl/promenade.js"];
+const { LIGHT, makeRenderer } = __mods["js/three-setup.js"];
 const LANE = [2.4, 3.5];          // walking lanes (|o|): clear of the streetcar and of the kerb furniture
 const SPEED = [1.05, 1.5];        // walking speeds, m/s
 const NEAR = 250;                 // pick seats and shops within this distance along the street
@@ -7883,11 +7955,11 @@ function buildPedestrians(scene, nav, count = 200) {
     const P = people[i]; if (!P) return null;
     if (!pr) {
       const canvas = document.createElement('canvas');
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+      const renderer = makeRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(28, 1, .05, 10);
-      sc.add(new THREE.HemisphereLight('#fff4e6', '#4a5560', .85));
-      const key = new THREE.DirectionalLight('#ffffff', .75); key.position.set(.6, 1.2, 1.4); sc.add(key);
+      sc.add(new THREE.HemisphereLight('#fff4e6', '#4a5560', .85 * LIGHT));
+      const key = new THREE.DirectionalLight('#ffffff', .75 * LIGHT); key.position.set(.6, 1.2, 1.4); sc.add(key);
       const bust = new THREE.Group(); sc.add(bust);
       pr = { canvas, renderer, sc, cam, bust };
     }
@@ -9460,6 +9532,7 @@ const { groundAt } = __mods["js/scene/jsh/terrain.js"];
 const { onSeason } = __mods["js/scene/season.js"];
 const { stage, cutHole, CORN_HOLE } = __mods["js/scene/jsh/farms.js"];
 const { detasselerProfile, bossProfile } = __mods["js/scene/jsh/crewprofiles.js"];
+const { LIGHT, makeRenderer } = __mods["js/three-setup.js"];
 const SEASON = [186, 218];   // July 5 to August 6: when the tassels are out
 const HOURS = [6, 15], DEW = 10.5;  // working hours; trash bags until the dew is off
 const SPEED = .25, SPACING = .3;    // walking pace in the rows (m/s); plants along a row (m)
@@ -9753,11 +9826,11 @@ function buildDetassel(scene, seed, { hour = () => 9 } = {}) {
     const P = crew[i]; if (!P) return null;
     if (!pr) {
       const canvas = document.createElement('canvas');
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+      const renderer = makeRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(28, 1, .05, 10);
-      sc.add(new THREE.HemisphereLight('#fff4e6', '#4a5560', .85));
-      const key = new THREE.DirectionalLight('#ffffff', .75); key.position.set(.6, 1.2, 1.4); sc.add(key);
+      sc.add(new THREE.HemisphereLight('#fff4e6', '#4a5560', .85 * LIGHT));
+      const key = new THREE.DirectionalLight('#ffffff', .75 * LIGHT); key.position.set(.6, 1.2, 1.4); sc.add(key);
       pr = { canvas, renderer, sc, cam, bust: null };
     }
     pr.renderer.setSize(size, size, false);
@@ -9950,8 +10023,8 @@ function buildCornLOD(scene, fields, seed = null, late = null) {
     // only the part of each buffer in use goes to the GPU
     near.count = tas.count = nN; mid.count = nM;
     for (const [m, n] of [[near, nN], [tas, nN], [mid, nM]]) {
-      m.instanceMatrix.updateRange.count = n * 16; m.instanceMatrix.needsUpdate = true;
-      if (m.instanceColor && m !== tas) { m.instanceColor.updateRange.count = n * 3; m.instanceColor.needsUpdate = true; }
+      m.instanceMatrix.clearUpdateRanges(); m.instanceMatrix.addUpdateRange(0, n * 16); m.instanceMatrix.needsUpdate = true;
+      if (m.instanceColor && m !== tas) { m.instanceColor.clearUpdateRanges(); m.instanceColor.addUpdateRange(0, n * 3); m.instanceColor.needsUpdate = true; }
     }
   }
   const stats = () => ({ near: nN, mid: nM, squares: cache.size, hole: CORN_HOLE.value.z });
@@ -10271,6 +10344,7 @@ __mods["js/scene/jsh/overlook.js"] = await (async () => {
 const { geo } = __mods["js/scene/phl/people.js"];
 const { groundAt } = __mods["js/scene/jsh/terrain.js"];
 const { buildTrees } = __mods["js/scene/nature.js"];
+const { LIGHT, makeRenderer } = __mods["js/three-setup.js"];
 const CANS = 40, EMPTY = 6;          // cans in the case when he got here; how many he is through already
 const SEAT = .43, EYE = 1.72;        // the chair's seat and the visitor's eye, above the ground (m)
 const GLASS = { up: 9, min: .3, max: 12 };   // binoculars: field of view as they come up, and the zoom's limits (degrees)
@@ -10760,10 +10834,10 @@ function buildOverlook(scene, site, { night = () => 0, spot = () => null } = {})
   let pr = null;
   function portrait(size = 176) {
     if (!pr) {
-      const canvas = document.createElement('canvas'), renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+      const canvas = document.createElement('canvas'), renderer = makeRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.setSize(size, size, false);
       const sc = new THREE.Scene(), pc = new THREE.PerspectiveCamera(28, 1, .05, 10), B = hunter(T);
-      sc.add(new THREE.HemisphereLight('#fff4e6', '#4a5560', .85)); const key = new THREE.DirectionalLight('#ffffff', .75); key.position.set(.6, 1.2, 1.4); sc.add(key);
+      sc.add(new THREE.HemisphereLight('#fff4e6', '#4a5560', .85 * LIGHT)); const key = new THREE.DirectionalLight('#ffffff', .75 * LIGHT); key.position.set(.6, 1.2, 1.4); sc.add(key);
       sc.add(B.root); B.root.updateMatrixWorld(true);
       const hd = B.head.getWorldPosition(new THREE.Vector3()); pc.position.set(hd.x + .06, hd.y - .02, hd.z + .78); pc.lookAt(hd.x, hd.y - .1, hd.z);
       renderer.render(sc, pc); pr = canvas;
@@ -10780,6 +10854,7 @@ __mods["js/scene/index.js"] = await (async () => {
 // Assembles the whole scene from the loaded data and exposes what the UI needs.
 
 const { createCore } = __mods["js/scene/core.js"];
+const { restoreAnisotropy } = __mods["js/three-setup.js"];
 const { pairs } = __mods["js/data.js"];
 const { CITY } = __mods["js/cities.js"];
 const { litMats, setWindowHour, DISPLAY_PRESETS, setDisplayColors } = __mods["js/scene/materials.js"];
@@ -11278,7 +11353,7 @@ async function buildScene(canvas, data, status = () => {}) {
     return added;
   }
 
-  const clock = new THREE.Clock(), sunOff = new THREE.Vector3();
+  const clock = new THREE.Timer(), sunOff = new THREE.Vector3(); clock.connect(document); // no huge step after a hidden tab
   // shadows are the costliest part of a frame: redraw the shadow map at once when the sun moves
   // (time of day, or re-centring on the camera below), otherwise only every few frames so moving
   // trains and people still drag their shadows along
@@ -11286,8 +11361,9 @@ async function buildScene(canvas, data, status = () => {}) {
   let shadowTick = 0;
   renderer.shadowMap.autoUpdate = false;
   function start(onFrame) {
+    restoreAnisotropy(renderer, scene);
     function frame() {
-      const dt = Math.min(clock.getDelta(), .05);
+      clock.update(); const dt = Math.min(clock.getDelta(), .05);
       monorail.update(dt, riding === 'loop', camera); old53.update(dt); boats.update(dt); anglers.update(dt); subway.update(dt, camera); updateShells(dt); sports.update(dt, riding, camera); yard.update(dt); marks.update(dt); nycMono.update(dt); chinatown.update(dt, camera); harvest.update(dt); corn.update(camera);
       if (fly) stepFly(dt);
       peds.update(dt, camera); walnut.seatFrame(camera); peds.inhabitFrame(camera); overlook.update(dt, camera); overlook.frame(camera);
@@ -12855,6 +12931,8 @@ return { createUI };
 __mods["js/main.js"] = await (async () => {
 // Entry point: pick a city (start menu, or ?city=phl / ?city=nyc) -> load its data -> build the
 // scene -> wire up the UI -> run. One city per page load: "Change city" reloads to the menu.
+// first: three.js settings, before any module makes a colour
+const { LIGHT } = __mods["js/three-setup.js"];
 const { CITIES, setCity } = __mods["js/cities.js"];
 const { loadData } = __mods["js/data.js"];
 const { buildScene } = __mods["js/scene/index.js"];

@@ -293,24 +293,31 @@ function hook(m, rep = [1, 1], off = [0, 0], inst = false) {
   m.onBeforeCompile = sh => {
     sh.uniforms.uWinCut = WIN_CUT;
     sh.uniforms.uRep = { value: new THREE.Vector2(...rep) }; sh.uniforms.uOff = { value: new THREE.Vector2(...off) };
-    sh.vertexShader = 'uniform vec2 uRep, uOff;\n' + sh.vertexShader.replace('#include <uv_vertex>', inst ? `
-#ifdef USE_UV
-  vec3 sc = vec3(length(instanceMatrix[0].xyz), length(instanceMatrix[1].xyz), length(instanceMatrix[2].xyz));
-  float along = abs(normal.x) > .5 ? (position.z + .5) * sc.z : (position.x + .5) * sc.x;
-  float jit = fract(instanceMatrix[3].x * .0131 + instanceMatrix[3].z * .0173);
-  vUv = abs(normal.y) > .5 ? ${R} : vec2(along / ${WIN_W.toFixed(1)} + jit, position.y * sc.y / ${WIN_H.toFixed(2)});
-#endif` : `
-#ifdef USE_UV
-  vUv = uv.x < -.5 ? ${R} : uv * uRep + uOff;
+    // three.js gives each map its own UV varying: the day texture (map) and the lit windows
+    // (emissiveMap) both take the facade UV worked out here
+    sh.vertexShader = 'uniform vec2 uRep, uOff;\n' + sh.vertexShader.replace('#include <uv_vertex>', `#include <uv_vertex>
+#if defined(USE_MAP) || defined(USE_EMISSIVEMAP)
+  {
+${inst ? `    vec3 sc = vec3(length(instanceMatrix[0].xyz), length(instanceMatrix[1].xyz), length(instanceMatrix[2].xyz));
+    float along = abs(normal.x) > .5 ? (position.z + .5) * sc.z : (position.x + .5) * sc.x;
+    float jit = fract(instanceMatrix[3].x * .0131 + instanceMatrix[3].z * .0173);
+    vec2 fUv = abs(normal.y) > .5 ? ${R} : vec2(along / ${WIN_W.toFixed(1)} + jit, position.y * sc.y / ${WIN_H.toFixed(2)});`
+  : `    vec2 fUv = uv.x < -.5 ? ${R} : uv * uRep + uOff;`}
+#ifdef USE_MAP
+    vMapUv = fUv;
+#endif
+#ifdef USE_EMISSIVEMAP
+    vEmissiveMapUv = fUv;
+#endif
+  }
 #endif`);
     if (inst) sh.vertexShader = sh.vertexShader.replace('#include <color_vertex>', `#include <color_vertex>
 #ifdef USE_INSTANCING_COLOR
-  if (abs(normal.y) > .5) { float rh = fract(sin(dot(instanceMatrix[3].xz, vec2(12.9898, 78.233))) * 43758.5453); vColor = ${glslRoof}; }
+  if (abs(normal.y) > .5) { float rh = fract(sin(dot(instanceMatrix[3].xz, vec2(12.9898, 78.233))) * 43758.5453); vColor.rgb = ${glslRoof}; }
 #endif`);
     sh.fragmentShader = 'uniform float uWinCut;\n' + sh.fragmentShader.replace('#include <emissivemap_fragment>', `
 #ifdef USE_EMISSIVEMAP
-  vec4 emissiveColor = texture2D(emissiveMap, vUv);
-  emissiveColor.rgb = emissiveMapTexelToLinear(emissiveColor).rgb;
+  vec4 emissiveColor = texture2D(emissiveMap, vEmissiveMapUv);
   totalEmissiveRadiance *= emissiveColor.rgb * step(uWinCut, emissiveColor.a) * (1.0 - .3 * uWinCut);
 #endif`);
   };

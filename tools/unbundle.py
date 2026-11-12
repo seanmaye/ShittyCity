@@ -15,7 +15,7 @@ LOADER = ("<script type=\"module\">\nimport('./js/main.js').catch(e => { console
 EXTERNALS = [  # (import line, how to tell a module uses it), in the order bundle.py hoists them
     ("import * as THREE from 'three';", re.compile(r"\bTHREE\.")),
     ("import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';", re.compile(r"\bOrbitControls\b")),
-    ("import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js';", re.compile(r"\bBufferGeometryUtils\b")),
+    ("import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';", re.compile(r"\bBufferGeometryUtils\b")),
     ("import { Line2 } from 'three/examples/jsm/lines/Line2.js';", re.compile(r"\bLine2\b")),
     ("import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';", re.compile(r"\bLineSegments2\b")),
     ("import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';", re.compile(r"\bLineSegmentsGeometry\b")),
