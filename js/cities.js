@@ -81,13 +81,13 @@ export const CITIES = {
     loadingArt: [
       { file: 'loading-overlook.webp', colors: ['#e8572a', '#f6c445'] },
     ],
-    blurb: 'A Lycoming County river town on the West Branch of the Susquehanna, with Pine Creek, Bald Eagle Mountain and the hills around it.',
+    blurb: 'A Lycoming County river town on the West Branch of the Susquehanna, with Bald Eagle Mountain and a proposed monorail loop to Antes Fort.',
     frame: { LAT0: 41.2025, LON0: -77.2536, MX: 83877.23, MZ: 111000 },   // Allegheny & Main; tools/jsh/extent.py
     dir: 'data/jsh', prefix: 'jsh-',
     files: [
       ['buildings', 'buildings.json'], ['river', 'river.json'], ['ground', 'ground.json'], ['trees', 'trees.json'],
       ['transit', 'transit.json'], ['city', 'city.json.gz'], ['cityBuildings', 'city_buildings.bin.gz'],
-      ['grid', 'terrain.bin.gz'], ['places', 'places.json'], ['farms', 'farms.json.gz'],
+      ['grid', 'terrain.bin.gz'], ['places', 'places.json'], ['farms', 'farms.json.gz'], ['monorailRoutes', 'monorail.json'],
     ],
     // from the hill above town, looking south over Allegheny St and the river to Bald Eagle Mountain
     home: { pos: [41.2190, -77.2640, 520], target: [41.1965, -77.2560, 20] },
@@ -97,8 +97,8 @@ export const CITIES = {
     storage: 'jsh3d:',
     title: 'Jersey Shore, PA: a river town on the West Branch',
     heading: 'Jersey Shore, on the West Branch',
-    canvasLabel: '3D model of Jersey Shore, Pennsylvania, on the West Branch Susquehanna River, with the surrounding hills',
-    hint: 'Jersey Shore borough and its neighbours on the West Branch of the Susquehanna, with Pine Creek and Bald Eagle Mountain, on real terrain. In July a detasseling crew works the seed corn on the island: click one of them to see through their eyes. “Bald Eagle Vista w/ Mr. Kepner” leaves you standing behind a hunter above the valley: click him to take a drag, drink his beer, or glass the valley through his binoculars (in late autumn a combine works the last standing corn below). Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom.',
+    canvasLabel: '3D model of Jersey Shore, Pennsylvania, with the surrounding hills and a proposed West Branch monorail loop',
+    hint: 'Jersey Shore borough and its neighbours on the West Branch of the Susquehanna, with Pine Creek and Bald Eagle Mountain, on real terrain. Select the West Branch Loop under “Ride a line” or click a monorail car to board. In July a detasseling crew works the seed corn on the island: click one of them to see through their eyes. “Bald Eagle Vista w/ Mr. Kepner” leaves you standing behind a hunter above the valley: click him to take a drag, drink his beer, or glass the valley through his binoculars (in late autumn a combine works the last standing corn below). Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom.',
     cutButton: '', cutHint: '',
     credit: 'Buildings: Overture Maps (Microsoft ML Buildings, OpenStreetMap) · Streets, parks, water: © OpenStreetMap contributors · Terrain: AWS Terrain Tiles (USGS 3DEP) · Crops: USDA NASS Cropland Data Layer',
     building: 'Spreading out along the river…',

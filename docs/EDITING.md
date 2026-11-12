@@ -316,7 +316,12 @@ data-jsh-farms          (gzip JSON) {year, fields, barns, silos} (js/scene/jsh/f
           canopy covers the block from afar, and cornlod.js leaves the block and 8 m headlands out
   The footprints these barns and silos came from are left out of data-jsh-buildings.
 
-All of Jersey Shore's blocks are written by tools/jsh/build_jsh.py; rerun it rather than editing them.
+data-jsh-monorail       PROPOSAL: the West Branch Loop, in the same format as data-nyc-monorail.
+  Each path point is [x, y, z] in local metres. The y values set the grade across the valley.
+  Piers and station stairs use the ground height from data-jsh-terrain.
+
+Edit data/jsh/monorail.json to change the proposal. The other Jersey Shore data blocks come from
+tools/jsh/build_jsh.py.
 
 
 4. Code map (chunk, then what you would change there)
@@ -423,6 +428,8 @@ js/scene/subway.js     every rail line (data-<city>-transit, plus data-phl-metro
                  picker). registerFleet(kind, spec, slots): cars moved by another module (the
                  monorails) become clickable/boardable; each slot has pos, dir, q, sync(),
                  onBoard(on). routes = every line's loop.
+js/scene/monorail.js   builds New York's East River Loop and Jersey Shore's West Branch Loop
+                 from their proposal data, with guideways, supports, stations and boardable trains.
 js/scene/index.js      builds everything in order, each city's parts only when its blocks are
                  there; merges transit + metro; the ride list (proposed monorails, then real lines
                  grouped by network); setTime / setMood (setMood = shortcut to two times);
@@ -575,8 +582,6 @@ bridges.js       the Brooklyn, Manhattan, Williamsburg and Queensboro bridges, f
                  towers, cables and suspenders, the Williamsburg truss, the Queensboro cantilever.
                  Their OSM decks are left out of the streets, so nothing is drawn twice.
 boroughmarks.js  the Wonder Wheel, the Unisphere and Citi Field (positions in the code)
-monorail.js      the East River Loop from data-nyc-monorail: guideway, supports, stations,
-                 trains; its cars board through subway.registerFleet like Philadelphia's
 
 Jersey Shore (js/scene/jsh/):
 
@@ -781,6 +786,8 @@ Move or add monorail stations
     STATIONS = [[lat, side], ...] (side 1 = east bank, -1 = west bank).
     New York's East River Loop: edit data-nyc-monorail routes[0].stations (name, position
     [x, z] m, length), or its `path` to move the guideway.
+    Jersey Shore's West Branch Loop: edit data-jsh-monorail the same way. Check the new
+    guideway's clearance and slope against the terrain grid when changing its path.
 
 Add, move or delete a sports court (Philadelphia)
     s = load("sports")

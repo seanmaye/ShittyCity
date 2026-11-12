@@ -1,7 +1,5 @@
-// The proposed East River Loop: a data-driven straddle monorail (data/nyc/monorail.json).
-// Ported from the NYC City Model (js/scene/monorail.js). Path points are [x, z] at the guideway
-// height or [x, y, z] metres in the NYC frame. Its cars are boarded through subway.registerFleet
-// (js/scene/index.js), like Philadelphia's monorails.
+// Data-driven straddle monorails. Path points are [x, z] at the default guideway
+// height or [x, y, z] in local metres. The scene registers the cars with the shared ride system.
 import * as THREE from 'three';
 
 const H = 18;
@@ -14,7 +12,7 @@ function routeCurve(route, height) {
   return new THREE.CatmullRomCurve3(points, !!route.closed, 'centripetal');
 }
 
-function addGuideway(scene, curve, route, height) {
+function addGuideway(scene, curve, route) {
   const length = curve.getLength(), steps = Math.max(24, Math.ceil(length / 7));
   const bed = new THREE.Mesh(new THREE.TubeGeometry(curve, steps, 1.05, 6, !!route.closed),
     new THREE.MeshStandardMaterial({ color: route.guidewayColor || '#d8dde1', roughness: .58, metalness: .12 }));
@@ -35,7 +33,7 @@ function addGuideway(scene, curve, route, height) {
   return length;
 }
 
-function addSupports(scene, curve, length, route) {
+function addSupports(scene, curve, length, route, groundAt) {
   const interval = Math.max(20, route.supportInterval || 34), count = Math.floor(length / interval);
   if (!count) return;
   const columnGeo = new THREE.CylinderGeometry(.72, 1.12, 1, 10);
@@ -46,8 +44,9 @@ function addSupports(scene, curve, length, route) {
   const dummy = new THREE.Object3D();
   for (let i = 0; i < count; i++) {
     const p = curve.getPointAt((i + .5) / count);
-    dummy.position.set(p.x, 0, p.z);
-    dummy.scale.set(1, p.y - 1.1, 1);
+    const ground = groundAt(p.x, p.z);
+    dummy.position.set(p.x, ground, p.z);
+    dummy.scale.set(1, p.y - 1.1 - ground, 1);
     dummy.updateMatrix();
     columns.setMatrixAt(i, dummy.matrix);
     dummy.position.y = p.y - .55;
@@ -94,26 +93,34 @@ function createStationBatch(scene) {
   return { add, flush, concrete, glass, canopy };
 }
 
-function addStation(scene, curve, station, route, batch) {
+function addStation(scene, curve, station, route, batch, groundAt) {
   const u = station.at != null ? wrap(station.at, 1) : (() => {
     if (!station.position) return 0;
     const target = V3(...station.position); let best = Infinity, bi = 0;
-    for (let i = 0; i <= 600; i++) { const p = curve.getPointAt(i / 600), d = p.distanceToSquared(target); if (d < best) { best = d; bi = i; } }
+    for (let i = 0; i <= 600; i++) {
+      const p = curve.getPointAt(i / 600);
+      if (station.position.length === 2) p.y = target.y;
+      const d = p.distanceToSquared(target);
+      if (d < best) { best = d; bi = i; }
+    }
     return bi / 600;
   })();
   const p = curve.getPointAt(u), t = curve.getTangentAt(u), g = new THREE.Group();
   g.position.copy(p); g.rotation.y = Math.atan2(t.x, t.z); scene.add(g);
   const canopy = batch.canopy(route.color || '#e24a3b');
+  const length = station.length || 68;
   g.updateMatrix();
   for (const side of [-1, 1]) {
-    batch.add('platform', batch.concrete, g.matrix, side * 4.8, -.55, 0, 1, 1, station.length || 68);
-    batch.add('screen', batch.glass, g.matrix, side * 2.3, .85, 0, 1, 1, station.length || 68);
+    batch.add('platform', batch.concrete, g.matrix, side * 4.8, -.55, 0, 1, 1, length);
+    batch.add('screen', batch.glass, g.matrix, side * 2.3, .85, 0, 1, 1, length);
   }
-  batch.add('roof', canopy, g.matrix, 0, 5.5, 0, 1, 1, (station.length || 68) + 5);
-  for (const z of [-28, 0, 28]) for (const x of [-5.8, 5.8]) {
+  batch.add('roof', canopy, g.matrix, 0, 5.5, 0, 1, 1, length + 5);
+  const postOffset = Math.min(28, length / 2 - 3);
+  for (const z of [-postOffset, 0, postOffset]) for (const x of [-5.8, 5.8]) {
     batch.add('post', batch.concrete, g.matrix, x, 2.85, z);
   }
-  batch.add('stair', batch.concrete, g.matrix, 9, -p.y / 2, 0, 1, p.y, 1);
+  const drop = p.y - groundAt(p.x + 9 * Math.cos(g.rotation.y), p.z - 9 * Math.sin(g.rotation.y));
+  batch.add('stair', batch.concrete, g.matrix, 9, -drop / 2, 0, 1, drop, 1);
   g.userData.stationName = station.name || '';
   return { group: g, u, name: station.name || '', position: p.clone(), route: route.id };
 }
@@ -158,15 +165,15 @@ function makeTrain(scene, route, carCount = 3, shared = null) {
 }
 
 /** Build the proposed network from local-metre route data. */
-export function buildMonorail(scene, proposal = {}) {
+export function buildMonorail(scene, proposal = {}, groundAt = () => 0) {
   const height = proposal.height || H, routes = [], objects = [], labels = [], allStations = [];
   const stationBatch = createStationBatch(scene);
   const speed = proposal.speed || 22;
   for (const spec of proposal.routes || []) {
     const curve = routeCurve(spec, height); if (!curve) continue;
-    const length = addGuideway(scene, curve, spec, height);
-    addSupports(scene, curve, length, spec);
-    const stations = (spec.stations || []).map(s => addStation(scene, curve, s, spec, stationBatch));
+    const length = addGuideway(scene, curve, spec);
+    addSupports(scene, curve, length, spec, groundAt);
+    const stations = (spec.stations || []).map(s => addStation(scene, curve, s, spec, stationBatch, groundAt));
     allStations.push(...stations);
     const fleet = makeTrain(scene, spec, spec.cars || 3), trains = [];
     const spacing = spec.trainSpacing || Math.max(length * .62, fleet.carLength * fleet.cars.length * 2.8);

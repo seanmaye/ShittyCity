@@ -1,6 +1,6 @@
 # Jersey Shore, PA
 
-Jersey Shore borough in Lycoming County and the country around it: the town on the West Branch of the Susquehanna, the island across from Allegheny Street, Pine Creek coming in from the west, Avis, Antes Fort, and the hills that close in the valley, with Bald Eagle Mountain to the south. It was the first city here with real terrain: the streets, parks, river and buildings all lie on the hills. Its farm fields grow and are harvested through the year. It has no rail transit to ride and no proposal yet.
+Jersey Shore borough in Lycoming County and the country around it: the town on the West Branch of the Susquehanna, the island across from Allegheny Street, Pine Creek coming in from the west, Avis, Antes Fort, and the hills that close in the valley, with Bald Eagle Mountain to the south. It was the first city here with real terrain: the streets, parks, river and buildings all lie on the hills. Its farm fields grow and are harvested through the year.
 
 - City id: `jsh`. Open it with `?city=jsh`.
 - Data: `data/jsh/`.
@@ -19,6 +19,7 @@ Jersey Shore borough in Lycoming County and the country around it: the town on t
   - Every building faces its nearest street. The type of each, and that orientation, are worked out in `build_jsh.py` (under `# what each remaining building is`). The infill and its alley garages are under `# infill`. Infill keeps off existing buildings, streets, paths, rail, water, parks, school grounds, downtown and big plants.
 - **The borough** is paved inside its boundary, which is drawn on the ground. Outside it is countryside.
 - **Streets and rail.** Every street, footpath and trail is shown, along with the Lycoming Valley Railroad and Norfolk Southern's Buffalo Line. The US 220 expressway and the PA 44 bridge over the river are included.
+- **Proposed West Branch Loop.** The elevated monorail links Allegheny Street, the river island and Antes Fort. Pick it under **Ride a line** or click a car to board. The guideway climbs gradually onto the foothills near Antes Fort and descends toward the river on the way back. Its route is in `data/jsh/monorail.json`, with guideway elevations in metres above the model datum. Piers and station stairs extend to the local ground height.
 - **Water**: the West Branch around the island, Pine Creek, the old West Branch Canal at Lock 32, ponds and streams.
 - **About 19,000 trees.** There are street trees along the residential streets, yard trees in town, and trees in every mapped wood.
 - **Farms**: about 140 crop fields, around 9 km² in all, laid where the USDA Cropland Data Layer has crops. It shows 55 fields of corn, 32 of soybeans, 46 of hay and 3 of winter wheat. They follow the farming year:

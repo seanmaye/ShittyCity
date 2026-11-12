@@ -1,0 +1,53 @@
+{
+  "name": "West Branch Monorail",
+  "description": "Illustrative elevated loop linking downtown Jersey Shore, the river island and Antes Fort.",
+  "speed": 18,
+  "routes": [
+    {
+      "id": "west-branch-loop",
+      "name": "West Branch Loop",
+      "color": "#d6452f",
+      "closed": true,
+      "supportInterval": 42,
+      "trainSpacing": 2200,
+      "cars": 2,
+      "path": [
+        [48, 24, 35],
+        [45, 24, -120],
+        [55, 24, -255],
+        [135, 24, -365],
+        [305, 24, -410],
+        [485, 24, -410],
+        [665, 24, -410],
+        [900, 25, -375],
+        [1140, 29, -310],
+        [1420, 31, -175],
+        [1680, 34, 25],
+        [1910, 39, 270],
+        [2160, 42, 525],
+        [2375, 43, 735],
+        [2450, 43, 940],
+        [2345, 45, 1025],
+        [2190, 45, 1040],
+        [2050, 45, 1040],
+        [1820, 48, 1015],
+        [1580, 45, 950],
+        [1370, 38, 875],
+        [1170, 29, 845],
+        [965, 25, 865],
+        [730, 24, 935],
+        [555, 24, 945],
+        [395, 24, 840],
+        [300, 24, 670],
+        [240, 24, 470],
+        [155, 24, 270],
+        [105, 24, 177]
+      ],
+      "stations": [
+        { "name": "Allegheny Street", "position": [47, -40], "length": 48 },
+        { "name": "River Island", "position": [485, -410], "length": 48 },
+        { "name": "Antes Fort", "position": [2190, 1040], "length": 48 }
+      ]
+    }
+  ]
+}
