@@ -41,6 +41,7 @@ import { buildDetassel } from './jsh/detassel.js';
 import { buildCornLOD } from './jsh/cornlod.js';
 import { pickLateField, buildHarvest } from './jsh/harvest.js';
 import { overlookSite, buildOverlook } from './jsh/overlook.js';
+import { churchSite, buildChurch } from './jsh/church.js';
 // let the status line paint between build steps (a timer, so it also works in background tabs)
 const nextFrame = () => new Promise(r => setTimeout(r, 16));
 // what a feature contributes when the city doesn't have it (another city's landmarks, say)
@@ -110,7 +111,9 @@ export async function buildScene(canvas, data, status = () => {}) {
   const ground = buildGround(scene, data.ground, river, data.yardpark ? data.yardpark.rings : [], { sea: CITY.sea, paved: data.city.limits });
   status(`Raising ${data.buildings.b.length.toLocaleString()} buildings…`, 60); await nextFrame();
   // Jersey Shore's footprints are typed (houses, storefronts, churches...) and built to their kind
-  const blds = data.buildings.j ? buildTown(scene, data.buildings) : buildBuildings(scene, data.buildings);
+  // (Crossroads Church is modelled on its own, inside and out: jsh/church.js)
+  const crossroads = data.buildings.j && data.places ? churchSite(data.buildings, data.places) : null;
+  const blds = data.buildings.j ? buildTown(scene, data.buildings, crossroads && crossroads.skip) : buildBuildings(scene, data.buildings);
   // the rest of the city out to the city limits (outside the original extent, its own data)
   status(CITY.building, 67); await nextFrame();
   // playing fields that the park trees must keep off (the Edgley frisbee and cricket ground)
@@ -159,6 +162,8 @@ export async function buildScene(canvas, data, status = () => {}) {
   // the hunter on the mountain: somewhere to stand, and someone to be (the same idea as a seat or a person on Walnut St)
   const overlook = lookout ? buildOverlook(scene, lookout, { night: () => sky.getState().night, spot: () => harvest.spot() })
     : { view: null, update() {}, frame() {}, look() {}, zoom: () => false, stand: () => null, inhabit: () => null, leave: () => null, pick: () => null, act: () => false, getState: () => null, on: () => false };
+  // Crossroads Church, outside and in ("Take me to church"): the view ends with the camera held in the sanctuary
+  const church = crossroads ? buildChurch(scene, crossroads) : { view: null, update() {}, clamp() {}, hold() {}, release() {}, indoors: () => false };
   // PROPOSAL (Philadelphia only): Walnut St, 22nd to Front, as a brick-paved shopping street, with people
   const isPhl = CITY.id === 'phl';
   const walnut = isPhl ? buildPromenade(scene, { buildings: data.buildings, cityB: city.boxes, roads: [data.ground.lines, data.city.lines], trees: data.trees })
@@ -306,7 +311,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   /** r: a line id from `lines`, or false for the overview (stay = keep the camera where it is) */
   function setRiding(r, stay = false) {
     if (aboard()) leaveCar(true);
-    riding = r; controls.enabled = r === false; fly = null;
+    riding = r; controls.enabled = r === false; fly = null; if (r !== false) church.release();
     if (r === false && !stay) { camera.position.copy(core.HOME_POS); controls.target.copy(core.HOME_TGT); controls.update(); }
   }
 
@@ -342,7 +347,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   if (nycBridges.length) views.push({ id: 'bridges', name: 'East River bridges', pos: V(1260, 475, 5070), target: V(-460, 70, 4030) });
   // the overlook's view ends with you standing there, looking around for yourself
   const arriveAtOverlook = () => { controls.update(); overlook.stand(camera); controls.enabled = false; camera.near = .05; camera.updateProjectionMatrix(); };
-  views.push(...places.views, ...(overlook.view ? [{ ...overlook.view, arrive: arriveAtOverlook }] : []), ...(peds.view ? [peds.view] : []), ...subway.views, ...marks.views, ...anglers.views, ...chinatown.views);
+  views.push(...places.views, ...(overlook.view ? [{ ...overlook.view, arrive: arriveAtOverlook }] : []), ...(church.view ? [{ ...church.view, arrive: () => { controls.update(); church.hold(); } }] : []), ...(peds.view ? [peds.view] : []), ...subway.views, ...marks.views, ...anglers.views, ...chinatown.views);
   // the river boats at Penn's Landing, from over Columbus Boulevard
   const rsp = data.boats && data.boats.lines.flatMap(l => l.stops).find(st => st.t === 'Race Street Pier');
   if (rsp) views.push({ id: 'boats', name: 'River boats', pos: V(rsp.x - 300, 150, rsp.z + 300), target: V(rsp.x + 80, 0, rsp.z - 40) });
@@ -359,6 +364,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   controls.addEventListener('start', () => { fly = null; });
   function flyTo(id) {
     const v = typeof id === 'object' ? id : views.find(w => w.id === id); if (!v) return;   // a view id, or a view itself
+    church.release();
     setCreative(false);
     if (riding !== false) setRiding(false, true);
     if (aboard()) leaveCar(true);
@@ -376,6 +382,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   }
   /** fly over a map point (minimap click), keeping the current viewing angle and distance */
   function flyToPoint(x, z) {
+    church.release();
     setCreative(false);
     if (riding !== false) setRiding(false, true);
     if (aboard()) leaveCar(true);
@@ -399,6 +406,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   }
   // first person inside an L car or a trolley: click a car (pickCar -> boardCar), Esc to leave
   function boardCar(h) {
+    church.release();
     setCreative(false);
     if (riding !== false) setRiding(false, true);
     fly = null; if (subway.getCut()) setCut(false);
@@ -437,6 +445,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   }
   /** "Ride a line": board the lead car of that line's first train (monorail ids 'loop', 0, 1; transit 'm:ID') */
   function boardLine(id) {
+    church.release();
     setCreative(false);
     const key = id === 'loop' ? 'mono:loop' : typeof id === 'number' ? 'mono:shuttle' + id : String(id).replace(/^m:/, '');
     if (riding !== false) setRiding(false, true);
@@ -460,7 +469,7 @@ export async function buildScene(canvas, data, status = () => {}) {
     if (on === creative) return creative;
     creative = on;
     if (on) {
-      fly = null; controls.enabled = false;
+      fly = null; controls.enabled = false; church.release();
       eul.setFromQuaternion(camera.quaternion, 'YXZ'); yaw = eul.y; pitch = eul.x;
     } else {
       // hand back to the orbit controls: put their target ahead of the camera, a little downhill
@@ -545,11 +554,12 @@ export async function buildScene(canvas, data, status = () => {}) {
       clock.update(); const dt = Math.min(clock.getDelta(), .05);
       monorail.update(dt, riding === 'loop', camera); proposedMono.update(dt); old53.update(dt); boats.update(dt); anglers.update(dt); subway.update(dt, camera); updateShells(dt); sports.update(dt, riding, camera); yard.update(dt); marks.update(dt); chinatown.update(dt, camera); harvest.update(dt); corn.update(camera);
       if (fly) stepFly(dt);
-      peds.update(dt, camera); walnut.seatFrame(camera); peds.inhabitFrame(camera); overlook.update(dt, camera); overlook.frame(camera);
+      peds.update(dt, camera); walnut.seatFrame(camera); peds.inhabitFrame(camera); overlook.update(dt, camera); overlook.frame(camera); church.update(dt, camera);
       if ((flyKeys.f || flyKeys.s || flyKeys.u) && riding === false && !aboard()) stepFlyKeys(dt);
       if (riding === false && !aboard() && !creative) controls.update();
       // fog, draw distance and the shadowed area follow the camera, so the whole city reads from above
       const free = riding === false && !aboard() && !creative;
+      if (free) church.clamp(camera, controls.target);   // in the sanctuary, the camera stays inside
       // (from the overlook you look right across the valley: the haze stays as far off as in the wide views)
       const focus = free ? controls.target : camera.position, d = free ? camera.position.distanceTo(controls.target) : creative ? Math.max(300, camera.position.y * 1.6) : overlook.on() ? 7000 : 300;
       scene.fog.near = Math.max(2200, d * .8); scene.fog.far = Math.max(9000, d * 3.2);
@@ -594,5 +604,5 @@ export async function buildScene(canvas, data, status = () => {}) {
     pickAngler: (x, y) => { camera.updateMatrixWorld(); return anglers.pick(camera, x, y, canvas.clientWidth, canvas.clientHeight); }, anglerInfo: anglers.info,
     viewAngler: i => { const a = anglers.info(i); if (a) flyTo(a.view); },
     pickStall: isPhl ? (x, y) => { camera.updateMatrixWorld(); return chinatown.pickStall(camera, x, y, canvas.clientWidth, canvas.clientHeight); } : null,
-    viewStall: () => { if (chinatown.stallView) flyTo(chinatown.stallView); }, mapData, flyToPoint, displayPresets: CITY.presets ? DISPLAY_PRESETS.filter(p => CITY.presets.includes(p.id)) : DISPLAY_PRESETS, setDisplayLights: setDisplayColors, lookCar: (dx, dy) => (walnut.getSeat() ? walnut.lookSeat(dx, dy) : peds.getInhabited() ? peds.lookAt(dx, dy) : overlook.on() ? overlook.look(dx, dy) : subway.look(dx, dy)), moveCar: subway.move, actCar: id => overlook.act(id), wheelCar: dy => overlook.zoom(dy), start, river, monorail, peds, corn, harvest, overlook };
+    viewStall: () => { if (chinatown.stallView) flyTo(chinatown.stallView); }, mapData, flyToPoint, displayPresets: CITY.presets ? DISPLAY_PRESETS.filter(p => CITY.presets.includes(p.id)) : DISPLAY_PRESETS, setDisplayLights: setDisplayColors, lookCar: (dx, dy) => (walnut.getSeat() ? walnut.lookSeat(dx, dy) : peds.getInhabited() ? peds.lookAt(dx, dy) : overlook.on() ? overlook.look(dx, dy) : subway.look(dx, dy)), moveCar: subway.move, actCar: id => overlook.act(id), wheelCar: dy => overlook.zoom(dy), start, river, monorail, peds, corn, harvest, overlook, indoors: () => church.indoors() };
 }

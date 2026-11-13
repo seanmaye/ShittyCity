@@ -157,7 +157,8 @@ function parts(F, wall, trim, base, u0) {
   return o;
 }
 
-export function buildTown(scene, data) {
+/** skip: indices of footprints something else builds (Crossroads Church: jsh/church.js) */
+export function buildTown(scene, data, skip = null) {
   const { b: B, j: J, jtypes: T, styles } = data;
   const tiles = new Map();
   const tile = (x, z, kind) => {
@@ -167,6 +168,7 @@ export function buildTown(scene, data) {
     return [w, t.trim];
   };
   for (let i = 0; i < B.length; i++) {
+    if (skip && skip.has(i)) continue;
     const type = T[J[i * 6]], cx = J[i * 6 + 1] / 10, cz = J[i * 6 + 2] / 10, w = J[i * 6 + 3] / 10, d = J[i * 6 + 4] / 10, ang = J[i * 6 + 5] / 1000;
     const r = k => hash(i * 13 + k), W = w / 2, D = d / 2, F = frame(cx, cz, ang), h = B[i][0] / 10, style = B[i][1];
     const siding = style ? styles[style].color : pick(SIDING, r(1));

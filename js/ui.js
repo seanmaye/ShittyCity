@@ -108,7 +108,7 @@ export function createUI(api) {
     if (carOn && personaOn !== null) { const c = car; if (c && c.kind === 'person') { if (c.id !== personaOn) syncCar(); else if (c.now !== peNow.textContent) peNow.textContent = c.now; } }
     syncActions(car);
     minimap.update(camera, now); ridebar.update(now);
-    const w = window.innerWidth, h = window.innerHeight, placed = [], inCar = carOn && !(car && car.labels);   // (from the overlook the place names help)
+    const w = window.innerWidth, h = window.innerHeight, placed = [], inCar = (carOn && !(car && car.labels)) || (api.indoors && api.indoors());   // (from the overlook the place names help; indoors, in the church, none do)
     const noTags = !showTags || inCar, noEats = !showEats || inCar;   // restaurant labels have their own switch
     // near the ground only nearby labels: far ones would pile up along the horizon over the street
     const lift = camera.position.y - (api.groundAt ? api.groundAt(camera.position.x, camera.position.z) : 0), reach = Math.max(250, lift * 20);
