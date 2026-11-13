@@ -20,7 +20,7 @@ Python helper below.
 --------------------------------------
 
   <head>      <style> (HUD, labels, start menu) and an import map that maps "three" to three@0.186.1
-  <body>      HUD markup: #ride, #transit, #lbl, #cut, #getoff, #switch-city buttons, #xhair
+  <body>      HUD markup: #ride, #transit, #lbl, #cut, #cine-btn (Cinematic), #getoff, #switch-city buttons, #xhair
               (creative-mode crosshair), #modehint, #time slider (+ #time-out), #legend,
               #lines picker, #view-btns (Go to), #heading, #hint, #tags, #credit;
               the #persona card (someone inhabited: Walnut St, the punks at the Railyard Bowl, the
@@ -493,6 +493,39 @@ js/ui.js         buttons, line picker, floating labels, keys (inside a car KEYMA
                  binocular mask (#binoc, its opacity is the person's bino 0..1; the wheel zooms
                  through api.wheelCar first). Standing somewhere (kind 'vista', the overlook)
                  the button reads "Step away" and clicks still pick the person there.
+js/cinema.js     cinematic mode's screen (#cine, made here): letterbox bars, the fade through black
+                 (state.fade), each shot's title for its first seconds; body.cinematic hides the
+                 rest of the chrome (css/style.css) and ui.js hides the labels. The Time, Season
+                 and Speed sliders are left as they are and keep working underneath: the tour
+                 is the live city. Any keydown, pointerdown or wheel ends it (caught first, in the capture
+                 phase, so it does nothing else; the click that follows is swallowed). Starts by
+                 itself after IDLE (150 s) without input when canStart() (not aboard, riding,
+                 flying or in a dialog), and at once with ?cinematic or #cinematic in the address.
+js/scene/cinematic.js  the camera work, for any city: createCinematic({ scene, camera, views, home,
+                 labels, routes, ground, getDay, name }). It never sets the clock or the season. On the first start it builds a skyline
+                 grid (CELL = 50 m: how far the highest thing in each cell stands above the
+                 ground, from every mesh's instances, small boxes or vertices; ground() is the
+                 city's terrain, or Jersey Shore's gridAt). Shots are made one at a time, for
+                 ever (make()): a kind of subject by WEIGHT, never the same kind twice running
+                 (view, landmark: labels rising 35 m+, place: the other labels, skyline: the
+                 40 tallest clusters, route: a stretch of any line 500 m+ (rail, monorail, boat;
+                 a short one, most of it) through built-up ground, the least-flown line first
+                 (one that fails 30 times running is set aside, so it can't hold up the rest), city:
+                 the home view, which also opens, wander: any spot 25 m+ tall, or in a small
+                 town a spot near its names and views, eat: index.js's spots, djour's
+                 three-star picks with a modelled shop front (not indoor stalls): street level,
+                 so eatShot() moves only between the place's own clear views, front and street,
+                 seven moves each, each used once), the least-shot subject of it, then
+                 aim(): a random side, distance and height (close views, under 140 m, only
+                 drift). A shot is kept only if seenShot() finds none before it of the same
+                 subject from within 40 degrees and about the same distance (or the same
+                 stretch of line), it is not near the last 4 subjects or under their names,
+                 and clear(): the camera stays above the grid plus a margin and the line of
+                 sight to the subject is open. After 150 tries the last-4 rules relax (never
+                 the never-twice one), so a shot always comes. done is every shot so far (also
+                 api.cinematic.shots). A view out of season (its when.days) is left out.
+                 step(dt) runs the shot and the fades; index.js calls it instead of the orbit
+                 controls (startCinematic / stopCinematic; flyTo, boarding and riding stop it).
 js/minimap.js    top-right map (#minimap): base map of limits, parks, water and rail drawn once
                  from api.mapData; LEVELS = metres across per zoom step; you as a view cone, or
                  the train and its line in bold when riding; a click calls api.flyToPoint(x, z).

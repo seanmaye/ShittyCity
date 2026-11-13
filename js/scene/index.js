@@ -17,6 +17,7 @@ import { buildYardPark } from './phl/yardpark.js';
 import { buildConcert } from './phl/concert.js';
 import { buildSubway, SPEC } from './subway.js';
 import { createSky } from './sky.js';
+import { createCinematic } from './cinematic.js';
 import { setSeason, addSnow, dayOfYear, dateOfDay, formatDay, getSeason } from './season.js';
 import { buildCity } from './city.js';
 import { buildCityMarks } from './phl/citymarks.js';
@@ -371,6 +372,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   let fly = null;
   controls.addEventListener('start', () => { fly = null; });
   function flyTo(id) {
+    stopCinematic();
     const v = typeof id === 'object' ? id : views.find(w => w.id === id); if (!v) return;   // a view id, or a view itself
     church.release();
     setCreative(false);
@@ -392,6 +394,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   }
   /** fly over a map point (minimap click), keeping the current viewing angle and distance */
   function flyToPoint(x, z) {
+    stopCinematic();
     church.release();
     setCreative(false);
     if (riding !== false) setRiding(false, true);
@@ -416,6 +419,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   }
   // first person inside an L car or a trolley: click a car (pickCar -> boardCar), Esc to leave
   function boardCar(h) {
+    stopCinematic();
     church.release();
     setCreative(false);
     if (riding !== false) setRiding(false, true);
@@ -461,6 +465,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   }
   /** "Ride a line": board the lead car of that line's first train (monorail ids 'loop', 0, 1; transit 'm:ID') */
   function boardLine(id) {
+    stopCinematic();
     church.release();
     setCreative(false);
     const key = id === 'loop' ? 'mono:loop' : typeof id === 'number' ? 'mono:shuttle' + id : String(id).replace(/^m:/, '');
@@ -518,6 +523,33 @@ export async function buildScene(canvas, data, status = () => {}) {
     controls.target.x += mv.x; controls.target.z += mv.z;
     controls.target.y = Math.max(surface(controls.target.x, controls.target.z), controls.target.y + mv.y);
   }
+  // Cinematic mode: hands-free fly-arounds planned from this city's views, landmarks, skyline and
+  // lines (cinematic.js; nothing city-specific here, so every city has it)
+  const lineName = id => { const l = lineById.get(id) || lines.find(o => o.id === id || o.id === 'm:' + id || o.id === 'm:mono:' + id); return l ? l.name : ''; };
+  const cine = createCinematic({
+    scene, camera, views, home: { pos: core.HOME_POS, target: core.HOME_TGT }, name: CITY.name,
+    // djour's three-star picks, at their modelled shop fronts (not the stalls inside a market hall)
+    spots: eats.places.filter(p => p.s >= 3 && p.look && !p.look.indoor && !p.soon).map(p => ({ title: p.n, sub: '★★★  ·  ' + CITY.name, target: p.view.target, front: p.view.pos, street: p.street.pos })),
+    labels, routes: mapData.routes.map(r => ({ ...r, name: lineName(r.id) })), ground: (x, z) => (terrain.on ? surface(x, z) : data.grid ? gridAt(x, z) : 0),   // (Jersey Shore: its own ground grid)
+    getDay: () => getSeason().day,   // (the clock and season are left alone: the tour shows the live city)
+  });
+  function startCinematic() {
+    church.release(); setCreative(false);
+    if (riding !== false) setRiding(false, true);
+    if (aboard()) leaveCar(true);
+    if (subway.getCut()) setCut(false);
+    fly = null;
+    if (!cine.start()) return false;
+    controls.enabled = false;
+    return true;
+  }
+  function stopCinematic() {
+    if (!cine.on()) return null;
+    const r = cine.stop();
+    // hand back to the orbit controls, looking where the shot was looking
+    controls.minDistance = Math.min(40, Math.max(2, camera.position.distanceTo(controls.target) * .9)); controls.enabled = true; controls.update();
+    return r;
+  }
   // click a train car to board it, or a cafe chair or bench on Walnut St to sit down
   const pickCar = (x, y) => { camera.updateMatrixWorld(); const w = canvas.clientWidth, h = canvas.clientHeight; return subway.pick(camera, x, y, w, h) || peds.pickPerson(camera, x, y, w, h) || concert.pick(camera, x, y, w, h) || walnut.pickSeat(camera, x, y, w, h) || overlook.pick(camera, x, y, w, h); };
   const aboard = () => subway.getRide() || walnut.getSeat() || peds.getInhabited() || concert.getInhabited() || overlook.getState();
@@ -569,13 +601,14 @@ export async function buildScene(canvas, data, status = () => {}) {
     function frame() {
       clock.update(); const dt = Math.min(clock.getDelta(), .05);
       monorail.update(dt, riding === 'loop', camera); proposedMono.update(dt); old53.update(dt); boats.update(dt); anglers.update(dt); subway.update(dt, camera); updateShells(dt); sports.update(dt, riding, camera); yard.update(dt); marks.update(dt); chinatown.update(dt, camera); harvest.update(dt); corn.update(camera);
-      if (fly) stepFly(dt);
+      if (cine.on()) { const t = cine.step(dt); if (t) controls.target.copy(t); }
+      else if (fly) stepFly(dt);
       peds.update(dt, camera); walnut.seatFrame(camera); peds.inhabitFrame(camera); concert.update(dt, camera); concert.frame(camera); overlook.update(dt, camera); overlook.frame(camera); church.update(dt, camera);
-      if ((flyKeys.f || flyKeys.s || flyKeys.u) && riding === false && !aboard()) stepFlyKeys(dt);
-      if (riding === false && !aboard() && !creative) controls.update();
+      if ((flyKeys.f || flyKeys.s || flyKeys.u) && riding === false && !aboard() && !cine.on()) stepFlyKeys(dt);
+      if (riding === false && !aboard() && !creative && !cine.on()) controls.update();
       // fog, draw distance and the shadowed area follow the camera, so the whole city reads from above
       const free = riding === false && !aboard() && !creative;
-      if (free) church.clamp(camera, controls.target);   // in the sanctuary, the camera stays inside
+      if (free && !cine.on()) church.clamp(camera, controls.target);   // in the sanctuary, the camera stays inside
       // (from the overlook you look right across the valley: the haze stays as far off as in the wide views)
       const focus = free ? controls.target : camera.position, d = free ? camera.position.distanceTo(controls.target) : creative ? Math.max(300, camera.position.y * 1.6) : overlook.on() ? 7000 : 300;
       scene.fog.near = Math.max(2200, d * .8); scene.fog.far = Math.max(9000, d * 3.2);
@@ -621,5 +654,5 @@ export async function buildScene(canvas, data, status = () => {}) {
     pickAngler: (x, y) => { camera.updateMatrixWorld(); return anglers.pick(camera, x, y, canvas.clientWidth, canvas.clientHeight); }, anglerInfo: anglers.info,
     viewAngler: i => { const a = anglers.info(i); if (a) flyTo(a.view); },
     pickStall: isPhl ? (x, y) => { camera.updateMatrixWorld(); return chinatown.pickStall(camera, x, y, canvas.clientWidth, canvas.clientHeight); } : null,
-    viewStall: () => { if (chinatown.stallView) flyTo(chinatown.stallView); }, mapData, flyToPoint, displayPresets: CITY.presets ? DISPLAY_PRESETS.filter(p => CITY.presets.includes(p.id)) : DISPLAY_PRESETS, setDisplayLights: setDisplayColors, lookCar: (dx, dy) => (walnut.getSeat() ? walnut.lookSeat(dx, dy) : peds.getInhabited() ? peds.lookAt(dx, dy) : concert.on() ? concert.lookAt(dx, dy) : overlook.on() ? overlook.look(dx, dy) : subway.look(dx, dy)), moveCar: subway.move, actCar: id => (concert.on() ? concert.act(id) : overlook.act(id)), wheelCar: dy => overlook.zoom(dy), start, river, monorail, peds, concert, corn, harvest, overlook, indoors: () => church.indoors() };
+    viewStall: () => { if (chinatown.stallView) flyTo(chinatown.stallView); }, mapData, flyToPoint, displayPresets: CITY.presets ? DISPLAY_PRESETS.filter(p => CITY.presets.includes(p.id)) : DISPLAY_PRESETS, setDisplayLights: setDisplayColors, lookCar: (dx, dy) => (walnut.getSeat() ? walnut.lookSeat(dx, dy) : peds.getInhabited() ? peds.lookAt(dx, dy) : concert.on() ? concert.lookAt(dx, dy) : overlook.on() ? overlook.look(dx, dy) : subway.look(dx, dy)), moveCar: subway.move, actCar: id => (concert.on() ? concert.act(id) : overlook.act(id)), wheelCar: dy => overlook.zoom(dy), start, startCinematic, stopCinematic, cinematic: cine, river, monorail, peds, concert, corn, harvest, overlook, indoors: () => church.indoors() };
 }

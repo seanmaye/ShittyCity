@@ -5,6 +5,7 @@ import { createMinimap } from './minimap.js';
 import { createRidebar } from './ridebar.js';
 import { createFishing } from './fishing.js';
 import { createArcade } from './arcade.js';
+import { createCinema } from './cinema.js';
 import { CITY } from './cities.js';
 // remembered per viewer and city (browser storage may be unavailable: then nothing is remembered)
 const store = { get: k => { try { return localStorage.getItem(CITY.storage + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(CITY.storage + k, v); } catch (e) { /* ignore */ } } };
@@ -107,9 +108,9 @@ export function createUI(api) {
     if (!!car !== carOn) syncCar();
     if (carOn && personaOn !== null) { const c = car; if (c && c.kind === 'person') { if (c.id !== personaOn) syncCar(); else if (c.now !== peNow.textContent) peNow.textContent = c.now; } }
     syncActions(car);
-    minimap.update(camera, now); ridebar.update(now);
+    minimap.update(camera, now); ridebar.update(now); cinema.update();
     const w = window.innerWidth, h = window.innerHeight, placed = [], inCar = (carOn && !(car && car.labels)) || (api.indoors && api.indoors());   // (from the overlook the place names help; indoors, in the church, none do)
-    const noTags = !showTags || inCar, noEats = !showEats || inCar;   // restaurant labels have their own switch
+    const cine = cinema.on(), noTags = !showTags || inCar || cine, noEats = !showEats || inCar || cine;   // (cinematic mode: no labels)   // restaurant labels have their own switch
     // near the ground only nearby labels: far ones would pile up along the horizon over the street
     const lift = camera.position.y - (api.groundAt ? api.groundAt(camera.position.x, camera.position.z) : 0), reach = Math.max(250, lift * 20);
     // a label sits above its place; one that would sit on another is lifted above it (on a phone only
@@ -572,7 +573,15 @@ export function createUI(api) {
   else setScheme(pre ? pre.id : 'white', (pre || api.displayPresets[0]).colors, (pre || api.displayPresets[0]).name, true);
 
   const minimap = createMinimap(api, { eats: () => (showEats && EATS.length ? EATS : null) }), ridebar = createRidebar(api);
-  [timeIn, speedIn, dayIn, lblBtn, rideBtn, cutBtn, trBtn].forEach(b => b.disabled = false);
+  // Cinematic mode (js/cinema.js, js/scene/cinematic.js): hands-free fly-arounds; also starts by itself
+  // after a while with nobody at the controls
+  const cineBtn = document.getElementById('cine-btn');
+  const cinema = createCinema(api, {
+    canStart: () => !carOn && !riding && !locked && !flyKeys.size && !fishing.active() && !arcade.active(),
+    onStop: () => markView(null),
+  });
+  cineBtn.addEventListener('click', () => { openPicker(false); if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; } if (cinema.start()) { markView(null); syncCar(); syncCut(); } });
+  [timeIn, speedIn, dayIn, lblBtn, rideBtn, cutBtn, trBtn, cineBtn].forEach(b => b.disabled = false);
 
   return { placeTags };
 }
