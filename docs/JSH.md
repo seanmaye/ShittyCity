@@ -62,13 +62,13 @@ Heights in the scene are metres above the river by town (about 157 m above sea l
 ## Rebuilding the data
 
 ```bash
-python -m pip install shapely numpy pillow pyproj duckdb rasterio
-python -I tools/jsh/fetch_jsh.py      # downloads the sources into tools/jsh/src/
-python -I tools/jsh/build_jsh.py      # writes data/jsh/
+uv sync --group data --group fetch
+uv run python -I tools/jsh/fetch_jsh.py      # downloads the sources into tools/jsh/src/
+uv run python -I tools/jsh/build_jsh.py      # writes data/jsh/
 python -I tools/bundle.py
 ```
 
-`fetch_jsh.py` only needs re-running to refresh the sources. `duckdb` is only needed for its buildings step, and `rasterio` for its crop step. The sources are committed in `tools/jsh/src/`. `tools/jsh/extent.py` holds the frame and the extents: the origin is Allegheny & Main, `MODEL` is the mapped area and `TERRAIN` is the elevation grid. If you change the frame there, change `CITIES.jsh.frame` in `js/cities.js` to match.
+`fetch_jsh.py` only needs re-running to refresh the sources, and only it needs the `fetch` group (`duckdb` for its buildings step, `rasterio` for its crop step); `build_jsh.py` needs only `data`. The sources are committed in `tools/jsh/src/`. `tools/jsh/extent.py` holds the frame and the extents: the origin is Allegheny & Main, `MODEL` is the mapped area and `TERRAIN` is the elevation grid. If you change the frame there, change `CITIES.jsh.frame` in `js/cities.js` to match.
 
 **Farms are estimated from 30 m crop pixels.** Fields of one crop that touch are merged into one, and their edges are smoothed and kept off roads, buildings, woods and water. The newest Cropland Data Layer online is 2021, and corn and soybeans rotate from year to year. Barns are footprints of at least 140 m² outside the borough, near fields or pasture, and not among a cluster of houses. Silos are small round footprints beside a barn. The rules are under `# farms` in `build_jsh.py`. Farm buildings are drawn by `js/scene/jsh/farms.js`, not as ordinary buildings.
 

@@ -19,14 +19,15 @@ against a commit in interleaved runs, so you can tell a real improvement from no
 
 ## Setup
 
-Python 3.10+ and Playwright (no project-level installs; the app itself has no build step):
+Python 3.12 and Playwright, from the `qa` group of the repo's uv environment (see "Run it" in
+[README.md](../../README.md); the app itself has no build step):
 
 ```bash
-pip install playwright
+uv sync --group qa
 ```
 
 ```bash
-python -m playwright install chromium
+uv run python -m playwright install chromium
 ```
 
 three.js and the font are fetched from their CDNs on the first run and cached in
@@ -36,27 +37,27 @@ load numbers. Output goes to `tools/perf/out/` (git-ignored).
 ## Commands
 
 ```bash
-python -I tools/perf/perf.py list
+uv run python -I tools/perf/perf.py list
 ```
 
 ```bash
-python -I tools/perf/perf.py run --quick
+uv run python -I tools/perf/perf.py run --quick
 ```
 
 ```bash
-python -I tools/perf/perf.py run -s overview-dusk,whole-city --census --ablate
+uv run python -I tools/perf/perf.py run -s overview-dusk,whole-city --census --ablate
 ```
 
 ```bash
-python -I tools/perf/perf.py ab --quick --rounds 3
+uv run python -I tools/perf/perf.py ab --quick --rounds 3
 ```
 
 ```bash
-python -I tools/perf/perf.py hot tools/perf/out/<run>/overview-dusk.cpuprofile --focus frame
+uv run python -I tools/perf/perf.py hot tools/perf/out/<run>/overview-dusk.cpuprofile --focus frame
 ```
 
 ```bash
-python -I tools/perf/perf.py compare tools/perf/out/<a> tools/perf/out/<b>
+uv run python -I tools/perf/perf.py compare tools/perf/out/<a> tools/perf/out/<b>
 ```
 
 | command | what it does | time |
