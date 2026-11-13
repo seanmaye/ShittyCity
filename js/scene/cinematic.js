@@ -36,7 +36,7 @@ const glide = t => t - .5 * Math.sin(2 * Math.PI * t) / (2 * Math.PI);
  * routes: [{ id, P: [{x, y, z}] }]. ground(x, z): the ground height. getDay(): the day of the year
  * (a view of something seasonal is left out of season). name: the city's name, for the captions.
  */
-export function createCinematic({ scene, camera, views, home, labels = [], routes = [], spots = [], ground = () => 0, getDay = () => 0, name = '' }) {
+export function createCinematic({ scene, camera, views, home, labels = [], routes = [], vehicles = () => [], spots = [], ground = () => 0, getDay = () => 0, name = '' }) {
   let grid = null;   // { x0, z0, nx, nz, h: Float32Array } how far the highest thing in each cell stands above the ground
 
   // ---------------------------------------------------------------- the skyline
@@ -187,7 +187,7 @@ export function createCinematic({ scene, camera, views, home, labels = [], route
     for (const rt of routes) {
       if (!rt.P || rt.P.length < 2) continue;
       let L = 0; for (let i = 1; i < rt.P.length; i++) L += Math.hypot(rt.P[i].x - rt.P[i - 1].x, rt.P[i].z - rt.P[i - 1].z);
-      if (L >= 500) sub.route.push({ id: 'r:' + rt.id, title: rt.name || '', P: rt.P, L, uses: 0 });
+      if (L >= 500) sub.route.push({ id: 'r:' + rt.id, raw: rt.id, title: rt.name || '', P: rt.P, L, uses: 0 });
     }
     spots.forEach((o, i) => sub.eat.push({ id: 'e:' + i, title: o.title, sub: o.sub, tgt: o.target.clone(), front: o.front.clone(), street: o.street.clone(), moves: EAT_MOVES.slice(), uses: 0 }));
     return sub;
@@ -288,31 +288,104 @@ export function createCinematic({ scene, camera, views, home, labels = [], route
     }
     return { title: sp.title, sub: sp.sub, kind: 'eat', subj: sp, at, dur: rnd(11, 14), take: () => sp.moves.splice(sp.moves.indexOf(mv), 1), mark: { eat: sp.id, x: tgt.x, z: tgt.z } };
   }
-  /** along a rail line: a stretch not flown before, from above and to one side, looking ahead */
+  /** A line: one of its trains (or trolleys, monorails, boats) moving along it, the camera going with
+   *  it. Styles: chase (behind and above), lead (ahead, looking back at it coming), side (alongside),
+   *  high (well back and up, the line ahead of it), pass (a fixed spot down the line it goes by).
+   *  For our own trains, where the car will be over the shot is known (vehicles' at(t)): it must stay
+   *  above ground the whole way, and the camera clear with the car in sight all along. Cars moved by
+   *  another module (the monorails, the boats) are judged from where they are now, with room to spare.
+   *  Never the same stretch of a line twice; the least-flown line first. */
+  const STYLES = ['chase', 'lead', 'side', 'high', 'pass'];
+  const diag = {};   // why line shots were turned down, by reason (api.cinematic.diag, for poking at)
+  const fv = new THREE.Vector3(), rv = new THREE.Vector3(), cp = new THREE.Vector3(), ct = new THREE.Vector3(), fut = new THREE.Vector3();
+  function frame(style, o, car, f, r, outP, outT) {   // where the camera wants to be for a car at car, heading f (flat), r to its right
+    const q = o.q;
+    if (style === 'chase') { outP.copy(car).addScaledVector(f, -q.back).addScaledVector(r, q.side); outT.copy(car).addScaledVector(f, q.ahead); }
+    else if (style === 'lead') { outP.copy(car).addScaledVector(f, q.back).addScaledVector(r, q.side); outT.copy(car).addScaledVector(f, -4); }
+    else if (style === 'side') { outP.copy(car).addScaledVector(r, q.side).addScaledVector(f, q.ahead * .3); outT.copy(car).addScaledVector(f, 6); }
+    else if (style === 'high') { outP.copy(car).addScaledVector(f, -q.back * 2.2).addScaledVector(r, q.side * 2); outT.copy(car).addScaledVector(f, q.ahead * 1.8); }
+    outP.y = ground(outP.x, outP.z) + o.H; outT.y = car.y + 2;
+  }
   function routeShot() {
-    // the least-flown line, leaving out one that keeps failing (all built-up nowhere, or all flown):
-    // it mustn't hold up every other line
-    const list = S.route.filter(o => (o.fails || 0) < 30); if (!list.length) return null;
-    const least = Math.min(...list.map(o => o.uses)), pool = list.filter(o => o.uses === least), rt = pool[Math.floor(Math.random() * pool.length)];
-    const fail = () => { rt.fails = (rt.fails || 0) + 1; return null; };
-    const P = rt.P, len = Math.min(rnd(1800, 3200), rt.L * .85), path = [];   // (a short line: most of it)
-    let acc = 0;
-    for (let i = Math.floor(Math.random() * P.length * .85); i < P.length - 1 && acc < len; i++) { path.push(P[i]); acc += Math.hypot(P[i + 1].x - P[i].x, P[i + 1].z - P[i].z); }
-    if (acc < len * .7 || path.length < 2) return fail();
-    if (done.some(o => o.route === rt.id && Math.hypot(o.x - path[0].x, o.z - path[0].z) < Math.min(900, rt.L * .2))) return fail();
-    if (nearRecent(path[0].x, path[0].z)) return null;
-    const n = path.length, lerpAt = (u, out) => { const f = clamp(u, 0, 1) * (n - 1), i = Math.min(n - 2, Math.floor(f)), k = f - i; return out.set(path[i].x + (path[i + 1].x - path[i].x) * k, 0, path[i].z + (path[i + 1].z - path[i].z) * k); };
-    // only through the city: buildings along most of it (not bare ground where a city has no footprints)
-    const every = path.filter((p, i) => i % 6 === 0); if (every.filter(p => rise(p.x, p.z, 200) > 20).length < every.length * .5) return fail();
-    let hi = 0; for (const p of path) hi = Math.max(hi, top(p.x, p.z, 150));
-    const a = new THREE.Vector3(), b = new THREE.Vector3(), side = new THREE.Vector3();
-    lerpAt(0, a); lerpAt(1, b); side.set(-(b.z - a.z), 0, b.x - a.x).normalize().multiplyScalar(rnd(80, 220) * (Math.random() < .5 ? 1 : -1));
-    const alt = hi + rnd(60, 150), ahead = rnd(.22, .4), drop = rnd(100, 160);
-    // (looking well ahead down the line, toward the horizon, as if flying it)
-    const at = (u, p, t) => { lerpAt(u * (1 - ahead), p); p.add(side); p.y = alt; lerpAt(Math.min(1, u * (1 - ahead) + ahead), t); t.y = Math.max(ground(t.x, t.z), alt - drop); };
-    if (!clear(at, 20)) return fail();
-    rt.fails = 0;
-    return { title: rt.title || nameNear(path[n >> 1].x, path[n >> 1].z, 2000) || name, kind: 'route', subj: rt, at, dur: rnd(14, 18), mark: { route: rt.id, x: path[0].x, z: path[0].z } };
+    // the least-flown line, leaving out one resting after failing again and again (its trains all in
+    // tunnels just now, nowhere built up, or that stretch flown): it mustn't hold up every other line,
+    // and it gets another go once its trains have moved on
+    const list = S.route.filter(o => !(o.rest > state.n)); if (!list.length) return null;
+    // (turns, not shots: a line whose turn came to nothing goes to the back like any other)
+    const least = Math.min(...list.map(o => o.turns || 0)), pool = list.filter(o => (o.turns || 0) === least), rt = pool[Math.floor(Math.random() * pool.length)];
+    rt.turns = (rt.turns || 0) + 1;
+    // its cars that are out in the open now (not in a tunnel)
+    const cars = vehicles(rt.raw).filter(c => !c.hidden() && (!c.at || c.at(0, fut).h > -.5));
+    let why = cars.length ? null : 'no cars out';
+    // a dozen goes: a car of it and a way of filming it
+    for (let n = 0; n < 12 && cars.length; n++) {
+      const r = tryCar(rt, cars[Math.floor(Math.random() * cars.length)], STYLES[Math.floor(Math.random() * STYLES.length)]);
+      if (typeof r === 'string') { diag[r] = (diag[r] || 0) + 1; why = why || r; continue; }
+      rt.fails = 0;
+      return r;
+    }
+    rt.fails = (rt.fails || 0) + 1; if (why) diag['line: ' + why] = (diag['line: ' + why] || 0) + 1;
+    if (rt.fails >= 5) { rt.rest = state.n + 15; rt.fails = 0; }   // (a rest of 15 shots)
+    return null;
+  }
+  /** one car of a line filmed one way: the shot, or why not */
+  function tryCar(rt, car, style) {
+    const dur = rnd(12, 16), x0 = car.pos.x, z0 = car.pos.z;
+    if (done.some(o => o.route === rt.id && Math.hypot(o.x - x0, o.z - z0) < 600)) return 'flown';
+    if (nearRecent(x0, z0)) return 'recent';
+    // where it will be: samples over the shot (our own trains), else straight on from here at its
+    // speed (monorails and boats, which never go underground)
+    const path = [];
+    for (let k = 0; k <= 12; k++) {
+      const t = dur * k / 12, p = new THREE.Vector3();
+      if (car.at) { car.at(t, p); if (p.h < -.5) return 'underground'; }
+      else p.copy(car.pos).addScaledVector(fv.set(car.dir.x, 0, car.dir.z).normalize(), (car.speed || 8) * t);
+      path.push(p);
+    }
+    // not across bare ground where a city has no footprints: something built or planted near most of
+    // it (the river for a boat)
+    if (!rt.raw.startsWith('boat:') && path.filter(p => rise(p.x, p.z, 300) > 8).length < path.length * .4) return 'bare';
+    const q = { back: rnd(18, 40), side: rnd(-14, 14), ahead: rnd(15, 40) };
+    if (style === 'side') q.side = rnd(22, 40) * (Math.random() < .5 ? 1 : -1);
+    // one height above the ground for the whole shot, clear of whatever the camera passes over
+    const want = style === 'high' ? rnd(55, 110) : rnd(7, 22);
+    const o = { q, H: 0 }, heading = (k, out) => { const a = path[Math.max(0, k - 1)], b = path[Math.min(12, k + 1)]; return out.set(b.x - a.x, 0, b.z - a.z).normalize(); };
+    const passAt = new THREE.Vector3();
+    if (style === 'pass') {   // a spot beside the line, about two-thirds of the way along
+      heading(8, fv); rv.set(-fv.z, 0, fv.x);
+      passAt.copy(path[8]).addScaledVector(rv, rnd(16, 32) * (Math.random() < .5 ? 1 : -1)).addScaledVector(fv, rnd(10, 30));
+    }
+    const camAt = (k, outP, outT) => {
+      if (style === 'pass') { outP.copy(passAt); outP.y = ground(outP.x, outP.z) + o.H; outT.copy(path[k]); outT.y += 2; return; }
+      heading(k, fv); rv.set(-fv.z, 0, fv.x); frame(style, o, path[k], fv, rv, outP, outT);
+    };
+    let H = want;
+    const lift = () => { for (let k = 0; k <= 12; k++) { camAt(k, cp, ct); H = Math.max(H, top(cp.x, cp.z, 25) - ground(cp.x, cp.z) + 4); } };
+    lift();
+    if (H > want + 40 && style !== 'high') return 'canyon';   // (buried in a street canyon: this style won't do here)
+    // the higher the camera has to be, the farther off it stands, so it looks along the car, not down on its roof
+    if (H > want) { const k = Math.max(1, (H * 1.3 + 10) / q.back); q.back *= k; q.ahead *= Math.min(2, k); if (style === 'side') q.side *= Math.max(1, (H * 1.1 + 10) / Math.abs(q.side)); lift(); }
+    o.H = H;
+    // the car in sight all the way: up to the last 60 m before it (the skyline grid's cells are 50 m,
+    // so nearer than that a street-level car looks walled in by the buildings along its street)
+    for (let k = 0; k <= 12; k++) {
+      camAt(k, cp, ct);
+      const d = cp.distanceTo(ct), stop = Math.max(0, 1 - 60 / Math.max(d, 1));
+      for (let j = 1; j < 10; j++) { fut.lerpVectors(cp, ct, j / 10 * stop); if (fut.y < top(fut.x, fut.z, 0) + 1.5) return 'sight'; }
+    }
+    // the shot: the live car, the camera easing after it (no jolt on a curve)
+    const sm = { p: new THREE.Vector3(), t: new THREE.Vector3(), f: new THREE.Vector3(), on: false };
+    const at = (u, p, t, dt = 0) => {
+      fv.set(car.dir.x, 0, car.dir.z); if (fv.lengthSq() < 1e-6) fv.copy(sm.f); fv.normalize();
+      if (!sm.on) sm.f.copy(fv); else sm.f.lerp(fv, 1 - Math.exp(-dt * 2)).normalize();
+      rv.set(-sm.f.z, 0, sm.f.x);
+      if (style === 'pass') { cp.copy(passAt); cp.y = ground(cp.x, cp.z) + o.H; ct.copy(car.pos); ct.y += 2; }
+      else frame(style, o, car.pos, sm.f, rv, cp, ct);
+      if (!sm.on) { sm.p.copy(cp); sm.t.copy(ct); sm.on = true; }
+      else { sm.p.lerp(cp, 1 - Math.exp(-dt * 2.5)); sm.t.lerp(ct, 1 - Math.exp(-dt * 5)); }
+      p.copy(sm.p); t.copy(sm.t);
+    };
+    return { title: rt.title || nameNear(x0, z0, 2000) || name, kind: 'route', subj: rt, at, dur, live: true, style, mark: { route: rt.id, x: x0, z: z0, style } };
   }
   let lastKind = null;
   /** the next shot, never one seen before (first: the opening shot, of the whole city) */
@@ -365,11 +438,11 @@ export function createCinematic({ scene, camera, views, home, labels = [], route
     const D = shot.dur;
     if (phase === 'in') { state.fade = 1 - smooth(t / FADE); if (t > D - FADE) phase = 'out'; }
     if (phase === 'out') { state.fade = smooth((t - (D - FADE)) / FADE); if (t >= D + BLACK && next()) return step(0); }
-    shot.at(glide(clamp(t / D, 0, 1)), P, T);
+    shot.at(shot.live ? clamp(t / D, 0, 1) : glide(clamp(t / D, 0, 1)), P, T, dt);   // (a live shot follows its vehicle, eased by dt)
     // never through the ground (the grid catches the rest when the move is planned)
     P.y = Math.max(P.y, ground(P.x, P.z) + 4);
     camera.position.copy(P); camera.up.set(0, 1, 0); camera.lookAt(T);
     return T;
   }
-  return { start, stop, step, on: () => on, state, shots: done, top: (x, z, r) => (grid ? top(x, z, r) : null) };   // (shots, top: for poking at from the console)
+  return { start, stop, step, on: () => on, state, shots: done, diag, top: (x, z, r) => (grid ? top(x, z, r) : null) };   // (shots, top: for poking at from the console)
 }

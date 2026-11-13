@@ -508,9 +508,15 @@ js/scene/cinematic.js  the camera work, for any city: createCinematic({ scene, c
                  city's terrain, or Jersey Shore's gridAt). Shots are made one at a time, for
                  ever (make()): a kind of subject by WEIGHT, never the same kind twice running
                  (view, landmark: labels rising 35 m+, place: the other labels, skyline: the
-                 40 tallest clusters, route: a stretch of any line 500 m+ (rail, monorail, boat;
-                 a short one, most of it) through built-up ground, the least-flown line first
-                 (one that fails 30 times running is set aside, so it can't hold up the rest), city:
+                 40 tallest clusters, route: a train (trolley, monorail, boat) of a line 500 m+,
+                 filmed live as it moves (routeShot/tryCar: STYLES chase, lead, side, high,
+                 pass), from vehicles(id) = subway.cars(id): each train's lead car, pos and dir
+                 live, and for our own trains at(t), where it will be: it must stay out of the
+                 tunnels for the whole shot, the camera clear (higher, it stands farther off)
+                 and the car in sight up to its last 60 m; the camera eases after the live car.
+                 Lines take turns (turns, not shots); one that fails 5 turns running rests for
+                 15 shots (its trains in tunnels just now). A line underground for all its
+                 modelled length (most of New York's) has nothing to film. city:
                  the home view, which also opens, wander: any spot 25 m+ tall, or in a small
                  town a spot near its names and views, eat: index.js's spots, djour's
                  three-star picks with a modelled shop front (not indoor stalls): street level,
