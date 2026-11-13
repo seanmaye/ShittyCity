@@ -100,12 +100,21 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P1a. Locked Python environment
 
-- State: in progress (implementer started 2026-11-13). Branch `refactor/p1a-uv`.
+- State: in review. Branch `refactor/p1a-uv`, https://github.com/seanmaye/ShittyCity/pull/4.
+- Gate (rebased on `9c38eae`): Jersey Shore rebuilt with the lock, `git diff --stat data/jsh`
+  empty; `perf.py list` and `ux.py list` start under `uv run`.
+- Decision: **shapely pinned `>=2.0.7,<2.1`** (GEOS 3.11). Shapely 2.1+/GEOS 3.13+ changes
+  `simplify()` and `minimum_rotated_rectangle`: 570 jsh house angles (560 by half a turn), 21 of
+  222 barns, one farm field. Upgrading it is a separate change that regenerates `data/jsh`.
+- pyproj is in `data` too (`build_jsh.py` imports it at top level). uv 0.13.4, CPython 3.12.15.
+- Unverified: New Orleans rebuild (sources git-ignored). Script docstrings still say `pip install`.
+- After merge, worktrees use `uv sync --group qa` (and `data`/`fetch` as needed).
 
 ### P1b. Retire the single-file bundle
 
-- State: not started. Starts after P1a (they edit the same docs). Contributor message to be
-  drafted for Micah before it merges.
+- State: in progress (implementer started 2026-11-13). Branch `refactor/p1b-retire-bundle`,
+  stacked on `refactor/p1a-uv` (same docs). Its smoke gate needs P1c's `perf.py smoke`.
+- Contributor message drafted for Micah (sent: not yet). Needs the live URL.
 
 ### P1c. Smoke check and pixel diff
 
