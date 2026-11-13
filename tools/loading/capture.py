@@ -3,7 +3,7 @@
 Each city lists its screens in js/cities.js (loadingScreens): a "Go to" view id or a camera, the
 time of day (hours from sunset) and the day of the year. This opens the real app in Chromium with
 the GPU on, flies to each one, waits for it to settle, and saves what the city's canvas drew (no
-panel or labels) as data/<city>/<file>, a 1920x1080 WebP.
+panel or labels), with the loading screens' colour grade, as data/<city>/<file>, a 1920x1080 WebP.
 
 Needs the local server (python -I tools/serve.py) and Playwright, like tools/perf:
     pip install playwright && python -m playwright install chromium
@@ -54,10 +54,16 @@ FLY = """async ([s, day]) => {
   a.flyTo(v);
 }"""
 
-GRAB = """() => {
-  const a = window.__city;
+# the loading screens' colour grade, baked into the frame here (a CSS filter on a moving image
+# costs the browser every frame, and slowed the city loading behind it)
+GRADE = 'contrast(1.12) saturate(1.3) brightness(.97)'
+
+GRAB = """(grade) => {
+  const a = window.__city, src = a.renderer.domElement;
   a.renderer.render(a.scene, a.camera);   // draw now, so the canvas still holds the frame below
-  return a.renderer.domElement.toDataURL('image/webp', 0.82);
+  const c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
+  const x = c.getContext('2d'); x.filter = grade; x.drawImage(src, 0, 0);
+  return c.toDataURL('image/webp', 0.82);
 }"""
 
 
@@ -88,7 +94,7 @@ def main():
             for s in screens:
                 page.evaluate(FLY, [s, DEFAULT_DAY])
                 page.wait_for_timeout(SETTLE_MS)
-                url = page.evaluate(GRAB)
+                url = page.evaluate(GRAB, GRADE)
                 out = os.path.join(ROOT, c['dir'], s['file'])
                 with open(out, 'wb') as f:
                     f.write(base64.b64decode(url.split(',', 1)[1]))

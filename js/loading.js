@@ -131,6 +131,29 @@ function dress(F, o) {
   }
 }
 
+/**
+ * The figure as a sticker: a thick white outline and a hard drop shadow drawn into the image, as a
+ * PNG data URL. (Drawn once here rather than as CSS filters, which the browser re-applies on every
+ * frame the figure moves: that made Philadelphia take half as long again to load.)
+ */
+function sticker(src, edge = 11, shadow = [30, 39]) {
+  const w = src.width, h = src.height;
+  const mk = () => { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; };
+  const tint = (color, alpha = 1) => {   // the figure's silhouette in one colour
+    const [c, x] = mk(); x.drawImage(src, 0, 0); x.globalCompositeOperation = 'source-in';
+    x.globalAlpha = alpha; x.fillStyle = color; x.fillRect(0, 0, w, h); return c;
+  };
+  const white = tint('#fff'), dark = tint('#000'), [out, x] = mk();
+  // the shadow falls from the outlined shape: the dark silhouette, spread like the outline, offset
+  for (let a = 0; a < 16; a++) x.drawImage(dark, shadow[0] + Math.cos(a * Math.PI / 8) * edge, shadow[1] + Math.sin(a * Math.PI / 8) * edge);
+  x.globalCompositeOperation = 'copy'; x.globalAlpha = .45;   // flatten the overlapping copies to one even shade
+  x.drawImage(out, 0, 0);
+  x.globalCompositeOperation = 'source-over'; x.globalAlpha = 1;
+  for (let a = 0; a < 16; a++) x.drawImage(white, Math.cos(a * Math.PI / 8) * edge, Math.sin(a * Math.PI / 8) * edge);
+  x.drawImage(src, 0, 0);
+  return out.toDataURL('image/png');
+}
+
 let heroRenderer = null;
 /** one figure in a pose, as a PNG data URL (transparent background); mirror flips it left-right */
 function renderHero(poseName, outfit, { mirror = false, dusk = false } = {}) {
@@ -154,7 +177,7 @@ function renderHero(poseName, outfit, { mirror = false, dusk = false } = {}) {
   // OutlineEffect leaves autoClear off after its second pass: clear by hand, or figures pile up
   heroRenderer.autoClear = true; heroRenderer.clear();
   new OutlineEffect(heroRenderer, { defaultThickness: .0085, defaultColor: [.04, .03, .05] }).render(scene, cam);
-  const url = heroRenderer.domElement.toDataURL('image/png');
+  const url = sticker(heroRenderer.domElement);
   scene.traverse(m => { if (m.isMesh) m.material.dispose(); });
   return url;
 }
