@@ -8,7 +8,8 @@
 // little toward him, tailgate down, a buck in the bed: in frame with him from the "Go to" spot.
 //
 // The "Go to" button flies the camera to a spot just behind him and leaves you standing there
-// (stand()): drag to look around, as a visitor. Click him to see through his eyes (inhabit()),
+// (stand(); on an upright screen a step further back, so he is in frame: fit()): drag to look
+// around, as a visitor. Click him, or "See through his eyes", to see through his eyes (inhabit()),
 // with a card about him like the people on Walnut St and the detasseling crew, and three things
 // to do (act()): take a drag, drink beer, or check out the view through the binoculars, which
 // come up and pan to whatever opts.spot() says is worth watching (the combine in harvest.js,
@@ -326,13 +327,32 @@ export function buildOverlook(scene, site, { night = () => 0, spot = () => null 
   // ---- "Go to": the visitor's spot, behind him and to his right, looking past him across the valley
 // with the truck in frame on the right (VIEW_YAW: from straight toward town, + to the left)
   const [vx, vz] = W(-1.5, -4.6), standPos = new THREE.Vector3(vx, groundAt(vx, vz) + EYE, vz);
-  const VIEW_YAW = -.07, YAW0 = h + VIEW_YAW + Math.PI, PITCH0 = -.09;   // as a camera's rotation.y (it looks down its own -z) and .x
+  const VIEW_YAW = -.07; let YAW0 = h + VIEW_YAW + Math.PI, PITCH0 = -.09;   // as a camera's rotation.y (it looks down its own -z) and .x
   const view = { id: 'ridge', name: 'Bald Eagle Vista w/ Mr. Kepner', pos: standPos.clone(),
     target: standPos.clone().add(new THREE.Vector3(Math.sin(h + VIEW_YAW) * Math.cos(PITCH0), Math.sin(PITCH0), Math.cos(h + VIEW_YAW) * Math.cos(PITCH0)).multiplyScalar(4000)) };
+  // A screen too narrow for all that (a phone or a tablet held upright) would have him off its left
+  // edge, and he is who you tap: there the spot steps back (up to 6 m) and turns until at least he
+  // and the buck in the truck bed are in frame, as much of the truck as fits, and looks a little
+  // higher, which puts him lower on the screen (below a tablet's open panel). The "Go to" flight
+  // reads view.pos and .target as it goes, so they are changed in place (from update()).
+  const HIM = [.55, 0], BUCK = [-3.6, 4], CAB = [-6.1, 6.05], fitted = { a: 0, fov: 0 };
+  function fit(aspect, fov) {
+    const half = Math.atan(Math.tan(fov * Math.PI / 360) * aspect) * .9;   // half the view's width, less a margin
+    const ang = (b, [lx, lz]) => Math.atan2(lx + 1.5, lz + 4.6 + b);        // seen from b m behind the spot; + to the left
+    let b = 0, yaw = VIEW_YAW; PITCH0 = -.09;
+    if (ang(0, HIM) - VIEW_YAW > half || VIEW_YAW - ang(0, CAB) > half) {
+      PITCH0 = -.02;
+      while (b < 6 && ang(b, HIM) - ang(b, BUCK) > 2 * half) b += .5;
+      yaw = Math.max(ang(b, HIM) - half, (ang(b, HIM) + ang(b, CAB)) / 2);
+    }
+    const [x, z] = W(-1.5, -4.6 - b); standPos.set(x, groundAt(x, z) + EYE, z); YAW0 = h + yaw + Math.PI;
+    view.pos.copy(standPos); view.target.copy(standPos).add(new THREE.Vector3(Math.sin(h + yaw) * Math.cos(PITCH0), Math.sin(PITCH0), Math.cos(h + yaw) * Math.cos(PITCH0)).multiplyScalar(4000));
+  }
 
   // ---- state
   let mode = null;                     // null: nobody here; 'stand': the visitor behind the chair; 'man': through the hunter's eyes
   let cam = null, act = null, clock = 0, drunk = EMPTY, sips = 0, wispT = 0, breathT = 0, tilt = 0;
+  let level = null;   // just arrived: the pitch to settle to (the orbit controls won't fly in looking that high; see fit())
   const look = { yaw: 0, pitch: 0 };   // standing: the camera's own yaw and pitch; as him: from straight ahead
   const idle = { drag: 5, sip: 28 };   // seconds until he next does each by himself
   const bino = { on: false, k: 0, t: 0, fov: 48, goal: 48, base: 48, spot: null, from: { yaw: 0, pitch: 0 }, track: false, zoomed: false, text: '' };
@@ -367,8 +387,10 @@ export function buildOverlook(scene, site, { night = () => 0, spot = () => null 
     act = id === 'drag' ? { id, t: 0, dur: 4.6, pose: mine ? reachFace('R') : P.mouthR } : { id, t: 0, dur: 4.7, pose: mine ? reachFace('L') : P.mouthL, held: false };
     return true;
   }
-  /** what the buttons do: 'drag', 'drink', 'glass' (the binoculars, up or down) */
+  /** what the buttons do: 'eyes' (standing behind him: into his chair, as tapping him does), and
+   *  as him 'drag', 'drink', 'glass' (the binoculars, up or down) */
   function doAct(id) {
+    if (id === 'eyes') { if (mode !== 'stand') return false; inhabit(); return true; }
     if (mode !== 'man') return false;
     if (id === 'glass') { setGlass(!bino.on); return true; }   // even mid-drag or mid-drink: the glasses just come up over it
     if (bino.on) setGlass(false);
@@ -377,6 +399,12 @@ export function buildOverlook(scene, site, { night = () => 0, spot = () => null 
 
   function update(dt, camera) {
     cam = camera;
+    // the screen's shape (and its base field of view: not while the binoculars have it)
+    if (mode !== 'man' && bino.k === 0 && (camera.aspect !== fitted.a || camera.fov !== fitted.fov)) {
+      const y0 = YAW0; fitted.a = camera.aspect; fitted.fov = camera.fov; fit(camera.aspect, camera.fov);
+      if (mode === 'stand' && Math.abs(YAW0 - y0) > .01) { look.yaw = YAW0; look.pitch = PITCH0; }   // turned the phone round while standing here
+    }
+    if (mode === 'stand' && level !== null) { look.pitch += (level - look.pitch) * (1 - Math.exp(-dt * 5)); if (Math.abs(level - look.pitch) < 1e-3) level = null; }
     // the binoculars coming up or going down: the mask (bino.k), the zoom, and the pan to what's worth seeing
     if (bino.on || bino.k > 0) {
       bino.t += dt; bino.k = clamp(bino.k + (bino.on ? dt : -dt) / .4, 0, 1);
@@ -425,7 +453,9 @@ export function buildOverlook(scene, site, { night = () => 0, spot = () => null 
         const held = t >= .7 && t < 4; if (held !== act.held) { act.held = held; holdCan(held); }
       }
       if (t >= act.dur) {
-        if (act.id === 'drink' && ++sips >= 4) { sips = 0; drunk++; empty(); can.visible = drunk < CANS; }   // that one's done: on the ground with the rest, and a fresh one
+        // that one's done: on the ground with the rest, and a fresh one. By himself he sips (four to a
+        // can); when you are him every "Drink beer" finishes one, so the count on his card goes up
+        if (act.id === 'drink' && (mine || ++sips >= 4)) { sips = 0; drunk++; empty(); can.visible = drunk < CANS; }
         act = null;
       }
     }
@@ -457,7 +487,7 @@ export function buildOverlook(scene, site, { night = () => 0, spot = () => null 
     }
   }
   function lookBy(dx, dy) {
-    if (mode === 'stand') { look.yaw -= dx * .0045; look.pitch = clamp(look.pitch - dy * .0045, -1.3, 1.3); return; }
+    if (mode === 'stand') { level = null; look.yaw -= dx * .0045; look.pitch = clamp(look.pitch - dy * .0045, -1.3, 1.3); return; }
     if (mode !== 'man') return;
     const k = .0045 * (bino.k > 0 && cam ? cam.fov / bino.base : 1);   // finer through the binoculars
     if (bino.on) bino.track = false;
@@ -471,7 +501,7 @@ export function buildOverlook(scene, site, { night = () => 0, spot = () => null 
 
   // ---- arriving, stepping into him, and leaving
   /** stand behind the chair, looking the way the camera already is (the "Go to" flight ends here) */
-  function stand(camera) { mode = 'stand'; eul.setFromQuaternion(camera.quaternion, 'YXZ'); look.yaw = eul.y; look.pitch = eul.x; return getState(); }
+  function stand(camera) { mode = 'stand'; eul.setFromQuaternion(camera.quaternion, 'YXZ'); look.yaw = eul.y; look.pitch = eul.x; level = PITCH0; return getState(); }
   function inhabit() { mode = 'man'; look.yaw = 0; look.pitch = -.06; F.head.visible = false; return getState(); }
   /** out of the hunter and back behind the chair; from there (or with all = true) away altogether */
   function leave(all = false) {
@@ -498,14 +528,19 @@ export function buildOverlook(scene, site, { night = () => 0, spot = () => null 
     : drunk >= CANS ? `Out of beer: all ${CANS} cans are on the ground`
     : `Sitting on the ridge with a cigarette and beer ${drunk + 1} of ${CANS}, a buck in the truck`);
   const ACTS = [{ id: 'drag', label: 'Take a drag', key: '1' }, { id: 'drink', label: 'Drink beer', key: '2' }, { id: 'glass', label: 'Check out the view', key: '3', on: false }];
-  /** what index.js and ui.js need to know while you are here (null when you aren't) */
+  // standing behind him, a button as well as tapping him: on a phone the hint saying so is folded away
+  const EYES = [{ id: 'eyes', label: 'See through his eyes' }];
+  /** what index.js and ui.js need to know while you are here (null when you aren't); hintTouch
+   *  leads with what to tap, as a phone shows the first three lines */
   function getState() {
     if (!mode) return null;
-    if (mode === 'stand') return { kind: 'vista', id: 'overlook', view: view.id, labels: true,
-      hint: 'On top of Bald Eagle Mountain, behind a hunter who has the best seat in the valley. Drag or click to look around: that’s his truck on the right. Click him to see through his eyes. Esc or “Step away” to leave.' };
-    ACTS[2].on = bino.on; ACTS[2].label = bino.on ? 'Put the binoculars down' : 'Check out the view';
+    if (mode === 'stand') return { kind: 'vista', id: 'overlook', view: view.id, labels: true, actions: EYES,
+      hint: 'On top of Bald Eagle Mountain, behind a hunter who has the best seat in the valley. Drag or click to look around: that’s his truck on the right. Click him to see through his eyes. Esc or “Step away” to leave.',
+      hintTouch: 'On top of Bald Eagle Mountain, behind a hunter who has the best seat in the valley. Tap him, or “See through his eyes”, to sit in his chair. Drag to look around: that’s his truck on the right. “Step away” to leave.' };
+    ACTS[2].on = bino.on; ACTS[2].label = bino.on ? 'Lower the binoculars' : 'Check out the view';   // (short enough for a phone's bar, on one line)
     return { kind: 'person', id: 'hunter', view: view.id, labels: true, ...WHO, now: now(), portrait, actions: ACTS, bino: smooth(bino.k),
-      hint: `Seeing the valley through ${WHO.name}’s eyes, from his chair on Bald Eagle Mountain. Drag or click to look around. Take a drag, drink beer, or check out the view through his binoculars (scroll to zoom). Space, Esc or “Leave” to step back behind him.` };
+      hint: `Seeing the valley through ${WHO.name}’s eyes, from his chair on Bald Eagle Mountain. Drag or click to look around. Take a drag, drink beer, or check out the view through his binoculars (scroll to zoom). Space, Esc or “Leave” to step back behind him.`,
+      hintTouch: `Seeing the valley through ${WHO.name}’s eyes, from his chair on Bald Eagle Mountain. Take a drag, drink beer, or check out the view through his binoculars (spread two fingers to zoom). Drag to look around; “Leave” to step back behind him.` };
   }
 
   // a head-and-shoulders portrait for his card (as detassel.js): a fresh figure, standing, facing the camera

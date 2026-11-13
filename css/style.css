@@ -1,14 +1,20 @@
 :root{--panel:rgba(255,252,248,.9);--ink:#1d2b36;--muted:#4b5a66;--btn:#1d2b36;--btn-ink:#fff;--line:rgba(29,43,54,.16);--accent:#d6452f;--tag:rgba(255,252,248,.92);color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--panel:rgba(18,26,34,.88);--ink:#eef2f5;--muted:#b4c0c9;--btn:#eef2f5;--btn-ink:#14202a;--line:rgba(238,242,245,.2);--tag:rgba(18,26,34,.88);color-scheme:dark}}
 :root[data-theme="dark"]{--panel:rgba(18,26,34,.88);--ink:#eef2f5;--muted:#b4c0c9;--btn:#eef2f5;--btn-ink:#14202a;--line:rgba(238,242,245,.2);--tag:rgba(18,26,34,.88);color-scheme:dark}
-html,body{height:100%;margin:0}
+html,body{height:100%;margin:0;overscroll-behavior:none}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{background:#e9a888;font-family:Archivo,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;color:var(--ink)}
-#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 #tags{position:fixed;inset:0;pointer-events:none;overflow:hidden}
 .tag{position:absolute;left:0;top:0;transform:translate(-50%,-100%);background:var(--tag);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:12px;font-weight:600;white-space:nowrap}
-.tag::after{content:"";position:absolute;left:50%;top:100%;width:1px;height:8px;background:var(--ink);opacity:.5}
+.tag::after{content:"";position:absolute;left:calc(50% + var(--sx,0px));top:100%;width:1px;height:8px;background:var(--ink);opacity:.5}
+.tag.below::after{top:auto;bottom:100%}   /* no room above the place (js/ui.js placeTags): hung below it */
 .hud{position:fixed;top:0;left:0;padding:calc(env(safe-area-inset-top,0px) + 14px) 14px 0 calc(env(safe-area-inset-left,0px) + 14px);max-width:min(380px,calc(100vw - 28px));box-sizing:border-box}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px 16px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px 16px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;flex-direction:column;box-sizing:border-box;max-height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 28px);max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 28px)}
+#hud-body{min-height:0;overflow-y:auto;overscroll-behavior:contain;margin:0 -10px 0 0;padding:0 10px 2px 0}
+/* the hint's More: only on small screens, where the hint is clamped to three lines */
+button.more{display:inline-block;background:none;border:0;border-radius:6px;color:var(--accent);padding:0 2px;margin:-10px 0 10px;font-size:13px}
+button.more[hidden]{display:none}
 h1{font-size:19px;font-weight:600;margin:0 0 4px;letter-spacing:-.01em;line-height:1.25}
 h1 b{font-weight:inherit}
 h1 span{display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent);margin-right:8px;vertical-align:1px}
@@ -43,6 +49,24 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 #xhair::before{left:10px;top:0;width:2px;height:22px}
 #xhair::after{top:10px;left:0;height:2px;width:22px}
 .legend .legend-h{flex-basis:100%;font-weight:600;margin-top:4px;color:var(--muted)}
+/* on a phone with the panel folded (js/ui.js), the dock carries a line for what the panel would
+   show: the legend's strip (one row, swiped sideways) with Hide, or what the cut-away is with Close */
+.dock-mini{display:none}
+.lm-list{flex:1;min-width:0;display:flex;gap:6px 14px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;font-size:12px;font-weight:600;white-space:nowrap;padding:4px 0;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent)}
+.lm-list::-webkit-scrollbar{display:none}
+.lm-list span{display:inline-flex;align-items:center;gap:6px}
+.lm-list span:last-child{padding-right:20px}
+.lm-list i{flex:none;width:16px;height:4px;border-radius:2px;background:var(--c)}
+.lm-list i.casing{height:8px;background:none;border-top:2px solid var(--c);border-bottom:2px solid var(--c);box-sizing:border-box;border-radius:0}
+.cut-mini p{flex:1;min-width:0;margin:0;font-size:13px;line-height:1.35;color:var(--ink)}
+@media (max-width:640px),(max-height:500px){
+  body:not(.hud-open) .legend-mini:not([hidden]),body:not(.hud-open):not(.aboard) .cut-mini:not([hidden]){display:flex;align-items:center;gap:8px;padding:4px 4px 4px 12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--ink)}
+  body:not(.hud-open):not(.aboard) .cut-mini:not([hidden]){padding:7px 4px 7px 12px}
+  .dock-mini button{flex:none;font-size:13px;padding:6px 13px}
+  /* the line has the bottom of the screen */
+  body:not(.hud-open):has(#legend-mini:not([hidden])) .credit,body:not(.hud-open):not(.aboard):has(#cut-mini:not([hidden])) .credit{display:none}
+}
+@media (pointer:coarse){.dock-mini button{min-height:44px}}
 .tag.t53{font-size:11px;padding:2px 7px;border-color:#a3243f}
 .lines[hidden]{display:none}
 .lines button{font-size:13px;padding:7px 12px}
@@ -64,7 +88,7 @@ button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 
   display: flex;
   align-items: flex-end;
   isolation: isolate;
-  overflow: auto;
+  overflow: hidden;
   padding: clamp(20px, 6vw, 96px);
   padding-bottom: max(clamp(20px, 6vh, 76px), env(safe-area-inset-bottom));
   padding-left: max(clamp(20px, 6vw, 96px), env(safe-area-inset-left));
@@ -72,20 +96,7 @@ button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 
   background: #291e2c;
   color: #fff6e8;
 }
-.city-loading[data-city="nyc"] {
-  --loading-accent: #ffce88;
-  background: #1d2941;
-}
 .city-loading[hidden] { display: none; }
-.loading-art {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  object-fit: cover;
-  z-index: -1;
-}
 .loading-copy { width: 100%; }
 #loading-city {
   margin: 0 0 16px;
@@ -113,8 +124,8 @@ button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 
 }
 #loading-progress[hidden] { display: none; }
 #loading-progress::-webkit-progress-bar { background: #524b58; }
-#loading-progress::-webkit-progress-value { background: var(--loading-fill, var(--loading-accent)); }
-#loading-progress::-moz-progress-bar { background: var(--loading-fill, var(--loading-accent)); }
+#loading-progress::-webkit-progress-value { background: var(--loading-accent); }
+#loading-progress::-moz-progress-bar { background: var(--loading-accent); }
 .loading-copy #status {
   width: fit-content;
   max-width: min(100%, 560px);
@@ -128,15 +139,94 @@ button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 
 }
 #loading-back { margin-top: 16px; background: #fff6e8; border-color: #fff6e8; color: #1d2231; }
 #loading-back:focus-visible { outline-color: var(--loading-accent); }
+.ls-stage, .ls-flash, .ls-fx, .ls-logo, .ls-tip, .ls-spin { display: none; }
 @media (max-width: 600px) {
   #loading-city { font-size: clamp(1.5rem, 9vw, 3.25rem); }
 }
-.credit{position:fixed;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 6px);margin:0;font-size:11px;color:var(--ink);background:var(--panel);border-radius:6px;padding:2px 7px;opacity:.85}
+
+/* The loading slideshow (js/loading.js): a city's points of interest, each a frame from its
+   3D model with one of our figures posed in front, sliding in one after another. */
+.city-loading.ls-on { background: #000; --bar: 4.5vh; }
+.ls-on .ls-stage, .ls-on .ls-flash, .ls-on .ls-fx { display: block; position: absolute; inset: 0; pointer-events: none; }
+.ls-on .ls-stage { z-index: -3; overflow: hidden; }
+/* (the blend mode matters for speed, not just looks: without it Chrome dropped about a quarter of
+   the frames in every slide; measured with a performance trace) */
+.ls-on .ls-flash { z-index: -2; background: #fff; opacity: 0; mix-blend-mode: screen; }
+.ls-on .ls-fx { z-index: -1; overflow: hidden; background: radial-gradient(ellipse at 50% 45%, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, .6) 100%); }
+/* letterbox bars */
+.ls-on::before, .ls-on::after { content: ""; position: absolute; left: 0; right: 0; height: var(--bar); background: #000; z-index: 0; pointer-events: none; }
+.ls-on::before { top: 0; } .ls-on::after { bottom: 0; }
+/* film grain: a noise tile (made in loading.js) jumping about a few times a second */
+.ls-grain { position: absolute; inset: -5%; background-image: var(--grain); opacity: .07; animation: ls-grain .5s steps(1) infinite; }
+@keyframes ls-grain {
+  0% { transform: translate(0, 0); } 20% { transform: translate(-3%, 2%); } 40% { transform: translate(2.5%, -3%); }
+  60% { transform: translate(-1.5%, -4%); } 80% { transform: translate(4%, 3%); }
+}
+.ls-screen { position: absolute; inset: 0; overflow: hidden; }
+/* a screen is a window a little wider than the viewport (so it still covers it when skewed into the
+   slanted panel it slides in as), holding the viewport-sized picture in the middle; kept within
+   ~1.1x the viewport so Firefox animates it off the main thread */
+.ls-on .ls-screen { left: -5%; right: -5%; }   /* EDGE in loading.js */
+.ls-inner { position: absolute; top: 0; bottom: 0; left: 4.5455%; width: 90.9091%; overflow: hidden; }
+.ls-pan { position: absolute; inset: -5%; }
+.ls-bg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; }   /* colour grade baked in by tools/loading/capture.py */
+.ls-grade { position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(255, 170, 90, .16), rgba(0, 0, 0, 0) 40%, rgba(10, 8, 30, .45) 100%),
+              radial-gradient(120% 90% at 70% 20%, rgba(255, 200, 140, .14), rgba(0, 0, 0, 0) 60%); }
+.ls-dim, .ls-glow { position: absolute; inset: 0; opacity: 0; background: #000; }
+.ls-glow { background: #fff; }
+.ls-drift { position: absolute; inset: 0; }
+.ls-hero { position: absolute; bottom: 2vh; height: 90vh; max-width: none; }   /* outline and shadow are drawn into the image (loading.js) */
+.ls-screen[data-side="right"] .ls-hero { right: 6vw; }
+.ls-screen[data-side="left"] .ls-hero { left: 5vw; }
+.ls-poi { position: absolute; top: calc(var(--bar) + 3vh); display: flex; flex-direction: column; gap: .5vh; max-width: 46vw; }
+.ls-screen[data-side="right"] .ls-poi { left: 5vw; align-items: flex-start; }
+.ls-screen[data-side="left"] .ls-poi { right: 5vw; align-items: flex-end; text-align: right; }
+.ls-poi small { font: 700 clamp(11px, 1.1vw, 18px)/1 Archivo, system-ui, sans-serif; letter-spacing: .3em; text-transform: uppercase; background: #d6452f; color: #fff; padding: .5em .7em .45em; }
+.ls-poi b { font: italic 900 clamp(30px, 5.6vw, 104px)/.88 Archivo, system-ui, sans-serif; font-stretch: 68%; text-transform: uppercase; color: #fff;
+  -webkit-text-stroke: 2px #0a0810; paint-order: stroke fill; text-shadow: 5px 5px 0 #0a0810; overflow-wrap: anywhere; }
+.ls-on .ls-logo { display: block; position: absolute; left: 4vw; bottom: calc(var(--bar) + 4vh); width: clamp(150px, 20vw, 360px); filter: drop-shadow(4px 5px 0 rgba(0, 0, 0, .55)); }
+.ls-on .loading-copy { position: absolute; right: 4vw; bottom: calc(var(--bar) + 4vh); width: auto; max-width: min(46vw, 560px); display: flex; flex-direction: column; align-items: flex-end; }
+.ls-on #loading-city { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; margin: 0; }
+.ls-on .ls-load { display: flex; align-items: center; gap: 14px; }
+.ls-on .loading-copy #status { margin: 0; padding: 0; background: none; font: 800 clamp(12px, 1.05vw, 18px)/1.2 Archivo, system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; text-align: right; text-shadow: 0 2px 6px rgba(0, 0, 0, .8); color: #fff; }
+.ls-on .ls-spin { display: block; flex: none; width: 34px; height: 34px; }
+.ls-spin circle { fill: none; stroke-width: 4.5; }
+.ls-spin .track { stroke: rgba(255, 255, 255, .22); }
+/* the whole icon turns (an HTML box, so the compositor turns it while the city loads) */
+.ls-spin .arc { stroke: #fff; stroke-linecap: round; stroke-dasharray: 26 100; }
+.ls-on .ls-spin { animation: ls-spin 1s linear infinite; }
+@keyframes ls-spin { to { transform: rotate(360deg); } }
+.ls-on #loading-progress { width: clamp(140px, 14vw, 240px); height: 4px; margin-top: 10px; margin-right: 48px; border: 0; border-radius: 2px; background: rgba(255, 255, 255, .22); }
+.ls-on #loading-progress::-webkit-progress-bar { background: rgba(255, 255, 255, .22); }
+.ls-on { --loading-accent: #fff; }
+.ls-on .ls-tip { display: block; position: absolute; left: 50%; bottom: 0; height: var(--bar); transform: translateX(-50%); z-index: 1; margin: 0;
+  display: flex; align-items: center; font: 600 clamp(11px, .85vw, 14px)/1.3 Archivo, system-ui, sans-serif; color: rgba(255, 255, 255, .78); white-space: nowrap; }
+.ls-on .ls-tip::before { content: "TIP"; color: #ffbd68; font-weight: 800; letter-spacing: .1em; margin-right: .7em; }
+.ls-on .ls-tip:empty { display: none; }
+/* phones and narrow windows: smaller figure, captions on top, no bars */
+@media (max-width: 700px), (max-aspect-ratio: 1/1) {
+  .city-loading.ls-on { --bar: 0px; }
+  .ls-hero { height: min(66vh, 120vw); bottom: 16vh; }
+  .ls-screen[data-side] .ls-hero { left: 50%; right: auto; translate: -50% 0; }
+  .ls-screen[data-side] .ls-poi { left: 16px; right: 16px; max-width: none; align-items: flex-start; text-align: left; top: calc(env(safe-area-inset-top, 0px) + 20px); }
+  .ls-poi b { font-size: clamp(30px, 10vw, 56px); }
+  .ls-on .ls-logo { left: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); width: 120px; }
+  .ls-on .loading-copy { right: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 22px); max-width: calc(100vw - 170px); }
+  .ls-on .ls-tip { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ls-grain { animation: none; }
+}
+.credit{position:fixed;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 6px);margin:0;font-size:11px;color:var(--ink);background:var(--panel);border-radius:6px;padding:2px 7px;opacity:.85;max-width:calc(100vw - var(--hud-w,400px) - 24px);box-sizing:border-box}
 .err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:24px;text-align:center;font-size:16px;color:#1d2b36}
 @media (max-width:520px){.tag{font-size:11px;padding:2px 7px}h1{font-size:17px}.views button{font-size:12px;padding:5px 9px}.credit{left:10px;right:auto;max-width:calc(100vw - 20px)}}
 .card-h{display:flex;align-items:flex-start;gap:8px}
 .card-h h1{flex:1}
 button.fold{flex:none;width:30px;height:30px;padding:0;display:grid;place-items:center;background:transparent;color:var(--ink);border-color:var(--line);margin:-3px -6px 0 0}
+/* Get off / Stand up / Leave sits in the header, so it is there with the panel folded too */
+.card-h #getoff{flex:none;font-size:13px;padding:6px 13px;margin:-3px 0 0}
+.card-h #getoff[hidden]{display:none}
 button.fold svg{transition:transform .2s}
 .card.folded{padding-bottom:12px}
 .card.folded h1{margin:0}
@@ -151,13 +241,17 @@ button.fold svg{transition:transform .2s}
 .swatch.custom input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
 .swatch.custom.on{border-color:var(--accent)}
 .swatch.custom:focus-within{outline:3px solid var(--accent);outline-offset:2px}
-.minimap{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);right:calc(env(safe-area-inset-right,0px) + 14px);width:200px;height:200px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#dfe3d6;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.minimap{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);right:calc(env(safe-area-inset-right,0px) + 14px);width:200px;height:200px;border-radius:14px;border:1px solid var(--line);background:#dfe3d6;box-shadow:0 2px 10px rgba(0,0,0,.18)}
 .minimap[hidden]{display:none}
-.minimap canvas{display:block;width:100%;height:100%;cursor:crosshair}
+.minimap canvas{display:block;width:100%;height:100%;cursor:crosshair;border-radius:13px}
 .mm-ctl{position:absolute;right:6px;bottom:6px;display:flex;flex-direction:column;gap:4px}
 .mm-ctl button{width:26px;height:26px;padding:0;font-size:16px;line-height:1;background:var(--panel);color:var(--ink);border-color:var(--line)}
+.mm-tog{display:none}
 .mm-scale{position:absolute;left:8px;bottom:6px;font-size:10.5px;font-weight:600;color:#1d2b36;background:rgba(255,255,255,.75);border-radius:4px;padding:1px 5px}
-.ridebar{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 30px);transform:translateX(-50%);width:min(760px,calc(100vw - 28px));box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:9px 14px 6px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--ink)}
+/* the line diagram while riding (js/ridebar.js): bottom centre, or in the space right of the open
+   panel (--hud-w, js/ui.js) so it never runs under it; a small screen docks it (.dock, below) */
+.ridebar{position:fixed;left:calc(env(safe-area-inset-left,0px) + 14px);right:calc(env(safe-area-inset-right,0px) + 14px);bottom:calc(env(safe-area-inset-bottom,0px) + 30px);max-width:760px;margin:0 auto;box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:9px 14px 6px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--ink);container:rb/inline-size}
+@media (min-width:641px) and (min-height:501px){body.hud-open .ridebar{left:calc(var(--hud-w,0px) + 14px)}}
 .ridebar[hidden]{display:none}
 .rb-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
 .rb-h b{font-weight:600}
@@ -165,25 +259,70 @@ button.fold svg{transition:transform .2s}
 .rb-to,.rb-next{color:var(--muted)}
 .rb-next{margin-left:auto}
 .rb-next strong{color:var(--ink);font-weight:600}
+.rb-nl::after{content:":"}
 #rb-svg{display:block;width:100%;height:auto;max-height:110px;margin-top:2px;overflow:visible}
 #rb-svg[hidden]{display:none}
 #rb-svg text{font:inherit;font-size:15px;fill:var(--muted)}
 #rb-svg text.next{fill:var(--ink);font-weight:600}
 #rb-svg text.done{opacity:.55}
-@media (max-width:640px){.minimap{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 30px);width:130px;height:130px}.ridebar{left:14px;transform:none;width:calc(100vw - 172px)}.rb-next{display:none}}
+/* a narrow bar (a phone; a tablet beside the panel): the whole line's names would be ~5 px tall, so
+   the next stop gets a line of its own in large type, and the strip shows just the stops around the
+   train, in the order it reaches them (js/ridebar.js) */
+.rb-near{display:none;position:relative;margin:9px 0 1px}
+.rb-rail{position:absolute;top:5px;height:6px;border-radius:3px;background:var(--c,#8a96a0)}
+.rb-rail.more-l{-webkit-mask-image:linear-gradient(90deg,transparent,#000 28px);mask-image:linear-gradient(90deg,transparent,#000 28px)}
+.rb-rail.more-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+.rb-rail.more-l.more-r{-webkit-mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent)}
+.rb-stops{position:relative;display:flex;list-style:none;margin:0;padding:0}
+.rb-stops li{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;line-height:1.25;color:var(--muted);text-align:center}
+.rb-stops i{width:10px;height:10px;border-radius:50%;background:#fff;border:3px solid var(--c,#8a96a0)}
+.rb-stops span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;padding:0 3px;overflow-wrap:anywhere}
+.rb-stops .done{opacity:.6}
+.rb-stops .done i{background:#d5d9dc}
+.rb-stops .next i{background:var(--c,#8a96a0)}
+.rb-stops .next span{color:var(--ink);font-weight:600}
+.rb-train{position:absolute;top:-3px;left:0;width:22px;height:22px;margin-left:-11px;box-sizing:border-box;border-radius:50%;background:var(--c,#8a96a0);border:3px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35);display:grid;place-items:center}
+.rb-train::after{content:"";margin-left:2px;border-left:7px solid #fff;border-top:5px solid transparent;border-bottom:5px solid transparent}
+.rb-train.back::after{margin:0 2px 0 0;transform:scaleX(-1)}
+@media (max-width:640px),(max-height:500px){.ridebar{padding:8px 12px 7px}}
+@media (max-height:600px){.rb-stops span{-webkit-line-clamp:1;line-clamp:1}.rb-near{margin-top:7px}}   /* a short screen (a small phone, or one on its side): every pixel of height counts */
+@container rb (max-width:560px){
+  .rb-h{gap:6px 8px}
+  #rb-name{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rb-to{flex:0 1 auto;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rb-next{flex:1 0 100%;order:9;margin:0;display:flex;align-items:baseline;gap:7px;min-width:0;white-space:nowrap}
+  .rb-next:empty{display:none}
+  .rb-nl{flex:none;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .rb-nl::after{content:none}
+  .rb-next strong{font-size:17px;line-height:1.25;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  #rb-svg{display:none}
+  .rb-near{display:block}
+  .rb-near[hidden]{display:none}
+}
 /* through someone's eyes: things they can do (js/ui.js syncActions), and the mask of their binoculars */
 .actions{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 30px);transform:translateX(-50%);display:flex;gap:6px;padding:6px;background:var(--panel);border:1px solid var(--line);border-radius:999px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);max-width:calc(100vw - 20px);box-sizing:border-box}
 .actions[hidden]{display:none}
+body:has(#actions:not([hidden])) .credit{display:none}   /* the bar has the bottom of the screen (as the ride bar does): a credit that wraps would run into it */
 .actions button{white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
 .actions button[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
 .actions kbd{font:inherit;font-size:11px;line-height:1;border:1px solid currentColor;border-radius:4px;padding:2px 5px;opacity:.6}
 #binoc{position:fixed;inset:0;pointer-events:none}
 #binoc[hidden]{display:none}
 #binoc svg{display:block;width:100%;height:100%}
-#binoc-cap{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 88px);transform:translateX(-50%);margin:0;padding:6px 14px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font-size:13px;font-weight:600;text-align:center;max-width:calc(100vw - 32px);box-sizing:border-box}
+#binoc-cap{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 88px);width:fit-content;margin:0 auto;padding:6px 14px;border-radius:16px;background:rgba(0,0,0,.55);color:#fff;font-size:13px;font-weight:600;text-align:center;max-width:calc(100vw - 32px);box-sizing:border-box}
 #binoc-cap:empty{display:none}
+#binoc-cap::after{content:attr(data-how);display:block;font-size:11.5px;font-weight:500;opacity:.8}   /* how to zoom (js/ui.js) */
+/* upright screens: the lenses as wide as the screen (at "meet" they'd fill only a band across the middle) */
+@media (max-aspect-ratio:1/1){#binoc svg{transform:scale(1.3)}}
+/* phones on their side: the dock has the right of the bottom edge, so the caption takes the left (off the lenses' middle) */
+@media (max-height:500px) and (min-width:641px){body:not(.hud-open) #binoc-cap{left:calc(env(safe-area-inset-left,0px) + 10px);right:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);margin:0;text-align:left;max-width:calc(100vw - min(460px, 100vw - var(--hud-w,350px) - 20px) - 30px)}}
+/* the map's + and − would read as the binoculars' zoom, and a map has no place in front of your eyes */
+body:has(#binoc:not([hidden])) .minimap{display:none}
 .persona.away{visibility:hidden}
-@media (max-width:640px){.actions{bottom:calc(env(safe-area-inset-bottom,0px) + 10px);gap:4px;padding:4px}.actions button{font-size:13px;padding:8px 10px}.actions kbd{display:none}body:has(#actions:not([hidden])) .credit{display:none}}
+/* small screens (either way up): the bar fits the dock; a label too long for its share wraps onto two lines */
+@media (max-width:640px),(max-height:500px){.actions{bottom:calc(env(safe-area-inset-bottom,0px) + 10px);gap:4px;padding:4px}.actions button{flex:0 1 auto;min-width:0;white-space:normal;justify-content:center;text-align:center;line-height:1.2;font-size:13px;padding:6px 10px}.actions kbd{display:none}}
+/* no keyboard on a touch screen: no key chips */
+@media (hover:none),(pointer:coarse){.actions kbd{display:none}}
 /* start menu: pick a city (js/main.js). The page behind it shows the dusk sky colours. */
 body.choosing{background:linear-gradient(#363a66,#e98e72 62%,#f6c89f)}
 body.choosing .hud,body.choosing .credit,body.choosing #modehint{display:none}
@@ -209,7 +348,24 @@ button.city em{font-style:normal;font-size:13px;font-weight:600;color:var(--acce
 .pe-bio{font-size:13px;margin:0 0 10px}
 .pe-face{position:absolute;top:0;right:calc(100% + 8px);width:96px;height:96px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(#e8edf0,#c9d3da)}
 .pe-face canvas{display:block;width:100%;height:100%}
-@media (max-width:640px){.pe-face{position:static;float:right;width:64px;height:64px;margin:0 0 6px 10px}.persona{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);left:16px;right:16px;width:auto;max-height:40vh;overflow:auto}.pe-facts{grid-template-columns:repeat(2,auto)}}
+.pe-h{display:flex;align-items:flex-start;gap:6px}
+.pe-h h2{flex:1;min-width:0}
+button.pe-fold{display:none}
+@media (max-width:640px){.persona{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);left:16px;right:16px;width:auto;max-height:40vh;overflow:auto}body.hud-open .persona{display:none}}   /* phones upright: the open panel has the screen; the card is back when it folds */
+/* small screens (either way up; in the dock the card is static, so the face can't hang off its
+   left edge): the face in the corner, the facts in one row when they fit, and a fold button
+   that takes the card down to the name and what they're doing, to see more of the view */
+@media (max-width:640px),(max-height:500px){
+  .pe-face{position:static;float:right;width:64px;height:64px;margin:0 0 6px 10px}
+  .pe-facts{display:flex;flex-wrap:wrap;gap:2px 14px}
+  button.pe-fold{display:grid;flex:none;width:30px;height:30px;padding:0;place-items:center;background:transparent;color:var(--ink);border-color:var(--line);margin:-3px 0 0}
+  button.pe-fold svg{transition:transform .2s}
+  .persona.min .pe-facts,.persona.min .pe-bio{display:none}
+  .persona.min .pe-face{width:36px;height:36px;border-radius:10px;margin-bottom:0}
+  .persona.min button.pe-fold svg{transform:rotate(180deg)}
+  .persona.min .pe-now{margin-bottom:8px}
+}
+@media (pointer:coarse){button.pe-fold{width:44px;height:44px;margin:-9px -4px -6px 0}}
 /* fishing on the Schuylkill (js/fishing.js) */
 .fish-modal{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,14,20,.45)}
 .fish-modal[hidden]{display:none}
@@ -230,6 +386,31 @@ button.fish-x{width:32px;height:32px;padding:0;font-size:20px;line-height:1;back
 .fish-cell canvas{width:72px;height:72px}
 .fish-cell b{font-weight:600;line-height:1.2}
 .fish-cell span{color:var(--muted);font-size:11px}
+.fish-card{max-height:calc(100dvh - 32px);overscroll-behavior:contain}
+.fish-game{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}   /* holding a finger down to reel must not select text */
+.fish-cv{-webkit-tap-highlight-color:transparent}
+button.fish-back{position:sticky;bottom:0;box-shadow:0 2px 12px rgba(0,0,0,.3)}   /* the log is long: the way back stays in sight */
+@media (pointer:coarse){button.fish-x{width:44px;height:44px;margin:-6px -8px -6px 0}.fish-card .row button,button.fish-back{min-height:44px}.fish-cv:focus-visible{outline:none}}
+@media (max-width:640px),(max-height:500px){
+  .fish-modal{padding:8px}
+  .fish-card{padding:10px 12px 12px;max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px)}
+  .fish-head h2{font-size:16px}
+  .fish-quote{font-size:15px;margin:4px 0 12px}
+  .fish-msg{font-size:14px;margin-top:8px}
+  .fish-grid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+  .fish-cell{padding:4px}
+  .fish-cell canvas{width:56px;height:56px}
+}
+@media (max-width:640px){.fish-cv{aspect-ratio:480/400}}   /* phones upright: a squarer picture, bigger on the screen (js/fishing.js follows its shape) */
+/* phones on their side: the picture down the left as tall as the screen, the words and buttons beside it */
+@media (max-height:500px) and (min-width:560px){
+  .fish-card[data-part="game"]{display:grid;grid-template-columns:min(calc(100vw - 300px),calc((100vh - 40px) * 1.4)) minmax(0,1fr);grid-template-columns:min(calc(100vw - 300px),calc((100dvh - 40px) * 1.4)) minmax(0,1fr);grid-template-rows:auto auto 1fr;column-gap:14px;align-items:start}
+  .fish-card[data-part="game"] .fish-game{display:contents}
+  .fish-card[data-part="game"] .fish-cv{grid-column:1;grid-row:1/4;aspect-ratio:560/400}
+  .fish-card[data-part="game"] .fish-head{grid-column:2;grid-row:1}
+  .fish-card[data-part="game"] .fish-msg{grid-column:2;grid-row:2;margin:0}
+  .fish-card[data-part="game"] .fish-row{grid-column:2;grid-row:3;margin-top:10px}
+}
 /* Lucky Arcade in Chinatown's night market (js/arcade.js) */
 .arc-modal{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,14,20,.5)}
 .arc-modal[hidden],.arc-menu[hidden],.arc-game[hidden]{display:none}
@@ -298,3 +479,119 @@ body.kitchen #hud-body{max-height:calc(100vh - 110px);overflow:auto;overscroll-b
 .klines .kstops{grid-column:1/-1;font-size:12px;color:var(--muted)}
 .klines .kline button{font-size:12px;padding:4px 10px}
 .klines .row{gap:6px;margin-bottom:6px}.klines .khint{font-size:12px;margin:0 0 6px}
+.arc-card{max-height:calc(100dvh - 32px);overscroll-behavior:contain}
+.arc-game{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}   /* holding and swiping on the games must not select text */
+.arc-cv{-webkit-tap-highlight-color:transparent}
+@media (pointer:coarse){button.arc-x{width:44px;height:44px;margin:-6px -8px -6px 0}.arc-row button{min-height:44px}.arc-cv:focus-visible{outline:none}}
+@media (max-width:640px),(max-height:500px){
+  .arc-modal{padding:8px}
+  .arc-card{padding:10px 12px 12px;max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px)}
+  .arc-head h2{font-size:16px}
+  .arc-quote{font-size:14px;margin:4px 0 10px}
+  .arc-msg{font-size:14px;margin-top:8px}
+  /* the menu as rows, a small picture of each game beside its name, so all three fit without scrolling */
+  .arc-list{grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+  button.arc-pick{display:grid;grid-template-columns:76px minmax(0,1fr);grid-auto-rows:auto;column-gap:10px;row-gap:2px;align-content:start;padding:6px}
+  .arc-pick canvas{grid-column:1;grid-row:1/span 3;width:76px}.arc-pick>:not(canvas){grid-column:2}
+  .arc-pick b{margin-top:0;font-size:15px}
+  .arc-pick span{font-size:12.5px;line-height:1.35}
+}
+@media (max-width:640px){.arc-cv{width:min(100%,calc(100vh - 220px));width:min(100%,calc(100dvh - 220px))}}
+/* phones on their side: the game down the left as tall as the screen, the words and buttons beside it */
+@media (max-height:500px) and (min-width:560px){
+  .arc-card[data-part="game"]{display:grid;grid-template-columns:min(calc(100vw - 320px),calc(100vh - 40px)) minmax(0,1fr);grid-template-columns:min(calc(100vw - 320px),calc(100dvh - 40px)) minmax(0,1fr);grid-template-rows:auto auto 1fr;column-gap:14px;align-items:start}
+  .arc-card[data-part="game"] .arc-game{display:contents}
+  .arc-card[data-part="game"] .arc-cv{grid-column:1;grid-row:1/4;width:100%;min-width:0;margin:0}
+  .arc-card[data-part="game"] .arc-head{grid-column:2;grid-row:1}
+  .arc-card[data-part="game"] .arc-msg{grid-column:2;grid-row:2;margin:0}
+  .arc-card[data-part="game"] .arc-row{grid-column:2;grid-row:3}
+}
+/* the bottom panels (persona, actions, ridebar, credit): placed one by one on big screens; on
+   small ones the dock stacks them at the bottom so they never cover each other */
+.dock{display:contents}
+body:has(#ridebar:not([hidden])) .credit{display:none}   /* riding: the line diagram has the bottom of the screen */
+/* walking inside a car on a touch screen: hold an arrow (js/ui.js), like holding W A S D */
+.walkpad{position:fixed;right:calc(env(safe-area-inset-right,0px) + 14px);top:50%;transform:translateY(-50%);display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,48px);grid-template-areas:". f ." "l . r" ". b .";gap:2px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.walkpad[hidden]{display:none}
+.walkpad button{width:48px;height:48px;padding:0;display:grid;place-items:center;border-radius:12px;background:var(--panel);color:var(--ink);border-color:var(--line);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);touch-action:none}
+.walkpad button.on{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.walkpad [data-k="f"]{grid-area:f}.walkpad [data-k="l"]{grid-area:l}.walkpad [data-k="r"]{grid-area:r}.walkpad [data-k="b"]{grid-area:b}
+/* short messages over the view: flying speed, skyline lights after dark */
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 14px);transform:translateX(-50%);margin:0;max-width:calc(100vw - 32px);box-sizing:border-box;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600;text-align:center;pointer-events:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.toast:empty{display:none}
+/* ---- small screens: phones either way up (js/ui.js COMPACT has the same query). Measured with
+   tools/ux (README there). */
+@media (max-width:640px),(max-height:500px){
+  #hint:not(.open){display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow:hidden}
+  .lines{max-height:none;overflow:visible}
+  .dock{position:fixed;left:calc(env(safe-area-inset-left,0px) + 10px);right:calc(env(safe-area-inset-right,0px) + 10px);bottom:calc(env(safe-area-inset-bottom,0px) + 10px);display:flex;flex-direction:column;align-items:stretch;gap:8px;pointer-events:none}
+  .dock>*{pointer-events:auto}
+  .dock>.persona,.dock>.actions,.dock>.ridebar,.dock>.credit{position:static;inset:auto;transform:none;width:auto;max-width:none;margin:0;box-sizing:border-box}
+  .dock>.actions{align-self:center;max-width:100%}
+  .dock>.credit{align-self:flex-start;max-width:100%;line-height:1.35;padding:3px 8px}
+  .dock>.persona{max-height:min(38vh,300px);max-height:min(38dvh,300px);overflow:auto;overscroll-behavior:contain}
+  body:has(#ridebar:not([hidden])) .credit,body:has(#persona:not([hidden])) .credit,body:has(#actions:not([hidden])) .credit{display:none}
+  .minimap{width:120px;height:120px;top:calc(env(safe-area-inset-top,0px) + 10px);right:calc(env(safe-area-inset-right,0px) + 10px)}
+  /* folded by default: just a round map button where the map's corner would be (js/minimap.js) */
+  .mm-tog{display:flex;align-items:center;justify-content:center;position:absolute;top:4px;right:4px;z-index:1;width:30px;height:30px;padding:0;border-radius:50%;background:var(--panel);color:var(--ink);border:1px solid var(--line);box-shadow:0 1px 4px rgba(0,0,0,.15)}
+  .mm-tog svg{width:16px;height:16px}
+  .minimap.folded{width:44px;height:44px;border-radius:50%;background:none;border:0;box-shadow:none}
+  .minimap.folded>:not(.mm-tog){display:none}
+  .minimap.folded .mm-tog{inset:0;width:44px;height:44px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+  .minimap.folded .mm-tog svg{width:22px;height:22px}
+  .dock>.toast{position:static;transform:none;align-self:center;max-width:100%;border-radius:14px}   /* stacked above the ride bar or card */
+}
+/* phones upright: the panel across the top, the minimap under it (when folded) */
+@media (max-width:640px){
+  .hud{right:0;max-width:none;padding:calc(env(safe-area-inset-top,0px) + 10px) calc(env(safe-area-inset-right,0px) + 10px) 0 calc(env(safe-area-inset-left,0px) + 10px)}
+  .card{max-height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 96px);max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 96px)}
+  .minimap{top:calc(var(--hud-h,64px) + 8px)}
+  body.hud-open .minimap,body.hud-open .walkpad{display:none}
+  .walkpad{top:max(50%,calc(var(--hud-h,64px) + 210px))}   /* clear of the minimap under the panel */
+}
+/* phones on their side: wide but short. The panel down the left, the dock on the right */
+@media (max-height:500px) and (min-width:641px){
+  .hud{max-width:min(340px,48vw);padding:calc(env(safe-area-inset-top,0px) + 10px) 0 0 calc(env(safe-area-inset-left,0px) + 10px)}
+  .card{max-height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 20px);max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 20px);padding:10px 14px 12px}
+  .minimap{width:104px;height:104px}
+  .dock{left:auto;width:min(460px,calc(100vw - var(--hud-w,350px) - 20px))}
+  .dock>.persona{max-height:calc(100vh - 90px);max-height:calc(100dvh - 90px)}
+  body:has(#persona:not([hidden])) .minimap{display:none}
+  .walkpad{right:auto;left:calc(env(safe-area-inset-left,0px) + 10px);top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);transform:none}
+  body.hud-open .walkpad{display:none}
+}
+/* ---- touch screens: everything you tap at least 44 px (Apple; Material asks 48) */
+@media (pointer:coarse){
+  button,.swatch,input[type=range]{touch-action:manipulation}
+  .card button,.menu button,.loading-copy button,.actions button{min-height:44px}
+  button.fold{width:44px;height:44px;margin:-9px -10px -6px 0}
+  .card-h #getoff{min-height:44px;margin:-9px 0 -6px}
+  .views button,.lines button{padding-top:6px;padding-bottom:6px}
+  .swatch{width:44px;height:44px}
+  .clock{margin-top:2px}
+  .clock input{height:44px;margin:0}
+  .mm-ctl{right:calc(100% + 6px);bottom:0;gap:6px}
+  .mm-ctl button{width:44px;height:44px;font-size:20px;box-shadow:0 1px 6px rgba(0,0,0,.18)}
+  button.more{min-height:44px;min-width:56px;padding:0 8px;margin:-12px 0 2px -8px;text-align:left}
+}
+
+/* Cinematic mode (js/cinema.js): letterbox bars, a fade through black between shots, a title per
+   shot; the panel, the map, the labels and the rest of the chrome step aside meanwhile */
+.cine{position:fixed;inset:0;pointer-events:none;z-index:8;--bar:clamp(0px,calc((100vh - 100vw / 2.35) / 2),13vh);--bar:clamp(0px,calc((100dvh - 100vw / 2.35) / 2),13dvh)}
+.cine[hidden]{display:none}
+.cine-bar{position:absolute;left:0;right:0;height:var(--bar);background:#000;transition:transform .8s cubic-bezier(.2,.7,.2,1)}
+.cine-bar.top{top:0;transform:translateY(-100%)}
+.cine-bar.bot{bottom:0;transform:translateY(100%)}
+.cine.on .cine-bar{transform:none}
+.cine-fade{position:absolute;inset:0;background:#000;opacity:0}
+.cine-cap{position:absolute;left:calc(env(safe-area-inset-left,0px) + clamp(18px,5vw,64px));bottom:calc(var(--bar) + clamp(16px,4vh,44px));max-width:min(80vw,900px);color:#fff;opacity:0;transform:translateY(8px);transition:opacity 1.1s ease,transform 1.4s ease;text-shadow:0 1px 18px rgba(0,0,0,.55),0 0 2px rgba(0,0,0,.4)}
+.cine-cap.show{opacity:1;transform:none}
+.cine-title{display:block;font-weight:800;font-stretch:75%;font-size:clamp(26px,5vw,58px);line-height:1;letter-spacing:.01em;text-transform:uppercase}
+.cine-sub{display:block;margin-top:8px;font-size:clamp(11px,1.4vw,14px);font-weight:600;letter-spacing:.32em;text-transform:uppercase;opacity:.85}
+.cine-sub[hidden]{display:none}
+.cine-cap::before{content:"";display:block;width:44px;height:4px;background:var(--accent);margin-bottom:12px}
+.cine-exit{position:absolute;left:0;right:0;bottom:0;height:var(--bar);min-height:28px;display:flex;align-items:center;justify-content:center;margin:0;color:rgba(255,255,255,.75);font-size:12px;letter-spacing:.06em;opacity:0;transition:opacity .6s}
+.cine-exit.show{opacity:1}
+body.cinematic .hud,body.cinematic .minimap,body.cinematic #modehint,body.cinematic .dock,body.cinematic #tags,body.cinematic .walkpad,body.cinematic .eatcard,body.cinematic #xhair{visibility:hidden}
+body.cinematic #c{cursor:none}
+@media (prefers-reduced-motion:reduce){.cine-bar,.cine-cap{transition:none}}

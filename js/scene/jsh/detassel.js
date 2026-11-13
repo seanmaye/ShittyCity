@@ -222,7 +222,10 @@ export function buildDetassel(scene, seed, { hour = () => 9 } = {}) {
 
   // "Go to: Detasseling crew": just behind and beside the crew, wherever they are (kept up to date;
   // the camera flight reads it as it goes)
-  const view = { id: 'crew', name: 'Detasseling crew', pos: new THREE.Vector3(x0 + vx * 14, groundAt(x0, z0) + 9, z0 + vz * 14), target: new THREE.Vector3(x0, groundAt(x0, z0) + 1, z0) };
+  // the crew are only out in July and in working hours: "Go to" moves the season and the clock there
+  // (mid-July, 9 AM: the trash bags still on against the dew) unless they are already at work
+  const view = { id: 'crew', name: 'Detasseling crew', pos: new THREE.Vector3(x0 + vx * 14, groundAt(x0, z0) + 9, z0 + vz * 14), target: new THREE.Vector3(x0, groundAt(x0, z0) + 1, z0),
+    when: { days: [SEASON[0] + 1, SEASON[1] - 1], hours: [HOURS[0] + .5, HOURS[1] - .5], day: 190, hour: 9 } };
   let inside = null, clock = 0, working = false, lastLeg = null;
   const look = { yaw: 0, pitch: 0 };
   function update(dt, camera) {
@@ -234,7 +237,8 @@ export function buildDetassel(scene, seed, { hour = () => 9 } = {}) {
     fm.visible = mm.visible = tf.visible = tm.visible = reachBlock && fm.userData.on;
     const far = camera.position.distanceTo(new THREE.Vector3(x0, camera.position.y, z0)) > 300 && camera.position.y - groundAt(x0, z0) > 60;
     crew.forEach(P => { P.F.root.visible = working && !far; });
-    if (!working || (far && !inside)) return;
+    if (!working) return;
+    if (far && !inside) { aim(where().out); return; }   // nobody near enough to see them: only where "Go to" goes
     D += SPEED * dt;
     const w = where();
     if (w.leg !== lastLeg) { if (w.leg === legs[0] && lastLeg && lastLeg.wrap) { pass++; pulled.fill(0); setTassels(); } lastLeg = w.leg; }
@@ -255,9 +259,18 @@ export function buildDetassel(scene, seed, { hour = () => 9 } = {}) {
       P.F.root.position.set(x, groundAt(x, z), z); P.F.root.rotation.y = P.h;
       P.leg = w.leg;
     });
-    const B = crew[4], gy = groundAt(B.x, B.z), hx = Math.sin(B.h), hz = Math.cos(B.h);
-    view.target.set(crew[1].x, gy + 1.3, crew[1].z);
-    view.pos.set(B.x - hx * 7 + hz * 6, gy + 6, B.z - hz * 7 - hx * 6);
+    aim(w.out);
+  }
+  /** the view: behind the boss and to one side, looking over the second detasseler (out: where()'s).
+   *  The orbit controls keep the camera 40 m or more from what it looks at (core.js minDistance),
+   *  so it looks at the field beyond them: aimed at the crew it would be pushed back to where
+   *  they are too small to tap. */
+  function aim(out) {
+    const [u1, v1] = out[1], [ub, vb, hd, sv] = out[4], [x1, z1] = at(u1, v1), [bx, bz] = at(ub, vb);
+    const a = Math.atan2(hd ? ux * hd : vx * sv, hd ? uz * hd : vz * sv), hx = Math.sin(a), hz = Math.cos(a), gy = groundAt(bx, bz);
+    view.pos.set(bx - hx * 7 + hz * 6, gy + 4, bz - hz * 7 - hx * 6);
+    const dx = x1 - view.pos.x, dz = z1 - view.pos.z, d = Math.hypot(dx, dz) || 1, tx = view.pos.x + dx / d * 42, tz = view.pos.z + dz / d * 42;
+    view.target.set(tx, groundAt(tx, tz) + 1, tz);
   }
 
   // ---- seeing through their eyes (the same calls as phl/pedestrians.js)
@@ -297,7 +310,9 @@ export function buildDetassel(scene, seed, { hour = () => 9 } = {}) {
   function getInhabited() {
     if (!inside) return null;
     const p = inside.prof;
-    return { kind: 'person', id: inside.i, name: p.name, sex: p.sex, age: p.age, height: p.height, kg: p.kg, lb: p.lb, bio: p.bio, now: activity(inside) };
+    return { kind: 'person', id: inside.i, name: p.name, sex: p.sex, age: p.age, height: p.height, kg: p.kg, lb: p.lb, bio: p.bio, now: activity(inside),
+      // (js/ui.js's own wording for a person is Walnut Street's; on a touch screen it says this with tap)
+      hint: `In the seed corn on the island, through ${p.name}’s eyes${p.boss ? ', behind the crew' : ', pulling tassels'}. You can’t steer; you go where they go. Drag or click to look around, Space, Esc or “Leave” to step out.` };
   }
   const lookAt = (dx, dy) => { look.yaw = Math.max(-2.2, Math.min(2.2, look.yaw - dx * .0045)); look.pitch = Math.max(-1.1, Math.min(1.1, look.pitch - dy * .0045)); };
   const eye = new THREE.Vector3(), fwd = new THREE.Vector3();

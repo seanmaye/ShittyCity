@@ -3,7 +3,7 @@ EDITING GUIDE: City models (single-file build)
 
 This guide is for an AI assistant (or a person) who has only this HTML file and wants to
 change a city. Everything the page needs is inside the file: styles, all scripts, and
-all map data and loading illustrations. three.js r186 (0.186.1) loads from the jsDelivr CDN.
+all map data and loading-screen backgrounds. three.js r186 (0.186.1) loads from the jsDelivr CDN.
 
 The page holds several cities on one engine: today Philadelphia (id "phl"), New York
 (id "nyc"), New Orleans (id "nola") and Jersey Shore, PA (id "jsh"). It opens on a start menu (#menu) to pick one, or
@@ -20,10 +20,11 @@ Python helper below.
 --------------------------------------
 
   <head>      <style> (HUD, labels, start menu) and an import map that maps "three" to three@0.186.1
-  <body>      HUD markup: #ride, #transit, #lbl, #cut, #getoff, #switch-city buttons, #xhair
+  <body>      HUD markup: #ride, #transit, #lbl, #cut, #cine-btn (Cinematic), #getoff, #switch-city buttons, #xhair
               (creative-mode crosshair), #modehint, #time slider (+ #time-out), #legend,
               #lines picker, #view-btns (Go to), #heading, #hint, #tags, #credit;
-              the #persona card (someone inhabited: Walnut St, the detasseling crew, the hunter);
+              the #persona card (someone inhabited: Walnut St, the punks at the Railyard Bowl, the
+              detasseling crew, the hunter);
               #actions (what the person you are inside can do) and #binoc (their binocular mask);
               the start menu #menu with #cities and the #city-loading screen with #status
   data blocks, city by city, one per file in the city's data folder:
@@ -31,12 +32,14 @@ Python helper below.
               <script type="application/gzip-base64" id="data-<city>-NAME" data-file="<city>/FILE">base64</script>
               NAME is the file name without .json / .json.gz / .bin.gz. Which blocks a city
               has is listed in section 3 and in its `files` entry in js/cities.js.
-              Loading art uses application/webp-base64 and id="art-<city>-NAME", where NAME
-              is the file name without .webp. The city lists each file and its progress bar
-              gradient colors in `loadingArt`.
+              Loading-screen backgrounds use application/webp-base64 and id="art-<city>-NAME",
+              where NAME is the file name without .webp (poi-*.webp: frames captured from the
+              3D city by tools/loading/capture.py). The city lists each screen in
+              `loadingScreens`: file, caption, the view it was captured from, and the posed
+              figure in front (js/loading.js has the poses and outfits).
   1 <script type="module"> holding all the code:
       - import lines at the very top (THREE, OrbitControls, BufferGeometryUtils, Line2,
-        LineMaterial, LineGeometry)
+        LineMaterial, LineGeometry, OutlineEffect)
       - then `const __mods = {}` and one chunk per original source file, each marked
         `// ---- js/scene/NAME.js` and shaped like
             __mods["js/scene/NAME.js"] = await (async () => {
@@ -490,6 +493,39 @@ js/ui.js         buttons, line picker, floating labels, keys (inside a car KEYMA
                  binocular mask (#binoc, its opacity is the person's bino 0..1; the wheel zooms
                  through api.wheelCar first). Standing somewhere (kind 'vista', the overlook)
                  the button reads "Step away" and clicks still pick the person there.
+js/cinema.js     cinematic mode's screen (#cine, made here): letterbox bars, the fade through black
+                 (state.fade), each shot's title for its first seconds; body.cinematic hides the
+                 rest of the chrome (css/style.css) and ui.js hides the labels. The Time, Season
+                 and Speed sliders are left as they are and keep working underneath: the tour
+                 is the live city. Any keydown, pointerdown or wheel ends it (caught first, in the capture
+                 phase, so it does nothing else; the click that follows is swallowed). Starts by
+                 itself after IDLE (150 s) without input when canStart() (not aboard, riding,
+                 flying or in a dialog), and at once with ?cinematic or #cinematic in the address.
+js/scene/cinematic.js  the camera work, for any city: createCinematic({ scene, camera, views, home,
+                 labels, routes, ground, getDay, name }). It never sets the clock or the season. On the first start it builds a skyline
+                 grid (CELL = 50 m: how far the highest thing in each cell stands above the
+                 ground, from every mesh's instances, small boxes or vertices; ground() is the
+                 city's terrain, or Jersey Shore's gridAt). Shots are made one at a time, for
+                 ever (make()): a kind of subject by WEIGHT, never the same kind twice running
+                 (view, landmark: labels rising 35 m+, place: the other labels, skyline: the
+                 40 tallest clusters, route: a stretch of any line 500 m+ (rail, monorail, boat;
+                 a short one, most of it) through built-up ground, the least-flown line first
+                 (one that fails 30 times running is set aside, so it can't hold up the rest), city:
+                 the home view, which also opens, wander: any spot 25 m+ tall, or in a small
+                 town a spot near its names and views, eat: index.js's spots, djour's
+                 three-star picks with a modelled shop front (not indoor stalls): street level,
+                 so eatShot() moves only between the place's own clear views, front and street,
+                 seven moves each, each used once), the least-shot subject of it, then
+                 aim(): a random side, distance and height (close views, under 140 m, only
+                 drift). A shot is kept only if seenShot() finds none before it of the same
+                 subject from within 40 degrees and about the same distance (or the same
+                 stretch of line), it is not near the last 4 subjects or under their names,
+                 and clear(): the camera stays above the grid plus a margin and the line of
+                 sight to the subject is open. After 150 tries the last-4 rules relax (never
+                 the never-twice one), so a shot always comes. done is every shot so far (also
+                 api.cinematic.shots). A view out of season (its when.days) is left out.
+                 step(dt) runs the shot and the fades; index.js calls it instead of the orbit
+                 controls (startCinematic / stopCinematic; flyTo, boarding and riding stop it).
 js/minimap.js    top-right map (#minimap): base map of limits, parks, water and rail drawn once
                  from api.mapData; LEVELS = metres across per zoom step; you as a view cone, or
                  the train and its line in bold when riding; a click calls api.flyToPoint(x, z).
@@ -580,7 +616,25 @@ sports.js        courts (SURFACE = line markings, EQUIP = nets, hoops, goals, li
                  corridor strips, shuttle monorails (H2 = 26 m, teal livery, a station
                  about every 1.1 km, piers placed between courts at load time)
 yardpark.js      rail yard deck, park, and the Railyard Bowl (bandshell, seats,
-                 screens, light beams)
+                 screens, light beams); returns the bowl's group as yard.bowl for concert.js
+concert.js       the show in the bowl, in the bowl's frame (+z toward the seats, y 0 the lawn,
+                 STAGE 1.6): the Chipmunks (chipmunk(): joints like Kyle's figures, merged per
+                 joint by bake(), scale 3), the kit, amps, screen faces and banner (canvas
+                 textures); SONGS loop with GAP between, `chipettes: true` brings the Chipettes
+                 on from the wing. The punks: spots in the pit (apronEdge() to 29.4 m) and the
+                 rows, none within 4.5 m of opts.avoid (ground.json bridges: the rail viaduct
+                 over the seats); outfit() picks each look; drawn instanced like pedestrians.js:
+                 partList() = one InstancedMesh per part (geometry, joint, offsets, colour,
+                 dyn() for props and the head you look out of), posed on rig() skeletons each
+                 frame within NEAR. habitPose() for what each does by themselves, ACTS /
+                 startAct() / actPose() / endAct() for the four actions each has (keys 1-4,
+                 the #actions bar); P.fx timers (high, khole, huff, roll, speed, drunk) drive
+                 effects(): the canvas's CSS filter and the camera's sway, roll and fov, and in
+                 a K-hole frame() floats the camera out of the body. index.js treats it like
+                 Walnut St's people: pick() -> boardCar({ punk }) -> inhabit(), kind 'person',
+                 act(id) via actCar, leave(). Owns the view 'punks' (abs; placed in the bowl's
+                 frame on the first update, after the deck is set on the ground).
+punkprofiles.js  made-up lives for the punks: punkProfile(i, look, habit)
 promenade.js     PROPOSAL: Walnut St, 22nd to Front, as a car-free shopping street.
                  WALNUT = the centreline (metres). drawLines() skips every road piece on it
                  (onPromenade) and oldtrolley.js leaves out the 1953 track bed there (onWalnut),
@@ -960,7 +1014,8 @@ A city entry holds:
                                the grid's surface. (Philadelphia's terrain needs no flag: a
                                `terrain` file is enough, js/scene/terrain.js.)
   storage                      localStorage prefix (folded panel, skyline lights)
-  title, heading, hint, canvasLabel, cutButton, cutHint, credit, building   page text
+  title, heading, hint, canvasLabel, cutButton, cutHint, credit, building   page text (hint says
+                               what the city is; js/ui.js adds how to move, for mouse or touch)
   groups                       the "Ride a line" networks in order (a line without `group` is
                                in the first); stationLines(s, LINES) = a station tag's line text
   presets                      skyline-light preset ids from materials.js (null = all; [] = no

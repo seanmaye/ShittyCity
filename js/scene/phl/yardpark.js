@@ -119,7 +119,7 @@ function bowl(scene, v, h) {
   let t = 0;
   const update = dt => { t += dt; beams.forEach((b, i) => { b.rotation.z = Math.sin(t * .6 + i) * .45; b.rotation.x = -.25 + Math.cos(t * .45 + i * 1.7) * .25; }); };
   g.updateMatrixWorld();
-  return { duskOnly, update, stage: new THREE.Vector3(0, 0, -8).applyMatrix4(g.matrixWorld) };
+  return { duskOnly, update, group: g, stage: new THREE.Vector3(0, 0, -8).applyMatrix4(g.matrixWorld) };
 }
 
 function segDist2(px, pz, ax, az, bx, bz) {
@@ -143,7 +143,7 @@ export function buildYardPark(scene, data, guideways) {
   }
   buildTrees(scene, trees, data.h, false);   // on the deck, which index.js lifts as a whole
   return {
-    duskOnly: b.duskOnly, update: b.update,
+    duskOnly: b.duskOnly, update: b.update, bowl: b.group,   // (the show in it: concert.js)
     labels: [
       { text: 'Rail Yard Park', pos: new THREE.Vector3(lx, data.h + 16, lz) },
       { text: 'Railyard Bowl', pos: b.stage.setY(data.h + 44) },

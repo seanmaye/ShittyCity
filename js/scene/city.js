@@ -273,8 +273,10 @@ export async function buildCity(scene, data, { waterMat, status = () => {}, clea
   }
 
   // the whole city from above, north up
+  // (framed for a ~29 km city like NYC or Philadelphia; a smaller one, like Jersey Shore, gets a closer camera)
   const [x0, z0, x1, z1] = city.bbox.map(v => v / 10), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
-  const view = { id: 'city', name: 'Whole city', pos: new THREE.Vector3(cx, 26000, cz + 16000), target: new THREE.Vector3(cx, 0, cz - 1500) };
+  const k = Math.min(1, Math.max(.3, Math.max(x1 - x0, z1 - z0) / 29000));
+  const view = { id: 'city', name: 'Whole city', pos: new THREE.Vector3(cx, 26000 * k, cz + 16000 * k), target: new THREE.Vector3(cx, 0, cz - 1500 * k) };
   const beacons = aviationLights(lights); beacons.userData.terrain = 'done'; scene.add(beacons);
   return { update, view, bridgeSegs, wet, bounds: { x0, z0, x1, z1 }, buildingCount: B.nB + B.nP, nightOnly: [beacons], boxes: B };
 }

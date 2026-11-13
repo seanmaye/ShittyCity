@@ -7,7 +7,12 @@
 // Keys: arrows or W A S D move; Space fires (Sky Swarm) or starts again; P pauses; Esc goes back
 // to the menu, then closes. Pointer or touch: Ping-Pong's paddle follows it, Sky Swarm's launcher
 // moves to it and fires while pressed, Dumpling Dash turns on a swipe. Best scores stay in this browser.
+// On a touch screen the instructions speak of fingers, not keys.
 import { CITY } from './cities.js';
+
+const TOUCH = matchMedia('(pointer: coarse)');
+const say = (keys, touch) => (TOUCH.matches ? touch : keys);
+const AGAIN = () => say('Space or click to play again', 'Tap to play again');
 
 const W = 480, H = 480;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -37,7 +42,8 @@ function pingPong() {
     if (s[who] >= WIN) { s.over = true; s.msg = who === 'you' ? 'You win' : 'The stall wins'; }
   };
   return {
-    help: 'W / S or the arrow keys (or the mouse) move your paddle. First to 7. Your longest rally is your score.',
+    help: say('W / S or the arrow keys (or the mouse) move your paddle. First to 7. Your longest rally is your score.',
+      'Slide a finger up and down the table to move your paddle. First to 7. Your longest rally is your score.'),
     get score() { return s.best; }, get over() { return s.over; }, get result() { return `${s.msg}, ${s.you} to ${s.cpu}. Longest rally ${s.best}.`; },
     update(dt, inp) {
       if (s.over) return;
@@ -67,7 +73,7 @@ function pingPong() {
       g.fillStyle = '#fff3d6'; g.beginPath(); g.arc(s.bx, s.by, R, 0, 7); g.fill();
       hud(g, `YOU ${s.you}`, `${s.cpu} CPU`);
       g.textAlign = 'center'; g.fillStyle = '#9fb7c6'; g.font = `13px ${FONT}`; g.fillText(`rally ${s.rally} · best ${s.best}`, W / 2, 15);
-      if (s.over) banner(g, s.msg, 'Space or tap to play again');
+      if (s.over) banner(g, s.msg, AGAIN());
     },
   };
 }
@@ -97,7 +103,8 @@ function skySwarm() {
     s.lives--; s.dead = 1.6; s.bombs = [];
   }
   return {
-    help: '← → or A / D move, Space fires (or press and drag on the screen). Divers score double.',
+    help: say('← → or A / D move, Space fires (or press and drag on the screen). Divers score double.',
+      'Hold a finger on the sky: your launcher slides under it and fires. Divers score double.'),
     get score() { return s.score; }, get over() { return s.over; }, get result() { return `Game over on wave ${s.wave}: ${s.score} points.`; },
     update(dt, inp) {
       s.t += dt;
@@ -197,7 +204,7 @@ function skySwarm() {
       hud(g, `SCORE ${s.score}`, `WAVE ${s.wave}`);
       for (let i = 0; i < s.lives - (s.dead > 0 ? 0 : 1); i++) { g.fillStyle = '#d6301f'; g.beginPath(); g.ellipse(18 + i * 22, H - 12, 8, 6, 0, 0, 7); g.fill(); }
       if (!s.foes.length && !s.over) banner(g, `WAVE ${s.wave + 1}`, 'Here they come');
-      if (s.over) banner(g, 'GAME OVER', 'Space or tap to play again');
+      if (s.over) banner(g, 'GAME OVER', AGAIN());
     },
   };
 }
@@ -298,7 +305,8 @@ function dumplingDash() {
     k.dir = opts.reduce((b, d) => { const v = (k.tx + d[0] - gx) ** 2 + (k.ty + d[1] - gy) ** 2; return v < b[0] ? [v, d] : b; }, [1e9, opts[0]])[1];
   };
   return {
-    help: 'Arrow keys or W A S D (or swipe) to steer. Eat every sesame seed; a fortune cookie lets you chase the cats.',
+    help: say('Arrow keys or W A S D (or swipe) to steer. Eat every sesame seed; a fortune cookie lets you chase the cats.',
+      'Swipe to steer. Eat every sesame seed; a fortune cookie lets you chase the cats.'),
     get score() { return s.score; }, get over() { return s.over; }, get result() { return `Game over on level ${s.level}: ${s.score} points.`; },
     update(dt, inp) {
       s.t += dt; s.fortuneT -= dt; for (const p of s.pops) p.t -= dt; s.pops = s.pops.filter(p => p.t > 0);
@@ -385,7 +393,7 @@ function dumplingDash() {
       for (let i = 0; i < s.lives - 1; i++) { g.fillStyle = '#f7f0de'; g.beginPath(); g.arc(W / 2 - 20 + i * 18, 15, 6, Math.PI, 0); g.closePath(); g.fill(); }
       if (s.fortuneT > 0) { g.fillStyle = 'rgba(0,0,0,.7)'; g.fillRect(0, OY + 9 * T, W, T); g.fillStyle = '#ffd75a'; g.font = `bold 13px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`🥠 ${s.fortune}`, W / 2, OY + 9.5 * T); }
       if (s.pause > 0 && !s.dying && s.t < 2 && s.level === 1 && s.lives === 3) banner(g, 'READY?', 'Eat every seed. Dodge the cats.');
-      if (s.over) banner(g, 'GAME OVER', 'Space or tap to play again');
+      if (s.over) banner(g, 'GAME OVER', AGAIN());
       else if (s.clear > 0) banner(g, 'ALL CLEAR!', `On to level ${s.level + 1}`);
     },
   };
@@ -434,14 +442,15 @@ export function createArcade(api) {
   const showBest = () => { for (const X of GAMES) cardsBy[X.id].bs.textContent = best[X.id] ? `Best: ${best[X.id]} ${X.unit}` : 'No score yet'; };
   showBest();
   function size() { const dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  // (focus without scrolling: on a short screen that would scroll the title out of sight)
   function showMenu() {
-    stop(); G = inst = null; game.hidden = true; menu.hidden = false; showBest();
-    title.textContent = 'Lucky Arcade 幸運街機'; list.querySelector('button').focus();
+    stop(); G = inst = null; game.hidden = true; menu.hidden = false; card.dataset.part = 'menu'; showBest();
+    title.textContent = 'Lucky Arcade 幸運街機'; list.querySelector('button').focus({ preventScroll: true }); card.scrollTop = 0;
   }
   function play(which) {
     G = which; inst = G.make(); paused = false; recorded = false; pauseBtn.textContent = 'Pause';
-    menu.hidden = true; game.hidden = false; title.textContent = `Lucky Arcade · ${G.name}`;
-    msg.textContent = G.help; size(); cv.focus();
+    menu.hidden = true; game.hidden = false; card.dataset.part = 'game'; title.textContent = `Lucky Arcade · ${G.name}`;
+    msg.textContent = inst.help; size(); cv.focus({ preventScroll: true }); card.scrollTop = 0;
     if (!raf) { last = performance.now(); raf = requestAnimationFrame(loop); }
   }
   function stop() { cancelAnimationFrame(raf); raf = 0; }
@@ -452,7 +461,7 @@ export function createArcade(api) {
     if (!paused) inst.update(dt, inp);
     inp.dir = null;
     inst.draw(g);
-    if (paused) banner(g, 'PAUSED', 'P or the Pause button to carry on');
+    if (paused) banner(g, 'PAUSED', say('P or the Pause button to carry on', 'Tap “Carry on” to play on'));
     if (inst.over && !recorded) {
       recorded = true; const sc = inst.score, prev = best[G.id] || 0;
       if (sc > prev) { best[G.id] = sc; save(best); }
@@ -503,10 +512,13 @@ export function createArcade(api) {
   const up = () => { inp.ptr.down = false; if (inp.ptr.live && !matchMedia('(pointer:fine)').matches) inp.ptr.live = false; swipe = null; };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   cv.addEventListener('pointerleave', () => { if (!inp.ptr.down) inp.ptr.live = false; });
+  cv.addEventListener('contextmenu', e => e.preventDefault());   // a long press (holding to fire) is not a right-click
   close.addEventListener('click', shut); back.addEventListener('click', showMenu); again.addEventListener('click', restart);
   pauseBtn.addEventListener('click', () => { togglePause(); cv.focus(); });
   modal.addEventListener('pointerdown', e => { if (e.target === modal) shut(); });
-  window.addEventListener('blur', () => { for (const k in inp.held) inp.held[k] = 0; if (inst && !inst.over && !paused) togglePause(); });
+  const away = () => { for (const k in inp.held) inp.held[k] = 0; if (inst && !inst.over && !paused) togglePause(); };
+  window.addEventListener('blur', away);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) away(); });   // a phone switching apps
 
   return { open, active: () => !modal.hidden };
 }

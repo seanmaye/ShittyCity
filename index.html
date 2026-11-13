@@ -7,7 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231d2b36'/%3E%3Crect x='10' y='18' width='44' height='20' rx='8' fill='%23d6452f'/%3E%3Crect x='16' y='23' width='8' height='7' rx='1.5' fill='%23fff6e8'/%3E%3Crect x='28' y='23' width='8' height='7' rx='1.5' fill='%23fff6e8'/%3E%3Crect x='40' y='23' width='8' height='7' rx='1.5' fill='%23fff6e8'/%3E%3Crect x='6' y='41' width='52' height='5' rx='2' fill='%23eef2f5'/%3E%3Crect x='29' y='46' width='6' height='12' fill='%23eef2f5'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,400..900;1,62..125,400..900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
@@ -23,44 +23,53 @@
 <div id="modehint" class="modehint" role="status"></div>
 <div class="hud"><div class="card">
 <div class="card-h"><h1><span aria-hidden="true"></span><b id="heading"></b></h1>
+<button id="getoff" type="button" hidden>Get off</button>
 <button id="fold" type="button" class="fold" aria-expanded="true" aria-controls="hud-body" aria-label="Collapse the panel" title="Collapse the panel"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 10.5 8 6l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
 <div id="hud-body">
-<p id="hint"></p>
+<p id="hint" data-ux-ok="truncated"></p><button id="hint-more" type="button" class="more" aria-controls="hint" aria-expanded="false" hidden>More</button>
 <div class="row">
 <button id="ride" type="button" disabled aria-expanded="false" aria-controls="lines">Ride a line</button>
 <button id="transit" type="button" class="ghost" disabled aria-pressed="false" aria-controls="legend">Show transit lines</button>
 <button id="lbl" type="button" class="ghost" disabled>Hide labels</button>
 <button id="cut" type="button" class="ghost" disabled aria-pressed="false">Cut away</button>
-<button id="getoff" type="button" hidden>Get off</button>
+<button id="cine-btn" type="button" class="ghost" disabled title="Sit back: hands-free fly-arounds of the city">Cinematic</button>
 <button id="switch-city" type="button" class="ghost">Change city</button>
 </div>
+<div class="lines" id="lines" role="group" aria-label="Choose a line" hidden></div>
+<div class="legend" id="legend" hidden></div>
 <div class="clock"><label for="time">Time</label><input type="range" id="time" min="0" max="24" step="any" value="0" disabled><output id="time-out" for="time"></output></div>
 <div class="clock"><label for="speed">Speed</label><input type="range" id="speed" min="0" max="1000" step="1" value="0" disabled aria-describedby="speed-out"><output id="speed-out" class="wide" for="speed">Frozen</output></div>
 <div class="clock"><label for="day">Season</label><input type="range" id="day" min="0" max="364" step="1" value="0" disabled><output id="day-out" class="wide" for="day"></output></div>
 <div class="skyline" role="group" aria-labelledby="sky-h"><span class="views-h" id="sky-h">Skyline lights <span class="sky-name" id="sky-name">Classic white</span></span><div class="swatches" id="swatches"><label class="swatch custom" title="Your own colour"><input type="color" id="sky-color" value="#7fd0ff" aria-label="Your own colour for the skyline lights"></label></div></div>
-<div class="legend" id="legend" hidden></div>
-<div class="lines" id="lines" role="group" aria-label="Choose a line" hidden></div>
 <div class="views" id="views" role="group" aria-labelledby="views-h"><span class="views-h" id="views-h">Go to</span><div class="row" id="view-btns"></div></div>
 <div class="views eats" id="eats" role="group" aria-labelledby="eats-h" hidden><span class="views-h" id="eats-h">Restaurants <span class="sky-name">djour’s starred picks</span></span><div class="row eats-ctl"><button id="eat-lbl" type="button" class="ghost" aria-pressed="true">Hide restaurant labels</button><select id="eat-hood" aria-label="Show the restaurants in a neighbourhood"></select></div><div class="row eat-list" id="eat-list"></div></div>
 </div>
 </div></div>
-<div class="minimap" id="minimap" hidden><canvas id="mm" aria-label="Map of the city showing where you are. Click to fly there."></canvas>
+<div class="minimap" id="minimap" hidden><button type="button" class="mm-tog" id="mm-tog" aria-expanded="false" aria-controls="mm" aria-label="Show the map" title="Show the map"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 4 3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5zM9 4v13.5M15 6.5V20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button><canvas id="mm" aria-label="Map of the city showing where you are. Click to fly there."></canvas>
 <div class="mm-ctl"><button type="button" id="mm-in" aria-label="Zoom the map in" title="Zoom in">+</button><button type="button" id="mm-out" aria-label="Zoom the map out" title="Zoom out">−</button></div>
 <span class="mm-scale" id="mm-scale" aria-hidden="true"></span></div>
-<aside class="persona" id="persona" aria-live="polite" hidden><div class="pe-face" id="pe-face" role="img"></div><h2 id="pe-name"></h2><dl class="pe-facts"><div><dt>Age</dt><dd id="pe-age"></dd></div><div><dt>Sex</dt><dd id="pe-sex"></dd></div><div><dt>Height</dt><dd id="pe-h"></dd></div><div><dt>Weight</dt><dd id="pe-w"></dd></div></dl><p class="pe-now"><span>Now</span> <b id="pe-now"></b></p><p class="pe-bio" id="pe-bio"></p></aside>
 <aside class="eatcard" id="eatcard" aria-live="polite" hidden><button type="button" class="eat-x" id="eat-x" aria-label="Close">×</button><h2 id="eat-name"></h2><p class="eat-stars" id="eat-stars"></p><p class="eat-meta" id="eat-meta"></p><p class="eat-tags" id="eat-tags"></p><blockquote class="eat-note" id="eat-note" hidden></blockquote><p class="eat-src">From <a href="https://www.djourformore.com/" target="_blank" rel="noopener">djour’s Philly food map</a></p></aside>
+<div class="dock" id="dock">
+<p class="toast" id="toast" role="status" aria-live="polite"></p>
+<aside class="persona" id="persona" aria-live="polite" hidden><div class="pe-face" id="pe-face" role="img"></div><div class="pe-h"><h2 id="pe-name"></h2><button type="button" class="pe-fold" id="pe-fold" aria-expanded="true" aria-controls="pe-facts pe-bio" aria-label="Fold the card" title="Fold the card"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 6 8 10.5 12.5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div><dl class="pe-facts" id="pe-facts"><div><dt>Age</dt><dd id="pe-age"></dd></div><div><dt>Sex</dt><dd id="pe-sex"></dd></div><div><dt>Height</dt><dd id="pe-h"></dd></div><div><dt>Weight</dt><dd id="pe-w"></dd></div></dl><p class="pe-now"><span>Now</span> <b id="pe-now"></b></p><p class="pe-bio" id="pe-bio"></p></aside>
 <div class="actions" id="actions" role="group" aria-label="Things to do" hidden></div>
 <div class="ridebar" id="ridebar" role="status" aria-live="off" hidden><div class="rb-h"><span class="rb-dot" id="rb-dot" aria-hidden="true"></span><b id="rb-name"></b><span class="rb-to" id="rb-to"></span><span class="rb-next" id="rb-next"></span></div><svg id="rb-svg" viewBox="0 0 1000 120" preserveAspectRatio="xMidYMax meet" aria-hidden="true"></svg></div>
 <p class="credit" id="credit"></p>
+</div>
+<div class="walkpad" id="walkpad" role="group" aria-label="Walk" data-touch-move hidden><button type="button" data-k="f" aria-label="Walk forward"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path d="M3.5 10.5 8 6l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" data-k="l" aria-label="Step left"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" data-k="r" aria-label="Step right"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" data-k="b" aria-label="Walk back"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path d="M3.5 5.5 8 10l4.5-4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
 </main>
 <section class="city-loading" id="city-loading" aria-labelledby="loading-city" hidden>
-<img class="loading-art" id="loading-art" alt="" fetchpriority="high" hidden>
+<div class="ls-stage" aria-hidden="true"></div>
+<div class="ls-flash" aria-hidden="true"></div>
+<div class="ls-fx" aria-hidden="true"><div class="ls-grain"></div></div>
+<svg class="ls-logo" viewBox="0 0 360 150" role="img" aria-label="City models"><g transform="skewX(-8) translate(18 0)"><rect x="2" y="6" width="74" height="74" rx="16" fill="#1d2b36" stroke="#fff" stroke-width="5"/><rect x="12" y="24" width="54" height="25" rx="10" fill="#d6452f"/><rect x="19" y="30" width="10" height="9" rx="2" fill="#fff6e8"/><rect x="34" y="30" width="10" height="9" rx="2" fill="#fff6e8"/><rect x="49" y="30" width="10" height="9" rx="2" fill="#fff6e8"/><rect x="8" y="53" width="62" height="6" rx="2" fill="#eef2f5"/><rect x="35" y="59" width="8" height="15" fill="#eef2f5"/><text x="88" y="66" font-family="Archivo, system-ui, sans-serif" font-weight="900" font-stretch="62%" font-style="italic" font-size="78" fill="#fff" stroke="#0a0810" stroke-width="7" paint-order="stroke" letter-spacing="-1">CITY</text><text x="2" y="142" font-family="Archivo, system-ui, sans-serif" font-weight="900" font-stretch="62%" font-style="italic" font-size="78" fill="#fff" stroke="#0a0810" stroke-width="7" paint-order="stroke" letter-spacing="-1">MODELS</text><rect x="244" y="88" width="96" height="14" fill="#d6452f"/></g></svg>
 <div class="loading-copy">
 <h1 id="loading-city" tabindex="-1"></h1>
+<div class="ls-load"><p id="status" role="status">Loading map data…</p><svg class="ls-spin" viewBox="0 0 40 40" aria-hidden="true"><circle class="track" cx="20" cy="20" r="16"/><circle class="arc" cx="20" cy="20" r="16" pathLength="100"/></svg></div>
 <progress id="loading-progress" max="100" value="0" aria-label="City loading progress"></progress>
-<p id="status" role="status">Loading map data…</p>
 <button id="loading-back" type="button" hidden>Change city</button>
 </div>
+<p class="ls-tip"></p>
 </section>
 <div class="menu" id="menu" hidden><div class="menu-card" role="dialog" aria-labelledby="menu-h"><h1 id="menu-h"><span aria-hidden="true"></span>City models</h1>
 <p>Pick a city to explore in 3D: real buildings, streets, parks and transit, with proposals of our own. You can switch cities at any time.</p>

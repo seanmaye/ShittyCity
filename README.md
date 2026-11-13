@@ -4,7 +4,7 @@ Interactive three.js models of whole cities, built from real map data, with prop
 
 | City | What's in it | More |
 | --- | --- | --- |
-| **Philadelphia** (`phl`) | Philadelphia out to the city limits on its real terrain (USGS 3DEP elevation); every rail transit line (SEPTA Metro, Regional Rail, PATCO, NJ Transit); the 1953 streetcars; stadiums, Independence Hall and the Delaware bridges. Proposals: a Schuylkill riverfront monorail loop, expressway sports parks, a rail yard park and a bowl, and Walnut Street as a brick promenade busy with people you can see through the eyes of, djour's 265 starred restaurants modelled as storefronts on their real buildings with their own labels and cards, and a Chinatown night market whose arcade stall has games you can play. Chinatown is modelled in detail, Friendship Gate and all. Cut-away: under Market Street. | [docs/PHL.md](docs/PHL.md) |
+| **Philadelphia** (`phl`) | Philadelphia out to the city limits on its real terrain (USGS 3DEP elevation); every rail transit line (SEPTA Metro, Regional Rail, PATCO, NJ Transit); the 1953 streetcars; stadiums, Independence Hall and the Delaware bridges. Proposals: a Schuylkill riverfront monorail loop, expressway sports parks, a rail yard park and a bowl where Alvin and the Chipmunks play to a crowd of punks you can see through the eyes of (and get high as), and Walnut Street as a brick promenade busy with people you can see through the eyes of, djour's 265 starred restaurants modelled as storefronts on their real buildings with their own labels and cards, and a Chinatown night market whose arcade stall has games you can play. Chinatown is modelled in detail, Friendship Gate and all. Cut-away: under Market Street. | [docs/PHL.md](docs/PHL.md) |
 | **New York** (`nyc`) | Manhattan, Brooklyn and Queens; the four East River bridges; Manhattan's towers, the Wonder Wheel, the Unisphere and Citi Field; 11 subway lines. Proposal: an East River monorail loop. Cut-away: under Times Square. | [docs/NYC.md](docs/NYC.md) |
 | **New Orleans** (`nola`) | The French Quarter, the CBD, the Marigny, the Bywater and the Garden District out to Uptown, City Park, the Lakefront and the Lower Ninth Ward; the Mississippi and Lake Pontchartrain; about 106,000 buildings; the six RTA streetcar lines on their real alignments (Arts, Broad, Cleveland, DC, Esplanade and Canal). Proposal: a Mississippi riverfront monorail loop. | [docs/NOLA.md](docs/NOLA.md) |
 | **Jersey Shore, PA** (`jsh`) | Jersey Shore borough and its neighbours on the West Branch of the Susquehanna: about 4,100 buildings, every street, the river round the island, Pine Creek, and Bald Eagle Mountain and the hills, on real terrain, with crop fields that grow and are harvested through the year, barns and silos, and in July a detasseling crew in the seed corn whose eyes you can see through. Proposal: the West Branch monorail loop via the river island and Antes Fort. | [docs/JSH.md](docs/JSH.md) |
@@ -17,6 +17,7 @@ Interactive three.js models of whole cities, built from real map data, with prop
   - Drag to orbit and scroll to zoom.
   - W A S D (or the arrow keys) fly, Space rises and Shift sinks.
   - Right-click the view for creative-mode flight: the mouse looks around and scroll sets the speed.
+- **Cinematic mode** ("Cinematic" in the panel) flies you round the city hands-free: slow orbits, push-ins, crane shots and flights along the rail lines, cut together through black, with the place's name on screen. It's the live city: the time of day, the season and the day's speed stay as you set them, so with the Speed slider up the sun sets and the lights come on during the tour. Any key, click or tap ends it. It also starts by itself after two and a half minutes with nobody at the controls, and `?cinematic` in the address starts it straight away (for a screen left running). It makes its shots up as it goes, for as long as it runs, and never shows the same shot twice: each picks a subject from what every city already has (its "Go to" views, labelled landmarks and places, skyline, streets and lines; in Philadelphia also djour's three-star restaurants, filmed at street level round their modelled shop fronts) and a camera angle, distance and move that no earlier shot used. A new city gets all this too.
 - **Cut away the ground** along a subway line to see the tunnels, platforms and trains underneath.
 - **Show transit lines** highlights every line in its colour, with a legend.
 - **Buildings** have day and night facades in six styles: rowhouse terraces, offices, ribbon windows, glass and stone. Roofs use real roofing colours. Rooftop plant and aviation lights sit on tall buildings, and office lights go off through the night.
@@ -27,6 +28,7 @@ Interactive three.js models of whole cities, built from real map data, with prop
 - **A minimap** in the top right shows where you are. Click it to fly there.
 - **Labels and "Go to" views** name the landmarks, stations and neighbourhoods.
 - **The panel folds** down to its title with the arrow in its corner.
+- **Loading screens** show the city's points of interest while it loads: frames from the 3D model itself, each with one of our figures striking a pose in front, sliding in one after another.
 
 ## Run it
 
@@ -91,6 +93,7 @@ js/data.js            data loader + lat/lon -> scene projection
 js/ui.js              buttons, hint text, floating labels, panel fold, skyline lights
 js/minimap.js         the top-right map
 js/ridebar.js         the line diagram shown while riding
+js/loading.js         the loading screens: posed figures over frames of the city
 js/scene/
   index.js            assembles the scene: each city's parts, time of day, rides, views
   core.js             renderer, camera, orbit controls, lights
@@ -129,6 +132,7 @@ tools/
   serve.py            local server for the source page, with caching off (Run it)
   bundle.py           packs everything into city-models.html
   unbundle.py         the reverse: unpacks city-models.html into the sources
+  loading/capture.py  captures the loading-screen backgrounds from each city (needs Playwright)
   phl/                Philadelphia's data tools (see docs/PHL.md and tools/phl/README.md)
   nyc/                New York's data tools (see docs/NYC.md)
   jsh/                Jersey Shore's data tools and their downloaded sources (see docs/JSH.md)
@@ -143,4 +147,5 @@ All cities share one set of data formats, which [docs/EDITING.md](docs/EDITING.m
 1. Make its data in `data/<id>/` in the shared formats, with the tools that make it in `tools/<id>/`.
 2. Add its entry to `CITIES` in `js/cities.js`. The menu shows it automatically.
 3. Put anything hand-built in `js/scene/<id>/`, and call it from `js/scene/index.js` when that city's data is loaded.
-4. Write `docs/<ID>.md`, and run `python -I tools/bundle.py`.
+4. List a few points of interest in its `loadingScreens` and capture them with `python -I tools/loading/capture.py <id>`.
+5. Write `docs/<ID>.md`, and run `python -I tools/bundle.py`.

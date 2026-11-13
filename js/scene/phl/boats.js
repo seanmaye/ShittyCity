@@ -100,7 +100,10 @@ export function buildBoats(scene, data) {
     const n = Math.max(1, Math.round(run.half / 6000));
     for (let k = 0; k < n; k++) {
       const model = boatModel(ln.color, winMat); model.userData.terrain = 'done'; scene.add(model);
-      const sl = { line: id, lineName: name, led: ln.name, color: ln.color, k, c: 0, run, s: run.L * k / n, dwell: 0, pos: V(0, 0, 0), dir: V(0, 0, 1), q: new THREE.Quaternion(), hidden: false,
+      // h: height above the ground, 0 (afloat). Without it subway.js goes by pos.y, and where the
+      // Delaware's surface lies more than a metre below datum it took a boat for underground: it
+      // couldn't be tapped, and riding it counted as riding in a tunnel
+      const sl = { line: id, lineName: name, led: ln.name, color: ln.color, k, c: 0, run, s: run.L * k / n, dwell: 0, pos: V(0, 0, 0), dir: V(0, 0, 1), q: new THREE.Quaternion(), hidden: false, h: 0,
         model, bob: k * 1.7, sync() {}, onBoard(on) { model.userData.shell.forEach(m => { m.visible = !on; }); } };   // aboard: the walkable cabin replaces the outer walls; hull and deck stay
       slots.push(sl); fleet.push(sl);
     }
