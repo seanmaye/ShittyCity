@@ -1004,11 +1004,24 @@ export function buildSubway(scene, data, river) {
    *  optionally run {L, at(s, out), stops: [{s, t}], strip} and s (distance along it) for the next-stop sign and line diagram.
    *  sp: {car (length, world units), scale? (the cabin's, for cars smaller than life), dress?(person) (passenger's clothes)} */
   function registerFleet(kind, sp, slots) { fleets[kind] = { sp, slots, parts: [], external: true }; }
+  /** the lead car of each train on a line, for cinematic.js to follow: pos and dir live, and for
+   *  our own trains at(t, out), where it will be t seconds from now (out.h below -1: underground).
+   *  Cars positioned by another module (monorails, boats) have no at: only where they are now. */
+  function cars(line) {
+    const out = [];
+    for (const [kind, fl] of Object.entries(fleets)) for (const sl of fl.slots) {
+      if (sl.line !== line || (sl.c || 0) !== 0) continue;
+      const sp = fl.sp, own = !fl.external && sl.run;
+      out.push({ kind, pos: sl.pos, dir: sl.dir, speed: sp.speed || 0, hidden: () => !!sl.hidden,
+        at: own ? (t, o) => { const L = sl.run.L, s = sl.s + sp.speed * t; return sl.run.at(((s % L) + L) % L, o); } : null });
+    }
+    return out;
+  }
   /** every line's route (its out-and-back loop), for the highlight overlay */
   const routes = data.runs.map(r => ({ id: r.line, color: (LINES[r.line] || {}).color || '#ffffff', kind: (LINES[r.line] || {}).kind, P: pts3(r.p, r.g) }));
   update(0);
 
   return { planes: [plane], setCut, getCut: () => (active ? active.id : false), update, labels, views: sections.map(s => s.view),
            pick, board, leave, getRide, rideStrip, look: look_, move,
-           boardLine, registerFleet, routes, lines: data.lines };
+           boardLine, registerFleet, cars, routes, lines: data.lines };
 }

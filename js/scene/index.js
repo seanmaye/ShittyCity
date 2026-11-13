@@ -525,12 +525,13 @@ export async function buildScene(canvas, data, status = () => {}) {
   }
   // Cinematic mode: hands-free fly-arounds planned from this city's views, landmarks, skyline and
   // lines (cinematic.js; nothing city-specific here, so every city has it)
-  const lineName = id => { const l = lineById.get(id) || lines.find(o => o.id === id || o.id === 'm:' + id || o.id === 'm:mono:' + id); return l ? l.name : ''; };
+  const lineName = id => { const sh = /^shuttle(\d+)$/.exec(id), l = lineById.get(id) || lines.find(o => o.id === id || o.id === 'm:' + id || o.id === 'm:mono:' + id || (sh && o.id === +sh[1])); return l ? l.name : ''; };   // (a sports shuttle's route is 'shuttle' + its index)
   const cine = createCinematic({
     scene, camera, views, home: { pos: core.HOME_POS, target: core.HOME_TGT }, name: CITY.name,
     // djour's three-star picks, at their modelled shop fronts (not the stalls inside a market hall)
     spots: eats.places.filter(p => p.s >= 3 && p.look && !p.look.indoor && !p.soon).map(p => ({ title: p.n, sub: '★★★  ·  ' + CITY.name, target: p.view.target, front: p.view.pos, street: p.street.pos })),
-    labels, routes: mapData.routes.map(r => ({ ...r, name: lineName(r.id) })), ground: (x, z) => (terrain.on ? surface(x, z) : data.grid ? gridAt(x, z) : 0),   // (Jersey Shore: its own ground grid)
+    labels, routes: mapData.routes.map(r => ({ ...r, name: lineName(r.id) })),
+    vehicles: id => [...subway.cars(id), ...subway.cars('mono:' + id)],   // (a line's trains; a monorail's cars are 'mono:' + its route id) ground: (x, z) => (terrain.on ? surface(x, z) : data.grid ? gridAt(x, z) : 0),   // (Jersey Shore: its own ground grid)
     getDay: () => getSeason().day,   // (the clock and season are left alone: the tour shows the live city)
   });
   function startCinematic() {
@@ -654,5 +655,5 @@ export async function buildScene(canvas, data, status = () => {}) {
     pickAngler: (x, y) => { camera.updateMatrixWorld(); return anglers.pick(camera, x, y, canvas.clientWidth, canvas.clientHeight); }, anglerInfo: anglers.info,
     viewAngler: i => { const a = anglers.info(i); if (a) flyTo(a.view); },
     pickStall: isPhl ? (x, y) => { camera.updateMatrixWorld(); return chinatown.pickStall(camera, x, y, canvas.clientWidth, canvas.clientHeight); } : null,
-    viewStall: () => { if (chinatown.stallView) flyTo(chinatown.stallView); }, mapData, flyToPoint, displayPresets: CITY.presets ? DISPLAY_PRESETS.filter(p => CITY.presets.includes(p.id)) : DISPLAY_PRESETS, setDisplayLights: setDisplayColors, lookCar: (dx, dy) => (walnut.getSeat() ? walnut.lookSeat(dx, dy) : peds.getInhabited() ? peds.lookAt(dx, dy) : concert.on() ? concert.lookAt(dx, dy) : overlook.on() ? overlook.look(dx, dy) : subway.look(dx, dy)), moveCar: subway.move, actCar: id => (concert.on() ? concert.act(id) : overlook.act(id)), wheelCar: dy => overlook.zoom(dy), start, startCinematic, stopCinematic, cinematic: cine, river, monorail, peds, concert, corn, harvest, overlook, indoors: () => church.indoors() };
+    viewStall: () => { if (chinatown.stallView) flyTo(chinatown.stallView); }, mapData, flyToPoint, displayPresets: CITY.presets ? DISPLAY_PRESETS.filter(p => CITY.presets.includes(p.id)) : DISPLAY_PRESETS, setDisplayLights: setDisplayColors, lookCar: (dx, dy) => (walnut.getSeat() ? walnut.lookSeat(dx, dy) : peds.getInhabited() ? peds.lookAt(dx, dy) : concert.on() ? concert.lookAt(dx, dy) : overlook.on() ? overlook.look(dx, dy) : subway.look(dx, dy)), moveCar: subway.move, actCar: id => (concert.on() ? concert.act(id) : overlook.act(id)), wheelCar: dy => overlook.zoom(dy), start, startCinematic, stopCinematic, cinematic: cine, subway, river, monorail, peds, concert, corn, harvest, overlook, indoors: () => church.indoors() };
 }
