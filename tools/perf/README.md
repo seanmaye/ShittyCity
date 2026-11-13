@@ -29,6 +29,8 @@ pip install playwright
 python -m playwright install chromium
 ```
 
+The pixel diffs (`ab --shots`, `smoke --against`) also need Pillow (`pip install pillow`).
+
 three.js and the font are fetched from their CDNs on the first run and cached in
 `tools/perf/.cache/`, so later runs need no network and CDN latency stays out of the
 load numbers. Output goes to `tools/perf/out/` (git-ignored).
@@ -59,13 +61,22 @@ python -I tools/perf/perf.py hot tools/perf/out/<run>/overview-dusk.cpuprofile -
 python -I tools/perf/perf.py compare tools/perf/out/<a> tools/perf/out/<b>
 ```
 
+```bash
+python -I tools/perf/perf.py smoke --ref origin/main --label base
+```
+
+```bash
+python -I tools/perf/perf.py smoke --against tools/perf/out/<time>-smoke-base
+```
+
 | command | what it does | time |
 |---|---|---|
 | `run` | load + every scenario (or `-s a,b` / `--quick`): timings, CPU and allocation profiles, screenshots | ~15 s per scenario + ~10 s load |
 | `run --census` | adds a one-frame draw-call census per scenario, grouped by the code that added each object | + a few s |
 | `run --ablate` | adds the cost of each part: shadow pass, half resolution, labels, and each big builder hidden | + ~50 s per scenario |
 | `ab` | A/B: `--base` commit (default HEAD) vs your working tree, alternating fresh browsers, paired t-test per metric; timings only | (~8 s + 8 s per scenario) × (2 × rounds + 1); `-s overview-dusk` at 5 rounds ≈ 3 min |
-| `ab --shots` | also saves a screenshot of every scenario for both sides (`A-<name>.png`, `B-<name>.png`) in the last round, to diff for visual changes | + a moment |
+| `ab --shots` | also saves a screenshot of every scenario for both sides (`A-<name>.png`, `B-<name>.png`) in the last round, and reports the share of changed pixels per scenario (`diff-<name>.png` marks them) | + a moment |
+| `smoke` | loads every city in `js/cities.js` (the working tree, `--ref REF` or `--root DIR`), fails on any page error, `console.error` or failed request, and saves `<city>.png` in a fixed view; `--against <earlier smoke folder>` reports the changed pixels per city. Exits non-zero if a city failed | ~10 s per city |
 | `snap NAME` | copies the sources as they are now (`index.html`, `css/`, `js/`) to `out/.snap/NAME`; `--ref REF` copies a commit instead. `ab --a-snap X --b-snap Y` then compares two snapshots, so stacked changes can be measured one at a time without committing, while you keep editing | instant |
 | `hot` | re-analyses a saved `.cpuprofile` / `.heapprofile`; `--focus fn` limits it to one function's subtree, `--total` ranks by inclusive time | instant |
 | `compare` | diffs two `report.json` files from separate `run`s (ideally `--repeat 3` each); weaker than `ab` because of drift between runs | instant |
@@ -86,6 +97,25 @@ ranges), `--no-profile` (timings only), `--seconds`, `--settle`, `--size 1920x10
 | `<scenario>.frames.json` | per-frame `dt`, `work`, `render`, `gpu`, `calls`, `tris` | for your own plots |
 | `<scenario>.census.json` | every draw-call group of one frame (`--census`) | |
 | `<scenario>.png` | what the scenario looked like: check it still looks right after an optimization | |
+
+## Smoke and pixel diffs
+
+`smoke` is the "does every city still load" check. Each city gets a fresh page with the
+same setup as `run` (seeded `Math.random`, pinned date, three.js and the font from the
+cache with the uuid patch, 1600×900) and must draw frames and close its loading screen
+within `--timeout` (180 s); a timeout is a failure, since a frame loop that dies shows up as
+one. Any `pageerror`, `console.error`, failed request or HTTP 4xx/5xx fails the city, and the
+report names the line or URL. Then a city flies to its home view at 12:30 (the kitchen keeps
+its opening view; it sets `window.__kitchen`, not `window.__city`), waits `--settle`,
+centres the shadow box like `ab --shots`, and saves `<city>.png`. Output: `smoke.md`,
+`smoke.json` and the screenshots in `tools/perf/out/<time>-smoke[-label]/`.
+
+The pixel diffs (`ab --shots`, `smoke --against`, `ux.py compare`) count a pixel as changed
+when any channel differs by more than 8 of 255 (`DIFF_THRESHOLD`), report the share of
+changed pixels, and save a diff image (B in grey, changed pixels red). They need Pillow.
+Nothing is masked, so trains, boats and people make two runs of the same code differ a
+little: judge a share against a same-commit pair on the same machine, never against zero
+or against images from another machine.
 
 ## Reading a report
 
