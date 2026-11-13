@@ -32,7 +32,33 @@ Unspecified Version) (WebGL2, GPU timer on)`; Chromium 158.0.8127.18 (Playwright
 own docs branches from a separate worktree (`git worktree list` shows it), so it never switches
 the main checkout's branch.
 
-**Pixel-diff tolerances:** _from P1c calibration_.
+**Pixel-diff tolerances** (P1c calibration, 2026-11-13; tolerance = 2× the largest same-commit
+floor seen, with a minimum of 0.001%; a share above it means "screenshots differ"):
+
+| check | view | floor seen | tolerance |
+| --- | --- | ---: | ---: |
+| smoke | phl | 0.0027% | 0.0054% |
+| smoke | nyc | 0.0001% | 0.001% |
+| smoke | jsh | 0.0000% | 0.001% |
+| smoke | nola | 0.0006% | 0.0012% |
+| smoke | pine | 0.0038% | 0.0075% |
+| `ab --shots` (phl) | overview-dusk | 0.0102% | 0.02% |
+| `ab --shots` (phl) | whole-city | 0.0009% | 0.002% |
+| `ab --shots` (phl) | ride-L | 0.8766% | 1.75% |
+| `ab --shots` (phl) | fly-market | 28.0% | not comparable by pixels (moving camera): look at it |
+
+Scenarios not listed get their floor from the first same-commit run that includes them. A
+deliberate change (the `--accent` colour) came out 0.11–0.20% in smoke, about 40× the floor.
+
+**How to read `ab` (decided 2026-11-13):** a `worse` row (99%) fails a gate. A lone
+`likely worse` (95%) row means rerun that scenario with `--rounds 8`; with ~40 metrics per run,
+one or two 95% verdicts appear by chance (the fixed harness, same commit on both sides, gave
+one: `overview-dusk.frameP95` +3.1%). `heapMB` rows swing ±30% with GC timing; ignore them
+unless a load or frame row moves with them.
+
+**Harness commands until P1a merges:** `uv run --no-project --with playwright==1.65.1 --with
+pillow==13.0.0 python -I tools/perf/perf.py …` (zsh: wrap in a function or script; a command in a
+variable is not word-split).
 
 **Contributors:** `main` moves about 16 commits a day from several people and their agents.
 Re-list files before every phase.
@@ -118,8 +144,17 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P1c. Smoke check and pixel diff
 
-- State: in progress (implementer started 2026-11-13, in parallel with P1a). Branch
-  `refactor/p1c-smoke`.
+- State: in review. Branch `refactor/p1c-smoke`, https://github.com/seanmaye/ShittyCity/pull/7.
+- Adds `perf.py smoke` (every city in `CITIES`, kitchen included) and pixel diffs in
+  `ab --shots`, `smoke --against`, `ux.py compare`.
+- **Found and fixed an A/B bias** (orchestrator's commit `e3ef143`): with the same commit on both
+  sides, the working-tree side (plain handler) raised buildings 4–6% slower in 10/10 rounds, and
+  the side that ran the discarded warm-up (always B) got `whole-city` frame time ~18% better
+  (bimodal ~10/~14 ms). Now both sides share a handler and both warm up. After the fix: no 99%
+  verdict; one 95% (`overview-dusk.frameP95` +3.1%).
+- Gate: smoke same-commit floors ≤ 0.0027%; deliberate colour change caught (0.11–0.20%).
+- Before-fix bias means **P0's baselines are fine** (single-side `run`s) but any `ab` run before
+  `e3ef143` should not be trusted for `whole-city` or the building load phase.
 
 ### P2. The build
 
