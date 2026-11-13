@@ -18,7 +18,7 @@ function status(message, value) {
   progress.value = Math.max(progress.value, value);
 }
 
-let slideshow = { stop() {} };
+let slideshow = { settle() {}, stop() {} };
 function showLoading(city) {
   const screen = $('city-loading'), heading = $('loading-city');
   screen.dataset.city = city.id;
@@ -73,6 +73,7 @@ try {
     const data = await loadData(p => status(`Loading map data… ${Math.round(p * 100)}%`, p * 50));
     const api = await buildScene($('c'), data, status);
     const ui = createUI(api);
+    slideshow.settle();   // no new slides while the city's first frames load the GPU
     status('Rendering the city…', 95);
     const firstFrame = api.start(camera => ui.placeTags(camera));
     window.__city = api; // handy for poking at the scene from the console

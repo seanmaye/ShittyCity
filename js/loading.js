@@ -230,7 +230,7 @@ function buildScreen(city, s) {
 export function startLoadingScreens(city, host) {
   const list = city.loadingScreens || [];
   const stage = host.querySelector('.ls-stage'), flash = host.querySelector('.ls-flash'), tip = host.querySelector('.ls-tip');
-  if (!list.length || !stage) return { stop() {} };
+  if (!list.length || !stage) return { settle() {}, stop() {} };
   host.classList.add('ls-on');
   // a tile of film grain for the overlay
   const g = document.createElement('canvas'); g.width = g.height = 256;
@@ -242,11 +242,13 @@ export function startLoadingScreens(city, host) {
   const tips = shuffle(TIPS.slice()), timers = new Set(), anims = new Set();
   const screens = shuffle(list.map((_, i) => i)).map(i => buildScreen(city, list[i]));
   const PERIOD = HOLD + IN;   // from one screen starting to slide in to the next
-  let stopped = false, tipN = 0;
+  let stopped = false, settled = false, tipN = 0;
 
   const now = () => document.timeline.currentTime;
   const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); if (!stopped) fn(); }, Math.max(0, ms)); timers.add(t); };
-  const animate = (node, frames, opts) => { const a = node.animate(frames, { fill: 'both', ...opts }); anims.add(a); a.finished.then(() => anims.delete(a), () => {}); return a; };
+  let collect = null;   // while planning a slide, its animations are gathered here (see settle)
+  const animate = (node, frames, opts) => { const a = node.animate(frames, { fill: 'both', ...opts }); anims.add(a); collect?.push(a); a.finished.then(() => anims.delete(a), () => {}); return a; };
+  const planned = [];   // { at: timeline ms the slide starts, anims }
 
   /** Bring screen S on in `delay` ms: its slide in (unless it's the very first), its figure and caption,
    *  and its slow drift for `life` ms (until the next one has covered it, or longer for the last of a
@@ -298,10 +300,15 @@ export function startLoadingScreens(city, host) {
   // timer for each one never fired until the city was done). Near the end of a run, as soon as the
   // page is free, the next run is planned, starting from the screen that is up.
   function run(top, firstAt) {
+    if (settled) return;
     const rest = shuffle(screens.filter(S => S !== top));
     const t = now(), start = Math.max(firstAt - t, 120);
     const last = rest[rest.length - 1];
-    rest.forEach((S, i) => { line(S); bringOn(S, start + i * PERIOD, false, S === last ? PERIOD * 6 : undefined); });
+    rest.forEach((S, i) => {
+      line(S); collect = [];
+      bringOn(S, start + i * PERIOD, false, S === last ? PERIOD * 6 : undefined);
+      planned.push({ at: t + start + i * PERIOD, anims: collect }); collect = null;
+    });
     const lastAt = t + start + (rest.length - 1) * PERIOD;
     later(() => run(last, lastAt + PERIOD), lastAt - t + IN + 200);
   }
@@ -316,6 +323,16 @@ export function startLoadingScreens(city, host) {
     if (screens.length > 1) Promise.all(screens.map(S => S.ready)).then(() => { if (!stopped) run(first, shownAt + HOLD); });
   });
   return {
+    // Hold still from now on: slides that haven't started are called off (one under way finishes),
+    // so the screen that is up stays up. main.js calls this as the city draws its first frames: the
+    // GPU is busy compiling and uploading the whole city then, and a slide during it stuttered badly
+    // (a third to a quarter of its frames dropped, against almost none while the city was being built).
+    settle() {
+      settled = true;
+      for (const t of timers) clearTimeout(t); timers.clear();
+      const t = now();
+      for (const p of planned) if (p.at > t) for (const a of p.anims) { a.cancel(); anims.delete(a); }
+    },
     stop() { stopped = true; for (const t of timers) clearTimeout(t); for (const a of anims) a.cancel(); heroRenderer?.dispose(); heroRenderer?.forceContextLoss(); heroRenderer = null; },
   };
 }
