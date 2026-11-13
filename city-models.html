@@ -18557,10 +18557,9 @@ IS.add(B(ICAB / 2 - 2, .75, 11, PLY, ICAB / 4, 17.25, -BASE_D + .75 + 5.5));   /
     put(I.fruitBowl(), ISLAND.west + 20, COUNTER, 96); put(I.cuttingBoard(10, 14), ISLAND.west + 23, COUNTER, 112);
     // window sill things
     for (const [z, c] of [[60, '#f2c230'], [64, '#c8312b'], [90, '#2f8a47']]) put(I.mug(1.4, 3.2, c), ROOM.w - 3, 42, z);
-    // two stools at the island's seating side
-    for (const z of [102, 124]) {
-      const blk = mat('#202124', { r: .5 });
-      put(new THREE.Group(), ISLAND.west - 6, 0, z).add(C(6.5, 6.5, 1.5, blk, 0, 22.5), C(.5, .5, 22.5, blk, 0, 0), C(5.5, 6.5, .5, blk, 0, 0), mesh(new THREE.TorusGeometry(5.5, .35, 6, 24), blk, 0, 9, 0).rotateX(PI / 2));
+    // the stool at the island's seating side (the second one clipped into the pantry rack)
+    { const blk = mat('#202124', { r: .5 });
+      put(new THREE.Group(), ISLAND.west - 6, 0, 102).add(C(6.5, 6.5, 1.5, blk, 0, 22.5), C(.5, .5, 22.5, blk, 0, 0), C(5.5, 6.5, .5, blk, 0, 0), mesh(new THREE.TorusGeometry(5.5, .35, 6, 24), blk, 0, 9, 0).rotateX(PI / 2));
     }
     // the rolling wire cart under the island's free end
     { const blk = mat('#1d1e21', { m: .5, r: .45 }), cart = put(new THREE.Group(), ISLAND.front - 9, 0, ISLAND.north + 9);
