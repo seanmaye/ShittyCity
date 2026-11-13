@@ -8,7 +8,22 @@ import { createArcade } from './arcade.js';
 import { CITY } from './cities.js';
 // remembered per viewer and city (browser storage may be unavailable: then nothing is remembered)
 const store = { get: k => { try { return localStorage.getItem(CITY.storage + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(CITY.storage + k, v); } catch (e) { /* ignore */ } } };
+// a touch screen (no mouse, no keyboard to speak of), and a small screen (a phone either way up):
+// the wording, the walk pad and the panel follow them (css/style.css has the same breakpoints)
+const TOUCH = matchMedia('(pointer: coarse)'), COMPACT = matchMedia('(max-width: 640px), (max-height: 500px)');
+/** text written for the mouse, said for a finger: click -> tap (cities' own hints, c.hint) */
+export function touchify(t) {
+  if (!TOUCH.matches || !t) return t;
+  return t.replace(/Drag or click to look around/g, 'Drag to look around').replace(/\b(Space, )?Esc or (“[^”]+”)/g, '$2')
+    .replace(/\b([Cc])lick(s|ed|ing)?\b/g, (m, c, end) => (c === 'C' ? 'T' : 't') + 'ap' + ({ s: 's', ed: 'ped', ing: 'ping' }[end] || ''));
+}
+/** how to move around, after each city's own hint */
+const controlsHint = trains => TOUCH.matches
+  ? 'Drag to turn the view, pinch to zoom, and drag with two fingers to move.' + (trains ? ' Tap any train to ride inside it.' : '')
+  : 'Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom.' + (trains ? ' Click any train to ride inside it.' : '');
 export function createUI(api) {
+  const toastEl = document.getElementById('toast'); let toastTimer = 0;
+  const toast = (msg, ms) => { toastEl.textContent = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => { toastEl.textContent = ''; }, ms); };
   const tagsEl = document.getElementById('tags');
   const LABELS = api.labels.map(({ text, pos, section, stn, far, cutHide, layer, stars, eat }) => {
     const el = document.createElement('div'); el.className = section ? 'tag sub' : stn ? 'tag stn ' + stn : layer ? 'tag ' + layer : 'tag'; el.textContent = text; tagsEl.appendChild(el);
@@ -23,7 +38,15 @@ export function createUI(api) {
   // the card for someone you're inhabiting on Walnut St
   const persona = document.getElementById('persona'), peNow = document.getElementById('pe-now');
   let personaOn = null;
+  // on a small screen the card folds down to the name and what they're doing (someone new: the whole card)
+  const peFold = document.getElementById('pe-fold');
+  const foldPersona = on => {
+    persona.classList.toggle('min', on); peFold.setAttribute('aria-expanded', String(!on));
+    const t = on ? 'Show the whole card' : 'Fold the card'; peFold.setAttribute('aria-label', t); peFold.title = t;
+  };
+  peFold.addEventListener('click', () => foldPersona(!persona.classList.contains('min')));
   function showPersona(c) {
+    if (!c || c.id !== personaOn) foldPersona(false);
     persona.hidden = !c; personaOn = c ? c.id : null; if (!c) return;
     document.getElementById('pe-name').textContent = c.name;
     document.getElementById('pe-age').textContent = c.age;
@@ -50,8 +73,11 @@ export function createUI(api) {
       actIds = ids; actEl.hidden = !acts.length; actBtns.length = 0;
       actEl.replaceChildren(...acts.map(a => {
         const b = document.createElement('button'), t = document.createElement('span'), k = document.createElement('kbd');
-        b.type = 'button'; b.className = 'ghost'; k.textContent = a.key; b.append(t, k);
-        b.addEventListener('click', () => { api.actCar(a.id); b.blur(); });   // (blur: Space must still mean "leave", not "press this again")
+        b.type = 'button'; b.className = 'ghost'; k.textContent = a.key; b.append(t); if (a.key) b.append(k);
+        b.addEventListener('click', () => {
+          const was = api.getCar(); api.actCar(a.id); b.blur();   // (blur: Space must still mean "leave", not "press this again")
+          const now = api.getCar(); if (!now !== !was || (now && (now.kind !== was.kind || now.id !== was.id))) syncCar();   // it put you somewhere else (the overlook's "See through his eyes")
+        });
         actBtns.push({ b, t }); return b;
       }));
     }
@@ -63,41 +89,86 @@ export function createUI(api) {
     // binoculars up: the card steps aside, and what they are looking at is written under the view
     const k = (c && c.bino) || 0;
     if (binoc.hidden !== k < .01) binoc.hidden = k < .01;
-    if (k >= .01) { binoc.style.opacity = k.toFixed(2); if (binocCap.textContent !== c.now) binocCap.textContent = c.now; }
+    if (k >= .01) {
+      binoc.style.opacity = k.toFixed(2); if (binocCap.textContent !== c.now) binocCap.textContent = c.now;
+      const how = TOUCH.matches ? 'Spread or pinch two fingers to zoom' : 'Scroll to zoom'; if (binocCap.dataset.how !== how) binocCap.dataset.how = how;
+    }
     persona.classList.toggle('away', k > .5);
   }
 
+  // the panels a label keeps out from under (it can't be read there, and on a phone they cover
+  // much of the view): measured a few times a second, before this frame's writes, not every frame
+  const CHROME = '.hud .card, #minimap, .mm-ctl, .dock > :not([hidden]), #walkpad:not([hidden]), #binoc-cap, .fish-card, .arc-card, #eatcard:not([hidden]), .kinfo:not([hidden])';
+  let chrome = [], chromeT = -1e9;
   function placeTags(camera) {
+    const now = performance.now();
+    if (now - chromeT > 250) { chromeT = now; chrome = [...document.querySelectorAll(CHROME)].map(e => e.getBoundingClientRect()).filter(r => r.width > 1 && r.height > 1); }
     const car = api.getCar();
     if (!!car !== carOn) syncCar();
     if (carOn && personaOn !== null) { const c = car; if (c && c.kind === 'person') { if (c.id !== personaOn) syncCar(); else if (c.now !== peNow.textContent) peNow.textContent = c.now; } }
     syncActions(car);
-    const now = performance.now(); minimap.update(camera, now); ridebar.update(now);
+    minimap.update(camera, now); ridebar.update(now);
     const w = window.innerWidth, h = window.innerHeight, placed = [], inCar = carOn && !(car && car.labels);   // (from the overlook the place names help)
     const noTags = !showTags || inCar, noEats = !showEats || inCar;   // restaurant labels have their own switch
     // near the ground only nearby labels: far ones would pile up along the horizon over the street
     const lift = camera.position.y - (api.groundAt ? api.groundAt(camera.position.x, camera.position.z) : 0), reach = Math.max(250, lift * 20);
+    // a label sits above its place; one that would sit on another is lifted above it (on a phone only
+    // twice: stacks of names fill a small screen); with no room above (another name, a panel, the top
+    // of the screen) it hangs below the place instead; with no room at all it is left out, never
+    // drawn over the rest or under a panel
+    const lifts = COMPACT.matches ? 2 : 6, hide = l => { l.el.style.display = 'none'; };
     LABELS.forEach(l => {
-      if ((l.layer === 'eat' ? noEats : noTags) || (l.section && l.section !== api.getCut()) || l.cutHide.includes(api.getCut()) || (l.layer === 't53' && !api.getTransitMap())) { l.el.style.display = 'none'; return; }
+      if ((l.layer === 'eat' ? noEats : noTags) || (l.section && l.section !== api.getCut()) || l.cutHide.includes(api.getCut()) || (l.layer === 't53' && !api.getTransitMap())) { hide(l); return; }
       pv.copy(l.v).project(camera);
-      if (pv.z > 1 || pv.x < -1.1 || pv.x > 1.1 || pv.y < -1.1 || pv.y > 1.1 || camera.position.distanceTo(l.v) > Math.min(l.far, reach)) { l.el.style.display = 'none'; return; }
-      if (!l.wd) { l.el.style.display = 'block'; l.wd = l.el.offsetWidth || 120; }
-      const x = (pv.x + 1) / 2 * w; let y = (1 - pv.y) / 2 * h - 8;
-      for (let k = 0; k < 6; k++) { const hit = placed.some(r => Math.abs(r.x - x) < (r.w + l.wd) / 2 + 4 && Math.abs(r.y - y) < 24); if (!hit) break; y -= 26; }
-      placed.push({ x, y, w: l.wd }); l.el.style.display = 'block'; l.el.style.transform = `translate(${x}px,${y}px) translate(-50%,-100%)`;
+      if (pv.z > 1 || pv.x < -1 || pv.x > 1 || pv.y < -1 || pv.y > 1 || camera.position.distanceTo(l.v) > Math.min(l.far, reach)) { hide(l); return; }
+      if (!l.wd) { l.el.style.display = 'block'; l.wd = l.el.offsetWidth || 120; l.ht = l.el.offsetHeight || 22; }
+      const ax = (pv.x + 1) / 2 * w, ay = (1 - pv.y) / 2 * h, half = l.wd / 2;
+      if (ax < 8 || ax > w - 8 || ay < 8 || ay > h - 8 || chrome.some(r => ax > r.left && ax < r.right && ay > r.top && ay < r.bottom)) { hide(l); return; }   // the place itself is off the screen or under a panel
+      // kept on the screen: slid in from the edge, its stem still on the place
+      const x = Math.min(w - 4 - half, Math.max(4 + half, ax)), x0 = x - half, x1 = x + half;
+      const free = (top, bot) => top > 2 && bot < h - 2 && !placed.some(r => x0 < r.x1 + 4 && x1 > r.x0 - 4 && top < r.bot && bot > r.top)
+        && !chrome.some(r => x0 < r.right && x1 > r.left && top < r.bottom && bot > r.top);
+      let top = -1;
+      for (let k = 0, y = ay - 8; k <= lifts; k++, y -= 26) if (free(y - l.ht, y + (k ? 0 : 8))) { top = y - l.ht; break; }
+      const below = top < 0 && free(ay, ay + 8 + l.ht);
+      if (below) top = ay + 8;
+      if (top < 0) { hide(l); return; }
+      placed.push({ x0, x1, top, bot: top + l.ht }); l.el.style.display = 'block'; l.el.style.transform = `translate(${x0}px,${top}px)`;
+      if (below !== !!l.below) { l.below = below; l.el.classList.toggle('below', below); }
+      const sx = Math.round(ax - x); if (sx !== l.sx) { l.sx = sx; l.el.style.setProperty('--sx', sx + 'px'); }
     });
   }
 
   const lblBtn = document.getElementById('lbl'), rideBtn = document.getElementById('ride'), hint = document.getElementById('hint');
-  const HINT0 = hint.textContent;
+  const hintMore = document.getElementById('hint-more');
+  // on small screens the hint shows three lines; More opens the rest
+  const syncMore = () => { hintMore.hidden = hint.classList.contains('open') ? false : !(hint.scrollHeight > hint.clientHeight + 1); };
+  const setHint = t => {
+    t = touchify(t); if (hint.textContent === t) return;
+    hint.textContent = t; hint.classList.remove('open'); hintMore.textContent = 'More'; hintMore.setAttribute('aria-expanded', 'false');
+    requestAnimationFrame(syncMore);
+  };
+  hintMore.addEventListener('click', () => {
+    const open = hint.classList.toggle('open'); hintMore.textContent = open ? 'Less' : 'More'; hintMore.setAttribute('aria-expanded', String(open));
+  });
+  COMPACT.addEventListener('change', () => requestAnimationFrame(syncMore));
+  const HINT0 = CITY.hint + ' ' + controlsHint(api.lines.length > 0);
   const CUT_HINT = CITY.cutHint;
   const baseHint = () => (api.getCut() ? CUT_HINT : HINT0);
   const cutBtn = document.getElementById('cut'), CUT_VIEW = api.views.find(v => v.cut);
   cutBtn.hidden = !CUT_VIEW;   // a city without a cut-away section
+  // on a phone the panel folds away to show the cut, hint and all: a line at the bottom says what
+  // you're looking at and closes it (css/style.css .cut-mini: small screens, panel folded, not aboard)
+  const cutMini = document.createElement('div'), cutTxt = document.createElement('p'), cutClose = document.createElement('button');
+  cutMini.className = 'dock-mini cut-mini'; cutMini.id = 'cut-mini'; cutMini.hidden = true; cutMini.setAttribute('role', 'group'); cutMini.setAttribute('aria-label', 'Cut-away');
+  cutTxt.textContent = touchify(((CITY.cutHint || '').match(/^.*?\.(?=\s|$)/) || [''])[0] + ' Click a train in the cut to ride it.');
+  cutClose.type = 'button'; cutClose.className = 'ghost'; cutClose.textContent = 'Close'; cutClose.setAttribute('aria-label', 'Close the cut');
+  cutClose.addEventListener('click', () => cutBtn.click());
+  cutMini.append(cutTxt, cutClose); if (CUT_VIEW) document.getElementById('dock').appendChild(cutMini);
   const syncCut = () => {
-    const on = !!api.getCut(); cutBtn.setAttribute('aria-pressed', String(on));
+    const on = !!api.getCut(); cutBtn.setAttribute('aria-pressed', String(on)); cutMini.hidden = !on;
     cutBtn.textContent = on ? 'Close the cut' : CITY.cutButton;
-    if (!riding && !api.getCar()) hint.textContent = baseHint();
+    if (!riding && !api.getCar()) setHint(baseHint());
   };
   // 24-hour clock slider (sun position for today's date in the city)
   const timeIn = document.getElementById('time'), timeOut = document.getElementById('time-out');
@@ -140,7 +211,13 @@ export function createUI(api) {
   const linesEl = document.getElementById('lines');
   const COLORS = { loop: '#d6452f' };
   let riding = false;
-  const openPicker = open => { linesEl.hidden = !open; rideBtn.setAttribute('aria-expanded', String(open)); };
+  // the panel scrolls on a short screen: bring what just opened under the buttons into sight (as
+  // much of it as fits), or tapping "Ride a line" seems to do nothing
+  const reveal = el => requestAnimationFrame(() => {
+    const box = document.getElementById('hud-body'), r = el.getBoundingClientRect(), b = box.getBoundingClientRect();
+    if (!el.hidden && r.bottom > b.bottom) box.scrollTop += Math.max(0, Math.min(r.bottom - b.bottom + 8, r.top - b.top - 8));
+  });
+  const openPicker = open => { linesEl.hidden = !open; rideBtn.setAttribute('aria-expanded', String(open)); if (open) reveal(linesEl); };
   let groupRow = null, groupName = null;
   api.lines.forEach(line => {
     if (line.group !== groupName) {       // a heading and a row of buttons per network
@@ -153,7 +230,7 @@ export function createUI(api) {
     b.addEventListener('click', () => {
       // board the lead car of the line's first train: walk around inside it like any car
       openPicker(false); markView(null);
-      if (api.boardLine(line.id)) { syncCar(); syncCut(); }
+      if (api.boardLine(line.id)) { syncCar(); syncCut(); autoFold(); }
     });
     groupRow.appendChild(b);
   });
@@ -161,7 +238,7 @@ export function createUI(api) {
   rideBtn.addEventListener('click', () => {
     if (riding) {
       riding = false; api.setRiding(false); markView('home');
-      rideBtn.textContent = 'Ride a line'; hint.textContent = baseHint();
+      rideBtn.textContent = 'Ride a line'; setHint(baseHint());
     } else openPicker(linesEl.hidden);
   });
 
@@ -171,8 +248,8 @@ export function createUI(api) {
   api.views.forEach(v => {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'ghost'; b.textContent = v.name;
     b.addEventListener('click', () => {
-      if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; hint.textContent = HINT0; }
-      openPicker(false); api.flyTo(v.id); markView(v.id); syncCut();
+      if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; setHint(HINT0); }
+      openPicker(false); api.flyTo(v.id); markView(v.id); syncCut(); autoFold();
     });
     viewEl.appendChild(b); viewBtns[v.id] = b;
   });
@@ -228,19 +305,20 @@ export function createUI(api) {
   }
   cutBtn.addEventListener('click', () => {
     if (api.getCut()) api.setCut(false);
-    else if (CUT_VIEW) { if (riding) rideBtn.click(); api.flyTo(CUT_VIEW.id); markView(CUT_VIEW.id); }
+    else if (CUT_VIEW) { if (riding) rideBtn.click(); api.flyTo(CUT_VIEW.id); markView(CUT_VIEW.id); autoFold(); }
     syncCut();
   });
   syncCut();
 
   // click any train car (or a monorail car) to ride inside it; underground cars only inside an open cut.
   // A cafe chair or bench on Walnut St works the same way: click to sit, Esc to stand up.
-  const canvas = api.renderer.domElement, offBtn = document.getElementById('getoff');
+  const canvas = api.renderer.domElement, offBtn = document.getElementById('getoff'), walkpad = document.getElementById('walkpad');
+  const releaseWalk = () => { if (!walkpad) return; walkpad.querySelectorAll('button.on').forEach(b => b.classList.remove('on')); };
   let down = null, carOn = false, hoverPending = false;
   // creative mode: right-clicking the view captures the mouse (pointer lock); the mouse then turns the
   // camera directly (or looks around inside a car), a crosshair marks the centre, Esc lets go
   const xhair = document.getElementById('xhair');
-  let locked = false, speedTimer = 0;
+  let locked = false;
   const lockMouse = () => { if (!locked && canvas.requestPointerLock) { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } };
   // the pill at the bottom says how to get in and out of creative mode
   const modeHint = document.getElementById('modehint');
@@ -265,31 +343,62 @@ export function createUI(api) {
     if (!api.getCreative()) return;
     e.preventDefault();
     const m = api.creativeSpeed(e.deltaY);
-    const st = document.getElementById('status'); st.textContent = `Flying speed ×${m.toFixed(m < 1 ? 2 : 1)}`;
-    clearTimeout(speedTimer); speedTimer = setTimeout(() => { st.textContent = ''; }, 1200);
+    toast(`Flying speed ×${m.toFixed(m < 1 ? 2 : 1)}`, 1200);
   }, { passive: false });
+  // binoculars on a touch screen: spread two fingers to zoom in, pinch to zoom out, a wheel step
+  // (api.wheelCar) for every 20% the fingers' spread changes; one finger looks around, two don't
+  const fingers = new Map(), PINCH = Math.log(1.2); let pinch = null;
+  const spread = () => { const [a, b] = [...fingers.values()]; return Math.hypot(a[0] - b[0], a[1] - b[1]) || 1; };
+  canvas.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'touch') return;
+    fingers.set(e.pointerId, [e.clientX, e.clientY]); if (fingers.size === 2 && carOn) pinch = { d: spread(), k: 0 };
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!fingers.has(e.pointerId)) return;
+    fingers.set(e.pointerId, [e.clientX, e.clientY]); if (!pinch || fingers.size !== 2) return;
+    const d = spread(); pinch.k += Math.log(d / pinch.d); pinch.d = d;
+    for (; pinch.k > PINCH; pinch.k -= PINCH) api.wheelCar(-1);
+    for (; pinch.k < -PINCH; pinch.k += PINCH) api.wheelCar(1);
+  });
+  const lift = e => { fingers.delete(e.pointerId); if (fingers.size < 2) pinch = null; };
+  canvas.addEventListener('pointerup', lift); canvas.addEventListener('pointercancel', lift);
   const rel = e => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   function syncCar() {
     const c = api.getCar(); carOn = !!c; offBtn.hidden = !carOn; canvas.style.cursor = carOn ? 'grab' : '';
+    const walk = carOn && !['seat', 'person', 'vista'].includes(c.kind);
+    document.body.classList.toggle('aboard', carOn); document.body.classList.toggle('aboard-walk', walk);
+    walkpad.hidden = !(walk && TOUCH.matches); if (walkpad.hidden) releaseWalk();
     if (!carOn && locked) api.setCreative(true);   // got off with the mouse still captured: back to flying
     syncModeHint();
     offBtn.textContent = c && c.kind === 'seat' ? 'Stand up' : c && c.kind === 'person' ? 'Leave' : c && c.kind === 'vista' ? 'Step away' : 'Get off';
     showPersona(c && c.kind === 'person' ? c : null);
     if (c) {
       // Philadelphia's Walnut St (people, seats), L and trolleys have their own wording; every
-      // other car uses its model name (c.hint: somewhere with wording of its own)
-      hint.textContent = c.hint ? c.hint : c.kind === 'person'
-        ? `Seeing Walnut Street through ${c.name}’s eyes. You can’t steer; you go where they go. Drag or click to look around, Space, Esc or “Leave” to step out.`
+      // other car uses its model name (c.hint: somewhere with wording of its own; c.hintTouch
+      // for a touch screen, else c.hint with click said as tap)
+      const t = TOUCH.matches, walkHow = t ? 'the on-screen arrows to walk' : 'W A S D or the arrow keys to walk', look = t ? 'Drag to look around' : 'Drag or click to look around';
+      const leave = w => t ? `tap “${w}” to leave` : `Esc or “${w}” to leave`;
+      setHint(c.hint ? (t && c.hintTouch) || c.hint : c.kind === 'person'
+        ? `Seeing Walnut Street through ${c.name}’s eyes. You can’t steer; you go where they go. ${look}, ${t ? 'tap' : 'Space, Esc or'} “Leave” to step out.`
         : c.kind === 'seat'
-        ? (c.seat === 'cafe' ? 'Sitting at a café table on Walnut Street.' : 'Sitting on a bench on Walnut Street.') + ' Drag or click to look around, Space, Esc or “Stand up” to get up.'
+        ? (c.seat === 'cafe' ? 'Sitting at a café table on Walnut Street.' : 'Sitting on a bench on Walnut Street.') + ` ${look}, ${t ? 'tap' : 'Space, Esc or'} “Stand up” to get up.`
         : c.kind === 'metro'
-        ? 'Aboard an L train, inside a SEPTA M-4 car. Drag or click to look around, W A S D or the arrow keys to walk the aisle, Esc or “Get off” to leave. The sign at the front shows the next stop.'
+        ? `Aboard an L train, inside a SEPTA M-4 car. ${look}, ${walkHow} the aisle, ${leave('Get off')}. The sign at the front shows the next stop.`
         : c.kind === 'trolley'
-          ? `Aboard a ${c.line} trolley, inside a Kawasaki LRV. Walk up to the front for the view through the windscreen. Drag or click to look around, W A S D or the arrow keys to walk, Esc or “Get off” to leave.`
-          : `Aboard the ${c.lineName}, inside a ${c.model}. Drag or click to look around, W A S D or the arrow keys to walk the aisle (the cab window is at the front), Esc or “Get off” to leave.`;
+          ? `Aboard a ${c.line} trolley, inside a Kawasaki LRV. Walk up to the front for the view through the windscreen. ${look}, ${walkHow}, ${leave('Get off')}.`
+          : `Aboard the ${c.lineName}, inside a ${/\(proposed\)/.test(c.lineName) ? String(c.model).replace(/ \(proposed\)$/, '') : c.model}. ${look}, ${walkHow} the aisle (the cab window is at the front), ${leave('Get off')}.`);
       markView(c.view || null);
-    } else if (!riding) hint.textContent = baseHint();
+      // on a phone the hint is in the folded panel: say its first sentence for a moment instead
+      const key = c.kind + ':' + (c.id ?? c.lineName ?? c.name);
+      if (key !== lastCar) requestAnimationFrame(() => {
+        if (!COMPACT.matches || !document.getElementById('hud-body').hidden) return;
+        const first = (hint.textContent.match(/^.+?[.!?](?=\s|$)/) || [hint.textContent])[0];
+        toast(first, 4000);
+      });
+      lastCar = key;
+    } else { lastCar = null; if (!riding) setHint(baseHint()); }
   }
+  let lastCar = null;
   canvas.addEventListener('pointerdown', e => {
     if (locked) { down = { lockedClick: true }; return; }
     down = { button: e.button, x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, t: performance.now(), id: e.pointerId };
@@ -298,7 +407,7 @@ export function createUI(api) {
   canvas.addEventListener('pointermove', e => {
     if (locked) return;   // handled by the mousemove listener above
     if (carOn) {
-      if (down && down.id === e.pointerId) { api.lookCar(e.clientX - down.lx, e.clientY - down.ly); down.lx = e.clientX; down.ly = e.clientY; }
+      if (down && down.id === e.pointerId) { if (!pinch) api.lookCar(e.clientX - down.lx, e.clientY - down.ly); down.lx = e.clientX; down.ly = e.clientY; }
       else if (!e.buttons && e.pointerType === 'mouse' && spectating()) canvas.style.cursor = api.pickCar(...rel(e)) ? 'pointer' : 'grab';
       return;
     }
@@ -333,7 +442,7 @@ export function createUI(api) {
     if (stallAt(...rel(e))) { if (riding) { riding = false; api.setRiding(false, true); rideBtn.textContent = 'Ride a line'; openPicker(false); } arcade.open(); return; }   // Chinatown's Lucky Arcade
     const hit = api.pickCar(...rel(e)); if (!hit) return;   // only a right-click enters creative mode
     if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; openPicker(false); }
-    api.boardCar(hit); syncCar(); syncCut();
+    api.boardCar(hit); syncCar(); syncCut(); autoFold();
   };
   // fishing (Philadelphia): the anglers on the Schuylkill banks, and the minigame
   const fishing = api.pickAngler ? createFishing(api) : { open() {}, active: () => false };
@@ -376,6 +485,12 @@ export function createUI(api) {
     const f = FLYMAP[e.key.toLowerCase()]; if (f && flyKeys.delete(f)) { applyFly(); if (e.key === ' ') e.preventDefault(); }
   });
   window.addEventListener('blur', () => { keys.clear(); applyKeys(); flyKeys.clear(); applyFly(); });
+  walkpad.querySelectorAll('button').forEach(b => {
+    const k = b.dataset.k, stop = () => { if (keys.delete(k)) applyKeys(); b.classList.remove('on'); };
+    b.addEventListener('pointerdown', e => { e.preventDefault(); b.setPointerCapture(e.pointerId); keys.add(k); applyKeys(); b.classList.add('on'); });
+    b.addEventListener('pointerup', stop); b.addEventListener('pointercancel', stop); b.addEventListener('lostpointercapture', stop);
+    b.addEventListener('contextmenu', e => e.preventDefault());   // a long press is a walk, not a menu
+  });
   offBtn.addEventListener('click', () => { api.leaveCar(); syncCar(); });
   // "Show transit lines": highlight every line in its colour, with a legend
   const trBtn = document.getElementById('transit'), legendEl = document.getElementById('legend');
@@ -384,9 +499,22 @@ export function createUI(api) {
     const s = document.createElement('span'), i = document.createElement('i'); i.style.background = it.color; i.setAttribute('aria-hidden', 'true');
     s.append(i, it.name); legendEl.appendChild(s);
   }
+  // on a phone the panel folds away to show the lines, and a strip of the legend sits at the bottom
+  // instead (css/style.css .legend-mini: small screens, panel folded), with a button to hide them
+  const mini = document.createElement('div'), miniList = document.createElement('div'), miniOff = document.createElement('button');
+  mini.className = 'dock-mini legend-mini'; mini.id = 'legend-mini'; mini.hidden = true; mini.setAttribute('role', 'group'); mini.setAttribute('aria-label', 'Transit lines');
+  miniList.className = 'lm-list';
+  miniOff.type = 'button'; miniOff.className = 'ghost'; miniOff.textContent = 'Hide'; miniOff.setAttribute('aria-label', 'Hide transit lines');
+  miniOff.addEventListener('click', () => trBtn.click());
+  for (const it of [...api.legend, ...api.oldTrolleyLegend]) {   // "1 · Broadway - 7 Avenue Local" is just "1" here
+    const s = document.createElement('span'), i = document.createElement('i'); i.className = it.kind || 'band'; i.style.setProperty('--c', it.color); i.setAttribute('aria-hidden', 'true');
+    s.append(i, it.name.split(' · ')[0]); s.title = it.name; miniList.appendChild(s);
+  }
+  mini.append(miniList, miniOff); document.getElementById('dock').appendChild(mini);
   trBtn.addEventListener('click', () => {
     const on = api.setTransitMap(!api.getTransitMap());
-    trBtn.setAttribute('aria-pressed', String(on)); trBtn.textContent = on ? 'Hide transit lines' : 'Show transit lines'; legendEl.hidden = !on;
+    trBtn.setAttribute('aria-pressed', String(on)); trBtn.textContent = on ? 'Hide transit lines' : 'Show transit lines'; legendEl.hidden = !on; mini.hidden = !on;
+    if (on) reveal(legendEl);
   });
   // the 1953 streetcar stripes share the transit legend, under their own heading
   if (api.oldTrolleyLegend.length) { const h53 = document.createElement('b'); h53.className = 'legend-h'; h53.textContent = 'Former streetcar lines (1953 map)'; legendEl.appendChild(h53); }
@@ -399,25 +527,30 @@ export function createUI(api) {
   const fold = on => {
     body.hidden = on; card.classList.toggle('folded', on); foldBtn.setAttribute('aria-expanded', String(!on));
     const t = on ? 'Expand the panel' : 'Collapse the panel'; foldBtn.setAttribute('aria-label', t); foldBtn.title = t;
+    document.body.classList.toggle('hud-open', !on);
+    if (!on) requestAnimationFrame(syncMore);
   };
+  // on a phone the panel gets out of the way once you've picked where to go (not remembered)
+  function autoFold() { if (COMPACT.matches && !body.hidden) fold(true); }
+  // the panel's size, for placing the minimap under it on a phone (css/style.css --hud-h, --hud-w)
+  new ResizeObserver(() => {
+    const r = card.getBoundingClientRect(), root = document.documentElement.style;
+    root.setProperty('--hud-w', Math.round(r.right) + 'px'); if (body.hidden) root.setProperty('--hud-h', Math.round(r.bottom) + 'px');
+  }).observe(card);
   const saved = store.get('folded');
-  fold(saved == null ? window.innerWidth < 640 : saved === '1');
+  fold(saved == null ? COMPACT.matches : saved === '1');
   foldBtn.addEventListener('click', () => { const on = !body.hidden; fold(on); store.set('folded', on ? '1' : '0'); });
 
   // skyline display lights: a colour scheme for the towers' crowns, the Cira Centre's LED skin,
   // the FMC crown and Boathouse Row, as the city does for teams and holidays
   const swatches = document.getElementById('swatches'), skyName = document.getElementById('sky-name'), skyColor = document.getElementById('sky-color');
   const customSw = skyColor.closest('.swatch'), swBtns = [];
-  const statusEl = document.getElementById('status'); let skyTimer = 0;
   function setScheme(id, colors, name, quiet) {
     api.setDisplayLights(colors); skyName.textContent = name;
     swBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
     customSw.classList.toggle('on', id === 'custom');
     store.set('skyline', id === 'custom' ? 'custom:' + colors[0] : id);
-    if (!quiet && api.getMood() === 'day') {   // the lights only show after dark
-      statusEl.textContent = 'Skyline lights show after dark: slide the time past sunset.';
-      clearTimeout(skyTimer); skyTimer = setTimeout(() => { statusEl.textContent = ''; }, 3200);
-    }
+    if (!quiet && api.getMood() === 'day') toast('Skyline lights show after dark: slide the time past sunset.', 3200);   // the lights only show after dark
   }
   for (const p of api.displayPresets) {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'swatch'; b.dataset.id = p.id;

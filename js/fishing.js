@@ -206,11 +206,14 @@ export function createFishing(api) {
   const again = el('button', '', grow, 'Cast again'), logBtn = el('button', 'ghost', grow, 'Catch log'), done = el('button', 'ghost', grow, 'Head back');
   [again, logBtn, done].forEach(b => { b.type = 'button'; });
   const log = el('div', 'fish-log', card), logHead = el('p', 'fish-loghead', log), grid = el('div', 'fish-grid', log);
-  const back = el('button', 'ghost', log, 'Back to fishing'); back.type = 'button';
-  const g = cv.getContext('2d'), W = 720, H = 400;
+  const back = el('button', 'fish-back', log, 'Back to fishing'); back.type = 'button';   // (kept in sight at the foot of the long log)
+  // the picture is 400 high and as wide as the box the page gives it (css/style.css: 720 on a big
+  // screen, squarer on a phone); k is picture pixels per CSS pixel, so its words stay legible
+  const g = cv.getContext('2d'), H = 400;
+  let W = 720, k = 1;
 
   let angler = null, state = 'idle', st = {}, raf = 0, last = 0, holding = false, lastFocus = null;
-  const show = part => { invite.hidden = part !== 'invite'; game.hidden = part !== 'game'; log.hidden = part !== 'log'; };
+  const show = part => { invite.hidden = part !== 'invite'; game.hidden = part !== 'game'; log.hidden = part !== 'log'; card.dataset.part = part; };
   function open(i) {
     angler = api.anglerInfo(i); if (!angler) return;
     lastFocus = document.activeElement;
@@ -224,13 +227,19 @@ export function createFishing(api) {
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
   function start() {
-    show('game'); size(); aim();
+    show('game'); size(); aim(); card.scrollTop = 0;
     if (!raf) { last = performance.now(); raf = requestAnimationFrame(loop); }
-    cv.focus();
+    cv.focus({ preventScroll: true });
   }
   const say = t => { msg.textContent = t; };
   function aim() { state = 'aim'; st = { t: 0 }; grow.hidden = true; say('Press to cast. The farther out, the deeper the water and the rarer the catch.'); }
-  function size() { const dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  function size() {
+    const r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+    if (r.width > 1 && r.height > 1) { W = Math.round(Math.min(720, Math.max(400, H * r.width / r.height))); k = W / r.width; }
+    cv.width = Math.round((r.width || W) * dpr); cv.height = Math.round(cv.width * H / W); g.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+  }
+  // a font for words in the picture: px, or more when the picture is small on screen (at least min CSS px)
+  const font = (px, min, w = 600) => `${w} ${Math.round(Math.max(px, min * k))}px Archivo, system-ui, sans-serif`;
 
   const ctx = () => { const day = api.getDay ? api.getDay() : 180, hour = api.getTime(); return { day, hour, power: st.power || 0 }; };
   function press() {
@@ -320,7 +329,7 @@ export function createFishing(api) {
     // rod, bending with the tension
     const ten = state === 'reel' ? st.ten : 0, hand = [84, WY - 66];
     const cast = state === 'aim' ? 0 : state === 'cast' ? Math.min(1, st.ct / .9) : 1, power = st.power || 0;
-    const bx = 190 + power * 470, by = WY + 2;
+    const bx = 190 + power * (W - 250), by = WY + 2;
     const tip = state === 'aim' ? [hand[0] + 30 - Math.cos(st.t * HARD.swing) * 40, hand[1] - 78] : [hand[0] + 150 - ten * 20, hand[1] - 80 + ten * 55];   // wound back for the cast
     g.strokeStyle = '#1b1b1b'; g.lineWidth = 3; g.beginPath(); g.moveTo(hand[0], hand[1]); g.quadraticCurveTo(hand[0] + 70, hand[1] - 70 + ten * 50, tip[0], tip[1]); g.stroke();
     // the line, the bobber, the catch
@@ -329,7 +338,7 @@ export function createFishing(api) {
     else if (state === 'wait' || state === 'bite') {
       const dip = state === 'bite' ? 10 + Math.sin(st.bt * 30) * 3 : st.nib > 0 ? 6 + Math.sin(st.nib * 40) * 3 : 0;   // nibbles dip almost as deep
       end_ = [bx, by + Math.sin(t * 2.4) * 1.5 + dip];
-      if (state === 'bite') { g.fillStyle = '#ffffff'; g.font = 'bold 34px Archivo, system-ui, sans-serif'; g.textAlign = 'center'; g.fillText('!', bx, by - 30); }
+      if (state === 'bite') { g.fillStyle = '#ffffff'; g.font = font(34, 22, 'bold'); g.textAlign = 'center'; g.fillText('!', bx, by - 30); }
     } else if (state === 'reel') {
       const fx = bx - (bx - 175) * st.prog + Math.sin(t * 7) * 10 * st.item.fight, fy = WY + 40 + (1 - st.prog) * 90 * (st.item.kind === 'fish' ? 1 : .5) + Math.sin(t * 5) * 6;
       end_ = [fx, fy];
@@ -341,7 +350,7 @@ export function createFishing(api) {
       if (state !== 'reel') { g.fillStyle = '#e0302a'; g.beginPath(); g.arc(end_[0], end_[1] - 2, 6, Math.PI, 0); g.fill(); g.fillStyle = '#f4f4f0'; g.beginPath(); g.arc(end_[0], end_[1] - 2, 6, 0, Math.PI); g.fill(); }
     }
     // gauges: the cast meter, or the line tension and how far there is to go
-    g.font = '600 12px Archivo, system-ui, sans-serif'; g.textAlign = 'left';
+    g.font = font(12, 10.5); g.textAlign = 'left';
     if (state === 'aim') {
       const p = .5 - .5 * Math.cos(st.t * HARD.swing);
       bar(20, H - 34, 260, 14, p, '#e0a31c', 'Cast');
@@ -351,29 +360,31 @@ export function createFishing(api) {
       g.fillStyle = 'rgba(61,154,74,.4)'; g.fillRect(20 + 260 * HARD.band[0], H - 52, 260 * (HARD.band[1] - HARD.band[0]), 14);   // the green band
       bar(20, H - 52, 260, 14, Math.min(1, st.ten), st.ten > HARD.band[1] ? '#d0302a' : green ? '#3d9a4a' : '#c9a227', 'Line tension', [[HARD.band[0], '#3d9a4a'], [HARD.band[1], '#d0302a']], true);
       bar(20, H - 26, 260, 10, st.prog, '#2f78c9', 'Reeled in');
-      g.font = '600 15px Archivo, system-ui, sans-serif';
-      if (st.surge > 0) { g.fillStyle = '#ff6b5a'; g.fillText('It’s running!', 420, H - 34); }   // a run: ease off
-      else { g.fillStyle = '#ffffff'; g.fillText(holding ? 'Reeling…' : 'Hold to reel', 420, H - 34); }
+      g.font = font(15, 13);
+      const [sx, sy] = W >= 640 ? [420, H - 34] : [20, H - 64];   // beside the gauges, or above them on a narrow picture
+      if (st.surge > 0) { g.fillStyle = '#ff6b5a'; g.fillText('It’s running!', sx, sy); }   // a run: ease off
+      else { g.fillStyle = '#ffffff'; g.fillText(holding ? 'Reeling…' : 'Hold to reel', sx, sy); }
     }
     // the result
     if (state === 'over' && st.why === 'snap') {   // the angler beside you, yelling
       const age = st.t - st.endT, shake = age < .8 ? Math.sin(age * 60) * 4 * (1 - age / .8) : 0;
-      speech(age > 1.4 ? `${st.yell} ${st.oneMore}` : st.yell, 100 + shake, WY - 112, '#fff1ee', '#b3261e', 17);   // then, after a beat, one more try
+      speech(age > 1.4 ? `${st.yell} ${st.oneMore}` : st.yell, 100 + shake, WY - 112, '#fff1ee', '#b3261e', Math.round(Math.max(17, 12 * k)));   // then, after a beat, one more try
     }
     if (state === 'over' && st.result) {
       const it = st.result;
-      g.fillStyle = 'rgba(10,16,22,.72)'; g.fillRect(W / 2 - 200, 40, 400, 220);
-      g.strokeStyle = RARITY[it.r].color; g.lineWidth = 3; g.strokeRect(W / 2 - 200, 40, 400, 220);
-      drawCatch(g, it, W / 2, 125, it.kind === 'fish' ? 210 : 120, 1, 0);
-      g.textAlign = 'center'; g.fillStyle = '#ffffff'; g.font = '600 22px Archivo, system-ui, sans-serif'; g.fillText(it.name, W / 2, 210);
-      g.fillStyle = RARITY[it.r].color; g.font = '600 14px Archivo, system-ui, sans-serif';
+      const cw = Math.min(400, W - 40);
+      g.fillStyle = 'rgba(10,16,22,.72)'; g.fillRect(W / 2 - cw / 2, 40, cw, 220);
+      g.strokeStyle = RARITY[it.r].color; g.lineWidth = 3; g.strokeRect(W / 2 - cw / 2, 40, cw, 220);
+      drawCatch(g, it, W / 2, 125, it.kind === 'fish' ? Math.min(210, cw - 60) : 120, 1, 0);
+      g.textAlign = 'center'; g.fillStyle = '#ffffff'; g.font = font(22, 15); g.fillText(it.name, W / 2, 210, cw - 20);
+      g.fillStyle = RARITY[it.r].color; g.font = font(14, 11);
       g.fillText(`${st.isNew ? 'NEW · ' : ''}${RARITY[it.r].label.toUpperCase()}${st.weight ? (st.weight < 1 ? ` · ${Math.round(st.weight * 16)} oz` : ` · ${st.weight.toFixed(1)} lb`) : ''}`, W / 2, 236);
     }
   }
   /** a speech bubble from the angler on the bank, its text wrapped to fit */
   function speech(text, x, y, fill, ink, size) {
     g.font = `600 ${size}px Archivo, system-ui, sans-serif`;
-    const maxW = 300, words = text.split(' '), lines = [];
+    const maxW = Math.min(300, W - x - 44), words = text.split(' '), lines = [];
     let line = '';
     for (const w of words) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t; }
     lines.push(line);
@@ -413,6 +424,8 @@ export function createFishing(api) {
   const up = () => { holding = false; };
   cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); down(e); });
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  cv.addEventListener('contextmenu', e => e.preventDefault());   // a long press (holding to reel) is not a right-click
+  new ResizeObserver(() => { if (!game.hidden) size(); }).observe(cv);   // turning the phone: the picture follows its box
   cv.tabIndex = 0;
   modal.addEventListener('keydown', e => {
     if (e.key === 'Escape') { e.preventDefault(); shut(); return; }

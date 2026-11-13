@@ -960,7 +960,8 @@ A city entry holds:
                                the grid's surface. (Philadelphia's terrain needs no flag: a
                                `terrain` file is enough, js/scene/terrain.js.)
   storage                      localStorage prefix (folded panel, skyline lights)
-  title, heading, hint, canvasLabel, cutButton, cutHint, credit, building   page text
+  title, heading, hint, canvasLabel, cutButton, cutHint, credit, building   page text (hint says
+                               what the city is; js/ui.js adds how to move, for mouse or touch)
   groups                       the "Ride a line" networks in order (a line without `group` is
                                in the first); stationLines(s, LINES) = a station tag's line text
   presets                      skyline-light preset ids from materials.js (null = all; [] = no
