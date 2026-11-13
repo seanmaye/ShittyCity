@@ -26,6 +26,7 @@ export const CITIES = {
       { file: 'poi-ben-franklin-bridge.webp', name: 'Ben Franklin Bridge', area: 'Delaware River', view: 'bfb', hour: -.25, hero: ['flex', 'green'], side: 'left' },
       { file: 'poi-walnut-street.webp', name: 'Walnut St Promenade', area: 'Center City', view: 'walnut', hour: -.6, hero: ['strut', 'black'], side: 'right' },
       { file: 'poi-sports-complex.webp', name: 'Sports Complex', area: 'South Philly', view: 'stadiums', hour: -.8, hero: ['folded', 'yellow'], side: 'left' },
+      { file: 'poi-railyard-bowl.webp', name: 'Alvin and the Chipmunks', area: 'Live at the Railyard Bowl', view: 'punks', hour: -.5, hero: ['rock', 'punk'], side: 'right' },
     ],
     blurb: 'All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill.',
     // projection: x metres east, z metres south of (LAT0, LON0); MX is metres per degree of longitude here

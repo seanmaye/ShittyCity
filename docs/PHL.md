@@ -30,7 +30,7 @@ All of Philadelphia out to the city limits, with every rail transit line and our
 
   Routes follow the real water, mid-channel; the piers stand at real riverfront parks and landings.
 - **Every car has a walkable cabin:** the M-4, B-IV, Kawasaki LRV, PCC, Silverliner IV, PATCO car, the monorail and the river boat. On the boats you can walk out of the cabin's back door onto the open stern deck.
-- **See through someone's eyes** on Walnut Street. Click any of the people there to inhabit them. You go where they go: you can look around but not steer. A card shows their age, sex, height, weight and a short biography. Esc or Space steps out. You can also click any café chair or bench to sit down.
+- **See through someone's eyes** on Walnut Street, or at the punk show in the Railyard Bowl. Click any of the people there to inhabit them. You go where they go: you can look around but not steer. A card shows their age, sex, height, weight and a short biography. Esc or Space steps out. You can also click any café chair or bench to sit down.
 - **The 1953 streetcars.** The Center City streetcar network of January 1953 is drawn as track with running PCC cars. You can ride any loop.
 - **Citywide landmarks** are modelled on their real outlines:
   - Lincoln Financial Field, Citizens Bank Park and Xfinity Mobile Arena
@@ -104,6 +104,10 @@ The rail yard north of 30th Street Station is covered by a deck at 10.5 m, just 
   - a stage with an apron and a backstage building;
   - video screens, speaker towers and delay towers;
   - a ring of light poles, and moving light beams at dusk.
+- **The show: Alvin and the Chipmunks, live, to a crowd of punks** ("Go to" Punk show at the Railyard Bowl; an evening show, so the flight moves the clock to 8:30 PM if it's earlier than 5). In `js/scene/phl/concert.js`.
+  - On stage, giant chipmunks: Alvin out front with a mic (red sweater with the big "A", red cap), Simon on guitar (blue, glasses) and Theodore on the drums (green). The set loops through seven songs, and the video screens say what's playing. For two of them the Chipettes come out of the wings (Brittany in pink, Jeanette in purple with glasses, Eleanor in green with pigtails), sing and dance, and walk off again.
+  - In the pit and up the first rows, about 80 punks: mohawks and liberty spikes in neon colours, shaved heads, studded leather, denim and army jackets with patches on the back, band tees, red plaid bondage pants, combat boots, spiked collars, wallet chains. Each one pogos, headbangs, holds a fist up, moshes in the pit, smokes, drinks, or sits slumped in a K-hole on the steps, and now and then does one of their own things by themselves. Nobody stands under the rail viaduct that crosses the seats.
+  - Click a punk to see through their eyes, with a card about them (a made-up name, punk name, neighbourhood, job, band, why they're at a Chipmunks show, what they have on and what they're on tonight: `punkprofiles.js`). Each has four things to do (keys 1 to 4), two drugs and two other things, from: Take a puff, Shoot ketamine, Huff glue, Drop a pill, Do a bump of speed, Shotgun a beer, Light a cigarette, Pogo, Start a mosh pit, Crowd surf, Spit at the stage and Yell “ALVIN!” (Alvin turns and points at you). They play out on the body and on what you see: being stoned sways and softens the view; glue blurs and brightens it; a pill, once it kicks in, cycles the colours; speed jitters it; beers add a drunken roll; and ketamine leaves the body: the view floats up out of you and looks down on you slumped on the steps for 40 seconds. Everyone here is fictional.
 
 ## Proposal: the Walnut Street promenade
 

@@ -23,7 +23,8 @@ Python helper below.
   <body>      HUD markup: #ride, #transit, #lbl, #cut, #getoff, #switch-city buttons, #xhair
               (creative-mode crosshair), #modehint, #time slider (+ #time-out), #legend,
               #lines picker, #view-btns (Go to), #heading, #hint, #tags, #credit;
-              the #persona card (someone inhabited: Walnut St, the detasseling crew, the hunter);
+              the #persona card (someone inhabited: Walnut St, the punks at the Railyard Bowl, the
+              detasseling crew, the hunter);
               #actions (what the person you are inside can do) and #binoc (their binocular mask);
               the start menu #menu with #cities and the #city-loading screen with #status
   data blocks, city by city, one per file in the city's data folder:
@@ -582,7 +583,25 @@ sports.js        courts (SURFACE = line markings, EQUIP = nets, hoops, goals, li
                  corridor strips, shuttle monorails (H2 = 26 m, teal livery, a station
                  about every 1.1 km, piers placed between courts at load time)
 yardpark.js      rail yard deck, park, and the Railyard Bowl (bandshell, seats,
-                 screens, light beams)
+                 screens, light beams); returns the bowl's group as yard.bowl for concert.js
+concert.js       the show in the bowl, in the bowl's frame (+z toward the seats, y 0 the lawn,
+                 STAGE 1.6): the Chipmunks (chipmunk(): joints like Kyle's figures, merged per
+                 joint by bake(), scale 3), the kit, amps, screen faces and banner (canvas
+                 textures); SONGS loop with GAP between, `chipettes: true` brings the Chipettes
+                 on from the wing. The punks: spots in the pit (apronEdge() to 29.4 m) and the
+                 rows, none within 4.5 m of opts.avoid (ground.json bridges: the rail viaduct
+                 over the seats); outfit() picks each look; drawn instanced like pedestrians.js:
+                 partList() = one InstancedMesh per part (geometry, joint, offsets, colour,
+                 dyn() for props and the head you look out of), posed on rig() skeletons each
+                 frame within NEAR. habitPose() for what each does by themselves, ACTS /
+                 startAct() / actPose() / endAct() for the four actions each has (keys 1-4,
+                 the #actions bar); P.fx timers (high, khole, huff, roll, speed, drunk) drive
+                 effects(): the canvas's CSS filter and the camera's sway, roll and fov, and in
+                 a K-hole frame() floats the camera out of the body. index.js treats it like
+                 Walnut St's people: pick() -> boardCar({ punk }) -> inhabit(), kind 'person',
+                 act(id) via actCar, leave(). Owns the view 'punks' (abs; placed in the bowl's
+                 frame on the first update, after the deck is set on the ground).
+punkprofiles.js  made-up lives for the punks: punkProfile(i, look, habit)
 promenade.js     PROPOSAL: Walnut St, 22nd to Front, as a car-free shopping street.
                  WALNUT = the centreline (metres). drawLines() skips every road piece on it
                  (onPromenade) and oldtrolley.js leaves out the 1953 track bed there (onWalnut),

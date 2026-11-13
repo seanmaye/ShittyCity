@@ -31,7 +31,8 @@ const offset = () => 160 + Math.tan(-SLANT * Math.PI / 180) * 50 * innerHeight /
 
 // ---- the figures --------------------------------------------------------------------------
 
-// outfits: makeFigure colours, plus sunglasses and a cap (its colour) if any
+// outfits: makeFigure colours, plus sunglasses and a cap (its colour) if any; a mohawk (its colour),
+// a spiked collar, and legs (trousers down to the boots) for the punk
 const OUTFITS = {
   tee:     { shirt: '#f2f2ee', shorts: '#2f4a6b', skin: '#b07a55', shoe: '#e6e6e6', hair: '#1d1410', shades: true },
   red:     { shirt: '#8c2f2f', shorts: '#1b1f27', skin: '#e0b48f', shoe: '#222222', hair: '#3a2a20', shades: true, cap: '#1f2a33' },
@@ -41,6 +42,8 @@ const OUTFITS = {
   denim:   { shirt: '#4a6b8c', shorts: '#2a2a2a', skin: '#c99370', shoe: '#e6e6e6', hair: '#6b4a2b', shades: true },
   flannel: { shirt: '#a3243f', shorts: '#3a4a5a', skin: '#e0b48f', shoe: '#5a3a2a', hair: '#6b4a2b', shades: true, cap: '#3d4a2a' },
   blaze:   { shirt: '#5a5a3a', shorts: '#4a4a3a', skin: '#c99370', shoe: '#5a3a2a', hair: '#3a2a20', shades: true, cap: '#ff6a1a' },
+  // the Railyard Bowl's punks (scene/phl/concert.js): leather, red plaid, a green mohawk and a spiked collar
+  punk:    { shirt: '#17171a', shorts: '#a3161f', skin: '#f0c9a6', shoe: '#121212', hair: '#1d1410', shades: true, mohawk: '#5dff3a', collar: true, legs: '#a3161f' },
 };
 
 // poses: joint angles on a makeFigure (people.js: rotate .x to swing forward, .z out to the side)
@@ -93,6 +96,15 @@ const POSES = {
     F.shL.rotation.z = .12; F.shR.rotation.z = -.12;
     F.head.rotation.set(-.1, .3, 0);
   },
+  // a fist in the air, the other hand on the hip
+  rock(F) {
+    F.root.rotation.y = -.3;
+    F.hipL.rotation.z = .2; F.hipR.rotation.z = -.2; F.kneeL.rotation.z = -.08; F.kneeR.rotation.z = .08;
+    F.shR.rotation.set(-.15, 0, -2.75); F.elR.rotation.set(0, 0, -.3);
+    F.shL.rotation.set(.18, 0, .78); F.elL.rotation.set(0, 0, -1.8);
+    F.chest.rotation.set(-.1, .12, 0);
+    F.head.rotation.set(-.28, .3, 0);
+  },
   // arms folded across the chest
   folded(F) {
     F.root.rotation.y = .36;
@@ -124,6 +136,18 @@ function dress(F, o) {
     const m = toon('#0c0c10'), lens = new THREE.Mesh(new THREE.BoxGeometry(.2, .05, .05), m);
     lens.position.set(0, -.012, .1); F.head.add(lens);
     for (const s of [1, -1]) { const arm = new THREE.Mesh(new THREE.BoxGeometry(.012, .012, .16), m); arm.position.set(s * .108, -.005, .03); F.head.add(arm); }
+  }
+  if (o.mohawk) {   // the hair shaved off, a fin down the middle; a spiked collar
+    F.head.children[0].visible = false;
+    const fin = new THREE.Mesh(new THREE.BoxGeometry(.045, .2, .27), toon(o.mohawk)); fin.position.set(0, .16, -.02); F.head.add(fin);
+  }
+  if (o.legs) for (const s of ['L', 'R']) F['knee' + s].children[0].material = toon(o.legs);   // trousers, not shorts
+  if (o.collar) {
+    const band = new THREE.Mesh(new THREE.TorusGeometry(.06, .016, 6, 16), toon('#0c0c10')); band.rotation.x = Math.PI / 2; band.position.y = .05; F.chest.add(band);
+    for (let k = 0; k < 7; k++) {
+      const a = -1.3 + k * .43, d = new THREE.Vector3(Math.sin(a), 0, Math.cos(a)), sp = new THREE.Mesh(new THREE.ConeGeometry(.011, .04, 5), toon('#e6e8ea'));
+      sp.position.copy(d).multiplyScalar(.074).setY(.05); sp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d); F.chest.add(sp);
+    }
   }
   if (o.cap) {
     const m = toon(o.cap);
