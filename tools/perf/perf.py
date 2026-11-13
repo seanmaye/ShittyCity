@@ -7,8 +7,10 @@ that open in Chrome DevTools. See tools/perf/README.md.
   python -I tools/perf/perf.py compare tools/perf/out/<before> tools/perf/out/<after>
   python -I tools/perf/perf.py hot tools/perf/out/<run>/overview-dusk.cpuprofile [--focus frame]
   python -I tools/perf/perf.py list
+  python -I tools/perf/perf.py smoke [--ref REF | --root DIR] [--cities phl,pine] [--against tools/perf/out/<smoke>]
 
 Needs Python Playwright and its Chromium (pip install playwright; python -m playwright install chromium).
+The pixel diffs (ab --shots, smoke --against) also need Pillow.
 """
 import argparse
 import datetime
@@ -23,6 +25,7 @@ import statistics
 import subprocess
 import sys
 import threading
+import time
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -546,16 +549,23 @@ def launch(pw, a):
     return pw.chromium.launch(headless=not a.headed, channel=a.channel, args=gpu_args())
 
 
-def open_app(browser, a, base, tag=False, profile_load=False):
-    """A new context and page with the probe, loaded until the scene has drawn 10 frames.
-    Returns (page, cdp, errors, load report); with profile_load, load['profile'] is the CPU
-    profile of the whole load."""
+def app_context(browser, a, tag=False):
+    """A new context with the fixed viewport, the probe (seeded Math.random, pinned date), and
+    three.js and the font served from the cache (with the uuid patch)."""
     w, h = (int(v) for v in a.size.lower().split('x'))
     ctx = browser.new_context(viewport={'width': w, 'height': h}, device_scale_factor=a.dpr)
     ctx.add_init_script(script='window.__PERF_CFG = ' + json.dumps({'seed': 1, 'date': FIXED_DATE}) + ';')
     ctx.add_init_script(path=PROBE)
     ctx.route(CDN, cdn_handler(tag))
     ctx.route(re.compile(r'/__blank$'), lambda r: r.fulfill(body='<!doctype html><title>perf</title>', content_type='text/html'))
+    return ctx
+
+
+def open_app(browser, a, base, tag=False, profile_load=False):
+    """A new context and page with the probe, loaded until the scene has drawn 10 frames.
+    Returns (page, cdp, errors, load report); with profile_load, load['profile'] is the CPU
+    profile of the whole load."""
+    ctx = app_context(browser, a, tag)
     page = ctx.new_page()
     errors = []
     page.on('pageerror', lambda e: errors.append(f'pageerror: {e}'))
@@ -753,6 +763,47 @@ def summary_md(rep):
     return '\n'.join(out) + '\n'
 
 
+# ---------------------------------------------------------------- screenshots
+
+DIFF_THRESHOLD = 8   # a pixel counts as changed when a channel differs by more than this (of 255): dithering stays under it
+
+
+def pixel_diff(pa, pb, out=None):
+    """Share (0-1) of the pixels that differ between two PNGs, None if their sizes differ. With
+    `out`, also saves a diff image: B faded to grey, the changed pixels red."""
+    from PIL import Image, ImageChops   # only the pixel diffs need Pillow
+    a, b = Image.open(pa).convert('RGB'), Image.open(pb).convert('RGB')
+    if a.size != b.size:
+        return None
+    mask = functools.reduce(ImageChops.lighter, ImageChops.difference(a, b).point(lambda v: 255 if v > DIFF_THRESHOLD else 0).split())
+    if out:
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        grey = Image.blend(b.convert('L').convert('RGB'), Image.new('RGB', b.size, 'white'), .6)
+        Image.composite(Image.new('RGB', b.size, (230, 0, 40)), grey, mask).save(out)
+    return mask.histogram()[255] / (b.size[0] * b.size[1])
+
+
+def diff_table(pairs, what):
+    """pairs: [(name, A png, B png, diff png)] -> (markdown table lines, {name: share, None if the sizes differ})."""
+    lines, shares = [f'| {what} | changed pixels |', '|---|---:|'], {}
+    for name, pa, pb, pd in pairs:
+        gone = [side for side, p in (('A', pa), ('B', pb)) if not os.path.exists(p)]
+        if gone:
+            lines.append(f'| {name} | no image on side {" and ".join(gone)} |')
+            continue
+        try:
+            shares[name] = pixel_diff(pa, pb, pd)
+        except ImportError:
+            return ['Pillow is not installed, so no pixel diff (pip install pillow).'], {}
+        lines.append(f'| {name} | {"size differs" if shares[name] is None else f"{100 * shares[name]:.4f}%"} |')
+    return lines, shares
+
+
+def diff_note(img):
+    return (f'Share of pixels that differ between A and B (a channel off by more than {DIFF_THRESHOLD} of 255; `{img}` marks them red). '
+            'Trains, boats and people move, so the same code on both sides does not give 0.\n')
+
+
 # ---------------------------------------------------------------- commands
 
 def pick_scenarios(a):
@@ -925,15 +976,151 @@ def cmd_ab(a):
                                        else 'no significant difference.'))
     if a.rounds < 4:
         lines.append('\nFewer than 4 rounds: the t-test can only catch large effects. Use --rounds 6 for small ones.')
+    shots = {}
+    if a.shots:
+        t, shots = diff_table([(sc['name'], *(os.path.join(out, f'{k}-{sc["name"]}.png') for k in ('A', 'B', 'diff'))) for sc in scen], 'scenario')
+        lines += ['\n## Screenshots\n', diff_note('diff-<scenario>.png'), *t]
     md = '\n'.join(lines) + '\n'
     with open(os.path.join(out, 'ab.md'), 'w', encoding='utf-8') as f:
         f.write(md)
     with open(os.path.join(out, 'ab.json'), 'w', encoding='utf-8') as f:
         json.dump({'base': a.base, 'commit': commit, 'dirty': dirty, 'env': env, 'errors': sorted(set(errors)), 'rounds': a.rounds,
-                   'seconds': a.seconds, 'scenarios': [s['name'] for s in scen], 'values': raw,
+                   'seconds': a.seconds, 'scenarios': [s['name'] for s in scen], 'values': raw, 'shots': shots,
                    'verdicts': [{'metric': k, 'verdict': v.strip('*'), 'pct': round(p, 2)} for k, v, p in verdicts]}, f, indent=1)
     print(md)
     print(f'Wrote {os.path.relpath(out, ROOT)} (ab.md, ab.json)')
+
+
+# smoke: the scene is up (a city sets window.__city, the kitchen window.__kitchen), frames run and the
+# loading screen has gone, or the page shows a load error
+SMOKE_WAIT = """() => ((window.__city || window.__kitchen) && window.__perf && __perf.frameCount >= 10 && document.getElementById('city-loading').hidden)
+    || getComputedStyle(document.getElementById('err')).display !== 'none'
+    || /Couldn|needs a local/.test(document.getElementById('status').textContent)"""
+# the fixed view for a smoke screenshot: a city's home view at 12:30 (the kitchen opens on its one fixed view and has no clock)
+SMOKE_VIEW = 'async () => { const api = window.__city; if (!api) return;\n' + RESET + "api.flyTo('home'); api.setTime(12.5);\n}"
+
+
+def smoke_city(browser, a, base, cid, out):
+    from playwright.sync_api import TimeoutError as PwTimeout
+    ctx = app_context(browser, a)
+    page = ctx.new_page()
+    errors, r, started = [], {'ok': False}, False
+    page.on('pageerror', lambda e: errors.append(f'pageerror: {e}'))
+    page.on('console', lambda m: errors.append(f'console.error: {m.text}') if m.type == 'error' else None)
+    page.on('requestfailed', lambda q: errors.append(f'request failed: {q.method} {q.url} ({q.failure})'))
+    page.on('response', lambda q: errors.append(f'HTTP {q.status}: {q.request.method} {q.url}') if q.status >= 400 else None)
+    state = "() => ({ frames: window.__perf ? __perf.frameCount : 0, status: document.getElementById('status').textContent, up: !!(window.__city || window.__kitchen) })"
+    t0 = time.time()
+    try:
+        page.goto(base + '/index.html?city=' + cid, wait_until='load', timeout=a.timeout * 1000)
+        try:
+            page.wait_for_function(SMOKE_WAIT, timeout=max(1000, a.timeout * 1000 - (time.time() - t0) * 1000), polling=250)
+        except PwTimeout:
+            st = page.evaluate(state)
+            errors.append(f'timed out after {a.timeout} s waiting for the scene to start and the loading screen to close '
+                          f'({st["frames"]} frames drawn, scene {"built" if st["up"] else "not built"}, status "{st["status"]}"): a frame loop that died looks like this')
+        else:
+            st = page.evaluate(state)
+            started = st['up'] and st['frames'] >= 10
+            if not started:
+                errors.append(f'the scene did not start: {st["status"]}')
+        if started:
+            r['loadS'] = round(time.time() - t0, 1)
+            page.evaluate(SMOKE_VIEW)
+            f0 = page.evaluate('__perf.frameCount')
+            page.wait_for_timeout(a.settle)
+            if page.evaluate('() => !!window.__city'):
+                page.evaluate(SHOT_ALIGN)
+            page.wait_for_timeout(400)
+            r['frames'] = page.evaluate('__perf.frameCount') - f0
+            if not r['frames']:
+                errors.append(f'the frame loop stopped: no frame drawn in the {a.settle + 400} ms before the screenshot')
+            r['gl'] = page.evaluate('() => __perf.api ? __perf.glInfo().renderer : null')
+            page.screenshot(path=os.path.join(out, cid + '.png'))
+        else:
+            page.screenshot(path=os.path.join(out, cid + '.fail.png'))
+    except Exception as e:   # noqa: BLE001  (one city failing must not stop the others)
+        errors.append(f'{type(e).__name__}: {e}'.strip())
+    finally:
+        r['errors'] = list(errors)
+        r['ok'] = not r['errors']
+        ctx.close()
+    return r
+
+
+def cmd_smoke(a):
+    """Load every city in js/cities.js from a served root the way the harness does (seeded, date
+    pinned, CDN files from the cache), fail on any page error, console error or failed request, and
+    save one screenshot per city in a fixed view. --against diffs them with an earlier smoke's."""
+    out = out_dir(a, '-smoke')
+    tmp = None
+    if a.ref:   # a commit, checked out into a temporary worktree (data/ included)
+        sha = git('rev-parse', '--short', a.ref)
+        if not sha:
+            sys.exit(f'unknown git ref: {a.ref}')
+        tmp = os.path.join(OUT, f'.smoke-{os.getpid()}')
+        r = subprocess.run(['git', 'worktree', 'add', '--detach', tmp, a.ref], cwd=ROOT, capture_output=True, text=True)
+        if r.returncode:
+            sys.exit('git worktree add failed: ' + r.stderr)
+        root, what = tmp, f'{a.ref} ({sha})'
+    elif a.root:
+        root, what = os.path.abspath(a.root), a.root
+    else:
+        dirty = bool(git('status', '--porcelain', '--', 'js', 'css', 'index.html', 'data'))
+        root, what = ROOT, f'the working tree ({git("rev-parse", "--short", "HEAD")}{" + uncommitted changes" if dirty else ""})'
+    from playwright.sync_api import sync_playwright
+    srv, base = serve(root)
+    res, gl = {}, None
+    try:
+        with sync_playwright() as pw:
+            browser = launch(pw, a)
+            try:
+                ctx = app_context(browser, a)
+                page = ctx.new_page()
+                page.goto(base + '/__blank')
+                ids = page.evaluate("async () => Object.keys((await import('/js/cities.js')).CITIES)")
+                ctx.close()
+                want = [c.strip() for c in a.cities.split(',') if c.strip()] if a.cities else ids
+                bad = [c for c in want if c not in ids]
+                if bad:
+                    sys.exit(f'unknown city id(s): {", ".join(bad)}; js/cities.js has {", ".join(ids)}')
+                for cid in want:
+                    print(f'{cid}…', flush=True)
+                    res[cid] = smoke_city(browser, a, base, cid, out)
+                    gl = gl or res[cid].get('gl')
+                    res[cid].pop('gl', None)
+                    print(f"  {'ok' if res[cid]['ok'] else 'FAILED'} ({res[cid].get('loadS', '-')} s)" + ''.join(f'\n    {e}' for e in res[cid]['errors'][:5]), flush=True)
+            finally:
+                browser.close()
+    finally:
+        srv.shutdown()
+        if tmp:
+            subprocess.run(['git', 'worktree', 'remove', '--force', tmp], cwd=ROOT, capture_output=True)
+    failed = [c for c, r in res.items() if not r['ok']]
+    lines = [f'# Smoke: {what}\n',
+             f'GPU: {gl or "?"}. {a.size} @ dpr {a.dpr}. Each city loads in a fresh page (seeded Math.random, pinned date) and must draw frames and close its '
+             f'loading screen within {a.timeout} s with no page error, console error or failed request; then the home view at 12:30 '
+             f'(the kitchen: its opening view), {a.settle} ms to settle, and `<city>.png`.\n',
+             '| city | result | load s | first error |', '|---|---|---:|---|']
+    for c, r in res.items():
+        lines.append(f"| {c} | {'ok' if r['ok'] else '**FAILED**'} | {r.get('loadS', '-')} | {(r['errors'][0] if r['errors'] else '').replace('|', '/')[:200]} |")
+    for c in failed:
+        lines.append(f'\n### {c}\n')
+        lines += [f'- {e}' for e in res[c]['errors'][:30]]
+    changed = {}
+    if a.against:
+        t, changed = diff_table([(c, os.path.join(a.against, c + '.png'), os.path.join(out, c + '.png'), os.path.join(out, c + '.diff.png')) for c in res], 'city')
+        lines += [f'\n## Pixel diff: A = {a.against}, B = this run\n', diff_note('<city>.diff.png'), *t]
+    lines.append('\n**Result:** ' + (f'failed: {", ".join(failed)}.' if failed else f'all {len(res)} cities passed.'))
+    md = '\n'.join(lines) + '\n'
+    with open(os.path.join(out, 'smoke.md'), 'w', encoding='utf-8') as f:
+        f.write(md)
+    with open(os.path.join(out, 'smoke.json'), 'w', encoding='utf-8') as f:
+        json.dump({'root': what, 'gl': gl, 'size': a.size, 'dpr': a.dpr, 'cities': res, 'against': a.against, 'changed': changed, 'failed': failed}, f, indent=1)
+    print(md)
+    print(f'Wrote {os.path.relpath(out, ROOT)} (smoke.md, smoke.json, <city>.png)')
+    if failed:
+        sys.exit(1)
 
 
 def snap_dir(name):
@@ -1099,6 +1286,21 @@ def main():
     sn.add_argument('--ref', help='snapshot this commit instead of the working tree')
     sn.set_defaults(fn=cmd_snap)
     sub.add_parser('list', help='list scenarios').set_defaults(fn=cmd_list)
+    sm = sub.add_parser('smoke', help='load every city: no page error, console error or failed request; one screenshot each')
+    src = sm.add_mutually_exclusive_group()
+    src.add_argument('--ref', help='serve this commit (checked out into a temporary worktree) instead of the working tree')
+    src.add_argument('--root', help='serve this folder instead of the working tree (what it lacks comes from the working tree)')
+    sm.add_argument('--cities', help='comma-separated city ids (default: every city in js/cities.js)')
+    sm.add_argument('--against', help='an earlier smoke output folder: report the share of changed pixels per city')
+    sm.add_argument('--label', default='', help='appended to the output folder name')
+    sm.add_argument('--out', help='output folder (default tools/perf/out/<time>-smoke[-label])')
+    sm.add_argument('--timeout', type=int, default=180, help='seconds a city may take to load before it counts as failed')
+    sm.add_argument('--settle', type=int, default=3000, help='ms in the fixed view before the screenshot')
+    sm.add_argument('--size', default='1600x900', help='viewport WxH')
+    sm.add_argument('--dpr', type=float, default=1, help='device pixel ratio')
+    sm.add_argument('--headed', action='store_true', help='show the browser window')
+    sm.add_argument('--channel', default=None, help='e.g. chrome to use an installed browser instead of Playwright\'s Chromium')
+    sm.set_defaults(fn=cmd_smoke)
     a = ap.parse_args()
     if getattr(a, 'ablate', False):
         a.census = True
