@@ -840,7 +840,8 @@ export function buildSubway(scene, data, river) {
       const p = sl.pos;
       if (!((sl.h ?? p.y) > -1 || (active && active.O(p.x, p.z) <= active.band + 3))) return;   // underground: only inside an open cut
       const half = fl.sp.car / 2;
-      tmpA.copy(p).addScaledVector(sl.dir, half).y += 2.2; tmpB.copy(p).addScaledVector(sl.dir, -half).y += 2.2;
+      const py = fl.sp.pickY ?? 2.2;   // how far above a slot's position its car's body is (the kitchen's toy cars are small)
+      tmpA.copy(p).addScaledVector(sl.dir, half).y += py; tmpB.copy(p).addScaledVector(sl.dir, -half).y += py;
       tmpA.project(camera); tmpB.project(camera);
       if (tmpA.z > 1 && tmpB.z > 1) return;
       const ax = (tmpA.x + 1) / 2 * w, ay = (1 - tmpA.y) / 2 * h, bx_ = (tmpB.x + 1) / 2 * w, by = (1 - tmpB.y) / 2 * h;
@@ -858,6 +859,9 @@ export function buildSubway(scene, data, river) {
     if (ride) { ride.int.group.visible = false; if (ride.sl.onBoard) ride.sl.onBoard(false); }
     if (sl.onBoard) sl.onBoard(true);
     const int = interiors[key];
+    // a fleet may shrink its cabin (the kitchen's toy monorails, sp.scale) and dress its passenger (sp.dress)
+    if (fl.sp.scale) int.group.scale.setScalar(fl.sp.scale);
+    if (fl.sp.dress && int.person && !int.dressed) { fl.sp.dress(int.person); int.dressed = true; }
     ride = { sl, kind: h.kind, int, eye: int.spawn.clone(), yaw: 0, pitch: -.04, mf: 0, ms: 0, q: new THREE.Quaternion(), first: true, next: null, tNext: 0 };
     int.group.visible = true; rideEnv.visible = true;
     return getRide();
@@ -996,7 +1000,9 @@ export function buildSubway(scene, data, river) {
     }
     return null;
   }
-  /** add cars positioned by another module (the monorails): slots {line, lineName, color, pos, dir, q, sync(), onBoard(on)} */
+  /** add cars positioned by another module (the monorails): slots {line, lineName, color, pos, dir, q, sync(), onBoard(on)},
+   *  optionally run {L, at(s, out), stops: [{s, t}], strip} and s (distance along it) for the next-stop sign and line diagram.
+   *  sp: {car (length, world units), scale? (the cabin's, for cars smaller than life), dress?(person) (passenger's clothes)} */
   function registerFleet(kind, sp, slots) { fleets[kind] = { sp, slots, parts: [], external: true }; }
   /** every line's route (its out-and-back loop), for the highlight overlay */
   const routes = data.runs.map(r => ({ id: r.line, color: (LINES[r.line] || {}).color || '#ffffff', kind: (LINES[r.line] || {}).kind, P: pts3(r.p, r.g) }));

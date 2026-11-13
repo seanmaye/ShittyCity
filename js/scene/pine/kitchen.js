@@ -15,6 +15,9 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { LIGHT, makeRenderer } from '../../three-setup.js';
 import * as I from './items.js';
+import { buildMiniRail } from './minirail.js';
+import { buildSubway } from '../subway.js';
+import { createRidebar } from '../../ridebar.js';
 
 const { B, C, mat, mesh } = I;
 const PI = Math.PI;
@@ -575,17 +578,60 @@ IS.add(B(ICAB / 2 - 2, .75, 11, PLY, ICAB / 4, 17.25, -BASE_D + .75 + 5.5));   /
     tip.hidden = !o;
     if (o) { tip.textContent = `${o.code} · ${o.name} — click to ${o.goal ? 'close' : 'open'}`; tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px'; }
   }
-  canvas.addEventListener('pointermove', e => { if (e.buttons) { setHover(null); return; } setHover(pick(e), e); });
+  canvas.addEventListener('pointermove', e => {
+    if (aboard) { if (e.buttons) transit.look(e.movementX, e.movementY); return; }
+    if (e.buttons) { setHover(null); return; }
+    // over a monorail car you can board: a hand and "Ride the ..." (a click boards it)
+    const r = canvas.getBoundingClientRect(), car = transit.pick(camera, e.clientX - r.left, e.clientY - r.top, r.width, r.height);
+    if (car) {
+      setHover(null); canvas.style.cursor = 'pointer'; tip.hidden = false;
+      tip.textContent = `Ride the ${mini.slots[car.i].lineName} — click to get on`; tip.style.left = e.clientX + 'px'; tip.style.top = e.clientY + 'px';
+      return;
+    }
+    setHover(pick(e), e);
+  });
   canvas.addEventListener('pointerleave', () => setHover(null));
   canvas.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; });
   canvas.addEventListener('pointerup', e => {
-    if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5) return;
+    if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 5 || aboard) return;
+    const r = canvas.getBoundingClientRect(), car = transit.pick(camera, e.clientX - r.left, e.clientY - r.top, r.width, r.height);
+    if (car) { board(() => transit.board(car)); return; }
     const o = pick(e); if (!o) return;
     toggle(o, !o.goal); show(o.goal ? o : null); setHover(o, e);
   });
 
   // camera flights
   let flight = null;
+  // the mini monorails, boarded like the cities' trains: the shared ride system (subway.js), empty
+  // but for these cars, gives the walkable monorail cabin, its next-stop sign and the line diagram
+  const mini = buildMiniRail(scene);
+  const transit = buildSubway(scene, { lines: [], tracks: [], runs: [], platforms: [], stations: [], entrances: [], sections: [] }, null);
+  transit.registerFleet('monorail', mini.fleet, mini.slots);
+  const linesLit = mini.highlight(renderer), ridebar = createRidebar({ rideStrip: transit.rideStrip });
+  let aboard = false;
+  const keys = {};
+  function board(go) {
+    if (!go()) return;
+    transit.look(-Math.PI / .0045, 0);   // turn round to face the cabin's passenger, who waves
+    aboard = true; flight = null; controls.enabled = false; setHover(null); show(null);
+    camera.near = .03; camera.updateProjectionMatrix(); syncAboard();
+  }
+  function getOff() {
+    const out = transit.leave(); aboard = false; controls.enabled = true;
+    camera.near = .5; camera.updateProjectionMatrix();
+    if (out) {   // step back from the car and look at it
+      camera.position.copy(out.p).addScaledVector(out.dir, -16).add(new THREE.Vector3(0, 9, 0)).addScaledVector(new THREE.Vector3(-out.dir.z, 0, out.dir.x), 8);
+      controls.target.copy(out.p); controls.update();
+    }
+    syncAboard();
+  }
+  const move = () => transit.move((keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0), (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0));
+  window.addEventListener('keydown', e => {
+    if (!aboard || (e.target.closest && e.target.closest('input, select, textarea'))) return;
+    if (e.key === 'Escape') { getOff(); return; }
+    if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) { keys[e.code] = true; move(); e.preventDefault(); }
+  });
+  window.addEventListener('keyup', e => { if (keys[e.code]) { keys[e.code] = false; move(); } });
   function fly(pos, target, ms = 900) { flight = { p0: camera.position.clone(), t0: controls.target.clone(), p1: pos, t1: target, start: performance.now(), ms }; }
   function lookAt(o) {
     if (o.look.world) return fly(o.look.cam.clone(), o.look.world.clone());
@@ -633,7 +679,36 @@ IS.add(B(ICAB / 2 - 2, .75, 11, PLY, ICAB / 4, 17.25, -BASE_D + .75 + 5.5));   /
     }
     list.append(head, row);
   }
-  box.append(allRow, viewRow, list);
+  // the mini monorails: show the lines; each line's name, colour and stations, and a button to ride
+  // it (sit in its lead car, as "Ride a line" does in the cities); Get off while aboard
+  const railRow = document.createElement('div'); railRow.className = 'views klines';
+  railRow.innerHTML = '<span class="views-h">Mini monorail</span>';
+  const railCtl = document.createElement('div'); railCtl.className = 'row';
+  const showLines = document.createElement('button'); showLines.type = 'button'; showLines.className = 'ghost'; showLines.textContent = 'Show lines';
+  showLines.setAttribute('aria-pressed', 'false');
+  showLines.addEventListener('click', () => { const on = linesLit.set(!linesLit.get()); showLines.textContent = on ? 'Hide lines' : 'Show lines'; showLines.setAttribute('aria-pressed', String(on)); });
+  const offBtn = document.createElement('button'); offBtn.type = 'button'; offBtn.textContent = 'Get off'; offBtn.hidden = true;
+  offBtn.addEventListener('click', getOff);
+  const aboardHint = document.createElement('p'); aboardHint.className = 'khint'; aboardHint.hidden = true;
+  aboardHint.textContent = 'Drag to look around, W A S D to walk, Esc to get off.';
+  railCtl.append(showLines, offBtn); railRow.append(railCtl, aboardHint);
+  const rideBtns = [];
+  mini.lines.forEach((l, i) => {
+    const item = document.createElement('div'); item.className = 'kline';
+    const name = document.createElement('b'), dot = document.createElement('span'); dot.className = 'kdot'; dot.style.background = l.color;
+    name.append(dot, l.name);
+    const stops = document.createElement('span'); stops.className = 'kstops'; stops.textContent = l.stations.join(' · ');
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'ghost'; b.textContent = 'Ride';
+    b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-label', `Ride the ${l.name}`);
+    b.addEventListener('click', () => { if (aboard) transit.leave(); board(() => transit.boardLine('kmono:' + l.id)); });
+    rideBtns.push(b); item.append(name, b, stops); railRow.appendChild(item);
+  });
+  function syncAboard() {
+    const on = aboard && transit.getRide(), id = on ? on.line : null;
+    rideBtns.forEach((b, i) => b.setAttribute('aria-pressed', String(id === 'kmono:' + mini.lines[i].id)));
+    offBtn.hidden = !aboard; aboardHint.hidden = !aboard;
+  }
+  box.append(allRow, viewRow, railRow, list);
   body.insertBefore(box, body.querySelector('.clock'));
   // fold the panel down to its title (folded to start with on small screens)
   { const hud = document.querySelector('.hud .card'), btn = document.getElementById('fold');
@@ -679,18 +754,21 @@ IS.add(B(ICAB / 2 - 2, .75, 11, PLY, ICAB / 4, 17.25, -BASE_D + .75 + 5.5));   /
       o.t = o.goal > o.t ? Math.min(o.goal, o.t + dt * 2.2) : Math.max(o.goal, o.t - dt * 2.2);
       o.set(ease(o.t));
     }
+    mini.update(dt, aboard ? null : camera);   // (outside, a chef waves when you look at him)
+    transit.update(dt, aboard ? camera : null);   // the cars' slots follow them; aboard, the camera rides in the cabin
+    ridebar.update(now);
     if (flight) {
       const k = Math.min(1, (now - flight.start) / flight.ms), e = ease(k);
       camera.position.lerpVectors(flight.p0, flight.p1, e); controls.target.lerpVectors(flight.t0, flight.t1, e);
       if (k >= 1) flight = null;
     }
-    controls.update();
+    if (!aboard) controls.update();
     // a wall seen from outside disappears (it faces inward), so hide its trim, door and window too
     for (const w of WALLS) w.visible = w.worldToLocal(_v.copy(camera.position)).z > -1;
     renderer.render(scene, camera);
   }
   return {
-    scene, camera, controls, openables, byCode,
+    scene, camera, controls, openables, byCode, mini, transit,
     open(code, on = true) { const o = byCode[code]; toggle(o, on); show(on ? o : null); if (on) lookAt(o); },
     start() {
       return new Promise(resolve => {

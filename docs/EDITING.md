@@ -453,6 +453,19 @@ js/scene/subway.js     every rail line (data-<city>-transit, plus data-phl-metro
                  onBoard(on). routes = every line's loop.
 js/scene/monorail.js   builds New York's East River Loop and Jersey Shore's West Branch Loop
                  from their proposal data, with guideways, supports, stations and boardable trains.
+                 Per-route options: seeThrough (an open glass window band between a lower shell and
+                 a roof), rider(car, index) (adds whoever rides in each car), suspended (cars hang
+                 under the beam on arms; supports rise to groundAt, read as what it hangs from) and
+                 shuttle (an open line run to the end and back; cars report userData.along and
+                 .back), flatbed (the index of a car built as an open deck, loaded by cargo(car));
+                 trainSpacing 1e9 gives one train. The kitchen's mini
+                 monorails use both (js/scene/pine/minirail.js: three toy lines in a group scaled to
+                 .35 in per unit, a chef in each car). Cars are aimed along the beam in their
+                 parent's frame, so a network may sit in a scaled group. To board them, a scene
+                 registers slots with subway.js registerFleet(kind, sp, slots): sp.scale shrinks the
+                 cabin, sp.dress(person) clothes its passenger, sp.pickY is how far above a slot its
+                 car is clicked (default 2.2), and a slot's run {L, at, stops, strip}
+                 and s feed the next-stop sign and the line diagram (the kitchen does all three).
 js/scene/index.js      builds everything in order, each city's parts only when its blocks are
                  there; merges transit + metro; the ride list (proposed monorails, then real lines
                  grouped by network); setTime / setMood (setMood = shortcut to two times);

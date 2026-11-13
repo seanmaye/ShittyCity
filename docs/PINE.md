@@ -14,6 +14,29 @@ skips the map loader, the city scene and the city panel controls for a city with
   Drawers, Base cabinets or Upper cabinets in the panel (which also flies the camera to it). A
   card lists what goes inside and why. *Open everything* and *Close everything* do all of them.
 - The sink base doesn't open: under the sink was out of scope.
+- **Mini monorails** (our addition), three toy-sized lines with named stations, kept out of the
+  way: the cars hang below the beam, and the beams hang from the counters and the ceiling. One
+  train per line: two cars with a chef in a white toque inside (he waves when you look at him
+  through the windows) and, between them, a flatbed carrying the line's load strapped down:
+  - **Countertop Express** (red): back and forth just off the counter edge, from the drawer
+    stack beside the stove round the corner past the dishwasher to the sink. Stations: Coffee
+    Corner, Dishwasher Dock, Sink Street. Load: a big balloon whisk.
+  - **Island Shuttle** (green): back and forth round the island's free end, hung from its
+    counter edge. Stations: Back Door, Fruit Bowl, Stool Stop. Load: a baguette.
+  - **Upper Cabinet Skyway** (blue): a loop round the room over the upper cabinets, hung from
+    the ceiling. Stations: Fridge Top, Window Bay, Back Door. Load: a wheel of cheese and a
+    rolling pin.
+
+  They ride like the cities' monorails: click any car (the cursor turns to a hand over one you
+  can board; the flatbeds have nowhere to sit), or *Ride* in the panel's *Mini monorail*
+  section, to sit inside it. The cabin is the cities' monorail cabin shrunk to the toy cars,
+  with its passenger (a chef in a toque and white jacket, who waves; you board facing him) and
+  the lit next-stop sign; drag to look
+  around, W A S D to walk, Esc or *Get off* to leave, and the line diagram at the bottom shows
+  the stops. *Show lines* highlights each line in its colour. They're built with the shared
+  monorail (`js/scene/monorail.js`) in `js/scene/pine/minirail.js`, where `LINES` holds each
+  line's corners (inches), height and stations; the rides use the shared ride system
+  (`js/scene/subway.js`, created empty but for these cars).
 
 ## Layout (inches; x east, z south, origin at the north-west corner)
 

@@ -1,8 +1,13 @@
 // Data-driven straddle monorails. Path points are [x, z] at the default guideway
 // height or [x, y, z] in local metres. The scene registers the cars with the shared ride system.
+// Per-route options: suspended (the cars hang below the beam on hanger arms, and the supports
+// rise from the beam to whatever it hangs from: groundAt gives that height), and shuttle (an
+// open line: the train runs to one end and back, every car facing the same way throughout),
+// flatbed (the index of a car built as an open deck, loaded by cargo(car)) and seeThrough/rider.
 import * as THREE from 'three';
 
 const H = 18;
+const SUSPEND = -3.3;   // a hanging car's centre, below the beam's (a sitting one's is 2.3 above)
 const V3 = (...p) => p.length === 2 ? new THREE.Vector3(p[0], H, p[1]) : new THREE.Vector3(p[0], p[1], p[2]);
 const wrap = (n, d) => ((n % d) + d) % d;
 
@@ -45,6 +50,12 @@ function addSupports(scene, curve, length, route, groundAt) {
   for (let i = 0; i < count; i++) {
     const p = curve.getPointAt((i + .5) / count);
     const ground = groundAt(p.x, p.z);
+    if (route.suspended) {   // a hanger from the top of the beam up to the counter or ceiling above
+      dummy.position.set(p.x, p.y + .9, p.z); dummy.scale.set(.5, Math.max(.2, ground - p.y - .9), .5);
+      dummy.updateMatrix(); columns.setMatrixAt(i, dummy.matrix);
+      dummy.position.y = ground - .3; dummy.scale.set(.6, .6, .6); dummy.updateMatrix(); caps.setMatrixAt(i, dummy.matrix);
+      continue;
+    }
     dummy.position.set(p.x, ground, p.z);
     dummy.scale.set(1, p.y - 1.1 - ground, 1);
     dummy.updateMatrix();
@@ -110,6 +121,15 @@ function addStation(scene, curve, station, route, batch, groundAt) {
   const canopy = batch.canopy(route.color || '#e24a3b');
   const length = station.length || 68;
   g.updateMatrix();
+  if (route.suspended) {
+    for (const side of [-1, 1]) {
+      batch.add('platform', batch.concrete, g.matrix, side * 4.6, SUSPEND - 1.9, 0, 1, 1, length);
+      batch.add('screen', batch.glass, g.matrix, side * 2.3, SUSPEND - .2, 0, 1, 1, length);
+      for (const z of [-length / 2 + 1, length / 2 - 1]) batch.add('post', batch.concrete, g.matrix, side * 6.3, SUSPEND / 2 + .4, z, 1, (1.8 - SUSPEND) / 5.2, 1);
+    }
+    g.userData.stationName = station.name || '';
+    return { group: g, u, name: station.name || '', position: p.clone().add(new THREE.Vector3(0, SUSPEND, 0)), route: route.id };
+  }
   for (const side of [-1, 1]) {
     batch.add('platform', batch.concrete, g.matrix, side * 4.8, -.55, 0, 1, 1, length);
     batch.add('screen', batch.glass, g.matrix, side * 2.3, .85, 0, 1, 1, length);
@@ -141,13 +161,49 @@ function makeTrain(scene, route, carCount = 3, shared = null) {
     windshieldGeo: new THREE.BoxGeometry(2.25, .95, .08),
     lampGeo: new THREE.BoxGeometry(.22, .2, .08),
   };
+  // route.seeThrough: an open window band of clear glass between a lower shell and a roof, so
+  // whoever rides (route.rider(car, index) adds them) can be seen from outside
+  if (route.seeThrough && !shared.lowerGeo) {
+    shared.lowerGeo = new THREE.BoxGeometry(3.1, 1.2, carLength); shared.roofGeo = new THREE.BoxGeometry(3.1, .4, carLength);
+    shared.endGeo = new THREE.BoxGeometry(3.1, 1.4, .14);
+    shared.glassMat = new THREE.MeshStandardMaterial({ color: '#cfe6f2', roughness: .05, metalness: .1, transparent: true, opacity: .22, depthWrite: false });
+  }
   for (let i = 0; i < carCount; i++) {
     const car = new THREE.Group();
-    const body = new THREE.Mesh(shared.bodyGeo, shared.shellMat);
     const stripe = new THREE.Mesh(shared.stripeGeo, shared.stripeMat); stripe.position.y = -.77;
-    const windows = new THREE.Mesh(shared.windowGeo, shared.windowMat); windows.position.y = .4;
     const skirt = new THREE.Mesh(shared.skirtGeo, shared.underMat); skirt.position.y = -1.55;
-    car.add(body, stripe, windows, skirt);
+    if (route.flatbed === i) {
+      // a flatbed: an open deck with low side rails and stake posts; route.cargo(car) loads it
+      if (!shared.deckGeo) { shared.deckGeo = new THREE.BoxGeometry(3.1, .4, carLength); shared.railGeo = new THREE.BoxGeometry(.14, .35, carLength - .4); shared.stakeGeo = new THREE.BoxGeometry(.18, .7, .18); }
+      const deck = new THREE.Mesh(shared.deckGeo, shared.shellMat); deck.position.y = -1.1;
+      car.add(deck, stripe, skirt);
+      for (const x of [-1.45, 1.45]) {
+        const rail = new THREE.Mesh(shared.railGeo, shared.stripeMat); rail.position.set(x, -.7, 0); car.add(rail);
+        for (const z of [-carLength / 2 + .4, 0, carLength / 2 - .4]) { const st = new THREE.Mesh(shared.stakeGeo, shared.underMat); st.position.set(x, -.65, z); car.add(st); }
+      }
+      if (route.suspended) {   // hung under the beam: a gantry at each end carries the deck up to the hanger
+        if (!shared.gantryGeo) { shared.gantryGeo = new THREE.BoxGeometry(.22, 2.7, .22); shared.topGeo = new THREE.BoxGeometry(.3, .3, carLength - .3); }
+        for (const z of [-carLength / 2 + .3, carLength / 2 - .3]) { const g = new THREE.Mesh(shared.gantryGeo, shared.underMat); g.position.set(0, .45, z); car.add(g); }
+        const top = new THREE.Mesh(shared.topGeo, shared.underMat); top.position.y = 1.65; car.add(top);
+      }
+      if (route.cargo) route.cargo(car);
+    } else if (route.seeThrough) {
+      const lower = new THREE.Mesh(shared.lowerGeo, shared.shellMat); lower.position.y = -.9;
+      const roof = new THREE.Mesh(shared.roofGeo, shared.shellMat); roof.position.y = 1.3;
+      const glass = new THREE.Mesh(shared.windowGeo, shared.glassMat); glass.position.y = .4; glass.renderOrder = 2;
+      car.add(lower, roof, stripe, skirt, glass);
+      for (const z of [-1, 1]) { const end = new THREE.Mesh(shared.endGeo, shared.glassMat); end.position.set(0, .4, z * (carLength / 2 - .07)); car.add(end); }
+    } else {
+      const body = new THREE.Mesh(shared.bodyGeo, shared.shellMat);
+      const windows = new THREE.Mesh(shared.windowGeo, shared.windowMat); windows.position.y = .4;
+      car.add(body, stripe, windows, skirt);
+    }
+    if (route.suspended) {
+      const arm = new THREE.Mesh(shared.armGeo || (shared.armGeo = new THREE.BoxGeometry(.4, 2.6, 1)), shared.underMat); arm.position.y = 2.75;
+      const bogie = new THREE.Mesh(shared.bogieGeo || (shared.bogieGeo = new THREE.BoxGeometry(2.7, .7, 2.6)), shared.underMat); bogie.position.y = -SUSPEND + 1.4;
+      car.add(arm, bogie);
+    }
+    if (route.rider && route.flatbed !== i) route.rider(car, i);
     if (i === 0 || i === carCount - 1) {
       const nose = new THREE.Mesh(shared.noseGeo, shared.shellMat); nose.scale.set(1.48, 1.45, 2.1); nose.position.z = (i === 0 ? 1 : -1) * carLength / 2; car.add(nose);
       const windshield = new THREE.Mesh(shared.windshieldGeo, shared.windowMat);
@@ -184,20 +240,36 @@ export function buildMonorail(scene, proposal = {}, groundAt = () => 0) {
       set.forEach((obj, i) => { obj.userData.routeId = spec.id; obj.userData.carIndex = i; objects.push(obj); });
       trains.push({ cars: set, offset, carLength: fleet.carLength, gap: fleet.gap });
     }
-    routes.push({ id: spec.id, name: spec.name || spec.id, color: spec.color || '#e24a3b', curve, length, closed: !!spec.closed, trains, speed, distance: 0, stations });
+    routes.push({ id: spec.id, name: spec.name || spec.id, color: spec.color || '#e24a3b', curve, length, closed: !!spec.closed, trains, speed, distance: 0, stations,
+                  suspended: !!spec.suspended, shuttle: !!spec.shuttle && !spec.closed });
     for (const s of stations) labels.push({ text: s.name, pos: s.position.clone().add(new THREE.Vector3(0, 15, 0)), far: 3600, route: spec.id });
   }
   stationBatch.flush();
-  const a = new THREE.Vector3(), b = new THREE.Vector3();
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), aim = new THREE.Vector3(), look = new THREE.Matrix4(), UP = new THREE.Vector3(0, 1, 0);
   function update(dt) {
     for (const route of routes) route.distance += route.speed * dt;
-    for (const route of routes) for (const train of route.trains) for (let i = 0; i < train.cars.length; i++) {
-      const car = train.cars[i];
-      const dist = wrap(train.offset + route.distance - i * (train.carLength + train.gap), route.length);
-      const u = dist / route.length;
-      route.curve.getPointAt(u, a);
-      route.curve.getPointAt(wrap(u + .8 / route.length, 1), b);
-      car.position.set(a.x, a.y + 2.3, a.z); car.lookAt(b.x, b.y + 2.3, b.z);
+    for (const route of routes) for (const train of route.trains) {
+      const step = train.carLength + train.gap, lift = route.suspended ? SUSPEND : 2.3;
+      // a shuttle: the whole train slides to the far end and back (car 0 at the far end's side)
+      let base = 0, back = false;
+      if (route.shuttle) {
+        const span = Math.max(1, route.length - train.cars.length * step), m = wrap(train.offset + route.distance, 2 * span);
+        back = m > span; base = back ? 2 * span - m : m;
+      }
+      for (let i = 0; i < train.cars.length; i++) {
+        const car = train.cars[i];
+        const dist = route.shuttle ? base + (train.cars.length - 1 - i) * step + train.carLength / 2
+          : wrap(train.offset + route.distance - i * step, route.length);
+        const u = Math.min(1, dist / route.length);
+        route.curve.getPointAt(u, a);
+        if (route.shuttle) b.copy(a).add(route.curve.getTangentAt(u, aim).multiplyScalar(.8));
+        else route.curve.getPointAt(wrap(u + .8 / route.length, 1), b);
+        // aim it along the beam in its parent's own frame (Object3D.lookAt takes world coordinates,
+        // which differ from these when the network sits in a scaled group, like the kitchen's)
+        car.position.set(a.x, a.y + lift, a.z); aim.set(b.x, b.y + lift, b.z);
+        look.lookAt(aim, car.position, UP); car.quaternion.setFromRotationMatrix(look);
+        car.userData.along = dist; car.userData.back = back;   // where it is on its line (the kitchen's ride diagram)
+      }
     }
   }
   update(0);

@@ -21,6 +21,7 @@ EXTERNALS = [  # (import line, how to tell a module uses it), in the order bundl
     ("import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';", re.compile(r"\bLineSegmentsGeometry\b")),
     ("import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';", re.compile(r"\bLineMaterial\b")),
     ("import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';", re.compile(r"\bLineGeometry\b")),
+    ("import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';", re.compile(r"\bRoomEnvironment\b")),
 ]
 # Gzip data and WebP illustrations are embedded as base64, with their file name.
 BINARY_BLOCK = re.compile(r'^<script type="application/(?:gzip|webp)-base64" id="((?:data|art)-[\w-]+)" data-file="([^"]+)">(.*?)</script>\n', re.S | re.M)
@@ -30,6 +31,7 @@ CHUNK = re.compile(r'// ---- (\S+)\n__mods\["\1"\] = await \(async \(\) => \{\n(
 # per-city folders had Philadelphia's JSON blocks without it)
 BLOCK = re.compile(r'^<script type="application/json" id="data-([\w-]+)"(?: data-file="([^"]+)")?>(.*?)</script>\n', re.S | re.M)
 LOCAL = re.compile(r'^const \{ (.*?) \} = __mods\["([^"]+)"\];$', re.M)
+LOCAL_NS = re.compile(r'^const (\w+) = __mods\["([^"]+)"\];$')
 
 
 def rel(frm, to):
@@ -45,6 +47,10 @@ def module_source(path, body, exports):
         if m:
             names = m.group(1).replace(": ", " as ")
             lines[i] = f"import {{ {names} }} from '{rel(path, m.group(2))}';"
+            continue
+        m = LOCAL_NS.match(l)   # `import * as X from './x.js'` became `const X = __mods["x"];`
+        if m:
+            lines[i] = f"import * as {m.group(1)} from '{rel(path, m.group(2))}';"
     # external imports were blanked; put them back into the blank lines of the import header
     code = "\n".join(l for l in lines if not l.startswith("import "))
     need = [imp for imp, used in EXTERNALS if used.search(code)]

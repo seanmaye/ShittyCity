@@ -290,3 +290,11 @@ body.kitchen #hud-body{max-height:calc(100vh - 110px);overflow:auto;overscroll-b
 .kinfo .kwhy{font-size:13px;margin:0 0 10px}
 .kinfo .kclose{font-size:12.5px;padding:6px 12px}
 @media (max-width:600px){.kinfo{left:14px;right:14px;width:auto;max-height:42vh;overflow:auto}}
+
+/* the kitchen's mini monorail lines (js/scene/pine/minirail.js) */
+.klines .kline{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 8px;margin:4px 0 8px}
+.klines .kline b{font-size:13px;display:flex;align-items:center;gap:6px}
+.klines .kdot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
+.klines .kstops{grid-column:1/-1;font-size:12px;color:var(--muted)}
+.klines .kline button{font-size:12px;padding:4px 10px}
+.klines .row{gap:6px;margin-bottom:6px}.klines .khint{font-size:12px;margin:0 0 6px}
