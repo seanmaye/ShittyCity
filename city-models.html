@@ -11822,7 +11822,9 @@ function buildOverlook(scene, site, { night = () => 0, spot = () => null } = {})
         const held = t >= .7 && t < 4; if (held !== act.held) { act.held = held; holdCan(held); }
       }
       if (t >= act.dur) {
-        if (act.id === 'drink' && ++sips >= 4) { sips = 0; drunk++; empty(); can.visible = drunk < CANS; }   // that one's done: on the ground with the rest, and a fresh one
+        // that one's done: on the ground with the rest, and a fresh one. By himself he sips (four to a
+        // can); when you are him every "Drink beer" finishes one, so the count on his card goes up
+        if (act.id === 'drink' && (mine || ++sips >= 4)) { sips = 0; drunk++; empty(); can.visible = drunk < CANS; }
         act = null;
       }
     }
