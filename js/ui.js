@@ -250,6 +250,10 @@ export function createUI(api) {
     b.addEventListener('click', () => {
       if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; setHint(HINT0); }
       openPicker(false); api.flyTo(v.id); markView(v.id); syncCut(); autoFold();
+      if (v.when) {   // the view may have moved the season and the clock: the sliders follow
+        timeIn.value = String(api.getTime()); showTime(api.getTime());
+        dayIn.value = String(api.getDay()); showDay(api.getDay());
+      }
     });
     viewEl.appendChild(b); viewBtns[v.id] = b;
   });

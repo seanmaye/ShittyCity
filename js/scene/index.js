@@ -363,6 +363,13 @@ export async function buildScene(canvas, data, status = () => {}) {
     if (riding !== false) setRiding(false, true);
     if (aboard()) leaveCar(true);
     if (v.cut) setCut(v.cut);
+    // a view of something seasonal (the detasseling crew): bring the day and the hour into its window
+    const w = v.when;
+    if (w) {
+      const d = getSeason().day, h = sky.getTime();
+      if (d < w.days[0] || d > w.days[1]) setDay(w.day);
+      if (h < w.hours[0] || h > w.hours[1]) setTime(w.hour);
+    }
     controls.minDistance = v.near || 40;   // close-up views (a restaurant's shop front) may come nearer than orbiting allows
     fly = { t: 0, dur: 2.2, p0: camera.position.clone(), t0: controls.target.clone(), p1: v.pos, t1: v.target,
             lift: Math.min(450, camera.position.distanceTo(v.pos) * .22), then: v.arrive };

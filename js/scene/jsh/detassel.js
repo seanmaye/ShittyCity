@@ -222,7 +222,10 @@ export function buildDetassel(scene, seed, { hour = () => 9 } = {}) {
 
   // "Go to: Detasseling crew": just behind and beside the crew, wherever they are (kept up to date;
   // the camera flight reads it as it goes)
-  const view = { id: 'crew', name: 'Detasseling crew', pos: new THREE.Vector3(x0 + vx * 14, groundAt(x0, z0) + 9, z0 + vz * 14), target: new THREE.Vector3(x0, groundAt(x0, z0) + 1, z0) };
+  // the crew are only out in July and in working hours: "Go to" moves the season and the clock there
+  // (mid-July, 9 AM: the trash bags still on against the dew) unless they are already at work
+  const view = { id: 'crew', name: 'Detasseling crew', pos: new THREE.Vector3(x0 + vx * 14, groundAt(x0, z0) + 9, z0 + vz * 14), target: new THREE.Vector3(x0, groundAt(x0, z0) + 1, z0),
+    when: { days: [SEASON[0] + 1, SEASON[1] - 1], hours: [HOURS[0] + .5, HOURS[1] - .5], day: 190, hour: 9 } };
   let inside = null, clock = 0, working = false, lastLeg = null;
   const look = { yaw: 0, pitch: 0 };
   function update(dt, camera) {
