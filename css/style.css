@@ -64,7 +64,7 @@ button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 
   display: flex;
   align-items: flex-end;
   isolation: isolate;
-  overflow: auto;
+  overflow: hidden;
   padding: clamp(20px, 6vw, 96px);
   padding-bottom: max(clamp(20px, 6vh, 76px), env(safe-area-inset-bottom));
   padding-left: max(clamp(20px, 6vw, 96px), env(safe-area-inset-left));
@@ -72,20 +72,7 @@ button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 
   background: #291e2c;
   color: #fff6e8;
 }
-.city-loading[data-city="nyc"] {
-  --loading-accent: #ffce88;
-  background: #1d2941;
-}
 .city-loading[hidden] { display: none; }
-.loading-art {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  object-fit: cover;
-  z-index: -1;
-}
 .loading-copy { width: 100%; }
 #loading-city {
   margin: 0 0 16px;
@@ -113,8 +100,8 @@ button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 
 }
 #loading-progress[hidden] { display: none; }
 #loading-progress::-webkit-progress-bar { background: #524b58; }
-#loading-progress::-webkit-progress-value { background: var(--loading-fill, var(--loading-accent)); }
-#loading-progress::-moz-progress-bar { background: var(--loading-fill, var(--loading-accent)); }
+#loading-progress::-webkit-progress-value { background: var(--loading-accent); }
+#loading-progress::-moz-progress-bar { background: var(--loading-accent); }
 .loading-copy #status {
   width: fit-content;
   max-width: min(100%, 560px);
@@ -128,8 +115,82 @@ button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 
 }
 #loading-back { margin-top: 16px; background: #fff6e8; border-color: #fff6e8; color: #1d2231; }
 #loading-back:focus-visible { outline-color: var(--loading-accent); }
+.ls-stage, .ls-flash, .ls-fx, .ls-logo, .ls-tip, .ls-spin { display: none; }
 @media (max-width: 600px) {
   #loading-city { font-size: clamp(1.5rem, 9vw, 3.25rem); }
+}
+
+/* The loading slideshow (js/loading.js): a city's points of interest, each a frame from its
+   3D model with one of our figures posed in front, sliding in one after another. */
+.city-loading.ls-on { background: #000; --bar: 4.5vh; }
+.ls-on .ls-stage, .ls-on .ls-flash, .ls-on .ls-fx { display: block; position: absolute; inset: 0; pointer-events: none; }
+.ls-on .ls-stage { z-index: -3; overflow: hidden; }
+.ls-on .ls-flash { z-index: -2; background: #fff; opacity: 0; mix-blend-mode: screen; }
+.ls-on .ls-fx { z-index: -1; overflow: hidden; background: radial-gradient(ellipse at 50% 45%, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, .6) 100%); }
+/* letterbox bars */
+.ls-on::before, .ls-on::after { content: ""; position: absolute; left: 0; right: 0; height: var(--bar); background: #000; z-index: 0; pointer-events: none; }
+.ls-on::before { top: 0; } .ls-on::after { bottom: 0; }
+/* film grain: a noise tile (made in loading.js) jumping about a few times a second */
+.ls-grain { position: absolute; inset: -50%; background-image: var(--grain); opacity: .11; mix-blend-mode: overlay; animation: ls-grain .5s steps(1) infinite; }
+@keyframes ls-grain {
+  0% { transform: translate(0, 0); } 20% { transform: translate(-7%, 4%); } 40% { transform: translate(5%, -6%); }
+  60% { transform: translate(-3%, -9%); } 80% { transform: translate(8%, 6%); }
+}
+.ls-screen { position: absolute; inset: 0; overflow: hidden; }
+/* a screen is a window wider than the viewport (so it still covers it when skewed into the slanted
+   panel it slides in as), holding the viewport-sized picture in the middle */
+.ls-on .ls-screen { left: -60%; right: -60%; }
+.ls-inner { position: absolute; top: 0; bottom: 0; left: 27.2727%; width: 45.4545%; overflow: hidden; }
+.ls-pan { position: absolute; inset: -6%; }
+.ls-bg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; filter: contrast(1.12) saturate(1.3) brightness(.97); }
+.ls-grade { position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(255, 170, 90, .16), rgba(0, 0, 0, 0) 40%, rgba(10, 8, 30, .45) 100%),
+              radial-gradient(120% 90% at 70% 20%, rgba(255, 200, 140, .14), rgba(0, 0, 0, 0) 60%); }
+.ls-dim, .ls-glow { position: absolute; inset: 0; opacity: 0; background: #000; }
+.ls-glow { background: #fff; }
+.ls-drift { position: absolute; inset: 0; }
+.ls-hero { position: absolute; bottom: 2vh; height: 90vh; max-width: none;
+  filter: drop-shadow(5px 0 0 #fff) drop-shadow(-5px 0 0 #fff) drop-shadow(0 5px 0 #fff) drop-shadow(0 -5px 0 #fff) drop-shadow(14px 18px 0 rgba(0, 0, 0, .45)); }
+.ls-screen[data-side="right"] .ls-hero { right: 6vw; }
+.ls-screen[data-side="left"] .ls-hero { left: 5vw; }
+.ls-poi { position: absolute; top: calc(var(--bar) + 3vh); display: flex; flex-direction: column; gap: .5vh; max-width: 46vw; }
+.ls-screen[data-side="right"] .ls-poi { left: 5vw; align-items: flex-start; }
+.ls-screen[data-side="left"] .ls-poi { right: 5vw; align-items: flex-end; text-align: right; }
+.ls-poi small { font: 700 clamp(11px, 1.1vw, 18px)/1 Archivo, system-ui, sans-serif; letter-spacing: .3em; text-transform: uppercase; background: #d6452f; color: #fff; padding: .5em .7em .45em; }
+.ls-poi b { font: italic 900 clamp(30px, 5.6vw, 104px)/.88 Archivo, system-ui, sans-serif; font-stretch: 68%; text-transform: uppercase; color: #fff;
+  -webkit-text-stroke: 2px #0a0810; paint-order: stroke fill; text-shadow: 5px 5px 0 #0a0810; overflow-wrap: anywhere; }
+.ls-on .ls-logo { display: block; position: absolute; left: 4vw; bottom: calc(var(--bar) + 4vh); width: clamp(150px, 20vw, 360px); filter: drop-shadow(4px 5px 0 rgba(0, 0, 0, .55)); }
+.ls-on .loading-copy { position: absolute; right: 4vw; bottom: calc(var(--bar) + 4vh); width: auto; max-width: min(46vw, 560px); display: flex; flex-direction: column; align-items: flex-end; }
+.ls-on #loading-city { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; margin: 0; }
+.ls-on .ls-load { display: flex; align-items: center; gap: 14px; }
+.ls-on .loading-copy #status { margin: 0; padding: 0; background: none; font: 800 clamp(12px, 1.05vw, 18px)/1.2 Archivo, system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; text-align: right; text-shadow: 0 2px 6px rgba(0, 0, 0, .8); color: #fff; }
+.ls-on .ls-spin { display: block; flex: none; width: 34px; height: 34px; }
+.ls-spin circle { fill: none; stroke-width: 4.5; }
+.ls-spin .track { stroke: rgba(255, 255, 255, .22); }
+/* the whole icon turns (an HTML box, so the compositor turns it while the city loads) */
+.ls-spin .arc { stroke: #fff; stroke-linecap: round; stroke-dasharray: 26 100; }
+.ls-on .ls-spin { animation: ls-spin 1s linear infinite; }
+@keyframes ls-spin { to { transform: rotate(360deg); } }
+.ls-on #loading-progress { width: clamp(140px, 14vw, 240px); height: 4px; margin-top: 10px; margin-right: 48px; border: 0; border-radius: 2px; background: rgba(255, 255, 255, .22); }
+.ls-on #loading-progress::-webkit-progress-bar { background: rgba(255, 255, 255, .22); }
+.ls-on { --loading-accent: #fff; }
+.ls-on .ls-tip { display: block; position: absolute; left: 50%; bottom: 0; height: var(--bar); transform: translateX(-50%); z-index: 1; margin: 0;
+  display: flex; align-items: center; font: 600 clamp(11px, .85vw, 14px)/1.3 Archivo, system-ui, sans-serif; color: rgba(255, 255, 255, .78); white-space: nowrap; }
+.ls-on .ls-tip::before { content: "TIP"; color: #ffbd68; font-weight: 800; letter-spacing: .1em; margin-right: .7em; }
+.ls-on .ls-tip:empty { display: none; }
+/* phones and narrow windows: smaller figure, captions on top, no bars */
+@media (max-width: 700px), (max-aspect-ratio: 1/1) {
+  .city-loading.ls-on { --bar: 0px; }
+  .ls-hero { height: min(66vh, 120vw); bottom: 16vh; }
+  .ls-screen[data-side] .ls-hero { left: 50%; right: auto; translate: -50% 0; }
+  .ls-screen[data-side] .ls-poi { left: 16px; right: 16px; max-width: none; align-items: flex-start; text-align: left; top: calc(env(safe-area-inset-top, 0px) + 20px); }
+  .ls-poi b { font-size: clamp(30px, 10vw, 56px); }
+  .ls-on .ls-logo { left: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); width: 120px; }
+  .ls-on .loading-copy { right: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 22px); max-width: calc(100vw - 170px); }
+  .ls-on .ls-tip { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ls-grain { animation: none; }
 }
 .credit{position:fixed;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 6px);margin:0;font-size:11px;color:var(--ink);background:var(--panel);border-radius:6px;padding:2px 7px;opacity:.85}
 .err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:24px;text-align:center;font-size:16px;color:#1d2b36}

@@ -26,6 +26,7 @@ Interactive three.js models of whole cities, built from real map data, with prop
 - **A minimap** in the top right shows where you are. Click it to fly there.
 - **Labels and "Go to" views** name the landmarks, stations and neighbourhoods.
 - **The panel folds** down to its title with the arrow in its corner.
+- **Loading screens** show the city's points of interest while it loads: frames from the 3D model itself, each with one of our figures striking a pose in front, sliding in one after another.
 
 ## Run it
 
@@ -90,6 +91,7 @@ js/data.js            data loader + lat/lon -> scene projection
 js/ui.js              buttons, hint text, floating labels, panel fold, skyline lights
 js/minimap.js         the top-right map
 js/ridebar.js         the line diagram shown while riding
+js/loading.js         the loading screens: posed figures over frames of the city
 js/scene/
   index.js            assembles the scene: each city's parts, time of day, rides, views
   core.js             renderer, camera, orbit controls, lights
@@ -128,6 +130,7 @@ tools/
   serve.py            local server for the source page, with caching off (Run it)
   bundle.py           packs everything into city-models.html
   unbundle.py         the reverse: unpacks city-models.html into the sources
+  loading/capture.py  captures the loading-screen backgrounds from each city (needs Playwright)
   phl/                Philadelphia's data tools (see docs/PHL.md and tools/phl/README.md)
   nyc/                New York's data tools (see docs/NYC.md)
   jsh/                Jersey Shore's data tools and their downloaded sources (see docs/JSH.md)
@@ -142,4 +145,5 @@ All cities share one set of data formats, which [docs/EDITING.md](docs/EDITING.m
 1. Make its data in `data/<id>/` in the shared formats, with the tools that make it in `tools/<id>/`.
 2. Add its entry to `CITIES` in `js/cities.js`. The menu shows it automatically.
 3. Put anything hand-built in `js/scene/<id>/`, and call it from `js/scene/index.js` when that city's data is loaded.
-4. Write `docs/<ID>.md`, and run `python -I tools/bundle.py`.
+4. List a few points of interest in its `loadingScreens` and capture them with `python -I tools/loading/capture.py <id>`.
+5. Write `docs/<ID>.md`, and run `python -I tools/bundle.py`.

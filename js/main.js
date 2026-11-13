@@ -7,6 +7,7 @@ import { loadData } from './data.js';
 import { buildScene } from './scene/index.js';
 import { createUI } from './ui.js';
 import { buildKitchen } from './scene/pine/kitchen.js';
+import { startLoadingScreens } from './loading.js';
 const $ = id => document.getElementById(id);
 const statusEl = $('status'), progress = $('loading-progress');
 const changeCity = () => location.assign(location.href.split(/[?#]/)[0]);
@@ -17,18 +18,13 @@ function status(message, value) {
   progress.value = Math.max(progress.value, value);
 }
 
+let slideshow = { stop() {} };
 function showLoading(city) {
-  const screen = $('city-loading'), art = $('loading-art'), heading = $('loading-city');
+  const screen = $('city-loading'), heading = $('loading-city');
   screen.dataset.city = city.id;
   heading.textContent = city.name;
-  if (city.loadingArt?.length) {
-    const { file, colors } = city.loadingArt[Math.floor(Math.random() * city.loadingArt.length)];
-    progress.style.setProperty('--loading-fill', `linear-gradient(90deg, ${colors.join(', ')})`);
-    const embedded = $(`art-${city.prefix}${file.replace(/\.webp$/, '')}`);
-    art.addEventListener('load', () => { art.hidden = false; }, { once: true });
-    art.src = embedded ? `data:image/webp;base64,${embedded.textContent.trim()}` : `${city.dir}/${file}`;
-  }
   screen.hidden = false;
+  slideshow = startLoadingScreens(city, screen);
   heading.focus();
 }
 
@@ -85,9 +81,12 @@ try {
   status('', 100);
   const screen = $('city-loading'), view = $('city-view');
   const hadFocus = screen.contains(document.activeElement);
-  screen.hidden = true;
   view.inert = false;
   if (hadFocus) view.focus();
+  // fade the loading screen away over the first frames of the city
+  const fade = matchMedia('(prefers-reduced-motion: reduce)').matches ? null : screen.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 450, easing: 'ease-in' });
+  const close = () => { screen.hidden = true; slideshow.stop(); };
+  if (fade) { screen.style.pointerEvents = 'none'; fade.finished.then(close, close); } else close();
 } catch (e) {
   console.error(e);
   progress.hidden = true;

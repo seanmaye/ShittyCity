@@ -3,7 +3,7 @@ EDITING GUIDE: City models (single-file build)
 
 This guide is for an AI assistant (or a person) who has only this HTML file and wants to
 change a city. Everything the page needs is inside the file: styles, all scripts, and
-all map data and loading illustrations. three.js r186 (0.186.1) loads from the jsDelivr CDN.
+all map data and loading-screen backgrounds. three.js r186 (0.186.1) loads from the jsDelivr CDN.
 
 The page holds several cities on one engine: today Philadelphia (id "phl"), New York
 (id "nyc") and Jersey Shore, PA (id "jsh"). It opens on a start menu (#menu) to pick one, or
@@ -31,12 +31,14 @@ Python helper below.
               <script type="application/gzip-base64" id="data-<city>-NAME" data-file="<city>/FILE">base64</script>
               NAME is the file name without .json / .json.gz / .bin.gz. Which blocks a city
               has is listed in section 3 and in its `files` entry in js/cities.js.
-              Loading art uses application/webp-base64 and id="art-<city>-NAME", where NAME
-              is the file name without .webp. The city lists each file and its progress bar
-              gradient colors in `loadingArt`.
+              Loading-screen backgrounds use application/webp-base64 and id="art-<city>-NAME",
+              where NAME is the file name without .webp (poi-*.webp: frames captured from the
+              3D city by tools/loading/capture.py). The city lists each screen in
+              `loadingScreens`: file, caption, the view it was captured from, and the posed
+              figure in front (js/loading.js has the poses and outfits).
   1 <script type="module"> holding all the code:
       - import lines at the very top (THREE, OrbitControls, BufferGeometryUtils, Line2,
-        LineMaterial, LineGeometry)
+        LineMaterial, LineGeometry, OutlineEffect)
       - then `const __mods = {}` and one chunk per original source file, each marked
         `// ---- js/scene/NAME.js` and shaped like
             __mods["js/scene/NAME.js"] = await (async () => {

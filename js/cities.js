@@ -16,11 +16,16 @@ function septaLines(s, LINES) {
 export const CITIES = {
   phl: {
     id: 'phl', name: 'Philadelphia',
-    loadingArt: [
-      { file: 'loading-waterfront.webp', colors: ['#f5703b', '#f9da70'] },
-      { file: 'loading-street.webp', colors: ['#a28cc3', '#ffb853'] },
-      { file: 'loading-independence-hall.webp', colors: ['#23a6bc', '#f4c76b'] },
-      { file: 'loading-30th-street-station.webp', colors: ['#9e71bd', '#ffc56b'] },
+    // the loading slideshow (js/loading.js): frames of the 3D city at its points of interest, made
+    // by tools/loading/capture.py. view: a "Go to" view id, or cam: [[x, y, z], [tx, ty, tz]] (y over
+    // the ground); hour: hours from sunset; day: day of the year (0 = 1 Jan; 285, mid-October, if left
+    // out). hero: [pose, outfit] (POSES and OUTFITS in js/loading.js); side: where the figure stands.
+    loadingScreens: [
+      { file: 'poi-independence-hall.webp', name: 'Independence Hall', area: 'Old City', view: 'indhall', hour: -1, hero: ['akimbo', 'tee'], side: 'right' },
+      { file: 'poi-chinatown.webp', name: 'Friendship Gate', area: 'Chinatown', view: 'chinatown', hour: 0, hero: ['point', 'red'], side: 'left' },
+      { file: 'poi-ben-franklin-bridge.webp', name: 'Ben Franklin Bridge', area: 'Delaware River', view: 'bfb', hour: -.25, hero: ['flex', 'green'], side: 'left' },
+      { file: 'poi-walnut-street.webp', name: 'Walnut St Promenade', area: 'Center City', view: 'walnut', hour: -.6, hero: ['strut', 'black'], side: 'right' },
+      { file: 'poi-sports-complex.webp', name: 'Sports Complex', area: 'South Philly', view: 'stadiums', hour: -.8, hero: ['folded', 'yellow'], side: 'left' },
     ],
     blurb: 'All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill.',
     // projection: x metres east, z metres south of (LAT0, LON0); MX is metres per degree of longitude here
@@ -50,11 +55,12 @@ export const CITIES = {
   },
   nyc: {
     id: 'nyc', name: 'New York',
-    loadingArt: [
-      { file: 'loading-waterfront.webp', colors: ['#ea72a8', '#febe81'] },
-      { file: 'loading-street.webp', colors: ['#5ea7ec', '#fda449'] },
-      { file: 'loading-bethesda-terrace.webp', colors: ['#20a5b6', '#c4d86b'] },
-      { file: 'loading-unisphere.webp', colors: ['#7d75ec', '#ffc08c'] },
+    loadingScreens: [
+      { file: 'poi-empire-state.webp', name: 'Empire State Building', area: 'Midtown', cam: [[260, 90, 40], [-140, 320, -382]], hour: -.6, hero: ['akimbo', 'black'], side: 'left' },
+      { file: 'poi-brooklyn-bridge.webp', name: 'Brooklyn Bridge', area: 'DUMBO', cam: [[-760, 45, 4620], [-1085, 45, 4318]], hour: -.3, hero: ['point', 'denim'], side: 'right' },
+      { file: 'poi-unisphere.webp', name: 'Unisphere', area: 'Flushing Meadows', cam: [[11600, 8, -80], [11666, 24, -154]], hour: -.8, hero: ['wave', 'yellow'], side: 'left' },
+      { file: 'poi-wonder-wheel.webp', name: 'Wonder Wheel', area: 'Coney Island', cam: [[372, 5, 19045], [408, 24, 18977]], hour: -.5, hero: ['flex', 'red'], side: 'right' },
+      { file: 'poi-central-park.webp', name: 'Central Park', area: 'Manhattan', view: 'central-park', hour: -1.2, hero: ['strut', 'tee'], side: 'right' },
     ],
     blurb: 'Manhattan, Brooklyn and Queens, the East River bridges, eleven subway lines and a proposed East River monorail loop.',
     frame: { LAT0: 40.745, LON0: -73.984, MX: 84096.03595426386, MZ: 111000 },
@@ -82,11 +88,12 @@ export const CITIES = {
   },
   jsh: {
     id: 'jsh', name: 'Jersey Shore, PA',
-    loadingArt: [
-      { file: 'loading-overlook.webp', colors: ['#e8572a', '#f6c445'] },
-      { file: 'loading-allegheny-street.webp', colors: ['#e66991', '#ffc06d'] },
-      { file: 'loading-pine-creek.webp', colors: ['#29a3ae', '#badd65'] },
-      { file: 'loading-river-island.webp', colors: ['#80ae3c', '#f7cb4e'] },
+    loadingScreens: [
+      { file: 'poi-allegheny-street.webp', name: 'Allegheny St', area: 'Downtown', view: 'downtown', hour: -.8, hero: ['akimbo', 'flannel'], side: 'right' },
+      { file: 'poi-river-bridge.webp', name: 'West Branch Bridge', area: 'The river island', view: 'bridge', hour: -.4, hero: ['point', 'denim'], side: 'left' },
+      { file: 'poi-pine-creek.webp', name: 'Pine Creek', area: 'Up the valley', view: 'pinecreek', hour: -.6, hero: ['wave', 'tee'], side: 'right' },
+      { file: 'poi-bald-eagle-vista.webp', name: 'Bald Eagle Vista', area: 'With Mr. Kepner', view: 'ridge', hour: -.3, hero: ['folded', 'blaze'], side: 'right' },
+      { file: 'poi-corn-fields.webp', name: 'The Seed Corn', area: 'July on the island', view: 'farms', day: 195, hour: -1.5, hero: ['strut', 'green'], side: 'left' },
     ],
     blurb: 'A Lycoming County river town on the West Branch of the Susquehanna, with Bald Eagle Mountain and a proposed monorail loop to Antes Fort.',
     frame: { LAT0: 41.2025, LON0: -77.2536, MX: 83877.23, MZ: 111000 },   // Allegheny & Main; tools/jsh/extent.py
