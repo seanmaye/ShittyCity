@@ -25,6 +25,7 @@ import { buildOldTrolleys } from './phl/oldtrolley.js';
 import { buildLandmarks as buildNycLandmarks } from './nyc/landmarks.js';
 import { buildBridges as buildNycBridges } from './nyc/bridges.js';
 import { buildBoroughMarks } from './nyc/boroughmarks.js';
+import { buildShowdown } from './nyc/showdown.js';
 import { buildPromenade } from './phl/promenade.js';
 import { buildPedestrians } from './phl/pedestrians.js';
 import { buildBoats } from './phl/boats.js';
@@ -138,6 +139,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   const nyc = data.nycLandmarks ? buildNycLandmarks(scene, data.nycLandmarks) : none();
   const nycBridges = data.nycLandmarks ? buildNycBridges(scene).bridgeSpans : [];
   if (data.nycLandmarks) buildBoroughMarks(scene);
+  const showdown = CITY.id === 'nyc' ? buildShowdown(scene) : none();
   buildTrees(scene, data.trees);
   // Jersey Shore's crop fields, barns and silos (data/jsh/farms.json.gz)
   // and, near the camera, the corn as single plants (cornlod.js)
@@ -343,6 +345,7 @@ export async function buildScene(canvas, data, status = () => {}) {
       pos: V(cx, 0, cz).addScaledVector(n, steep ? 70 : 120).addScaledVector(t, -110).setY(steep ? 190 : 95), target: V(cx, 2, cz).addScaledVector(t, 30) });
   });
   // New York's named views (data/nyc/landmarks.json; its overview is the home view) and the bridges
+  views.push(...showdown.views);
   for (const v of (data.nycLandmarks || {}).views || []) if (v.id !== 'overview') views.push({ id: v.id, name: v.name, pos: V(...v.pos), target: V(...v.target) });
   if (nycBridges.length) views.push({ id: 'bridges', name: 'East River bridges', pos: V(1260, 475, 5070), target: V(-460, 70, 4030) });
   // the overlook's view ends with you standing there, looking around for yourself
@@ -368,7 +371,8 @@ export async function buildScene(canvas, data, status = () => {}) {
     setCreative(false);
     if (riding !== false) setRiding(false, true);
     if (aboard()) leaveCar(true);
-    if (v.cut) setCut(v.cut);
+    if (v.cut !== undefined) setCut(v.cut);
+    if (v.hour !== undefined) setTime(v.hour);
     // a view of something seasonal (the detasseling crew): bring the day and the hour into its window
     const w = v.when;
     if (w) {
@@ -377,8 +381,9 @@ export async function buildScene(canvas, data, status = () => {}) {
       if (h < w.hours[0] || h > w.hours[1]) setTime(w.hour);
     }
     controls.minDistance = v.near || 40;   // close-up views (a restaurant's shop front) may come nearer than orbiting allows
-    fly = { t: 0, dur: 2.2, p0: camera.position.clone(), t0: controls.target.clone(), p1: v.pos, t1: v.target,
-            lift: Math.min(450, camera.position.distanceTo(v.pos) * .22), then: v.arrive };
+    const pos = camera.aspect < 1 && v.portraitPos ? v.portraitPos : v.pos;
+    fly = { t: 0, dur: 2.2, p0: camera.position.clone(), t0: controls.target.clone(), p1: pos, t1: v.target,
+            lift: Math.min(450, camera.position.distanceTo(pos) * .22), then: v.arrive };
   }
   /** fly over a map point (minimap click), keeping the current viewing angle and distance */
   function flyToPoint(x, z) {
@@ -568,6 +573,7 @@ export async function buildScene(canvas, data, status = () => {}) {
         sun.target.position.set(focus.x, 0, focus.z); sun.position.copy(sun.target.position).add(sunOff);
       }
       city.update(camera, scene.fog.far);
+      showdown.update(dt, camera, subway.getCut());
       // a block that starts casting must be in the map at once, or its shadow blinks in late
       if (cullShadowCasters() || ++shadowTick >= SHADOW_EVERY || !shadowSun.equals(sun.position)) {
         renderer.shadowMap.needsUpdate = true; shadowTick = 0; shadowSun.copy(sun.position);

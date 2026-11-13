@@ -30,6 +30,7 @@ Manhattan, Brooklyn and Queens, with the four East River bridges, 11 subway line
   - Grand Central, the UN Secretariat, Madison Square Garden, and the Met, Natural History and Guggenheim museums, shown as simpler shapes
 - **Subway.** The 1, 6, 7, A, E, F, G, J, L, N and Q follow their real routes and stops from MTA GTFS. They run underground, and the 7 also runs elevated across Queens. You can ride any of them inside an NYC subway car. "Show transit lines" highlights them all.
 - **The Times Square cut-away** opens the ground along the 1 train corridor beneath Times Square.
+- **Spider-Man vs. Electro** recreates the Times Square confrontation from *The Amazing Spider-Man 2* above ground. In **Go to**, choose **Spider-Man vs. Electro** for a close-up or **Times Square plaza** for the red steps and billboards. Both views set the clock to 10 p.m. The scene stages the characters, cars and street furniture within the real Midtown street grid.
 - **Skyline lights** colour the Empire State and Chrysler crowns: classic white, the holidays, Pride, or your own colour.
 
 ## Proposal: the East River Loop
