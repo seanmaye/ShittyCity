@@ -484,7 +484,7 @@ export function buildSubway(scene, data, river) {
     let st = [];
     if (run) {
       if (!run.stops) run.stops = stopsOn(run, lineId, kind);
-      const half = run.stops.filter(o => o.s < run.L / 2), seen = new Set();
+      const half = run.strip && !run.strip.back ? run.stops : run.stops.filter(o => o.s < run.L / 2), seen = new Set();   // a loop (the monorails): every station
       for (const o of (half.length > 1 ? half : run.stops)) if (!seen.has(o.t)) { seen.add(o.t); st.push({ t: o.t }); }
     }
     const ends = st.length > 1 ? [st[0].t, st[st.length - 1].t].map(t => t.length > 16 ? t.slice(0, 15) + '…' : t) : ['', ''];

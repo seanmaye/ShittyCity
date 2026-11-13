@@ -208,14 +208,34 @@ export async function buildScene(canvas, data, status = () => {}) {
   river.waterMat.userData.noSnow = true;
   // the monorails' cars can be boarded like any transit car (positioned by their own modules)
   const monoSlots = [];
-  const addTrain = (cars, line, lineName, color, k = 0) => cars.forEach((car, c) => monoSlots.push({
-    line, lineName, color, k, c, pos: new THREE.Vector3(), dir: new THREE.Vector3(0, 0, 1), q: new THREE.Quaternion(),
+  // where a monorail is along its guideway, for the line diagram and the next-stop sign (subway.js
+  // rideStrip): a run with the named stations as stops, and each car's s, found from where its own
+  // module put it (the nearest of points every 5 m). A loop goes round; a shuttle (open guideway)
+  // goes out and back, so its run is twice the guideway, folded at the far end.
+  const monoRun = (curve, closed, stations = []) => {
+    if (!curve) return null;
+    const Lc = curve.getLength(), N = Math.max(100, Math.round(Lc / 5)), P = curve.getSpacedPoints(N), L = closed ? Lc : 2 * Lc;
+    const named = stations.filter(st => st.name).map(st => ({ s: st.u * Lc, t: st.name })).sort((a, b) => a.s - b.s);
+    const fold = s => (closed ? s / L : s <= Lc ? s / Lc : (L - s) / Lc);
+    const track = car => { let sc = -1, dir = 1; return () => {
+      const p = car.position; let best = 0, bd = Infinity;
+      for (let j = 0; j <= N; j++) { const d = (P[j].x - p.x) ** 2 + (P[j].z - p.z) ** 2; if (d < bd) { bd = d; best = j; } }
+      const s = best / N * Lc; if (sc >= 0 && Math.abs(s - sc) > .5 && Math.abs(s - sc) < Lc / 2) dir = s > sc ? 1 : -1;
+      sc = s; return closed || dir > 0 ? s : L - s;
+    }; };
+    return { L, at: (s, v) => curve.getPointAt(Math.min(1, fold(s)), v), track,
+      stops: closed ? named : [...named, ...named.slice(0, -1).reverse().map(o => ({ s: L - o.s, t: o.t }))],
+      strip: { back: !closed, out: closed ? L : Lc, u: s => s, fold, stops: named.map(o => ({ t: o.t, f: o.s / Lc })) } };
+  };
+  const addTrain = (cars, line, lineName, color, k = 0, run = null) => cars.forEach((car, c) => { const at = run && run.track(car); monoSlots.push({
+    line, lineName, led: lineName.replace(/ \(proposed\)$/, ''), color, k, c, pos: new THREE.Vector3(), dir: new THREE.Vector3(0, 0, 1), q: new THREE.Quaternion(), run: run || undefined,
+    get s() { return at ? at() : undefined; },
     sync() { this.pos.copy(car.position); this.pos.y -= 1.6; this.dir.set(0, 0, 1).applyQuaternion(car.quaternion); this.q.copy(car.quaternion); },
     onBoard(on) { car.visible = !on; },
-  }));
-  addTrain(monorail.cars, 'mono:loop', 'Riverfront loop monorail (proposed)', '#d6452f');
-  sports.trains.forEach((cars, i) => addTrain(cars, 'mono:shuttle' + i, `${sports.lines[i].name} (proposed)`, '#1f9a8f'));
-  proposedMono.routes.forEach(r => r.trains.forEach((t, k) => addTrain(t.cars, 'mono:' + r.id, `${r.name} monorail (proposed)`, r.color, k)));
+  }); });
+  addTrain(monorail.cars, 'mono:loop', 'Riverfront loop monorail (proposed)', '#d6452f', 0, monoRun(monorail.curve, true, monorail.stations));
+  sports.trains.forEach((cars, i) => addTrain(cars, 'mono:shuttle' + i, `${sports.lines[i].name} (proposed)`, '#1f9a8f', 0, monoRun(sports.curves[i], false)));
+  proposedMono.routes.forEach(r => { const run = monoRun(r.curve, r.closed, r.stations); r.trains.forEach((t, k) => addTrain(t.cars, 'mono:' + r.id, `${r.name} monorail (proposed)`, r.color, k, run)); });
   monoSlots.forEach(sl => sl.sync());
   if (monoSlots.length) subway.registerFleet('monorail', { car: 14 }, monoSlots);
   if (old53.slots.length) subway.registerFleet('pcc53', SPEC.pcc, old53.slots);   // the 1953 streetcars can be boarded too

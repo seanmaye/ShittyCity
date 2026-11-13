@@ -5,7 +5,8 @@ import { terrain, surface, profile } from '../terrain.js';
 export const H = 18;               // guideway height (m)
 const EAST = 58, WEST = 65;        // set-back from the water's edge (m)
 const SOUTH_LAT = 39.9452, NORTH_LAT = 39.9752;
-const STATIONS = [[39.9478, 1], [39.9640, 1], [39.9702, 1], [39.9548, -1], [39.9662, -1]];
+// [lat, bank (1 east, -1 west), name]: the names are for the ride bar's stops (js/ridebar.js)
+const STATIONS = [[39.9478, 1, 'Schuylkill River Park'], [39.9640, 1, 'Art Museum'], [39.9702, 1, 'Boathouse Row'], [39.9548, -1, '30th Street Station'], [39.9662, -1, 'Spring Garden']];
 
 function segDist2(px, pz, ax, az, bx, bz) {
   const dx = bx - ax, dz = bz - az, L = dx * dx + dz * dz;
@@ -148,10 +149,11 @@ export function buildMonorail(scene, river, bridgeSegs, buildings, lm, onCourt =
   // stations
   const pts = []; for (let i = 0; i < 2400; i++) pts.push(curve.getPointAt(i / 2400));
   const plat = new THREE.MeshStandardMaterial({ color: '#bfc4c8' }), can = new THREE.MeshStandardMaterial({ color: '#d6452f', roughness: .6 });
-  STATIONS.forEach(([lat, side]) => {
+  const stations = STATIONS.map(([lat, side, name]) => {
     const tgt = stationPoint(lat, side);
     let bi = 0, bd = 1e18; pts.forEach((p, i) => { const d = p.distanceToSquared(tgt); if (d < bd) { bd = d; bi = i; } });
     station(scene, curve, bi / 2400, H, can, plat);
+    return { u: bi / 2400, name };   // where it is along the loop (0..1), for the line diagram
   });
 
   // train
@@ -169,7 +171,7 @@ export function buildMonorail(scene, river, bridgeSegs, buildings, lm, onCourt =
       camera.position.lerp(camGoal, .3); look.lerp(lookGoal, .12); camera.lookAt(look);
     }
   }
-  return { curve, length: L, trainWinMat, update, cars };
+  return { curve, length: L, trainWinMat, update, cars, stations };
 }
 
 /** Platforms, canopy and stair tower at parameter u along a guideway curve of height h. */

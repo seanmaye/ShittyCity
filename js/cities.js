@@ -44,7 +44,8 @@ export const CITIES = {
     title: 'Philadelphia: Schuylkill riverfront and monorail',
     heading: 'Philadelphia’s Schuylkill, reimagined',
     canvasLabel: '3D model of Philadelphia to the city limits, with its rail transit network and a proposed monorail loop along the Schuylkill',
-    hint: 'All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill. Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom. Click any train to ride inside it.',
+    // what the city is; the panel adds how to move around (for a mouse or a touch screen, js/ui.js)
+    hint: 'All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill.',
     cutButton: 'Cut away Market St',
     cutHint: 'Market Street cut open: the L (blue) and the T1–T5 trolleys (green) in the subway below. Tunnels that turn away from Market are drawn see-through. Track positions are from OpenStreetMap; depths are estimates.',
     credit: 'Buildings: City of Philadelphia LI footprints · River, parks, streets, transit: © OpenStreetMap contributors · Restaurant picks and notes: djour (djourformore.com)',
@@ -77,7 +78,7 @@ export const CITIES = {
     title: 'New York: Manhattan, Brooklyn and Queens',
     heading: 'New York, from the waterfront to the skyline',
     canvasLabel: '3D model of Manhattan, Brooklyn and Queens with MTA subway routes and a proposed East River monorail loop',
-    hint: 'Manhattan, Brooklyn and Queens, eleven subway lines and a proposed East River monorail loop. Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom. Click any train to ride inside it.',
+    hint: 'Manhattan, Brooklyn and Queens, eleven subway lines and a proposed East River monorail loop.',
     cutButton: 'Cut away Times Square',
     cutHint: 'Times Square cut open: the 1 train corridor and the lines that cross it underground. Tunnels that turn away are drawn see-through. Routes are from MTA GTFS; tunnel depths and platforms are illustrative.',
     credit: 'Buildings: NYC Open Data · Shorelines: NYC Open Data, NJDEP · Streets, parks, water: © OpenStreetMap contributors · Subway: MTA GTFS',
@@ -112,7 +113,8 @@ export const CITIES = {
     title: 'Jersey Shore, PA: a river town on the West Branch',
     heading: 'Jersey Shore, on the West Branch',
     canvasLabel: '3D model of Jersey Shore, Pennsylvania, with the surrounding hills and a proposed West Branch monorail loop',
-    hint: 'Jersey Shore borough and its neighbours on the West Branch of the Susquehanna, with Pine Creek and Bald Eagle Mountain, on real terrain. Select the West Branch Loop under “Ride a line” or click a monorail car to board. In July a detasseling crew works the seed corn on the island: click one of them to see through their eyes. “Bald Eagle Vista w/ Mr. Kepner” leaves you standing behind a hunter above the valley: click him to take a drag, drink his beer, or glass the valley through his binoculars (in late autumn a combine works the last standing corn below). Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom.',
+    // (a phone shows the first three lines: the town, then the things to go and do)
+    hint: 'Jersey Shore and its neighbours on the West Branch of the Susquehanna, under Bald Eagle Mountain, on real terrain. Go to “Bald Eagle Vista w/ Mr. Kepner” and click the hunter to take a drag, drink his beer, or glass the valley through his binoculars (in late autumn a combine works the last standing corn below). In July a detasseling crew works the seed corn on the island (“Detasseling crew”): click one of them to see through their eyes. Select the West Branch Loop under “Ride a line” or click a monorail car to board.',
     cutButton: '', cutHint: '',
     credit: 'Buildings: Overture Maps (Microsoft ML Buildings, OpenStreetMap) · Streets, parks, water: © OpenStreetMap contributors · Terrain: AWS Terrain Tiles (USGS 3DEP) · Crops: USDA NASS Cropland Data Layer',
     building: 'Spreading out along the river…',

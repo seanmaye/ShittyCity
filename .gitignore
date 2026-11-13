@@ -4,3 +4,4 @@ tools/.venv/
 tools/perf/out/
 tools/perf/.cache/
 .claude/launch.json
+tools/ux/out/

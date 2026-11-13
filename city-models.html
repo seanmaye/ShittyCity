@@ -964,7 +964,8 @@ A city entry holds:
                                the grid's surface. (Philadelphia's terrain needs no flag: a
                                `terrain` file is enough, js/scene/terrain.js.)
   storage                      localStorage prefix (folded panel, skyline lights)
-  title, heading, hint, canvasLabel, cutButton, cutHint, credit, building   page text
+  title, heading, hint, canvasLabel, cutButton, cutHint, credit, building   page text (hint says
+                               what the city is; js/ui.js adds how to move, for mouse or touch)
   groups                       the "Ride a line" networks in order (a line without `group` is
                                in the first); stationLines(s, LINES) = a station tag's line text
   presets                      skyline-light preset ids from materials.js (null = all; [] = no
@@ -990,14 +991,20 @@ tools/bundle.py (it picks up every data/<id>/ folder).
 :root{--panel:rgba(255,252,248,.9);--ink:#1d2b36;--muted:#4b5a66;--btn:#1d2b36;--btn-ink:#fff;--line:rgba(29,43,54,.16);--accent:#d6452f;--tag:rgba(255,252,248,.92);color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--panel:rgba(18,26,34,.88);--ink:#eef2f5;--muted:#b4c0c9;--btn:#eef2f5;--btn-ink:#14202a;--line:rgba(238,242,245,.2);--tag:rgba(18,26,34,.88);color-scheme:dark}}
 :root[data-theme="dark"]{--panel:rgba(18,26,34,.88);--ink:#eef2f5;--muted:#b4c0c9;--btn:#eef2f5;--btn-ink:#14202a;--line:rgba(238,242,245,.2);--tag:rgba(18,26,34,.88);color-scheme:dark}
-html,body{height:100%;margin:0}
+html,body{height:100%;margin:0;overscroll-behavior:none}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{background:#e9a888;font-family:Archivo,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;color:var(--ink)}
-#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 #tags{position:fixed;inset:0;pointer-events:none;overflow:hidden}
 .tag{position:absolute;left:0;top:0;transform:translate(-50%,-100%);background:var(--tag);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:12px;font-weight:600;white-space:nowrap}
-.tag::after{content:"";position:absolute;left:50%;top:100%;width:1px;height:8px;background:var(--ink);opacity:.5}
+.tag::after{content:"";position:absolute;left:calc(50% + var(--sx,0px));top:100%;width:1px;height:8px;background:var(--ink);opacity:.5}
+.tag.below::after{top:auto;bottom:100%}   /* no room above the place (js/ui.js placeTags): hung below it */
 .hud{position:fixed;top:0;left:0;padding:calc(env(safe-area-inset-top,0px) + 14px) 14px 0 calc(env(safe-area-inset-left,0px) + 14px);max-width:min(380px,calc(100vw - 28px));box-sizing:border-box}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px 16px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px 16px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;flex-direction:column;box-sizing:border-box;max-height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 28px);max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 28px)}
+#hud-body{min-height:0;overflow-y:auto;overscroll-behavior:contain;margin:0 -10px 0 0;padding:0 10px 2px 0}
+/* the hint's More: only on small screens, where the hint is clamped to three lines */
+button.more{display:inline-block;background:none;border:0;border-radius:6px;color:var(--accent);padding:0 2px;margin:-10px 0 10px;font-size:13px}
+button.more[hidden]{display:none}
 h1{font-size:19px;font-weight:600;margin:0 0 4px;letter-spacing:-.01em;line-height:1.25}
 h1 b{font-weight:inherit}
 h1 span{display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent);margin-right:8px;vertical-align:1px}
@@ -1032,6 +1039,24 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 #xhair::before{left:10px;top:0;width:2px;height:22px}
 #xhair::after{top:10px;left:0;height:2px;width:22px}
 .legend .legend-h{flex-basis:100%;font-weight:600;margin-top:4px;color:var(--muted)}
+/* on a phone with the panel folded (js/ui.js), the dock carries a line for what the panel would
+   show: the legend's strip (one row, swiped sideways) with Hide, or what the cut-away is with Close */
+.dock-mini{display:none}
+.lm-list{flex:1;min-width:0;display:flex;gap:6px 14px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;font-size:12px;font-weight:600;white-space:nowrap;padding:4px 0;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent)}
+.lm-list::-webkit-scrollbar{display:none}
+.lm-list span{display:inline-flex;align-items:center;gap:6px}
+.lm-list span:last-child{padding-right:20px}
+.lm-list i{flex:none;width:16px;height:4px;border-radius:2px;background:var(--c)}
+.lm-list i.casing{height:8px;background:none;border-top:2px solid var(--c);border-bottom:2px solid var(--c);box-sizing:border-box;border-radius:0}
+.cut-mini p{flex:1;min-width:0;margin:0;font-size:13px;line-height:1.35;color:var(--ink)}
+@media (max-width:640px),(max-height:500px){
+  body:not(.hud-open) .legend-mini:not([hidden]),body:not(.hud-open):not(.aboard) .cut-mini:not([hidden]){display:flex;align-items:center;gap:8px;padding:4px 4px 4px 12px;background:var(--panel);border:1px solid var(--line);border-radius:14px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--ink)}
+  body:not(.hud-open):not(.aboard) .cut-mini:not([hidden]){padding:7px 4px 7px 12px}
+  .dock-mini button{flex:none;font-size:13px;padding:6px 13px}
+  /* the line has the bottom of the screen */
+  body:not(.hud-open):has(#legend-mini:not([hidden])) .credit,body:not(.hud-open):not(.aboard):has(#cut-mini:not([hidden])) .credit{display:none}
+}
+@media (pointer:coarse){.dock-mini button{min-height:44px}}
 .tag.t53{font-size:11px;padding:2px 7px;border-color:#a3243f}
 .lines[hidden]{display:none}
 .lines button{font-size:13px;padding:7px 12px}
@@ -1181,12 +1206,15 @@ button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 
 @media (prefers-reduced-motion: reduce) {
   .ls-grain { animation: none; }
 }
-.credit{position:fixed;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 6px);margin:0;font-size:11px;color:var(--ink);background:var(--panel);border-radius:6px;padding:2px 7px;opacity:.85}
+.credit{position:fixed;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 6px);margin:0;font-size:11px;color:var(--ink);background:var(--panel);border-radius:6px;padding:2px 7px;opacity:.85;max-width:calc(100vw - var(--hud-w,400px) - 24px);box-sizing:border-box}
 .err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:24px;text-align:center;font-size:16px;color:#1d2b36}
 @media (max-width:520px){.tag{font-size:11px;padding:2px 7px}h1{font-size:17px}.views button{font-size:12px;padding:5px 9px}.credit{left:10px;right:auto;max-width:calc(100vw - 20px)}}
 .card-h{display:flex;align-items:flex-start;gap:8px}
 .card-h h1{flex:1}
 button.fold{flex:none;width:30px;height:30px;padding:0;display:grid;place-items:center;background:transparent;color:var(--ink);border-color:var(--line);margin:-3px -6px 0 0}
+/* Get off / Stand up / Leave sits in the header, so it is there with the panel folded too */
+.card-h #getoff{flex:none;font-size:13px;padding:6px 13px;margin:-3px 0 0}
+.card-h #getoff[hidden]{display:none}
 button.fold svg{transition:transform .2s}
 .card.folded{padding-bottom:12px}
 .card.folded h1{margin:0}
@@ -1201,13 +1229,16 @@ button.fold svg{transition:transform .2s}
 .swatch.custom input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
 .swatch.custom.on{border-color:var(--accent)}
 .swatch.custom:focus-within{outline:3px solid var(--accent);outline-offset:2px}
-.minimap{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);right:calc(env(safe-area-inset-right,0px) + 14px);width:200px;height:200px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#dfe3d6;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.minimap{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);right:calc(env(safe-area-inset-right,0px) + 14px);width:200px;height:200px;border-radius:14px;border:1px solid var(--line);background:#dfe3d6;box-shadow:0 2px 10px rgba(0,0,0,.18)}
 .minimap[hidden]{display:none}
-.minimap canvas{display:block;width:100%;height:100%;cursor:crosshair}
+.minimap canvas{display:block;width:100%;height:100%;cursor:crosshair;border-radius:13px}
 .mm-ctl{position:absolute;right:6px;bottom:6px;display:flex;flex-direction:column;gap:4px}
 .mm-ctl button{width:26px;height:26px;padding:0;font-size:16px;line-height:1;background:var(--panel);color:var(--ink);border-color:var(--line)}
 .mm-scale{position:absolute;left:8px;bottom:6px;font-size:10.5px;font-weight:600;color:#1d2b36;background:rgba(255,255,255,.75);border-radius:4px;padding:1px 5px}
-.ridebar{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 30px);transform:translateX(-50%);width:min(760px,calc(100vw - 28px));box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:9px 14px 6px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--ink)}
+/* the line diagram while riding (js/ridebar.js): bottom centre, or in the space right of the open
+   panel (--hud-w, js/ui.js) so it never runs under it; a small screen docks it (.dock, below) */
+.ridebar{position:fixed;left:calc(env(safe-area-inset-left,0px) + 14px);right:calc(env(safe-area-inset-right,0px) + 14px);bottom:calc(env(safe-area-inset-bottom,0px) + 30px);max-width:760px;margin:0 auto;box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:9px 14px 6px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--ink);container:rb/inline-size}
+@media (min-width:641px) and (min-height:501px){body.hud-open .ridebar{left:calc(var(--hud-w,0px) + 14px)}}
 .ridebar[hidden]{display:none}
 .rb-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
 .rb-h b{font-weight:600}
@@ -1215,25 +1246,70 @@ button.fold svg{transition:transform .2s}
 .rb-to,.rb-next{color:var(--muted)}
 .rb-next{margin-left:auto}
 .rb-next strong{color:var(--ink);font-weight:600}
+.rb-nl::after{content:":"}
 #rb-svg{display:block;width:100%;height:auto;max-height:110px;margin-top:2px;overflow:visible}
 #rb-svg[hidden]{display:none}
 #rb-svg text{font:inherit;font-size:15px;fill:var(--muted)}
 #rb-svg text.next{fill:var(--ink);font-weight:600}
 #rb-svg text.done{opacity:.55}
-@media (max-width:640px){.minimap{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 30px);width:130px;height:130px}.ridebar{left:14px;transform:none;width:calc(100vw - 172px)}.rb-next{display:none}}
+/* a narrow bar (a phone; a tablet beside the panel): the whole line's names would be ~5 px tall, so
+   the next stop gets a line of its own in large type, and the strip shows just the stops around the
+   train, in the order it reaches them (js/ridebar.js) */
+.rb-near{display:none;position:relative;margin:9px 0 1px}
+.rb-rail{position:absolute;top:5px;height:6px;border-radius:3px;background:var(--c,#8a96a0)}
+.rb-rail.more-l{-webkit-mask-image:linear-gradient(90deg,transparent,#000 28px);mask-image:linear-gradient(90deg,transparent,#000 28px)}
+.rb-rail.more-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+.rb-rail.more-l.more-r{-webkit-mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,transparent,#000 28px,#000 calc(100% - 28px),transparent)}
+.rb-stops{position:relative;display:flex;list-style:none;margin:0;padding:0}
+.rb-stops li{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;line-height:1.25;color:var(--muted);text-align:center}
+.rb-stops i{width:10px;height:10px;border-radius:50%;background:#fff;border:3px solid var(--c,#8a96a0)}
+.rb-stops span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;padding:0 3px;overflow-wrap:anywhere}
+.rb-stops .done{opacity:.6}
+.rb-stops .done i{background:#d5d9dc}
+.rb-stops .next i{background:var(--c,#8a96a0)}
+.rb-stops .next span{color:var(--ink);font-weight:600}
+.rb-train{position:absolute;top:-3px;left:0;width:22px;height:22px;margin-left:-11px;box-sizing:border-box;border-radius:50%;background:var(--c,#8a96a0);border:3px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35);display:grid;place-items:center}
+.rb-train::after{content:"";margin-left:2px;border-left:7px solid #fff;border-top:5px solid transparent;border-bottom:5px solid transparent}
+.rb-train.back::after{margin:0 2px 0 0;transform:scaleX(-1)}
+@media (max-width:640px),(max-height:500px){.ridebar{padding:8px 12px 7px}}
+@media (max-height:600px){.rb-stops span{-webkit-line-clamp:1;line-clamp:1}.rb-near{margin-top:7px}}   /* a short screen (a small phone, or one on its side): every pixel of height counts */
+@container rb (max-width:560px){
+  .rb-h{gap:6px 8px}
+  #rb-name{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rb-to{flex:0 1 auto;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rb-next{flex:1 0 100%;order:9;margin:0;display:flex;align-items:baseline;gap:7px;min-width:0;white-space:nowrap}
+  .rb-next:empty{display:none}
+  .rb-nl{flex:none;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .rb-nl::after{content:none}
+  .rb-next strong{font-size:17px;line-height:1.25;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  #rb-svg{display:none}
+  .rb-near{display:block}
+  .rb-near[hidden]{display:none}
+}
 /* through someone's eyes: things they can do (js/ui.js syncActions), and the mask of their binoculars */
 .actions{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 30px);transform:translateX(-50%);display:flex;gap:6px;padding:6px;background:var(--panel);border:1px solid var(--line);border-radius:999px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);max-width:calc(100vw - 20px);box-sizing:border-box}
 .actions[hidden]{display:none}
+body:has(#actions:not([hidden])) .credit{display:none}   /* the bar has the bottom of the screen (as the ride bar does): a credit that wraps would run into it */
 .actions button{white-space:nowrap;display:inline-flex;align-items:center;gap:8px}
 .actions button[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
 .actions kbd{font:inherit;font-size:11px;line-height:1;border:1px solid currentColor;border-radius:4px;padding:2px 5px;opacity:.6}
 #binoc{position:fixed;inset:0;pointer-events:none}
 #binoc[hidden]{display:none}
 #binoc svg{display:block;width:100%;height:100%}
-#binoc-cap{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 88px);transform:translateX(-50%);margin:0;padding:6px 14px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font-size:13px;font-weight:600;text-align:center;max-width:calc(100vw - 32px);box-sizing:border-box}
+#binoc-cap{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 88px);width:fit-content;margin:0 auto;padding:6px 14px;border-radius:16px;background:rgba(0,0,0,.55);color:#fff;font-size:13px;font-weight:600;text-align:center;max-width:calc(100vw - 32px);box-sizing:border-box}
 #binoc-cap:empty{display:none}
+#binoc-cap::after{content:attr(data-how);display:block;font-size:11.5px;font-weight:500;opacity:.8}   /* how to zoom (js/ui.js) */
+/* upright screens: the lenses as wide as the screen (at "meet" they'd fill only a band across the middle) */
+@media (max-aspect-ratio:1/1){#binoc svg{transform:scale(1.3)}}
+/* phones on their side: the dock has the right of the bottom edge, so the caption takes the left (off the lenses' middle) */
+@media (max-height:500px) and (min-width:641px){body:not(.hud-open) #binoc-cap{left:calc(env(safe-area-inset-left,0px) + 10px);right:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);margin:0;text-align:left;max-width:calc(100vw - min(460px, 100vw - var(--hud-w,350px) - 20px) - 30px)}}
+/* the map's + and − would read as the binoculars' zoom, and a map has no place in front of your eyes */
+body:has(#binoc:not([hidden])) .minimap{display:none}
 .persona.away{visibility:hidden}
-@media (max-width:640px){.actions{bottom:calc(env(safe-area-inset-bottom,0px) + 10px);gap:4px;padding:4px}.actions button{font-size:13px;padding:8px 10px}.actions kbd{display:none}body:has(#actions:not([hidden])) .credit{display:none}}
+/* small screens (either way up): the bar fits the dock; a label too long for its share wraps onto two lines */
+@media (max-width:640px),(max-height:500px){.actions{bottom:calc(env(safe-area-inset-bottom,0px) + 10px);gap:4px;padding:4px}.actions button{flex:0 1 auto;min-width:0;white-space:normal;justify-content:center;text-align:center;line-height:1.2;font-size:13px;padding:6px 10px}.actions kbd{display:none}}
+/* no keyboard on a touch screen: no key chips */
+@media (hover:none),(pointer:coarse){.actions kbd{display:none}}
 /* start menu: pick a city (js/main.js). The page behind it shows the dusk sky colours. */
 body.choosing{background:linear-gradient(#363a66,#e98e72 62%,#f6c89f)}
 body.choosing .hud,body.choosing .credit,body.choosing #modehint{display:none}
@@ -1259,7 +1335,24 @@ button.city em{font-style:normal;font-size:13px;font-weight:600;color:var(--acce
 .pe-bio{font-size:13px;margin:0 0 10px}
 .pe-face{position:absolute;top:0;right:calc(100% + 8px);width:96px;height:96px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:linear-gradient(#e8edf0,#c9d3da)}
 .pe-face canvas{display:block;width:100%;height:100%}
-@media (max-width:640px){.pe-face{position:static;float:right;width:64px;height:64px;margin:0 0 6px 10px}.persona{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);left:16px;right:16px;width:auto;max-height:40vh;overflow:auto}.pe-facts{grid-template-columns:repeat(2,auto)}}
+.pe-h{display:flex;align-items:flex-start;gap:6px}
+.pe-h h2{flex:1;min-width:0}
+button.pe-fold{display:none}
+@media (max-width:640px){.persona{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);left:16px;right:16px;width:auto;max-height:40vh;overflow:auto}body.hud-open .persona{display:none}}   /* phones upright: the open panel has the screen; the card is back when it folds */
+/* small screens (either way up; in the dock the card is static, so the face can't hang off its
+   left edge): the face in the corner, the facts in one row when they fit, and a fold button
+   that takes the card down to the name and what they're doing, to see more of the view */
+@media (max-width:640px),(max-height:500px){
+  .pe-face{position:static;float:right;width:64px;height:64px;margin:0 0 6px 10px}
+  .pe-facts{display:flex;flex-wrap:wrap;gap:2px 14px}
+  button.pe-fold{display:grid;flex:none;width:30px;height:30px;padding:0;place-items:center;background:transparent;color:var(--ink);border-color:var(--line);margin:-3px 0 0}
+  button.pe-fold svg{transition:transform .2s}
+  .persona.min .pe-facts,.persona.min .pe-bio{display:none}
+  .persona.min .pe-face{width:36px;height:36px;border-radius:10px;margin-bottom:0}
+  .persona.min button.pe-fold svg{transform:rotate(180deg)}
+  .persona.min .pe-now{margin-bottom:8px}
+}
+@media (pointer:coarse){button.pe-fold{width:44px;height:44px;margin:-9px -4px -6px 0}}
 /* fishing on the Schuylkill (js/fishing.js) */
 .fish-modal{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,14,20,.45)}
 .fish-modal[hidden]{display:none}
@@ -1280,6 +1373,31 @@ button.fish-x{width:32px;height:32px;padding:0;font-size:20px;line-height:1;back
 .fish-cell canvas{width:72px;height:72px}
 .fish-cell b{font-weight:600;line-height:1.2}
 .fish-cell span{color:var(--muted);font-size:11px}
+.fish-card{max-height:calc(100dvh - 32px);overscroll-behavior:contain}
+.fish-game{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}   /* holding a finger down to reel must not select text */
+.fish-cv{-webkit-tap-highlight-color:transparent}
+button.fish-back{position:sticky;bottom:0;box-shadow:0 2px 12px rgba(0,0,0,.3)}   /* the log is long: the way back stays in sight */
+@media (pointer:coarse){button.fish-x{width:44px;height:44px;margin:-6px -8px -6px 0}.fish-card .row button,button.fish-back{min-height:44px}.fish-cv:focus-visible{outline:none}}
+@media (max-width:640px),(max-height:500px){
+  .fish-modal{padding:8px}
+  .fish-card{padding:10px 12px 12px;max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px)}
+  .fish-head h2{font-size:16px}
+  .fish-quote{font-size:15px;margin:4px 0 12px}
+  .fish-msg{font-size:14px;margin-top:8px}
+  .fish-grid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+  .fish-cell{padding:4px}
+  .fish-cell canvas{width:56px;height:56px}
+}
+@media (max-width:640px){.fish-cv{aspect-ratio:480/400}}   /* phones upright: a squarer picture, bigger on the screen (js/fishing.js follows its shape) */
+/* phones on their side: the picture down the left as tall as the screen, the words and buttons beside it */
+@media (max-height:500px) and (min-width:560px){
+  .fish-card[data-part="game"]{display:grid;grid-template-columns:min(calc(100vw - 300px),calc((100vh - 40px) * 1.4)) minmax(0,1fr);grid-template-columns:min(calc(100vw - 300px),calc((100dvh - 40px) * 1.4)) minmax(0,1fr);grid-template-rows:auto auto 1fr;column-gap:14px;align-items:start}
+  .fish-card[data-part="game"] .fish-game{display:contents}
+  .fish-card[data-part="game"] .fish-cv{grid-column:1;grid-row:1/4;aspect-ratio:560/400}
+  .fish-card[data-part="game"] .fish-head{grid-column:2;grid-row:1}
+  .fish-card[data-part="game"] .fish-msg{grid-column:2;grid-row:2;margin:0}
+  .fish-card[data-part="game"] .fish-row{grid-column:2;grid-row:3;margin-top:10px}
+}
 /* Lucky Arcade in Chinatown's night market (js/arcade.js) */
 .arc-modal{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,14,20,.5)}
 .arc-modal[hidden],.arc-menu[hidden],.arc-game[hidden]{display:none}
@@ -1348,6 +1466,94 @@ body.kitchen #hud-body{max-height:calc(100vh - 110px);overflow:auto;overscroll-b
 .klines .kstops{grid-column:1/-1;font-size:12px;color:var(--muted)}
 .klines .kline button{font-size:12px;padding:4px 10px}
 .klines .row{gap:6px;margin-bottom:6px}.klines .khint{font-size:12px;margin:0 0 6px}
+.arc-card{max-height:calc(100dvh - 32px);overscroll-behavior:contain}
+.arc-game{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}   /* holding and swiping on the games must not select text */
+.arc-cv{-webkit-tap-highlight-color:transparent}
+@media (pointer:coarse){button.arc-x{width:44px;height:44px;margin:-6px -8px -6px 0}.arc-row button{min-height:44px}.arc-cv:focus-visible{outline:none}}
+@media (max-width:640px),(max-height:500px){
+  .arc-modal{padding:8px}
+  .arc-card{padding:10px 12px 12px;max-height:calc(100vh - 16px);max-height:calc(100dvh - 16px)}
+  .arc-head h2{font-size:16px}
+  .arc-quote{font-size:14px;margin:4px 0 10px}
+  .arc-msg{font-size:14px;margin-top:8px}
+  /* the menu as rows, a small picture of each game beside its name, so all three fit without scrolling */
+  .arc-list{grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+  button.arc-pick{display:grid;grid-template-columns:76px minmax(0,1fr);grid-auto-rows:auto;column-gap:10px;row-gap:2px;align-content:start;padding:6px}
+  .arc-pick canvas{grid-column:1;grid-row:1/span 3;width:76px}.arc-pick>:not(canvas){grid-column:2}
+  .arc-pick b{margin-top:0;font-size:15px}
+  .arc-pick span{font-size:12.5px;line-height:1.35}
+}
+@media (max-width:640px){.arc-cv{width:min(100%,calc(100vh - 220px));width:min(100%,calc(100dvh - 220px))}}
+/* phones on their side: the game down the left as tall as the screen, the words and buttons beside it */
+@media (max-height:500px) and (min-width:560px){
+  .arc-card[data-part="game"]{display:grid;grid-template-columns:min(calc(100vw - 320px),calc(100vh - 40px)) minmax(0,1fr);grid-template-columns:min(calc(100vw - 320px),calc(100dvh - 40px)) minmax(0,1fr);grid-template-rows:auto auto 1fr;column-gap:14px;align-items:start}
+  .arc-card[data-part="game"] .arc-game{display:contents}
+  .arc-card[data-part="game"] .arc-cv{grid-column:1;grid-row:1/4;width:100%;min-width:0;margin:0}
+  .arc-card[data-part="game"] .arc-head{grid-column:2;grid-row:1}
+  .arc-card[data-part="game"] .arc-msg{grid-column:2;grid-row:2;margin:0}
+  .arc-card[data-part="game"] .arc-row{grid-column:2;grid-row:3}
+}
+/* the bottom panels (persona, actions, ridebar, credit): placed one by one on big screens; on
+   small ones the dock stacks them at the bottom so they never cover each other */
+.dock{display:contents}
+body:has(#ridebar:not([hidden])) .credit{display:none}   /* riding: the line diagram has the bottom of the screen */
+/* walking inside a car on a touch screen: hold an arrow (js/ui.js), like holding W A S D */
+.walkpad{position:fixed;right:calc(env(safe-area-inset-right,0px) + 14px);top:50%;transform:translateY(-50%);display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,48px);grid-template-areas:". f ." "l . r" ". b .";gap:2px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.walkpad[hidden]{display:none}
+.walkpad button{width:48px;height:48px;padding:0;display:grid;place-items:center;border-radius:12px;background:var(--panel);color:var(--ink);border-color:var(--line);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);touch-action:none}
+.walkpad button.on{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.walkpad [data-k="f"]{grid-area:f}.walkpad [data-k="l"]{grid-area:l}.walkpad [data-k="r"]{grid-area:r}.walkpad [data-k="b"]{grid-area:b}
+/* short messages over the view: flying speed, skyline lights after dark */
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 14px);transform:translateX(-50%);margin:0;max-width:calc(100vw - 32px);box-sizing:border-box;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600;text-align:center;pointer-events:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.toast:empty{display:none}
+/* ---- small screens: phones either way up (js/ui.js COMPACT has the same query). Measured with
+   tools/ux (README there). */
+@media (max-width:640px),(max-height:500px){
+  #hint:not(.open){display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow:hidden}
+  .lines{max-height:none;overflow:visible}
+  .dock{position:fixed;left:calc(env(safe-area-inset-left,0px) + 10px);right:calc(env(safe-area-inset-right,0px) + 10px);bottom:calc(env(safe-area-inset-bottom,0px) + 10px);display:flex;flex-direction:column;align-items:stretch;gap:8px;pointer-events:none}
+  .dock>*{pointer-events:auto}
+  .dock>.persona,.dock>.actions,.dock>.ridebar,.dock>.credit{position:static;inset:auto;transform:none;width:auto;max-width:none;margin:0;box-sizing:border-box}
+  .dock>.actions{align-self:center;max-width:100%}
+  .dock>.credit{align-self:flex-start;max-width:100%;line-height:1.35;padding:3px 8px}
+  .dock>.persona{max-height:min(38vh,300px);max-height:min(38dvh,300px);overflow:auto;overscroll-behavior:contain}
+  body:has(#ridebar:not([hidden])) .credit,body:has(#persona:not([hidden])) .credit,body:has(#actions:not([hidden])) .credit{display:none}
+  .minimap{width:120px;height:120px;top:calc(env(safe-area-inset-top,0px) + 10px);right:calc(env(safe-area-inset-right,0px) + 10px)}
+  .dock>.toast{position:static;transform:none;align-self:center;max-width:100%;border-radius:14px}   /* stacked above the ride bar or card */
+}
+/* phones upright: the panel across the top, the minimap under it (when folded) */
+@media (max-width:640px){
+  .hud{right:0;max-width:none;padding:calc(env(safe-area-inset-top,0px) + 10px) calc(env(safe-area-inset-right,0px) + 10px) 0 calc(env(safe-area-inset-left,0px) + 10px)}
+  .card{max-height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 96px);max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 96px)}
+  .minimap{top:calc(var(--hud-h,64px) + 8px)}
+  body.hud-open .minimap,body.hud-open .walkpad{display:none}
+  .walkpad{top:max(50%,calc(var(--hud-h,64px) + 210px))}   /* clear of the minimap under the panel */
+}
+/* phones on their side: wide but short. The panel down the left, the dock on the right */
+@media (max-height:500px) and (min-width:641px){
+  .hud{max-width:min(340px,48vw);padding:calc(env(safe-area-inset-top,0px) + 10px) 0 0 calc(env(safe-area-inset-left,0px) + 10px)}
+  .card{max-height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 20px);max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 20px);padding:10px 14px 12px}
+  .minimap{width:104px;height:104px}
+  .dock{left:auto;width:min(460px,calc(100vw - var(--hud-w,350px) - 20px))}
+  .dock>.persona{max-height:calc(100vh - 90px);max-height:calc(100dvh - 90px)}
+  body:has(#persona:not([hidden])) .minimap{display:none}
+  .walkpad{right:auto;left:calc(env(safe-area-inset-left,0px) + 10px);top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);transform:none}
+  body.hud-open .walkpad{display:none}
+}
+/* ---- touch screens: everything you tap at least 44 px (Apple; Material asks 48) */
+@media (pointer:coarse){
+  button,.swatch,input[type=range]{touch-action:manipulation}
+  .card button,.menu button,.loading-copy button,.actions button{min-height:44px}
+  button.fold{width:44px;height:44px;margin:-9px -10px -6px 0}
+  .card-h #getoff{min-height:44px;margin:-9px 0 -6px}
+  .views button,.lines button{padding-top:6px;padding-bottom:6px}
+  .swatch{width:44px;height:44px}
+  .clock{margin-top:2px}
+  .clock input{height:44px;margin:0}
+  .mm-ctl{right:calc(100% + 6px);bottom:0;gap:6px}
+  .mm-ctl button{width:44px;height:44px;font-size:20px;box-shadow:0 1px 6px rgba(0,0,0,.18)}
+  button.more{min-height:44px;min-width:56px;padding:0 8px;margin:-12px 0 2px -8px;text-align:left}
+}
 </style>
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
@@ -1363,23 +1569,23 @@ body.kitchen #hud-body{max-height:calc(100vh - 110px);overflow:auto;overscroll-b
 <div id="modehint" class="modehint" role="status"></div>
 <div class="hud"><div class="card">
 <div class="card-h"><h1><span aria-hidden="true"></span><b id="heading"></b></h1>
+<button id="getoff" type="button" hidden>Get off</button>
 <button id="fold" type="button" class="fold" aria-expanded="true" aria-controls="hud-body" aria-label="Collapse the panel" title="Collapse the panel"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 10.5 8 6l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
 <div id="hud-body">
-<p id="hint"></p>
+<p id="hint" data-ux-ok="truncated"></p><button id="hint-more" type="button" class="more" aria-controls="hint" aria-expanded="false" hidden>More</button>
 <div class="row">
 <button id="ride" type="button" disabled aria-expanded="false" aria-controls="lines">Ride a line</button>
 <button id="transit" type="button" class="ghost" disabled aria-pressed="false" aria-controls="legend">Show transit lines</button>
 <button id="lbl" type="button" class="ghost" disabled>Hide labels</button>
 <button id="cut" type="button" class="ghost" disabled aria-pressed="false">Cut away</button>
-<button id="getoff" type="button" hidden>Get off</button>
 <button id="switch-city" type="button" class="ghost">Change city</button>
 </div>
+<div class="lines" id="lines" role="group" aria-label="Choose a line" hidden></div>
+<div class="legend" id="legend" hidden></div>
 <div class="clock"><label for="time">Time</label><input type="range" id="time" min="0" max="24" step="any" value="0" disabled><output id="time-out" for="time"></output></div>
 <div class="clock"><label for="speed">Speed</label><input type="range" id="speed" min="0" max="1000" step="1" value="0" disabled aria-describedby="speed-out"><output id="speed-out" class="wide" for="speed">Frozen</output></div>
 <div class="clock"><label for="day">Season</label><input type="range" id="day" min="0" max="364" step="1" value="0" disabled><output id="day-out" class="wide" for="day"></output></div>
 <div class="skyline" role="group" aria-labelledby="sky-h"><span class="views-h" id="sky-h">Skyline lights <span class="sky-name" id="sky-name">Classic white</span></span><div class="swatches" id="swatches"><label class="swatch custom" title="Your own colour"><input type="color" id="sky-color" value="#7fd0ff" aria-label="Your own colour for the skyline lights"></label></div></div>
-<div class="legend" id="legend" hidden></div>
-<div class="lines" id="lines" role="group" aria-label="Choose a line" hidden></div>
 <div class="views" id="views" role="group" aria-labelledby="views-h"><span class="views-h" id="views-h">Go to</span><div class="row" id="view-btns"></div></div>
 <div class="views eats" id="eats" role="group" aria-labelledby="eats-h" hidden><span class="views-h" id="eats-h">Restaurants <span class="sky-name">djour’s starred picks</span></span><div class="row eats-ctl"><button id="eat-lbl" type="button" class="ghost" aria-pressed="true">Hide restaurant labels</button><select id="eat-hood" aria-label="Show the restaurants in a neighbourhood"></select></div><div class="row eat-list" id="eat-list"></div></div>
 </div>
@@ -1387,11 +1593,15 @@ body.kitchen #hud-body{max-height:calc(100vh - 110px);overflow:auto;overscroll-b
 <div class="minimap" id="minimap" hidden><canvas id="mm" aria-label="Map of the city showing where you are. Click to fly there."></canvas>
 <div class="mm-ctl"><button type="button" id="mm-in" aria-label="Zoom the map in" title="Zoom in">+</button><button type="button" id="mm-out" aria-label="Zoom the map out" title="Zoom out">−</button></div>
 <span class="mm-scale" id="mm-scale" aria-hidden="true"></span></div>
-<aside class="persona" id="persona" aria-live="polite" hidden><div class="pe-face" id="pe-face" role="img"></div><h2 id="pe-name"></h2><dl class="pe-facts"><div><dt>Age</dt><dd id="pe-age"></dd></div><div><dt>Sex</dt><dd id="pe-sex"></dd></div><div><dt>Height</dt><dd id="pe-h"></dd></div><div><dt>Weight</dt><dd id="pe-w"></dd></div></dl><p class="pe-now"><span>Now</span> <b id="pe-now"></b></p><p class="pe-bio" id="pe-bio"></p></aside>
 <aside class="eatcard" id="eatcard" aria-live="polite" hidden><button type="button" class="eat-x" id="eat-x" aria-label="Close">×</button><h2 id="eat-name"></h2><p class="eat-stars" id="eat-stars"></p><p class="eat-meta" id="eat-meta"></p><p class="eat-tags" id="eat-tags"></p><blockquote class="eat-note" id="eat-note" hidden></blockquote><p class="eat-src">From <a href="https://www.djourformore.com/" target="_blank" rel="noopener">djour’s Philly food map</a></p></aside>
+<div class="dock" id="dock">
+<p class="toast" id="toast" role="status" aria-live="polite"></p>
+<aside class="persona" id="persona" aria-live="polite" hidden><div class="pe-face" id="pe-face" role="img"></div><div class="pe-h"><h2 id="pe-name"></h2><button type="button" class="pe-fold" id="pe-fold" aria-expanded="true" aria-controls="pe-facts pe-bio" aria-label="Fold the card" title="Fold the card"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M3.5 6 8 10.5 12.5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div><dl class="pe-facts" id="pe-facts"><div><dt>Age</dt><dd id="pe-age"></dd></div><div><dt>Sex</dt><dd id="pe-sex"></dd></div><div><dt>Height</dt><dd id="pe-h"></dd></div><div><dt>Weight</dt><dd id="pe-w"></dd></div></dl><p class="pe-now"><span>Now</span> <b id="pe-now"></b></p><p class="pe-bio" id="pe-bio"></p></aside>
 <div class="actions" id="actions" role="group" aria-label="Things to do" hidden></div>
 <div class="ridebar" id="ridebar" role="status" aria-live="off" hidden><div class="rb-h"><span class="rb-dot" id="rb-dot" aria-hidden="true"></span><b id="rb-name"></b><span class="rb-to" id="rb-to"></span><span class="rb-next" id="rb-next"></span></div><svg id="rb-svg" viewBox="0 0 1000 120" preserveAspectRatio="xMidYMax meet" aria-hidden="true"></svg></div>
 <p class="credit" id="credit"></p>
+</div>
+<div class="walkpad" id="walkpad" role="group" aria-label="Walk" data-touch-move hidden><button type="button" data-k="f" aria-label="Walk forward"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path d="M3.5 10.5 8 6l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" data-k="l" aria-label="Step left"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" data-k="r" aria-label="Step right"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" data-k="b" aria-label="Walk back"><svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path d="M3.5 5.5 8 10l4.5-4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
 </main>
 <section class="city-loading" id="city-loading" aria-labelledby="loading-city" hidden>
 <div class="ls-stage" aria-hidden="true"></div>
@@ -1628,7 +1838,8 @@ const CITIES = {
     title: 'Philadelphia: Schuylkill riverfront and monorail',
     heading: 'Philadelphia’s Schuylkill, reimagined',
     canvasLabel: '3D model of Philadelphia to the city limits, with its rail transit network and a proposed monorail loop along the Schuylkill',
-    hint: 'All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill. Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom. Click any train to ride inside it.',
+    // what the city is; the panel adds how to move around (for a mouse or a touch screen, js/ui.js)
+    hint: 'All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill.',
     cutButton: 'Cut away Market St',
     cutHint: 'Market Street cut open: the L (blue) and the T1–T5 trolleys (green) in the subway below. Tunnels that turn away from Market are drawn see-through. Track positions are from OpenStreetMap; depths are estimates.',
     credit: 'Buildings: City of Philadelphia LI footprints · River, parks, streets, transit: © OpenStreetMap contributors · Restaurant picks and notes: djour (djourformore.com)',
@@ -1661,7 +1872,7 @@ const CITIES = {
     title: 'New York: Manhattan, Brooklyn and Queens',
     heading: 'New York, from the waterfront to the skyline',
     canvasLabel: '3D model of Manhattan, Brooklyn and Queens with MTA subway routes and a proposed East River monorail loop',
-    hint: 'Manhattan, Brooklyn and Queens, eleven subway lines and a proposed East River monorail loop. Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom. Click any train to ride inside it.',
+    hint: 'Manhattan, Brooklyn and Queens, eleven subway lines and a proposed East River monorail loop.',
     cutButton: 'Cut away Times Square',
     cutHint: 'Times Square cut open: the 1 train corridor and the lines that cross it underground. Tunnels that turn away are drawn see-through. Routes are from MTA GTFS; tunnel depths and platforms are illustrative.',
     credit: 'Buildings: NYC Open Data · Shorelines: NYC Open Data, NJDEP · Streets, parks, water: © OpenStreetMap contributors · Subway: MTA GTFS',
@@ -1696,7 +1907,8 @@ const CITIES = {
     title: 'Jersey Shore, PA: a river town on the West Branch',
     heading: 'Jersey Shore, on the West Branch',
     canvasLabel: '3D model of Jersey Shore, Pennsylvania, with the surrounding hills and a proposed West Branch monorail loop',
-    hint: 'Jersey Shore borough and its neighbours on the West Branch of the Susquehanna, with Pine Creek and Bald Eagle Mountain, on real terrain. Select the West Branch Loop under “Ride a line” or click a monorail car to board. In July a detasseling crew works the seed corn on the island: click one of them to see through their eyes. “Bald Eagle Vista w/ Mr. Kepner” leaves you standing behind a hunter above the valley: click him to take a drag, drink his beer, or glass the valley through his binoculars (in late autumn a combine works the last standing corn below). Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom.',
+    // (a phone shows the first three lines: the town, then the things to go and do)
+    hint: 'Jersey Shore and its neighbours on the West Branch of the Susquehanna, under Bald Eagle Mountain, on real terrain. Go to “Bald Eagle Vista w/ Mr. Kepner” and click the hunter to take a drag, drink his beer, or glass the valley through his binoculars (in late autumn a combine works the last standing corn below). In July a detasseling crew works the seed corn on the island (“Detasseling crew”): click one of them to see through their eyes. Select the West Branch Loop under “Ride a line” or click a monorail car to board.',
     cutButton: '', cutHint: '',
     credit: 'Buildings: Overture Maps (Microsoft ML Buildings, OpenStreetMap) · Streets, parks, water: © OpenStreetMap contributors · Terrain: AWS Terrain Tiles (USGS 3DEP) · Crops: USDA NASS Cropland Data Layer',
     building: 'Spreading out along the river…',
@@ -3971,7 +4183,8 @@ const { terrain, surface, profile } = __mods["js/scene/terrain.js"];
 const H = 18;               // guideway height (m)
 const EAST = 58, WEST = 65;        // set-back from the water's edge (m)
 const SOUTH_LAT = 39.9452, NORTH_LAT = 39.9752;
-const STATIONS = [[39.9478, 1], [39.9640, 1], [39.9702, 1], [39.9548, -1], [39.9662, -1]];
+// [lat, bank (1 east, -1 west), name]: the names are for the ride bar's stops (js/ridebar.js)
+const STATIONS = [[39.9478, 1, 'Schuylkill River Park'], [39.9640, 1, 'Art Museum'], [39.9702, 1, 'Boathouse Row'], [39.9548, -1, '30th Street Station'], [39.9662, -1, 'Spring Garden']];
 
 function segDist2(px, pz, ax, az, bx, bz) {
   const dx = bx - ax, dz = bz - az, L = dx * dx + dz * dz;
@@ -4114,10 +4327,11 @@ function buildMonorail(scene, river, bridgeSegs, buildings, lm, onCourt = () => 
   // stations
   const pts = []; for (let i = 0; i < 2400; i++) pts.push(curve.getPointAt(i / 2400));
   const plat = new THREE.MeshStandardMaterial({ color: '#bfc4c8' }), can = new THREE.MeshStandardMaterial({ color: '#d6452f', roughness: .6 });
-  STATIONS.forEach(([lat, side]) => {
+  const stations = STATIONS.map(([lat, side, name]) => {
     const tgt = stationPoint(lat, side);
     let bi = 0, bd = 1e18; pts.forEach((p, i) => { const d = p.distanceToSquared(tgt); if (d < bd) { bd = d; bi = i; } });
     station(scene, curve, bi / 2400, H, can, plat);
+    return { u: bi / 2400, name };   // where it is along the loop (0..1), for the line diagram
   });
 
   // train
@@ -4135,7 +4349,7 @@ function buildMonorail(scene, river, bridgeSegs, buildings, lm, onCourt = () => 
       camera.position.lerp(camGoal, .3); look.lerp(lookGoal, .12); camera.lookAt(look);
     }
   }
-  return { curve, length: L, trainWinMat, update, cars };
+  return { curve, length: L, trainWinMat, update, cars, stations };
 }
 
 /** Platforms, canopy and stair tower at parameter u along a guideway curve of height h. */
@@ -5546,7 +5760,7 @@ function buildSubway(scene, data, river) {
     let st = [];
     if (run) {
       if (!run.stops) run.stops = stopsOn(run, lineId, kind);
-      const half = run.stops.filter(o => o.s < run.L / 2), seen = new Set();
+      const half = run.strip && !run.strip.back ? run.stops : run.stops.filter(o => o.s < run.L / 2), seen = new Set();   // a loop (the monorails): every station
       for (const o of (half.length > 1 ? half : run.stops)) if (!seen.has(o.t)) { seen.add(o.t); st.push({ t: o.t }); }
     }
     const ends = st.length > 1 ? [st[0].t, st[st.length - 1].t].map(t => t.length > 16 ? t.slice(0, 15) + '…' : t) : ['', ''];
@@ -8437,7 +8651,10 @@ function buildBoats(scene, data) {
     const n = Math.max(1, Math.round(run.half / 6000));
     for (let k = 0; k < n; k++) {
       const model = boatModel(ln.color, winMat); model.userData.terrain = 'done'; scene.add(model);
-      const sl = { line: id, lineName: name, led: ln.name, color: ln.color, k, c: 0, run, s: run.L * k / n, dwell: 0, pos: V(0, 0, 0), dir: V(0, 0, 1), q: new THREE.Quaternion(), hidden: false,
+      // h: height above the ground, 0 (afloat). Without it subway.js goes by pos.y, and where the
+      // Delaware's surface lies more than a metre below datum it took a boat for underground: it
+      // couldn't be tapped, and riding it counted as riding in a tunnel
+      const sl = { line: id, lineName: name, led: ln.name, color: ln.color, k, c: 0, run, s: run.L * k / n, dwell: 0, pos: V(0, 0, 0), dir: V(0, 0, 1), q: new THREE.Quaternion(), hidden: false, h: 0,
         model, bob: k * 1.7, sync() {}, onBoard(on) { model.userData.shell.forEach(m => { m.visible = !on; }); } };   // aboard: the walkable cabin replaces the outer walls; hull and deck stay
       slots.push(sl); fleet.push(sl);
     }
@@ -10565,7 +10782,8 @@ function buildDetassel(scene, seed, { hour = () => 9 } = {}) {
     fm.visible = mm.visible = tf.visible = tm.visible = reachBlock && fm.userData.on;
     const far = camera.position.distanceTo(new THREE.Vector3(x0, camera.position.y, z0)) > 300 && camera.position.y - groundAt(x0, z0) > 60;
     crew.forEach(P => { P.F.root.visible = working && !far; });
-    if (!working || (far && !inside)) return;
+    if (!working) return;
+    if (far && !inside) { aim(where().out); return; }   // nobody near enough to see them: only where "Go to" goes
     D += SPEED * dt;
     const w = where();
     if (w.leg !== lastLeg) { if (w.leg === legs[0] && lastLeg && lastLeg.wrap) { pass++; pulled.fill(0); setTassels(); } lastLeg = w.leg; }
@@ -10586,9 +10804,18 @@ function buildDetassel(scene, seed, { hour = () => 9 } = {}) {
       P.F.root.position.set(x, groundAt(x, z), z); P.F.root.rotation.y = P.h;
       P.leg = w.leg;
     });
-    const B = crew[4], gy = groundAt(B.x, B.z), hx = Math.sin(B.h), hz = Math.cos(B.h);
-    view.target.set(crew[1].x, gy + 1.3, crew[1].z);
-    view.pos.set(B.x - hx * 7 + hz * 6, gy + 6, B.z - hz * 7 - hx * 6);
+    aim(w.out);
+  }
+  /** the view: behind the boss and to one side, looking over the second detasseler (out: where()'s).
+   *  The orbit controls keep the camera 40 m or more from what it looks at (core.js minDistance),
+   *  so it looks at the field beyond them: aimed at the crew it would be pushed back to where
+   *  they are too small to tap. */
+  function aim(out) {
+    const [u1, v1] = out[1], [ub, vb, hd, sv] = out[4], [x1, z1] = at(u1, v1), [bx, bz] = at(ub, vb);
+    const a = Math.atan2(hd ? ux * hd : vx * sv, hd ? uz * hd : vz * sv), hx = Math.sin(a), hz = Math.cos(a), gy = groundAt(bx, bz);
+    view.pos.set(bx - hx * 7 + hz * 6, gy + 4, bz - hz * 7 - hx * 6);
+    const dx = x1 - view.pos.x, dz = z1 - view.pos.z, d = Math.hypot(dx, dz) || 1, tx = view.pos.x + dx / d * 42, tz = view.pos.z + dz / d * 42;
+    view.target.set(tx, groundAt(tx, tz) + 1, tz);
   }
 
   // ---- seeing through their eyes (the same calls as phl/pedestrians.js)
@@ -10628,7 +10855,9 @@ function buildDetassel(scene, seed, { hour = () => 9 } = {}) {
   function getInhabited() {
     if (!inside) return null;
     const p = inside.prof;
-    return { kind: 'person', id: inside.i, name: p.name, sex: p.sex, age: p.age, height: p.height, kg: p.kg, lb: p.lb, bio: p.bio, now: activity(inside) };
+    return { kind: 'person', id: inside.i, name: p.name, sex: p.sex, age: p.age, height: p.height, kg: p.kg, lb: p.lb, bio: p.bio, now: activity(inside),
+      // (js/ui.js's own wording for a person is Walnut Street's; on a touch screen it says this with tap)
+      hint: `In the seed corn on the island, through ${p.name}’s eyes${p.boss ? ', behind the crew' : ', pulling tassels'}. You can’t steer; you go where they go. Drag or click to look around, Space, Esc or “Leave” to step out.` };
   }
   const lookAt = (dx, dy) => { look.yaw = Math.max(-2.2, Math.min(2.2, look.yaw - dx * .0045)); look.pitch = Math.max(-1.1, Math.min(1.1, look.pitch - dy * .0045)); };
   const eye = new THREE.Vector3(), fwd = new THREE.Vector3();
@@ -11150,7 +11379,8 @@ __mods["js/scene/jsh/overlook.js"] = await (async () => {
 // little toward him, tailgate down, a buck in the bed: in frame with him from the "Go to" spot.
 //
 // The "Go to" button flies the camera to a spot just behind him and leaves you standing there
-// (stand()): drag to look around, as a visitor. Click him to see through his eyes (inhabit()),
+// (stand(); on an upright screen a step further back, so he is in frame: fit()): drag to look
+// around, as a visitor. Click him, or "See through his eyes", to see through his eyes (inhabit()),
 // with a card about him like the people on Walnut St and the detasseling crew, and three things
 // to do (act()): take a drag, drink beer, or check out the view through the binoculars, which
 // come up and pan to whatever opts.spot() says is worth watching (the combine in harvest.js,
@@ -11467,13 +11697,32 @@ function buildOverlook(scene, site, { night = () => 0, spot = () => null } = {})
   // ---- "Go to": the visitor's spot, behind him and to his right, looking past him across the valley
 // with the truck in frame on the right (VIEW_YAW: from straight toward town, + to the left)
   const [vx, vz] = W(-1.5, -4.6), standPos = new THREE.Vector3(vx, groundAt(vx, vz) + EYE, vz);
-  const VIEW_YAW = -.07, YAW0 = h + VIEW_YAW + Math.PI, PITCH0 = -.09;   // as a camera's rotation.y (it looks down its own -z) and .x
+  const VIEW_YAW = -.07; let YAW0 = h + VIEW_YAW + Math.PI, PITCH0 = -.09;   // as a camera's rotation.y (it looks down its own -z) and .x
   const view = { id: 'ridge', name: 'Bald Eagle Vista w/ Mr. Kepner', pos: standPos.clone(),
     target: standPos.clone().add(new THREE.Vector3(Math.sin(h + VIEW_YAW) * Math.cos(PITCH0), Math.sin(PITCH0), Math.cos(h + VIEW_YAW) * Math.cos(PITCH0)).multiplyScalar(4000)) };
+  // A screen too narrow for all that (a phone or a tablet held upright) would have him off its left
+  // edge, and he is who you tap: there the spot steps back (up to 6 m) and turns until at least he
+  // and the buck in the truck bed are in frame, as much of the truck as fits, and looks a little
+  // higher, which puts him lower on the screen (below a tablet's open panel). The "Go to" flight
+  // reads view.pos and .target as it goes, so they are changed in place (from update()).
+  const HIM = [.55, 0], BUCK = [-3.6, 4], CAB = [-6.1, 6.05], fitted = { a: 0, fov: 0 };
+  function fit(aspect, fov) {
+    const half = Math.atan(Math.tan(fov * Math.PI / 360) * aspect) * .9;   // half the view's width, less a margin
+    const ang = (b, [lx, lz]) => Math.atan2(lx + 1.5, lz + 4.6 + b);        // seen from b m behind the spot; + to the left
+    let b = 0, yaw = VIEW_YAW; PITCH0 = -.09;
+    if (ang(0, HIM) - VIEW_YAW > half || VIEW_YAW - ang(0, CAB) > half) {
+      PITCH0 = -.02;
+      while (b < 6 && ang(b, HIM) - ang(b, BUCK) > 2 * half) b += .5;
+      yaw = Math.max(ang(b, HIM) - half, (ang(b, HIM) + ang(b, CAB)) / 2);
+    }
+    const [x, z] = W(-1.5, -4.6 - b); standPos.set(x, groundAt(x, z) + EYE, z); YAW0 = h + yaw + Math.PI;
+    view.pos.copy(standPos); view.target.copy(standPos).add(new THREE.Vector3(Math.sin(h + yaw) * Math.cos(PITCH0), Math.sin(PITCH0), Math.cos(h + yaw) * Math.cos(PITCH0)).multiplyScalar(4000));
+  }
 
   // ---- state
   let mode = null;                     // null: nobody here; 'stand': the visitor behind the chair; 'man': through the hunter's eyes
   let cam = null, act = null, clock = 0, drunk = EMPTY, sips = 0, wispT = 0, breathT = 0, tilt = 0;
+  let level = null;   // just arrived: the pitch to settle to (the orbit controls won't fly in looking that high; see fit())
   const look = { yaw: 0, pitch: 0 };   // standing: the camera's own yaw and pitch; as him: from straight ahead
   const idle = { drag: 5, sip: 28 };   // seconds until he next does each by himself
   const bino = { on: false, k: 0, t: 0, fov: 48, goal: 48, base: 48, spot: null, from: { yaw: 0, pitch: 0 }, track: false, zoomed: false, text: '' };
@@ -11508,8 +11757,10 @@ function buildOverlook(scene, site, { night = () => 0, spot = () => null } = {})
     act = id === 'drag' ? { id, t: 0, dur: 4.6, pose: mine ? reachFace('R') : P.mouthR } : { id, t: 0, dur: 4.7, pose: mine ? reachFace('L') : P.mouthL, held: false };
     return true;
   }
-  /** what the buttons do: 'drag', 'drink', 'glass' (the binoculars, up or down) */
+  /** what the buttons do: 'eyes' (standing behind him: into his chair, as tapping him does), and
+   *  as him 'drag', 'drink', 'glass' (the binoculars, up or down) */
   function doAct(id) {
+    if (id === 'eyes') { if (mode !== 'stand') return false; inhabit(); return true; }
     if (mode !== 'man') return false;
     if (id === 'glass') { setGlass(!bino.on); return true; }   // even mid-drag or mid-drink: the glasses just come up over it
     if (bino.on) setGlass(false);
@@ -11518,6 +11769,12 @@ function buildOverlook(scene, site, { night = () => 0, spot = () => null } = {})
 
   function update(dt, camera) {
     cam = camera;
+    // the screen's shape (and its base field of view: not while the binoculars have it)
+    if (mode !== 'man' && bino.k === 0 && (camera.aspect !== fitted.a || camera.fov !== fitted.fov)) {
+      const y0 = YAW0; fitted.a = camera.aspect; fitted.fov = camera.fov; fit(camera.aspect, camera.fov);
+      if (mode === 'stand' && Math.abs(YAW0 - y0) > .01) { look.yaw = YAW0; look.pitch = PITCH0; }   // turned the phone round while standing here
+    }
+    if (mode === 'stand' && level !== null) { look.pitch += (level - look.pitch) * (1 - Math.exp(-dt * 5)); if (Math.abs(level - look.pitch) < 1e-3) level = null; }
     // the binoculars coming up or going down: the mask (bino.k), the zoom, and the pan to what's worth seeing
     if (bino.on || bino.k > 0) {
       bino.t += dt; bino.k = clamp(bino.k + (bino.on ? dt : -dt) / .4, 0, 1);
@@ -11598,7 +11855,7 @@ function buildOverlook(scene, site, { night = () => 0, spot = () => null } = {})
     }
   }
   function lookBy(dx, dy) {
-    if (mode === 'stand') { look.yaw -= dx * .0045; look.pitch = clamp(look.pitch - dy * .0045, -1.3, 1.3); return; }
+    if (mode === 'stand') { level = null; look.yaw -= dx * .0045; look.pitch = clamp(look.pitch - dy * .0045, -1.3, 1.3); return; }
     if (mode !== 'man') return;
     const k = .0045 * (bino.k > 0 && cam ? cam.fov / bino.base : 1);   // finer through the binoculars
     if (bino.on) bino.track = false;
@@ -11612,7 +11869,7 @@ function buildOverlook(scene, site, { night = () => 0, spot = () => null } = {})
 
   // ---- arriving, stepping into him, and leaving
   /** stand behind the chair, looking the way the camera already is (the "Go to" flight ends here) */
-  function stand(camera) { mode = 'stand'; eul.setFromQuaternion(camera.quaternion, 'YXZ'); look.yaw = eul.y; look.pitch = eul.x; return getState(); }
+  function stand(camera) { mode = 'stand'; eul.setFromQuaternion(camera.quaternion, 'YXZ'); look.yaw = eul.y; look.pitch = eul.x; level = PITCH0; return getState(); }
   function inhabit() { mode = 'man'; look.yaw = 0; look.pitch = -.06; F.head.visible = false; return getState(); }
   /** out of the hunter and back behind the chair; from there (or with all = true) away altogether */
   function leave(all = false) {
@@ -11639,14 +11896,19 @@ function buildOverlook(scene, site, { night = () => 0, spot = () => null } = {})
     : drunk >= CANS ? `Out of beer: all ${CANS} cans are on the ground`
     : `Sitting on the ridge with a cigarette and beer ${drunk + 1} of ${CANS}, a buck in the truck`);
   const ACTS = [{ id: 'drag', label: 'Take a drag', key: '1' }, { id: 'drink', label: 'Drink beer', key: '2' }, { id: 'glass', label: 'Check out the view', key: '3', on: false }];
-  /** what index.js and ui.js need to know while you are here (null when you aren't) */
+  // standing behind him, a button as well as tapping him: on a phone the hint saying so is folded away
+  const EYES = [{ id: 'eyes', label: 'See through his eyes' }];
+  /** what index.js and ui.js need to know while you are here (null when you aren't); hintTouch
+   *  leads with what to tap, as a phone shows the first three lines */
   function getState() {
     if (!mode) return null;
-    if (mode === 'stand') return { kind: 'vista', id: 'overlook', view: view.id, labels: true,
-      hint: 'On top of Bald Eagle Mountain, behind a hunter who has the best seat in the valley. Drag or click to look around: that’s his truck on the right. Click him to see through his eyes. Esc or “Step away” to leave.' };
-    ACTS[2].on = bino.on; ACTS[2].label = bino.on ? 'Put the binoculars down' : 'Check out the view';
+    if (mode === 'stand') return { kind: 'vista', id: 'overlook', view: view.id, labels: true, actions: EYES,
+      hint: 'On top of Bald Eagle Mountain, behind a hunter who has the best seat in the valley. Drag or click to look around: that’s his truck on the right. Click him to see through his eyes. Esc or “Step away” to leave.',
+      hintTouch: 'On top of Bald Eagle Mountain, behind a hunter who has the best seat in the valley. Tap him, or “See through his eyes”, to sit in his chair. Drag to look around: that’s his truck on the right. “Step away” to leave.' };
+    ACTS[2].on = bino.on; ACTS[2].label = bino.on ? 'Lower the binoculars' : 'Check out the view';   // (short enough for a phone's bar, on one line)
     return { kind: 'person', id: 'hunter', view: view.id, labels: true, ...WHO, now: now(), portrait, actions: ACTS, bino: smooth(bino.k),
-      hint: `Seeing the valley through ${WHO.name}’s eyes, from his chair on Bald Eagle Mountain. Drag or click to look around. Take a drag, drink beer, or check out the view through his binoculars (scroll to zoom). Space, Esc or “Leave” to step back behind him.` };
+      hint: `Seeing the valley through ${WHO.name}’s eyes, from his chair on Bald Eagle Mountain. Drag or click to look around. Take a drag, drink beer, or check out the view through his binoculars (scroll to zoom). Space, Esc or “Leave” to step back behind him.`,
+      hintTouch: `Seeing the valley through ${WHO.name}’s eyes, from his chair on Bald Eagle Mountain. Take a drag, drink beer, or check out the view through his binoculars (spread two fingers to zoom). Drag to look around; “Leave” to step back behind him.` };
   }
 
   // a head-and-shoulders portrait for his card (as detassel.js): a fresh figure, standing, facing the camera
@@ -11880,14 +12142,34 @@ async function buildScene(canvas, data, status = () => {}) {
   river.waterMat.userData.noSnow = true;
   // the monorails' cars can be boarded like any transit car (positioned by their own modules)
   const monoSlots = [];
-  const addTrain = (cars, line, lineName, color, k = 0) => cars.forEach((car, c) => monoSlots.push({
-    line, lineName, color, k, c, pos: new THREE.Vector3(), dir: new THREE.Vector3(0, 0, 1), q: new THREE.Quaternion(),
+  // where a monorail is along its guideway, for the line diagram and the next-stop sign (subway.js
+  // rideStrip): a run with the named stations as stops, and each car's s, found from where its own
+  // module put it (the nearest of points every 5 m). A loop goes round; a shuttle (open guideway)
+  // goes out and back, so its run is twice the guideway, folded at the far end.
+  const monoRun = (curve, closed, stations = []) => {
+    if (!curve) return null;
+    const Lc = curve.getLength(), N = Math.max(100, Math.round(Lc / 5)), P = curve.getSpacedPoints(N), L = closed ? Lc : 2 * Lc;
+    const named = stations.filter(st => st.name).map(st => ({ s: st.u * Lc, t: st.name })).sort((a, b) => a.s - b.s);
+    const fold = s => (closed ? s / L : s <= Lc ? s / Lc : (L - s) / Lc);
+    const track = car => { let sc = -1, dir = 1; return () => {
+      const p = car.position; let best = 0, bd = Infinity;
+      for (let j = 0; j <= N; j++) { const d = (P[j].x - p.x) ** 2 + (P[j].z - p.z) ** 2; if (d < bd) { bd = d; best = j; } }
+      const s = best / N * Lc; if (sc >= 0 && Math.abs(s - sc) > .5 && Math.abs(s - sc) < Lc / 2) dir = s > sc ? 1 : -1;
+      sc = s; return closed || dir > 0 ? s : L - s;
+    }; };
+    return { L, at: (s, v) => curve.getPointAt(Math.min(1, fold(s)), v), track,
+      stops: closed ? named : [...named, ...named.slice(0, -1).reverse().map(o => ({ s: L - o.s, t: o.t }))],
+      strip: { back: !closed, out: closed ? L : Lc, u: s => s, fold, stops: named.map(o => ({ t: o.t, f: o.s / Lc })) } };
+  };
+  const addTrain = (cars, line, lineName, color, k = 0, run = null) => cars.forEach((car, c) => { const at = run && run.track(car); monoSlots.push({
+    line, lineName, led: lineName.replace(/ \(proposed\)$/, ''), color, k, c, pos: new THREE.Vector3(), dir: new THREE.Vector3(0, 0, 1), q: new THREE.Quaternion(), run: run || undefined,
+    get s() { return at ? at() : undefined; },
     sync() { this.pos.copy(car.position); this.pos.y -= 1.6; this.dir.set(0, 0, 1).applyQuaternion(car.quaternion); this.q.copy(car.quaternion); },
     onBoard(on) { car.visible = !on; },
-  }));
-  addTrain(monorail.cars, 'mono:loop', 'Riverfront loop monorail (proposed)', '#d6452f');
-  sports.trains.forEach((cars, i) => addTrain(cars, 'mono:shuttle' + i, `${sports.lines[i].name} (proposed)`, '#1f9a8f'));
-  proposedMono.routes.forEach(r => r.trains.forEach((t, k) => addTrain(t.cars, 'mono:' + r.id, `${r.name} monorail (proposed)`, r.color, k)));
+  }); });
+  addTrain(monorail.cars, 'mono:loop', 'Riverfront loop monorail (proposed)', '#d6452f', 0, monoRun(monorail.curve, true, monorail.stations));
+  sports.trains.forEach((cars, i) => addTrain(cars, 'mono:shuttle' + i, `${sports.lines[i].name} (proposed)`, '#1f9a8f', 0, monoRun(sports.curves[i], false)));
+  proposedMono.routes.forEach(r => { const run = monoRun(r.curve, r.closed, r.stations); r.trains.forEach((t, k) => addTrain(t.cars, 'mono:' + r.id, `${r.name} monorail (proposed)`, r.color, k, run)); });
   monoSlots.forEach(sl => sl.sync());
   if (monoSlots.length) subway.registerFleet('monorail', { car: 14 }, monoSlots);
   if (old53.slots.length) subway.registerFleet('pcc53', SPEC.pcc, old53.slots);   // the 1953 streetcars can be boarded too
@@ -12356,22 +12638,33 @@ __mods["js/ridebar.js"] = await (async () => {
 // train's doors: the line in its colour, every stop evenly spaced, the stops already passed
 // greyed out, the next stop in bold, and the train moving between them. Lines are drawn left
 // (first stop) to right (last stop); the train's arrow shows which way it's heading.
+// On a narrow bar (a phone, or beside the open panel on a tablet: css/style.css switches on the
+// bar's own width) the whole line can't be drawn legibly, so it shows the stops around the train
+// instead, in the order the train reaches them, left to right, with real-size names.
 const NS = 'http://www.w3.org/2000/svg';
 const X0 = 30, X1 = 970, Y = 104;
 
 function createRidebar(api) {
   const el = document.getElementById('ridebar'), svg = document.getElementById('rb-svg');
   const nameEl = document.getElementById('rb-name'), toEl = document.getElementById('rb-to'), nextEl = document.getElementById('rb-next'), dot = document.getElementById('rb-dot');
-  let key = null, last = 0, parts = null;
+  // the narrow strip: the line, a few stops (a dot and a name each) and the train
+  const near = document.createElement('div'); near.className = 'rb-near'; near.setAttribute('aria-hidden', 'true');
+  near.dataset.uxOk = 'truncated';   // a long stop name is clamped to two lines here; the next one is written out in full above
+  nameEl.dataset.uxOk = 'truncated';   // narrow: the line's name gives way (ellipsis) to where it's going
+  const rail = document.createElement('b'), list = document.createElement('ol'), pill = document.createElement('i');
+  rail.className = 'rb-rail'; list.className = 'rb-stops'; pill.className = 'rb-train';
+  near.append(rail, list, pill); el.appendChild(near);
+  let key = null, nearKey = null, last = 0, parts = null;
   const mk = (tag, attrs, parent = svg) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); parent.appendChild(e); return e; };
 
   function build(st) {
-    svg.textContent = ''; parts = null;
-    nameEl.textContent = st.name; dot.style.background = st.color;
-    if (st.f == null) { svg.hidden = true; return; }
-    svg.hidden = false;
+    svg.textContent = ''; parts = null; nearKey = null;
+    nameEl.textContent = st.name; dot.style.background = st.color; el.style.setProperty('--c', st.color);
+    near.hidden = st.f == null; svg.toggleAttribute('hidden', st.f == null);   // (an SVG element has no `hidden` property)
+    if (st.f == null) return;
     mk('line', { x1: X0, y1: Y, x2: X1, y2: Y, stroke: st.color, 'stroke-width': 9, 'stroke-linecap': 'round' });
     const n = (st.stops || []).length, many = n > 26;
+    svg.setAttribute('viewBox', n ? '0 0 1000 120' : '0 84 1000 40');   // no stop names to make room for: just the line
     const stops = (st.stops || []).map((s, i) => {
       const x = n > 1 ? X0 + i / (n - 1) * (X1 - X0) : (X0 + X1) / 2;
       const c = mk('circle', { cx: x, cy: Y, r: many ? 5 : 6.5, fill: '#fff', stroke: st.color, 'stroke-width': 3 });
@@ -12386,6 +12679,45 @@ function createRidebar(api) {
     parts = { stops, train, arrow };
   }
 
+  /** the narrow strip: the last stop passed, the next, and as many after it as fit, nearest first */
+  function strip(st, stops, nextI) {
+    const W = near.clientWidth; if (!W) return;   // the wide diagram is showing instead
+    const n = stops.length, loop = st.loop;
+    if (!n) {   // a line with no stops of its own (the 1953 streetcars, Philadelphia's monorails): just where along it
+      if (nearKey !== 'bare') { nearKey = 'bare'; list.textContent = ''; rail.style.left = '0'; rail.style.right = '0'; rail.className = 'rb-rail'; }
+      pill.style.left = (st.f * 100).toFixed(2) + '%'; pill.classList.toggle('back', st.dir < 0);
+      return;
+    }
+    // in the order the train meets them (a loop: round from the stop just passed)
+    const ord = st.dir > 0 ? stops : [...stops].reverse();
+    const j = nextI < 0 ? n : ord.indexOf(stops[nextI]);
+    const m = Math.min(n, Math.max(3, Math.min(6, Math.round(W / 92))));
+    const start = loop ? j - 1 : Math.max(0, Math.min(j - 1, n - m)), at = i => ord[((i % n) + n) % n];
+    const shown = []; for (let k = 0; k < m; k++) shown.push(at(start + k));
+    const k2 = shown.map(s => s.name).join('|') + '#' + (j - start);
+    if (k2 !== nearKey) {
+      nearKey = k2; list.textContent = '';
+      shown.forEach((s, k) => {
+        const li = document.createElement('li'), d = document.createElement('i'), t = document.createElement('span');
+        t.textContent = s.name; li.className = k < j - start ? 'done' : k === j - start ? 'next' : ''; li.append(d, t); list.appendChild(li);
+      });
+      // the rail runs on past the ends of the window where the line does (faded), else stops at its last stop
+      const moreL = loop || start > 0, moreR = loop || start + m < n;
+      rail.className = 'rb-rail' + (moreL ? ' more-l' : '') + (moreR ? ' more-r' : '');
+      rail.style.left = moreL ? '0' : (50 / m).toFixed(2) + '%'; rail.style.right = moreR ? '0' : (50 / m).toFixed(2) + '%';
+    }
+    // the train, between the stop it passed and the next, in proportion to the real distance
+    const p = j - start, cell = k => (k + .5) / m * 100;
+    let x;
+    if (!loop && j >= n) x = cell(m - 1) + 35 / m;                 // past the last stop, running out to the end
+    else if (!loop && j === 0) x = Math.max(2, cell(0) - 35 / m);    // not yet at the first
+    else {
+      const a = at(j - 1).f, b = at(j).f, span = loop ? ((b - a) % 1 + 1) % 1 : b - a, gone = loop ? ((st.f - a) % 1 + 1) % 1 : st.f - a;
+      x = cell(p - 1) + Math.max(0, Math.min(1, span ? gone / span : 0)) * 100 / m;
+    }
+    pill.style.left = x.toFixed(2) + '%'; pill.classList.remove('back');
+  }
+
   function update(now) {
     if (now - last < 200) return;
     last = now;
@@ -12396,10 +12728,8 @@ function createRidebar(api) {
     el.hidden = false;
     const stops = (parts && parts.stops) || [];
     const ends = stops.length > 1 ? [stops[0].name, stops[stops.length - 1].name] : null;
-    toEl.textContent = st.loop ? (ends ? '· loop' : '') : ends ? `→ ${st.dir > 0 ? ends[1] : ends[0]}` : '';
-    nextEl.innerHTML = '';
-    if (st.next) { nextEl.append('Next: '); const s = document.createElement('strong'); s.textContent = st.next; nextEl.append(s); }
-    if (!parts) return;
+    toEl.textContent = st.loop ? '· loop' : ends ? `→ ${st.dir > 0 ? ends[1] : ends[0]}` : '';
+    if (!parts) { nextEl.textContent = nextEl.dataset.v = ''; return; }
     // between two stops, the train sits in proportion to the real distance between them
     let x = X0 + st.f * (X1 - X0);
     if (stops.length > 1) {
@@ -12409,14 +12739,26 @@ function createRidebar(api) {
     }
     parts.train.setAttribute('transform', `translate(${x} ${Y})`);
     parts.arrow.setAttribute('transform', st.dir < 0 ? 'scale(-1 1)' : '');
-    // passed stops (behind the train in its direction of travel) grey out; the next one is bold
-    let found = false;
-    for (const s of st.dir > 0 ? stops : [...stops].reverse()) {
-      const passed = st.dir > 0 ? s.f < st.f - .004 : s.f > st.f + .004, isNext = !passed && !found;
-      if (isNext) found = true;
+    // the next stop is the one the train's sign announces (st.next: the real track, both ways), or,
+    // where it names none on the diagram, the first ahead of the train; those behind it grey out
+    // (on a loop nothing stays passed)
+    let found = -1, bd = Infinity;
+    if (st.next) stops.forEach((s, i) => { const d = Math.abs(s.f - st.f); if (s.name === st.next && d < bd) { bd = d; found = i; } });
+    if (found < 0) {
+      const ahead = stops.map((s, i) => (st.dir > 0 ? i : stops.length - 1 - i));
+      found = ahead.find(i => (st.dir > 0 ? stops[i].f >= st.f - .004 : stops[i].f <= st.f + .004)) ?? (st.loop && stops.length ? 0 : -1);
+    }
+    stops.forEach((s, i) => {
+      const passed = !st.loop && (found < 0 || (st.dir > 0 ? i < found : i > found)), isNext = i === found;
       s.c.setAttribute('fill', passed ? '#d5d9dc' : isNext ? st.color : '#fff');
       s.el.setAttribute('class', passed ? 'done' : isNext ? 'next' : '');
+    });
+    const next = st.next || (found >= 0 ? stops[found].name : null);
+    if (nextEl.dataset.v !== (next || '')) {
+      nextEl.dataset.v = next || ''; nextEl.textContent = '';
+      if (next) { const l = document.createElement('span'), s = document.createElement('strong'); l.className = 'rb-nl'; l.textContent = 'Next'; s.textContent = next; nextEl.append(l, ' ', s); }
     }
+    strip(st, stops, found);
   }
   return { update };
 }
@@ -12632,11 +12974,14 @@ function createFishing(api) {
   const again = el('button', '', grow, 'Cast again'), logBtn = el('button', 'ghost', grow, 'Catch log'), done = el('button', 'ghost', grow, 'Head back');
   [again, logBtn, done].forEach(b => { b.type = 'button'; });
   const log = el('div', 'fish-log', card), logHead = el('p', 'fish-loghead', log), grid = el('div', 'fish-grid', log);
-  const back = el('button', 'ghost', log, 'Back to fishing'); back.type = 'button';
-  const g = cv.getContext('2d'), W = 720, H = 400;
+  const back = el('button', 'fish-back', log, 'Back to fishing'); back.type = 'button';   // (kept in sight at the foot of the long log)
+  // the picture is 400 high and as wide as the box the page gives it (css/style.css: 720 on a big
+  // screen, squarer on a phone); k is picture pixels per CSS pixel, so its words stay legible
+  const g = cv.getContext('2d'), H = 400;
+  let W = 720, k = 1;
 
   let angler = null, state = 'idle', st = {}, raf = 0, last = 0, holding = false, lastFocus = null;
-  const show = part => { invite.hidden = part !== 'invite'; game.hidden = part !== 'game'; log.hidden = part !== 'log'; };
+  const show = part => { invite.hidden = part !== 'invite'; game.hidden = part !== 'game'; log.hidden = part !== 'log'; card.dataset.part = part; };
   function open(i) {
     angler = api.anglerInfo(i); if (!angler) return;
     lastFocus = document.activeElement;
@@ -12650,13 +12995,19 @@ function createFishing(api) {
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
   function start() {
-    show('game'); size(); aim();
+    show('game'); size(); aim(); card.scrollTop = 0;
     if (!raf) { last = performance.now(); raf = requestAnimationFrame(loop); }
-    cv.focus();
+    cv.focus({ preventScroll: true });
   }
   const say = t => { msg.textContent = t; };
   function aim() { state = 'aim'; st = { t: 0 }; grow.hidden = true; say('Press to cast. The farther out, the deeper the water and the rarer the catch.'); }
-  function size() { const dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  function size() {
+    const r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+    if (r.width > 1 && r.height > 1) { W = Math.round(Math.min(720, Math.max(400, H * r.width / r.height))); k = W / r.width; }
+    cv.width = Math.round((r.width || W) * dpr); cv.height = Math.round(cv.width * H / W); g.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+  }
+  // a font for words in the picture: px, or more when the picture is small on screen (at least min CSS px)
+  const font = (px, min, w = 600) => `${w} ${Math.round(Math.max(px, min * k))}px Archivo, system-ui, sans-serif`;
 
   const ctx = () => { const day = api.getDay ? api.getDay() : 180, hour = api.getTime(); return { day, hour, power: st.power || 0 }; };
   function press() {
@@ -12746,7 +13097,7 @@ function createFishing(api) {
     // rod, bending with the tension
     const ten = state === 'reel' ? st.ten : 0, hand = [84, WY - 66];
     const cast = state === 'aim' ? 0 : state === 'cast' ? Math.min(1, st.ct / .9) : 1, power = st.power || 0;
-    const bx = 190 + power * 470, by = WY + 2;
+    const bx = 190 + power * (W - 250), by = WY + 2;
     const tip = state === 'aim' ? [hand[0] + 30 - Math.cos(st.t * HARD.swing) * 40, hand[1] - 78] : [hand[0] + 150 - ten * 20, hand[1] - 80 + ten * 55];   // wound back for the cast
     g.strokeStyle = '#1b1b1b'; g.lineWidth = 3; g.beginPath(); g.moveTo(hand[0], hand[1]); g.quadraticCurveTo(hand[0] + 70, hand[1] - 70 + ten * 50, tip[0], tip[1]); g.stroke();
     // the line, the bobber, the catch
@@ -12755,7 +13106,7 @@ function createFishing(api) {
     else if (state === 'wait' || state === 'bite') {
       const dip = state === 'bite' ? 10 + Math.sin(st.bt * 30) * 3 : st.nib > 0 ? 6 + Math.sin(st.nib * 40) * 3 : 0;   // nibbles dip almost as deep
       end_ = [bx, by + Math.sin(t * 2.4) * 1.5 + dip];
-      if (state === 'bite') { g.fillStyle = '#ffffff'; g.font = 'bold 34px Archivo, system-ui, sans-serif'; g.textAlign = 'center'; g.fillText('!', bx, by - 30); }
+      if (state === 'bite') { g.fillStyle = '#ffffff'; g.font = font(34, 22, 'bold'); g.textAlign = 'center'; g.fillText('!', bx, by - 30); }
     } else if (state === 'reel') {
       const fx = bx - (bx - 175) * st.prog + Math.sin(t * 7) * 10 * st.item.fight, fy = WY + 40 + (1 - st.prog) * 90 * (st.item.kind === 'fish' ? 1 : .5) + Math.sin(t * 5) * 6;
       end_ = [fx, fy];
@@ -12767,7 +13118,7 @@ function createFishing(api) {
       if (state !== 'reel') { g.fillStyle = '#e0302a'; g.beginPath(); g.arc(end_[0], end_[1] - 2, 6, Math.PI, 0); g.fill(); g.fillStyle = '#f4f4f0'; g.beginPath(); g.arc(end_[0], end_[1] - 2, 6, 0, Math.PI); g.fill(); }
     }
     // gauges: the cast meter, or the line tension and how far there is to go
-    g.font = '600 12px Archivo, system-ui, sans-serif'; g.textAlign = 'left';
+    g.font = font(12, 10.5); g.textAlign = 'left';
     if (state === 'aim') {
       const p = .5 - .5 * Math.cos(st.t * HARD.swing);
       bar(20, H - 34, 260, 14, p, '#e0a31c', 'Cast');
@@ -12777,29 +13128,31 @@ function createFishing(api) {
       g.fillStyle = 'rgba(61,154,74,.4)'; g.fillRect(20 + 260 * HARD.band[0], H - 52, 260 * (HARD.band[1] - HARD.band[0]), 14);   // the green band
       bar(20, H - 52, 260, 14, Math.min(1, st.ten), st.ten > HARD.band[1] ? '#d0302a' : green ? '#3d9a4a' : '#c9a227', 'Line tension', [[HARD.band[0], '#3d9a4a'], [HARD.band[1], '#d0302a']], true);
       bar(20, H - 26, 260, 10, st.prog, '#2f78c9', 'Reeled in');
-      g.font = '600 15px Archivo, system-ui, sans-serif';
-      if (st.surge > 0) { g.fillStyle = '#ff6b5a'; g.fillText('It’s running!', 420, H - 34); }   // a run: ease off
-      else { g.fillStyle = '#ffffff'; g.fillText(holding ? 'Reeling…' : 'Hold to reel', 420, H - 34); }
+      g.font = font(15, 13);
+      const [sx, sy] = W >= 640 ? [420, H - 34] : [20, H - 64];   // beside the gauges, or above them on a narrow picture
+      if (st.surge > 0) { g.fillStyle = '#ff6b5a'; g.fillText('It’s running!', sx, sy); }   // a run: ease off
+      else { g.fillStyle = '#ffffff'; g.fillText(holding ? 'Reeling…' : 'Hold to reel', sx, sy); }
     }
     // the result
     if (state === 'over' && st.why === 'snap') {   // the angler beside you, yelling
       const age = st.t - st.endT, shake = age < .8 ? Math.sin(age * 60) * 4 * (1 - age / .8) : 0;
-      speech(age > 1.4 ? `${st.yell} ${st.oneMore}` : st.yell, 100 + shake, WY - 112, '#fff1ee', '#b3261e', 17);   // then, after a beat, one more try
+      speech(age > 1.4 ? `${st.yell} ${st.oneMore}` : st.yell, 100 + shake, WY - 112, '#fff1ee', '#b3261e', Math.round(Math.max(17, 12 * k)));   // then, after a beat, one more try
     }
     if (state === 'over' && st.result) {
       const it = st.result;
-      g.fillStyle = 'rgba(10,16,22,.72)'; g.fillRect(W / 2 - 200, 40, 400, 220);
-      g.strokeStyle = RARITY[it.r].color; g.lineWidth = 3; g.strokeRect(W / 2 - 200, 40, 400, 220);
-      drawCatch(g, it, W / 2, 125, it.kind === 'fish' ? 210 : 120, 1, 0);
-      g.textAlign = 'center'; g.fillStyle = '#ffffff'; g.font = '600 22px Archivo, system-ui, sans-serif'; g.fillText(it.name, W / 2, 210);
-      g.fillStyle = RARITY[it.r].color; g.font = '600 14px Archivo, system-ui, sans-serif';
+      const cw = Math.min(400, W - 40);
+      g.fillStyle = 'rgba(10,16,22,.72)'; g.fillRect(W / 2 - cw / 2, 40, cw, 220);
+      g.strokeStyle = RARITY[it.r].color; g.lineWidth = 3; g.strokeRect(W / 2 - cw / 2, 40, cw, 220);
+      drawCatch(g, it, W / 2, 125, it.kind === 'fish' ? Math.min(210, cw - 60) : 120, 1, 0);
+      g.textAlign = 'center'; g.fillStyle = '#ffffff'; g.font = font(22, 15); g.fillText(it.name, W / 2, 210, cw - 20);
+      g.fillStyle = RARITY[it.r].color; g.font = font(14, 11);
       g.fillText(`${st.isNew ? 'NEW · ' : ''}${RARITY[it.r].label.toUpperCase()}${st.weight ? (st.weight < 1 ? ` · ${Math.round(st.weight * 16)} oz` : ` · ${st.weight.toFixed(1)} lb`) : ''}`, W / 2, 236);
     }
   }
   /** a speech bubble from the angler on the bank, its text wrapped to fit */
   function speech(text, x, y, fill, ink, size) {
     g.font = `600 ${size}px Archivo, system-ui, sans-serif`;
-    const maxW = 300, words = text.split(' '), lines = [];
+    const maxW = Math.min(300, W - x - 44), words = text.split(' '), lines = [];
     let line = '';
     for (const w of words) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t; }
     lines.push(line);
@@ -12839,6 +13192,8 @@ function createFishing(api) {
   const up = () => { holding = false; };
   cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); down(e); });
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  cv.addEventListener('contextmenu', e => e.preventDefault());   // a long press (holding to reel) is not a right-click
+  new ResizeObserver(() => { if (!game.hidden) size(); }).observe(cv);   // turning the phone: the picture follows its box
   cv.tabIndex = 0;
   modal.addEventListener('keydown', e => {
     if (e.key === 'Escape') { e.preventDefault(); shut(); return; }
@@ -12865,7 +13220,12 @@ __mods["js/arcade.js"] = await (async () => {
 // Keys: arrows or W A S D move; Space fires (Sky Swarm) or starts again; P pauses; Esc goes back
 // to the menu, then closes. Pointer or touch: Ping-Pong's paddle follows it, Sky Swarm's launcher
 // moves to it and fires while pressed, Dumpling Dash turns on a swipe. Best scores stay in this browser.
+// On a touch screen the instructions speak of fingers, not keys.
 const { CITY } = __mods["js/cities.js"];
+const TOUCH = matchMedia('(pointer: coarse)');
+const say = (keys, touch) => (TOUCH.matches ? touch : keys);
+const AGAIN = () => say('Space or click to play again', 'Tap to play again');
+
 const W = 480, H = 480;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -12894,7 +13254,8 @@ function pingPong() {
     if (s[who] >= WIN) { s.over = true; s.msg = who === 'you' ? 'You win' : 'The stall wins'; }
   };
   return {
-    help: 'W / S or the arrow keys (or the mouse) move your paddle. First to 7. Your longest rally is your score.',
+    help: say('W / S or the arrow keys (or the mouse) move your paddle. First to 7. Your longest rally is your score.',
+      'Slide a finger up and down the table to move your paddle. First to 7. Your longest rally is your score.'),
     get score() { return s.best; }, get over() { return s.over; }, get result() { return `${s.msg}, ${s.you} to ${s.cpu}. Longest rally ${s.best}.`; },
     update(dt, inp) {
       if (s.over) return;
@@ -12924,7 +13285,7 @@ function pingPong() {
       g.fillStyle = '#fff3d6'; g.beginPath(); g.arc(s.bx, s.by, R, 0, 7); g.fill();
       hud(g, `YOU ${s.you}`, `${s.cpu} CPU`);
       g.textAlign = 'center'; g.fillStyle = '#9fb7c6'; g.font = `13px ${FONT}`; g.fillText(`rally ${s.rally} · best ${s.best}`, W / 2, 15);
-      if (s.over) banner(g, s.msg, 'Space or tap to play again');
+      if (s.over) banner(g, s.msg, AGAIN());
     },
   };
 }
@@ -12954,7 +13315,8 @@ function skySwarm() {
     s.lives--; s.dead = 1.6; s.bombs = [];
   }
   return {
-    help: '← → or A / D move, Space fires (or press and drag on the screen). Divers score double.',
+    help: say('← → or A / D move, Space fires (or press and drag on the screen). Divers score double.',
+      'Hold a finger on the sky: your launcher slides under it and fires. Divers score double.'),
     get score() { return s.score; }, get over() { return s.over; }, get result() { return `Game over on wave ${s.wave}: ${s.score} points.`; },
     update(dt, inp) {
       s.t += dt;
@@ -13054,7 +13416,7 @@ function skySwarm() {
       hud(g, `SCORE ${s.score}`, `WAVE ${s.wave}`);
       for (let i = 0; i < s.lives - (s.dead > 0 ? 0 : 1); i++) { g.fillStyle = '#d6301f'; g.beginPath(); g.ellipse(18 + i * 22, H - 12, 8, 6, 0, 0, 7); g.fill(); }
       if (!s.foes.length && !s.over) banner(g, `WAVE ${s.wave + 1}`, 'Here they come');
-      if (s.over) banner(g, 'GAME OVER', 'Space or tap to play again');
+      if (s.over) banner(g, 'GAME OVER', AGAIN());
     },
   };
 }
@@ -13155,7 +13517,8 @@ function dumplingDash() {
     k.dir = opts.reduce((b, d) => { const v = (k.tx + d[0] - gx) ** 2 + (k.ty + d[1] - gy) ** 2; return v < b[0] ? [v, d] : b; }, [1e9, opts[0]])[1];
   };
   return {
-    help: 'Arrow keys or W A S D (or swipe) to steer. Eat every sesame seed; a fortune cookie lets you chase the cats.',
+    help: say('Arrow keys or W A S D (or swipe) to steer. Eat every sesame seed; a fortune cookie lets you chase the cats.',
+      'Swipe to steer. Eat every sesame seed; a fortune cookie lets you chase the cats.'),
     get score() { return s.score; }, get over() { return s.over; }, get result() { return `Game over on level ${s.level}: ${s.score} points.`; },
     update(dt, inp) {
       s.t += dt; s.fortuneT -= dt; for (const p of s.pops) p.t -= dt; s.pops = s.pops.filter(p => p.t > 0);
@@ -13242,7 +13605,7 @@ function dumplingDash() {
       for (let i = 0; i < s.lives - 1; i++) { g.fillStyle = '#f7f0de'; g.beginPath(); g.arc(W / 2 - 20 + i * 18, 15, 6, Math.PI, 0); g.closePath(); g.fill(); }
       if (s.fortuneT > 0) { g.fillStyle = 'rgba(0,0,0,.7)'; g.fillRect(0, OY + 9 * T, W, T); g.fillStyle = '#ffd75a'; g.font = `bold 13px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(`🥠 ${s.fortune}`, W / 2, OY + 9.5 * T); }
       if (s.pause > 0 && !s.dying && s.t < 2 && s.level === 1 && s.lives === 3) banner(g, 'READY?', 'Eat every seed. Dodge the cats.');
-      if (s.over) banner(g, 'GAME OVER', 'Space or tap to play again');
+      if (s.over) banner(g, 'GAME OVER', AGAIN());
       else if (s.clear > 0) banner(g, 'ALL CLEAR!', `On to level ${s.level + 1}`);
     },
   };
@@ -13291,14 +13654,15 @@ function createArcade(api) {
   const showBest = () => { for (const X of GAMES) cardsBy[X.id].bs.textContent = best[X.id] ? `Best: ${best[X.id]} ${X.unit}` : 'No score yet'; };
   showBest();
   function size() { const dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  // (focus without scrolling: on a short screen that would scroll the title out of sight)
   function showMenu() {
-    stop(); G = inst = null; game.hidden = true; menu.hidden = false; showBest();
-    title.textContent = 'Lucky Arcade 幸運街機'; list.querySelector('button').focus();
+    stop(); G = inst = null; game.hidden = true; menu.hidden = false; card.dataset.part = 'menu'; showBest();
+    title.textContent = 'Lucky Arcade 幸運街機'; list.querySelector('button').focus({ preventScroll: true }); card.scrollTop = 0;
   }
   function play(which) {
     G = which; inst = G.make(); paused = false; recorded = false; pauseBtn.textContent = 'Pause';
-    menu.hidden = true; game.hidden = false; title.textContent = `Lucky Arcade · ${G.name}`;
-    msg.textContent = G.help; size(); cv.focus();
+    menu.hidden = true; game.hidden = false; card.dataset.part = 'game'; title.textContent = `Lucky Arcade · ${G.name}`;
+    msg.textContent = inst.help; size(); cv.focus({ preventScroll: true }); card.scrollTop = 0;
     if (!raf) { last = performance.now(); raf = requestAnimationFrame(loop); }
   }
   function stop() { cancelAnimationFrame(raf); raf = 0; }
@@ -13309,7 +13673,7 @@ function createArcade(api) {
     if (!paused) inst.update(dt, inp);
     inp.dir = null;
     inst.draw(g);
-    if (paused) banner(g, 'PAUSED', 'P or the Pause button to carry on');
+    if (paused) banner(g, 'PAUSED', say('P or the Pause button to carry on', 'Tap “Carry on” to play on'));
     if (inst.over && !recorded) {
       recorded = true; const sc = inst.score, prev = best[G.id] || 0;
       if (sc > prev) { best[G.id] = sc; save(best); }
@@ -13360,10 +13724,13 @@ function createArcade(api) {
   const up = () => { inp.ptr.down = false; if (inp.ptr.live && !matchMedia('(pointer:fine)').matches) inp.ptr.live = false; swipe = null; };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   cv.addEventListener('pointerleave', () => { if (!inp.ptr.down) inp.ptr.live = false; });
+  cv.addEventListener('contextmenu', e => e.preventDefault());   // a long press (holding to fire) is not a right-click
   close.addEventListener('click', shut); back.addEventListener('click', showMenu); again.addEventListener('click', restart);
   pauseBtn.addEventListener('click', () => { togglePause(); cv.focus(); });
   modal.addEventListener('pointerdown', e => { if (e.target === modal) shut(); });
-  window.addEventListener('blur', () => { for (const k in inp.held) inp.held[k] = 0; if (inst && !inst.over && !paused) togglePause(); });
+  const away = () => { for (const k in inp.held) inp.held[k] = 0; if (inst && !inst.over && !paused) togglePause(); };
+  window.addEventListener('blur', away);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) away(); });   // a phone switching apps
 
   return { open, active: () => !modal.hidden };
 }
@@ -13382,7 +13749,22 @@ const { createArcade } = __mods["js/arcade.js"];
 const { CITY } = __mods["js/cities.js"];
 // remembered per viewer and city (browser storage may be unavailable: then nothing is remembered)
 const store = { get: k => { try { return localStorage.getItem(CITY.storage + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(CITY.storage + k, v); } catch (e) { /* ignore */ } } };
+// a touch screen (no mouse, no keyboard to speak of), and a small screen (a phone either way up):
+// the wording, the walk pad and the panel follow them (css/style.css has the same breakpoints)
+const TOUCH = matchMedia('(pointer: coarse)'), COMPACT = matchMedia('(max-width: 640px), (max-height: 500px)');
+/** text written for the mouse, said for a finger: click -> tap (cities' own hints, c.hint) */
+function touchify(t) {
+  if (!TOUCH.matches || !t) return t;
+  return t.replace(/Drag or click to look around/g, 'Drag to look around').replace(/\b(Space, )?Esc or (“[^”]+”)/g, '$2')
+    .replace(/\b([Cc])lick(s|ed|ing)?\b/g, (m, c, end) => (c === 'C' ? 'T' : 't') + 'ap' + ({ s: 's', ed: 'ped', ing: 'ping' }[end] || ''));
+}
+/** how to move around, after each city's own hint */
+const controlsHint = trains => TOUCH.matches
+  ? 'Drag to turn the view, pinch to zoom, and drag with two fingers to move.' + (trains ? ' Tap any train to ride inside it.' : '')
+  : 'Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom.' + (trains ? ' Click any train to ride inside it.' : '');
 function createUI(api) {
+  const toastEl = document.getElementById('toast'); let toastTimer = 0;
+  const toast = (msg, ms) => { toastEl.textContent = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => { toastEl.textContent = ''; }, ms); };
   const tagsEl = document.getElementById('tags');
   const LABELS = api.labels.map(({ text, pos, section, stn, far, cutHide, layer, stars, eat }) => {
     const el = document.createElement('div'); el.className = section ? 'tag sub' : stn ? 'tag stn ' + stn : layer ? 'tag ' + layer : 'tag'; el.textContent = text; tagsEl.appendChild(el);
@@ -13397,7 +13779,15 @@ function createUI(api) {
   // the card for someone you're inhabiting on Walnut St
   const persona = document.getElementById('persona'), peNow = document.getElementById('pe-now');
   let personaOn = null;
+  // on a small screen the card folds down to the name and what they're doing (someone new: the whole card)
+  const peFold = document.getElementById('pe-fold');
+  const foldPersona = on => {
+    persona.classList.toggle('min', on); peFold.setAttribute('aria-expanded', String(!on));
+    const t = on ? 'Show the whole card' : 'Fold the card'; peFold.setAttribute('aria-label', t); peFold.title = t;
+  };
+  peFold.addEventListener('click', () => foldPersona(!persona.classList.contains('min')));
   function showPersona(c) {
+    if (!c || c.id !== personaOn) foldPersona(false);
     persona.hidden = !c; personaOn = c ? c.id : null; if (!c) return;
     document.getElementById('pe-name').textContent = c.name;
     document.getElementById('pe-age').textContent = c.age;
@@ -13424,8 +13814,11 @@ function createUI(api) {
       actIds = ids; actEl.hidden = !acts.length; actBtns.length = 0;
       actEl.replaceChildren(...acts.map(a => {
         const b = document.createElement('button'), t = document.createElement('span'), k = document.createElement('kbd');
-        b.type = 'button'; b.className = 'ghost'; k.textContent = a.key; b.append(t, k);
-        b.addEventListener('click', () => { api.actCar(a.id); b.blur(); });   // (blur: Space must still mean "leave", not "press this again")
+        b.type = 'button'; b.className = 'ghost'; k.textContent = a.key; b.append(t); if (a.key) b.append(k);
+        b.addEventListener('click', () => {
+          const was = api.getCar(); api.actCar(a.id); b.blur();   // (blur: Space must still mean "leave", not "press this again")
+          const now = api.getCar(); if (!now !== !was || (now && (now.kind !== was.kind || now.id !== was.id))) syncCar();   // it put you somewhere else (the overlook's "See through his eyes")
+        });
         actBtns.push({ b, t }); return b;
       }));
     }
@@ -13437,41 +13830,86 @@ function createUI(api) {
     // binoculars up: the card steps aside, and what they are looking at is written under the view
     const k = (c && c.bino) || 0;
     if (binoc.hidden !== k < .01) binoc.hidden = k < .01;
-    if (k >= .01) { binoc.style.opacity = k.toFixed(2); if (binocCap.textContent !== c.now) binocCap.textContent = c.now; }
+    if (k >= .01) {
+      binoc.style.opacity = k.toFixed(2); if (binocCap.textContent !== c.now) binocCap.textContent = c.now;
+      const how = TOUCH.matches ? 'Spread or pinch two fingers to zoom' : 'Scroll to zoom'; if (binocCap.dataset.how !== how) binocCap.dataset.how = how;
+    }
     persona.classList.toggle('away', k > .5);
   }
 
+  // the panels a label keeps out from under (it can't be read there, and on a phone they cover
+  // much of the view): measured a few times a second, before this frame's writes, not every frame
+  const CHROME = '.hud .card, #minimap, .mm-ctl, .dock > :not([hidden]), #walkpad:not([hidden]), #binoc-cap, .fish-card, .arc-card, #eatcard:not([hidden]), .kinfo:not([hidden])';
+  let chrome = [], chromeT = -1e9;
   function placeTags(camera) {
+    const now = performance.now();
+    if (now - chromeT > 250) { chromeT = now; chrome = [...document.querySelectorAll(CHROME)].map(e => e.getBoundingClientRect()).filter(r => r.width > 1 && r.height > 1); }
     const car = api.getCar();
     if (!!car !== carOn) syncCar();
     if (carOn && personaOn !== null) { const c = car; if (c && c.kind === 'person') { if (c.id !== personaOn) syncCar(); else if (c.now !== peNow.textContent) peNow.textContent = c.now; } }
     syncActions(car);
-    const now = performance.now(); minimap.update(camera, now); ridebar.update(now);
+    minimap.update(camera, now); ridebar.update(now);
     const w = window.innerWidth, h = window.innerHeight, placed = [], inCar = carOn && !(car && car.labels);   // (from the overlook the place names help)
     const noTags = !showTags || inCar, noEats = !showEats || inCar;   // restaurant labels have their own switch
     // near the ground only nearby labels: far ones would pile up along the horizon over the street
     const lift = camera.position.y - (api.groundAt ? api.groundAt(camera.position.x, camera.position.z) : 0), reach = Math.max(250, lift * 20);
+    // a label sits above its place; one that would sit on another is lifted above it (on a phone only
+    // twice: stacks of names fill a small screen); with no room above (another name, a panel, the top
+    // of the screen) it hangs below the place instead; with no room at all it is left out, never
+    // drawn over the rest or under a panel
+    const lifts = COMPACT.matches ? 2 : 6, hide = l => { l.el.style.display = 'none'; };
     LABELS.forEach(l => {
-      if ((l.layer === 'eat' ? noEats : noTags) || (l.section && l.section !== api.getCut()) || l.cutHide.includes(api.getCut()) || (l.layer === 't53' && !api.getTransitMap())) { l.el.style.display = 'none'; return; }
+      if ((l.layer === 'eat' ? noEats : noTags) || (l.section && l.section !== api.getCut()) || l.cutHide.includes(api.getCut()) || (l.layer === 't53' && !api.getTransitMap())) { hide(l); return; }
       pv.copy(l.v).project(camera);
-      if (pv.z > 1 || pv.x < -1.1 || pv.x > 1.1 || pv.y < -1.1 || pv.y > 1.1 || camera.position.distanceTo(l.v) > Math.min(l.far, reach)) { l.el.style.display = 'none'; return; }
-      if (!l.wd) { l.el.style.display = 'block'; l.wd = l.el.offsetWidth || 120; }
-      const x = (pv.x + 1) / 2 * w; let y = (1 - pv.y) / 2 * h - 8;
-      for (let k = 0; k < 6; k++) { const hit = placed.some(r => Math.abs(r.x - x) < (r.w + l.wd) / 2 + 4 && Math.abs(r.y - y) < 24); if (!hit) break; y -= 26; }
-      placed.push({ x, y, w: l.wd }); l.el.style.display = 'block'; l.el.style.transform = `translate(${x}px,${y}px) translate(-50%,-100%)`;
+      if (pv.z > 1 || pv.x < -1 || pv.x > 1 || pv.y < -1 || pv.y > 1 || camera.position.distanceTo(l.v) > Math.min(l.far, reach)) { hide(l); return; }
+      if (!l.wd) { l.el.style.display = 'block'; l.wd = l.el.offsetWidth || 120; l.ht = l.el.offsetHeight || 22; }
+      const ax = (pv.x + 1) / 2 * w, ay = (1 - pv.y) / 2 * h, half = l.wd / 2;
+      if (ax < 8 || ax > w - 8 || ay < 8 || ay > h - 8 || chrome.some(r => ax > r.left && ax < r.right && ay > r.top && ay < r.bottom)) { hide(l); return; }   // the place itself is off the screen or under a panel
+      // kept on the screen: slid in from the edge, its stem still on the place
+      const x = Math.min(w - 4 - half, Math.max(4 + half, ax)), x0 = x - half, x1 = x + half;
+      const free = (top, bot) => top > 2 && bot < h - 2 && !placed.some(r => x0 < r.x1 + 4 && x1 > r.x0 - 4 && top < r.bot && bot > r.top)
+        && !chrome.some(r => x0 < r.right && x1 > r.left && top < r.bottom && bot > r.top);
+      let top = -1;
+      for (let k = 0, y = ay - 8; k <= lifts; k++, y -= 26) if (free(y - l.ht, y + (k ? 0 : 8))) { top = y - l.ht; break; }
+      const below = top < 0 && free(ay, ay + 8 + l.ht);
+      if (below) top = ay + 8;
+      if (top < 0) { hide(l); return; }
+      placed.push({ x0, x1, top, bot: top + l.ht }); l.el.style.display = 'block'; l.el.style.transform = `translate(${x0}px,${top}px)`;
+      if (below !== !!l.below) { l.below = below; l.el.classList.toggle('below', below); }
+      const sx = Math.round(ax - x); if (sx !== l.sx) { l.sx = sx; l.el.style.setProperty('--sx', sx + 'px'); }
     });
   }
 
   const lblBtn = document.getElementById('lbl'), rideBtn = document.getElementById('ride'), hint = document.getElementById('hint');
-  const HINT0 = hint.textContent;
+  const hintMore = document.getElementById('hint-more');
+  // on small screens the hint shows three lines; More opens the rest
+  const syncMore = () => { hintMore.hidden = hint.classList.contains('open') ? false : !(hint.scrollHeight > hint.clientHeight + 1); };
+  const setHint = t => {
+    t = touchify(t); if (hint.textContent === t) return;
+    hint.textContent = t; hint.classList.remove('open'); hintMore.textContent = 'More'; hintMore.setAttribute('aria-expanded', 'false');
+    requestAnimationFrame(syncMore);
+  };
+  hintMore.addEventListener('click', () => {
+    const open = hint.classList.toggle('open'); hintMore.textContent = open ? 'Less' : 'More'; hintMore.setAttribute('aria-expanded', String(open));
+  });
+  COMPACT.addEventListener('change', () => requestAnimationFrame(syncMore));
+  const HINT0 = CITY.hint + ' ' + controlsHint(api.lines.length > 0);
   const CUT_HINT = CITY.cutHint;
   const baseHint = () => (api.getCut() ? CUT_HINT : HINT0);
   const cutBtn = document.getElementById('cut'), CUT_VIEW = api.views.find(v => v.cut);
   cutBtn.hidden = !CUT_VIEW;   // a city without a cut-away section
+  // on a phone the panel folds away to show the cut, hint and all: a line at the bottom says what
+  // you're looking at and closes it (css/style.css .cut-mini: small screens, panel folded, not aboard)
+  const cutMini = document.createElement('div'), cutTxt = document.createElement('p'), cutClose = document.createElement('button');
+  cutMini.className = 'dock-mini cut-mini'; cutMini.id = 'cut-mini'; cutMini.hidden = true; cutMini.setAttribute('role', 'group'); cutMini.setAttribute('aria-label', 'Cut-away');
+  cutTxt.textContent = touchify(((CITY.cutHint || '').match(/^.*?\.(?=\s|$)/) || [''])[0] + ' Click a train in the cut to ride it.');
+  cutClose.type = 'button'; cutClose.className = 'ghost'; cutClose.textContent = 'Close'; cutClose.setAttribute('aria-label', 'Close the cut');
+  cutClose.addEventListener('click', () => cutBtn.click());
+  cutMini.append(cutTxt, cutClose); if (CUT_VIEW) document.getElementById('dock').appendChild(cutMini);
   const syncCut = () => {
-    const on = !!api.getCut(); cutBtn.setAttribute('aria-pressed', String(on));
+    const on = !!api.getCut(); cutBtn.setAttribute('aria-pressed', String(on)); cutMini.hidden = !on;
     cutBtn.textContent = on ? 'Close the cut' : CITY.cutButton;
-    if (!riding && !api.getCar()) hint.textContent = baseHint();
+    if (!riding && !api.getCar()) setHint(baseHint());
   };
   // 24-hour clock slider (sun position for today's date in the city)
   const timeIn = document.getElementById('time'), timeOut = document.getElementById('time-out');
@@ -13514,7 +13952,13 @@ function createUI(api) {
   const linesEl = document.getElementById('lines');
   const COLORS = { loop: '#d6452f' };
   let riding = false;
-  const openPicker = open => { linesEl.hidden = !open; rideBtn.setAttribute('aria-expanded', String(open)); };
+  // the panel scrolls on a short screen: bring what just opened under the buttons into sight (as
+  // much of it as fits), or tapping "Ride a line" seems to do nothing
+  const reveal = el => requestAnimationFrame(() => {
+    const box = document.getElementById('hud-body'), r = el.getBoundingClientRect(), b = box.getBoundingClientRect();
+    if (!el.hidden && r.bottom > b.bottom) box.scrollTop += Math.max(0, Math.min(r.bottom - b.bottom + 8, r.top - b.top - 8));
+  });
+  const openPicker = open => { linesEl.hidden = !open; rideBtn.setAttribute('aria-expanded', String(open)); if (open) reveal(linesEl); };
   let groupRow = null, groupName = null;
   api.lines.forEach(line => {
     if (line.group !== groupName) {       // a heading and a row of buttons per network
@@ -13527,7 +13971,7 @@ function createUI(api) {
     b.addEventListener('click', () => {
       // board the lead car of the line's first train: walk around inside it like any car
       openPicker(false); markView(null);
-      if (api.boardLine(line.id)) { syncCar(); syncCut(); }
+      if (api.boardLine(line.id)) { syncCar(); syncCut(); autoFold(); }
     });
     groupRow.appendChild(b);
   });
@@ -13535,7 +13979,7 @@ function createUI(api) {
   rideBtn.addEventListener('click', () => {
     if (riding) {
       riding = false; api.setRiding(false); markView('home');
-      rideBtn.textContent = 'Ride a line'; hint.textContent = baseHint();
+      rideBtn.textContent = 'Ride a line'; setHint(baseHint());
     } else openPicker(linesEl.hidden);
   });
 
@@ -13545,8 +13989,8 @@ function createUI(api) {
   api.views.forEach(v => {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'ghost'; b.textContent = v.name;
     b.addEventListener('click', () => {
-      if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; hint.textContent = HINT0; }
-      openPicker(false); api.flyTo(v.id); markView(v.id); syncCut();
+      if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; setHint(HINT0); }
+      openPicker(false); api.flyTo(v.id); markView(v.id); syncCut(); autoFold();
     });
     viewEl.appendChild(b); viewBtns[v.id] = b;
   });
@@ -13602,19 +14046,20 @@ function createUI(api) {
   }
   cutBtn.addEventListener('click', () => {
     if (api.getCut()) api.setCut(false);
-    else if (CUT_VIEW) { if (riding) rideBtn.click(); api.flyTo(CUT_VIEW.id); markView(CUT_VIEW.id); }
+    else if (CUT_VIEW) { if (riding) rideBtn.click(); api.flyTo(CUT_VIEW.id); markView(CUT_VIEW.id); autoFold(); }
     syncCut();
   });
   syncCut();
 
   // click any train car (or a monorail car) to ride inside it; underground cars only inside an open cut.
   // A cafe chair or bench on Walnut St works the same way: click to sit, Esc to stand up.
-  const canvas = api.renderer.domElement, offBtn = document.getElementById('getoff');
+  const canvas = api.renderer.domElement, offBtn = document.getElementById('getoff'), walkpad = document.getElementById('walkpad');
+  const releaseWalk = () => { if (!walkpad) return; walkpad.querySelectorAll('button.on').forEach(b => b.classList.remove('on')); };
   let down = null, carOn = false, hoverPending = false;
   // creative mode: right-clicking the view captures the mouse (pointer lock); the mouse then turns the
   // camera directly (or looks around inside a car), a crosshair marks the centre, Esc lets go
   const xhair = document.getElementById('xhair');
-  let locked = false, speedTimer = 0;
+  let locked = false;
   const lockMouse = () => { if (!locked && canvas.requestPointerLock) { const r = canvas.requestPointerLock(); if (r && r.catch) r.catch(() => {}); } };
   // the pill at the bottom says how to get in and out of creative mode
   const modeHint = document.getElementById('modehint');
@@ -13639,31 +14084,62 @@ function createUI(api) {
     if (!api.getCreative()) return;
     e.preventDefault();
     const m = api.creativeSpeed(e.deltaY);
-    const st = document.getElementById('status'); st.textContent = `Flying speed ×${m.toFixed(m < 1 ? 2 : 1)}`;
-    clearTimeout(speedTimer); speedTimer = setTimeout(() => { st.textContent = ''; }, 1200);
+    toast(`Flying speed ×${m.toFixed(m < 1 ? 2 : 1)}`, 1200);
   }, { passive: false });
+  // binoculars on a touch screen: spread two fingers to zoom in, pinch to zoom out, a wheel step
+  // (api.wheelCar) for every 20% the fingers' spread changes; one finger looks around, two don't
+  const fingers = new Map(), PINCH = Math.log(1.2); let pinch = null;
+  const spread = () => { const [a, b] = [...fingers.values()]; return Math.hypot(a[0] - b[0], a[1] - b[1]) || 1; };
+  canvas.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'touch') return;
+    fingers.set(e.pointerId, [e.clientX, e.clientY]); if (fingers.size === 2 && carOn) pinch = { d: spread(), k: 0 };
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!fingers.has(e.pointerId)) return;
+    fingers.set(e.pointerId, [e.clientX, e.clientY]); if (!pinch || fingers.size !== 2) return;
+    const d = spread(); pinch.k += Math.log(d / pinch.d); pinch.d = d;
+    for (; pinch.k > PINCH; pinch.k -= PINCH) api.wheelCar(-1);
+    for (; pinch.k < -PINCH; pinch.k += PINCH) api.wheelCar(1);
+  });
+  const lift = e => { fingers.delete(e.pointerId); if (fingers.size < 2) pinch = null; };
+  canvas.addEventListener('pointerup', lift); canvas.addEventListener('pointercancel', lift);
   const rel = e => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   function syncCar() {
     const c = api.getCar(); carOn = !!c; offBtn.hidden = !carOn; canvas.style.cursor = carOn ? 'grab' : '';
+    const walk = carOn && !['seat', 'person', 'vista'].includes(c.kind);
+    document.body.classList.toggle('aboard', carOn); document.body.classList.toggle('aboard-walk', walk);
+    walkpad.hidden = !(walk && TOUCH.matches); if (walkpad.hidden) releaseWalk();
     if (!carOn && locked) api.setCreative(true);   // got off with the mouse still captured: back to flying
     syncModeHint();
     offBtn.textContent = c && c.kind === 'seat' ? 'Stand up' : c && c.kind === 'person' ? 'Leave' : c && c.kind === 'vista' ? 'Step away' : 'Get off';
     showPersona(c && c.kind === 'person' ? c : null);
     if (c) {
       // Philadelphia's Walnut St (people, seats), L and trolleys have their own wording; every
-      // other car uses its model name (c.hint: somewhere with wording of its own)
-      hint.textContent = c.hint ? c.hint : c.kind === 'person'
-        ? `Seeing Walnut Street through ${c.name}’s eyes. You can’t steer; you go where they go. Drag or click to look around, Space, Esc or “Leave” to step out.`
+      // other car uses its model name (c.hint: somewhere with wording of its own; c.hintTouch
+      // for a touch screen, else c.hint with click said as tap)
+      const t = TOUCH.matches, walkHow = t ? 'the on-screen arrows to walk' : 'W A S D or the arrow keys to walk', look = t ? 'Drag to look around' : 'Drag or click to look around';
+      const leave = w => t ? `tap “${w}” to leave` : `Esc or “${w}” to leave`;
+      setHint(c.hint ? (t && c.hintTouch) || c.hint : c.kind === 'person'
+        ? `Seeing Walnut Street through ${c.name}’s eyes. You can’t steer; you go where they go. ${look}, ${t ? 'tap' : 'Space, Esc or'} “Leave” to step out.`
         : c.kind === 'seat'
-        ? (c.seat === 'cafe' ? 'Sitting at a café table on Walnut Street.' : 'Sitting on a bench on Walnut Street.') + ' Drag or click to look around, Space, Esc or “Stand up” to get up.'
+        ? (c.seat === 'cafe' ? 'Sitting at a café table on Walnut Street.' : 'Sitting on a bench on Walnut Street.') + ` ${look}, ${t ? 'tap' : 'Space, Esc or'} “Stand up” to get up.`
         : c.kind === 'metro'
-        ? 'Aboard an L train, inside a SEPTA M-4 car. Drag or click to look around, W A S D or the arrow keys to walk the aisle, Esc or “Get off” to leave. The sign at the front shows the next stop.'
+        ? `Aboard an L train, inside a SEPTA M-4 car. ${look}, ${walkHow} the aisle, ${leave('Get off')}. The sign at the front shows the next stop.`
         : c.kind === 'trolley'
-          ? `Aboard a ${c.line} trolley, inside a Kawasaki LRV. Walk up to the front for the view through the windscreen. Drag or click to look around, W A S D or the arrow keys to walk, Esc or “Get off” to leave.`
-          : `Aboard the ${c.lineName}, inside a ${c.model}. Drag or click to look around, W A S D or the arrow keys to walk the aisle (the cab window is at the front), Esc or “Get off” to leave.`;
+          ? `Aboard a ${c.line} trolley, inside a Kawasaki LRV. Walk up to the front for the view through the windscreen. ${look}, ${walkHow}, ${leave('Get off')}.`
+          : `Aboard the ${c.lineName}, inside a ${/\(proposed\)/.test(c.lineName) ? String(c.model).replace(/ \(proposed\)$/, '') : c.model}. ${look}, ${walkHow} the aisle (the cab window is at the front), ${leave('Get off')}.`);
       markView(c.view || null);
-    } else if (!riding) hint.textContent = baseHint();
+      // on a phone the hint is in the folded panel: say its first sentence for a moment instead
+      const key = c.kind + ':' + (c.id ?? c.lineName ?? c.name);
+      if (key !== lastCar) requestAnimationFrame(() => {
+        if (!COMPACT.matches || !document.getElementById('hud-body').hidden) return;
+        const first = (hint.textContent.match(/^.+?[.!?](?=\s|$)/) || [hint.textContent])[0];
+        toast(first, 4000);
+      });
+      lastCar = key;
+    } else { lastCar = null; if (!riding) setHint(baseHint()); }
   }
+  let lastCar = null;
   canvas.addEventListener('pointerdown', e => {
     if (locked) { down = { lockedClick: true }; return; }
     down = { button: e.button, x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, t: performance.now(), id: e.pointerId };
@@ -13672,7 +14148,7 @@ function createUI(api) {
   canvas.addEventListener('pointermove', e => {
     if (locked) return;   // handled by the mousemove listener above
     if (carOn) {
-      if (down && down.id === e.pointerId) { api.lookCar(e.clientX - down.lx, e.clientY - down.ly); down.lx = e.clientX; down.ly = e.clientY; }
+      if (down && down.id === e.pointerId) { if (!pinch) api.lookCar(e.clientX - down.lx, e.clientY - down.ly); down.lx = e.clientX; down.ly = e.clientY; }
       else if (!e.buttons && e.pointerType === 'mouse' && spectating()) canvas.style.cursor = api.pickCar(...rel(e)) ? 'pointer' : 'grab';
       return;
     }
@@ -13707,7 +14183,7 @@ function createUI(api) {
     if (stallAt(...rel(e))) { if (riding) { riding = false; api.setRiding(false, true); rideBtn.textContent = 'Ride a line'; openPicker(false); } arcade.open(); return; }   // Chinatown's Lucky Arcade
     const hit = api.pickCar(...rel(e)); if (!hit) return;   // only a right-click enters creative mode
     if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; openPicker(false); }
-    api.boardCar(hit); syncCar(); syncCut();
+    api.boardCar(hit); syncCar(); syncCut(); autoFold();
   };
   // fishing (Philadelphia): the anglers on the Schuylkill banks, and the minigame
   const fishing = api.pickAngler ? createFishing(api) : { open() {}, active: () => false };
@@ -13750,6 +14226,12 @@ function createUI(api) {
     const f = FLYMAP[e.key.toLowerCase()]; if (f && flyKeys.delete(f)) { applyFly(); if (e.key === ' ') e.preventDefault(); }
   });
   window.addEventListener('blur', () => { keys.clear(); applyKeys(); flyKeys.clear(); applyFly(); });
+  walkpad.querySelectorAll('button').forEach(b => {
+    const k = b.dataset.k, stop = () => { if (keys.delete(k)) applyKeys(); b.classList.remove('on'); };
+    b.addEventListener('pointerdown', e => { e.preventDefault(); b.setPointerCapture(e.pointerId); keys.add(k); applyKeys(); b.classList.add('on'); });
+    b.addEventListener('pointerup', stop); b.addEventListener('pointercancel', stop); b.addEventListener('lostpointercapture', stop);
+    b.addEventListener('contextmenu', e => e.preventDefault());   // a long press is a walk, not a menu
+  });
   offBtn.addEventListener('click', () => { api.leaveCar(); syncCar(); });
   // "Show transit lines": highlight every line in its colour, with a legend
   const trBtn = document.getElementById('transit'), legendEl = document.getElementById('legend');
@@ -13758,9 +14240,22 @@ function createUI(api) {
     const s = document.createElement('span'), i = document.createElement('i'); i.style.background = it.color; i.setAttribute('aria-hidden', 'true');
     s.append(i, it.name); legendEl.appendChild(s);
   }
+  // on a phone the panel folds away to show the lines, and a strip of the legend sits at the bottom
+  // instead (css/style.css .legend-mini: small screens, panel folded), with a button to hide them
+  const mini = document.createElement('div'), miniList = document.createElement('div'), miniOff = document.createElement('button');
+  mini.className = 'dock-mini legend-mini'; mini.id = 'legend-mini'; mini.hidden = true; mini.setAttribute('role', 'group'); mini.setAttribute('aria-label', 'Transit lines');
+  miniList.className = 'lm-list';
+  miniOff.type = 'button'; miniOff.className = 'ghost'; miniOff.textContent = 'Hide'; miniOff.setAttribute('aria-label', 'Hide transit lines');
+  miniOff.addEventListener('click', () => trBtn.click());
+  for (const it of [...api.legend, ...api.oldTrolleyLegend]) {   // "1 · Broadway - 7 Avenue Local" is just "1" here
+    const s = document.createElement('span'), i = document.createElement('i'); i.className = it.kind || 'band'; i.style.setProperty('--c', it.color); i.setAttribute('aria-hidden', 'true');
+    s.append(i, it.name.split(' · ')[0]); s.title = it.name; miniList.appendChild(s);
+  }
+  mini.append(miniList, miniOff); document.getElementById('dock').appendChild(mini);
   trBtn.addEventListener('click', () => {
     const on = api.setTransitMap(!api.getTransitMap());
-    trBtn.setAttribute('aria-pressed', String(on)); trBtn.textContent = on ? 'Hide transit lines' : 'Show transit lines'; legendEl.hidden = !on;
+    trBtn.setAttribute('aria-pressed', String(on)); trBtn.textContent = on ? 'Hide transit lines' : 'Show transit lines'; legendEl.hidden = !on; mini.hidden = !on;
+    if (on) reveal(legendEl);
   });
   // the 1953 streetcar stripes share the transit legend, under their own heading
   if (api.oldTrolleyLegend.length) { const h53 = document.createElement('b'); h53.className = 'legend-h'; h53.textContent = 'Former streetcar lines (1953 map)'; legendEl.appendChild(h53); }
@@ -13773,25 +14268,30 @@ function createUI(api) {
   const fold = on => {
     body.hidden = on; card.classList.toggle('folded', on); foldBtn.setAttribute('aria-expanded', String(!on));
     const t = on ? 'Expand the panel' : 'Collapse the panel'; foldBtn.setAttribute('aria-label', t); foldBtn.title = t;
+    document.body.classList.toggle('hud-open', !on);
+    if (!on) requestAnimationFrame(syncMore);
   };
+  // on a phone the panel gets out of the way once you've picked where to go (not remembered)
+  function autoFold() { if (COMPACT.matches && !body.hidden) fold(true); }
+  // the panel's size, for placing the minimap under it on a phone (css/style.css --hud-h, --hud-w)
+  new ResizeObserver(() => {
+    const r = card.getBoundingClientRect(), root = document.documentElement.style;
+    root.setProperty('--hud-w', Math.round(r.right) + 'px'); if (body.hidden) root.setProperty('--hud-h', Math.round(r.bottom) + 'px');
+  }).observe(card);
   const saved = store.get('folded');
-  fold(saved == null ? window.innerWidth < 640 : saved === '1');
+  fold(saved == null ? COMPACT.matches : saved === '1');
   foldBtn.addEventListener('click', () => { const on = !body.hidden; fold(on); store.set('folded', on ? '1' : '0'); });
 
   // skyline display lights: a colour scheme for the towers' crowns, the Cira Centre's LED skin,
   // the FMC crown and Boathouse Row, as the city does for teams and holidays
   const swatches = document.getElementById('swatches'), skyName = document.getElementById('sky-name'), skyColor = document.getElementById('sky-color');
   const customSw = skyColor.closest('.swatch'), swBtns = [];
-  const statusEl = document.getElementById('status'); let skyTimer = 0;
   function setScheme(id, colors, name, quiet) {
     api.setDisplayLights(colors); skyName.textContent = name;
     swBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
     customSw.classList.toggle('on', id === 'custom');
     store.set('skyline', id === 'custom' ? 'custom:' + colors[0] : id);
-    if (!quiet && api.getMood() === 'day') {   // the lights only show after dark
-      statusEl.textContent = 'Skyline lights show after dark: slide the time past sunset.';
-      clearTimeout(skyTimer); skyTimer = setTimeout(() => { statusEl.textContent = ''; }, 3200);
-    }
+    if (!quiet && api.getMood() === 'day') toast('Skyline lights show after dark: slide the time past sunset.', 3200);   // the lights only show after dark
   }
   for (const p of api.displayPresets) {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'swatch'; b.dataset.id = p.id;
@@ -13814,7 +14314,7 @@ function createUI(api) {
   return { placeTags };
 }
 
-return { createUI };
+return { touchify, createUI };
 })();
 // ---- js/scene/pine/items.js
 __mods["js/scene/pine/items.js"] = await (async () => {
