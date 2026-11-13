@@ -123,6 +123,31 @@ export const CITIES = {
     stationLines: s => (s.lines || []).join(' '),
     presets: [],   // no lit skyline: the panel leaves out Skyline lights
   },
+  nola: {
+    id: 'nola', name: 'New Orleans',
+    blurb: 'The French Quarter, the CBD and the Garden District, the Mississippi and Lake Pontchartrain, six streetcar lines and a proposed riverfront monorail loop.',
+    frame: { LAT0: 29.9555, LON0: -90.0665, MX: 96529.37, MZ: 111000 },   // Canal & Royal; tools/nola/extent.py
+    dir: 'data/nola', prefix: 'nola-',
+    files: [
+      ['buildings', 'buildings.json'], ['river', 'river.json'], ['ground', 'ground.json'], ['trees', 'trees.json'],
+      ['transit', 'transit.json'], ['city', 'city.json.gz'], ['cityBuildings', 'city_buildings.bin.gz'],
+      ['places', 'places.json'], ['monorailRoutes', 'monorail.json'],
+    ],
+    home: { pos: [29.9650, -90.0850, 450], target: [29.9555, -90.0640, 30] },   // over Uptown, looking toward the Quarter and the river
+    sunTarget: [29.9555, -90.0665], sun: { lat: 29.9555, lon: -90.0665 },
+    sea: true,    // everything that isn't mapped land is water (the Mississippi, Lake Pontchartrain)
+    storage: 'nola3d:',
+    title: 'New Orleans: the French Quarter and the Mississippi',
+    heading: 'New Orleans, from the Quarter to the river',
+    canvasLabel: '3D model of New Orleans with its streetcar lines and a proposed Mississippi riverfront monorail loop',
+    hint: 'The French Quarter, the CBD and the Garden District, the Mississippi and Lake Pontchartrain, six RTA streetcar lines and a proposed riverfront monorail loop. Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom. Click any streetcar to ride inside it.',
+    cutButton: '', cutHint: '',
+    credit: 'Buildings: Overture Maps (Microsoft ML Buildings, OpenStreetMap) · Streets, parks, water: © OpenStreetMap contributors · Streetcars: OpenStreetMap',
+    building: 'Spreading out along the Mississippi…',
+    groups: ['RTA Streetcar'],
+    stationLines: s => (s.lines || []).join(' '),
+    presets: [],   // no lit skyline: the panel leaves out Skyline lights
+  },
   pine: {
     // not a map: one kitchen, built by hand in js/scene/pine/kitchen.js (main.js skips the map
     // data, the city scene and its panel controls for a city with kitchen: true)

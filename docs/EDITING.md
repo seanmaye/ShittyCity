@@ -6,8 +6,8 @@ change a city. Everything the page needs is inside the file: styles, all scripts
 all map data and loading-screen backgrounds. three.js r186 (0.186.1) loads from the jsDelivr CDN.
 
 The page holds several cities on one engine: today Philadelphia (id "phl"), New York
-(id "nyc") and Jersey Shore, PA (id "jsh"). It opens on a start menu (#menu) to pick one, or
-goes straight to one with ?city=phl, ?city=nyc or ?city=jsh; "Change city" (#switch-city) reloads to the menu. Each city has its
+(id "nyc"), New Orleans (id "nola") and Jersey Shore, PA (id "jsh"). It opens on a start menu (#menu) to pick one, or
+goes straight to one with ?city=phl, ?city=nyc, ?city=nola or ?city=jsh; "Change city" (#switch-city) reloads to the menu. Each city has its
 own data blocks (data-<city>-NAME), its own settings in the js/cities.js chunk, and its own
 hand-built scene code (js/scene/<city>/); everything else is shared.
 

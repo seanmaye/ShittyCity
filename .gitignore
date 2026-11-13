@@ -1,4 +1,6 @@
 tools/phl/raw/
+# New Orleans's raw sources are a 45 MB re-fetchable download (tools/nola/fetch_nola.py)
+tools/nola/src/
 __pycache__/
 tools/.venv/
 tools/perf/out/
