@@ -65,7 +65,6 @@ Heights in the scene are metres above the river by town (about 157 m above sea l
 uv sync --group data --group fetch
 uv run python -I tools/jsh/fetch_jsh.py      # downloads the sources into tools/jsh/src/
 uv run python -I tools/jsh/build_jsh.py      # writes data/jsh/
-python -I tools/bundle.py
 ```
 
 `fetch_jsh.py` only needs re-running to refresh the sources, and only it needs the `fetch` group (`duckdb` for its buildings step, `rasterio` for its crop step); `build_jsh.py` needs only `data`. The sources are committed in `tools/jsh/src/`. `tools/jsh/extent.py` holds the frame and the extents: the origin is Allegheny & Main, `MODEL` is the mapped area and `TERRAIN` is the elevation grid. If you change the frame there, change `CITIES.jsh.frame` in `js/cities.js` to match.

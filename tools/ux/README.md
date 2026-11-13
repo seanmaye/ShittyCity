@@ -133,4 +133,3 @@ somewhere in the setup if the view matters.
    went away because something got hidden is not a fix.
 3. `run` again with the same cities, devices and states, then `compare <before> <after>
    --detail`. Errors should go down without new ones; desktop must not get worse.
-4. The README's "Sharing as one file" step (`tools/bundle.py`) is only for shipping; leave it.

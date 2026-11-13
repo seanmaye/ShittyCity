@@ -45,8 +45,7 @@ explains every metric and pitfall. The loop:
    `perf.py ab --a-snap <before> --b-snap <after>` measures one change at a time, and can run
    while you keep editing. Add `--shots` to save both sides' screenshots (`A-<scenario>.png`,
    `B-<scenario>.png`): they should differ only where trains moved.
-5. Report the numbers with the scenario names and the GPU from the report header. Rebuild
-   the single-file bundle (`python -I tools/bundle.py`) only if the user asks to ship it.
+5. Report the numbers with the scenario names and the GPU from the report header.
 
 Rules of thumb for this codebase:
 

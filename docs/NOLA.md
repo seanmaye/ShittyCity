@@ -24,7 +24,6 @@ The French Quarter, the Central Business District, the Marigny, the Bywater and 
 uv sync --group data --group fetch
 uv run python -I tools/nola/fetch_nola.py      # downloads the sources into tools/nola/src/
 uv run python -I tools/nola/build_nola.py      # writes data/nola/
-python -I tools/bundle.py
 ```
 
 `fetch_nola.py` only needs re-running to refresh the sources. The Overpass query goes through `curl` (the system Python's TLS is rejected by overpass-api.de); the Overture footprints are read from Overture's public S3 release with DuckDB. `tools/nola/extent.py` holds the frame and the extents: the origin is Canal & Royal, `MODEL` is the mapped area and `CORE` is the detailed centre. If you change the frame there, change `CITIES.nola.frame` in `js/cities.js` to match.
