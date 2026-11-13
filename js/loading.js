@@ -23,11 +23,15 @@ const PAN = .44, PUSH = .005, SWAY = .32;
 const EASE = 'cubic-bezier(.65, 0, .35, 1)';
 // the slanted panel a new screen arrives in: a window skewed this much, starting this far off
 // to the side, while the picture inside is moved back by the exact inverse so it stays put
-const SLANT = -20;   // degrees
-/** How far (vw) the panel starts off to the side: just far enough that its slanted edge's nearest
- *  corner sits at the edge of the screen, so the whole slide is on screen. (A screen spans -60vw to
- *  160vw at rest, see .ls-screen in the CSS; the slant reaches tan(SLANT) * half the height out.) */
-const offset = () => 160 + Math.tan(-SLANT * Math.PI / 180) * 50 * innerHeight / innerWidth + 1;
+// A screen is a window a little wider than the viewport (EDGE vw spare each side, see .ls-screen in
+// the CSS), skewed into the slanted panel it slides in as. Its slant uses just that spare width, so the
+// window always covers the screen: about 10 degrees on a laptop, nearly upright on a phone. (Firefox
+// only runs an animation off the page's main thread for elements up to ~1.125x the viewport; a wider
+// window stuttered there while a city loaded.)
+const EDGE = 5;
+const slant = () => -Math.atan(EDGE / 50 * innerWidth / innerHeight) * 180 / Math.PI;   // degrees
+/** how far (vw) the panel starts off to the side: its slanted edge's nearest corner just off screen */
+const offset = () => 100 + 2 * EDGE + 1;
 
 // ---- the figures --------------------------------------------------------------------------
 
@@ -289,16 +293,17 @@ export function startLoadingScreens(city, host) {
       return;
     }
     // the slow drift for the whole time on screen: frame one way, figure the other
-    const secs = life / 1000, pan = PAN * secs / 2, sway = SWAY * secs / 2;
-    animate(S.bg, [{ transform: `translate3d(${-pan * dir}%, 0, 0) scale(1.02)` }, { transform: `translate3d(${pan * dir}%, 0, 0) scale(${1.02 + PUSH * secs})` }], { duration: life, easing: 'linear', ...d });
-    animate(S.drift, [{ transform: `translate3d(${sway * dir}vw, 0, 0)` }, { transform: `translate3d(${-sway * dir}vw, 0, 0)` }], { duration: life, easing: 'linear', ...d });
+    // (at most ~13 s of travel, so the picture never slides past its 5% margin; then it rests)
+    const travel = Math.min(life, 13000), secs = travel / 1000, pan = PAN * secs / 2, sway = SWAY * secs / 2;
+    animate(S.bg, [{ transform: `translate3d(${-pan * dir}%, 0, 0) scale(1.02)` }, { transform: `translate3d(${pan * dir}%, 0, 0) scale(${1.02 + PUSH * secs})` }], { duration: travel, easing: 'linear', ...d });
+    animate(S.drift, [{ transform: `translate3d(${sway * dir}vw, 0, 0)` }, { transform: `translate3d(${-sway * dir}vw, 0, 0)` }], { duration: travel, easing: 'linear', ...d });
     if (!first) {
       // The new frame arrives from its figure's side as a slanted panel and slides over the old one.
       // (the window slides in; its contents slide back by the same amount, so only the edge moves)
-      const off = offset() * dir;
-      animate(S.root, [{ transform: `translate3d(${off}vw, 0, 0) skewX(${SLANT}deg)` }, { transform: `translate3d(0, 0, 0) skewX(${SLANT}deg)` }], { duration: IN, easing: EASE, ...d });
-      animate(S.inner, [{ transform: `skewX(${-SLANT}deg) translate3d(${-off}vw, 0, 0)` }, { transform: `skewX(${-SLANT}deg) translate3d(0, 0, 0)` }], { duration: IN, easing: EASE, ...d });
-      animate(S.pan, [{ transform: `translate3d(${12 * dir}%, 0, 0)` }, { transform: 'none' }], { duration: IN, easing: EASE, ...d });
+      const off = offset() * dir, sk = slant();
+      animate(S.root, [{ transform: `translate3d(${off}vw, 0, 0) skewX(${sk}deg)` }, { transform: `translate3d(0, 0, 0) skewX(${sk}deg)` }], { duration: IN, easing: EASE, ...d });
+      animate(S.inner, [{ transform: `skewX(${-sk}deg) translate3d(${-off}vw, 0, 0)` }, { transform: `skewX(${-sk}deg) translate3d(0, 0, 0)` }], { duration: IN, easing: EASE, ...d });
+      animate(S.pan, [{ transform: `translate3d(${4 * dir}%, 0, 0)` }, { transform: 'none' }], { duration: IN, easing: EASE, ...d });
       animate(S.glow, [{ opacity: .35 }, { opacity: 0 }], { duration: IN, easing: 'ease-out', ...d });
       // (no fill: several of these wait on the one element, and a waiting one mustn't hide the others)
       animate(flash, [{ opacity: 0 }, { opacity: .38, offset: .5 }, { opacity: 0 }], { duration: 400, delay: delay + IN * .5 - 200, fill: 'none' });
@@ -316,9 +321,9 @@ export function startLoadingScreens(city, host) {
     for (const a of S.root.getAnimations({ subtree: true })) { a.cancel(); anims.delete(a); }
     if (still) S.root.style.opacity = 0;
     else {
-      const off = offset() * (S.side === 'right' ? 1 : -1);
-      S.root.style.transform = `translate3d(${off}vw, 0, 0) skewX(${SLANT}deg)`;
-      S.inner.style.transform = `skewX(${-SLANT}deg) translate3d(${-off}vw, 0, 0)`;
+      const off = offset() * (S.side === 'right' ? 1 : -1), sk = slant();
+      S.root.style.transform = `translate3d(${off}vw, 0, 0) skewX(${sk}deg)`;
+      S.inner.style.transform = `skewX(${-sk}deg) translate3d(${-off}vw, 0, 0)`;
     }
     stage.append(S.root);
   }

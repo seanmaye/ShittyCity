@@ -149,23 +149,26 @@ button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 
 .city-loading.ls-on { background: #000; --bar: 4.5vh; }
 .ls-on .ls-stage, .ls-on .ls-flash, .ls-on .ls-fx { display: block; position: absolute; inset: 0; pointer-events: none; }
 .ls-on .ls-stage { z-index: -3; overflow: hidden; }
+/* (the blend mode matters for speed, not just looks: without it Chrome dropped about a quarter of
+   the frames in every slide; measured with a performance trace) */
 .ls-on .ls-flash { z-index: -2; background: #fff; opacity: 0; mix-blend-mode: screen; }
 .ls-on .ls-fx { z-index: -1; overflow: hidden; background: radial-gradient(ellipse at 50% 45%, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, .6) 100%); }
 /* letterbox bars */
 .ls-on::before, .ls-on::after { content: ""; position: absolute; left: 0; right: 0; height: var(--bar); background: #000; z-index: 0; pointer-events: none; }
 .ls-on::before { top: 0; } .ls-on::after { bottom: 0; }
 /* film grain: a noise tile (made in loading.js) jumping about a few times a second */
-.ls-grain { position: absolute; inset: -50%; background-image: var(--grain); opacity: .11; mix-blend-mode: overlay; animation: ls-grain .5s steps(1) infinite; }
+.ls-grain { position: absolute; inset: -5%; background-image: var(--grain); opacity: .07; animation: ls-grain .5s steps(1) infinite; }
 @keyframes ls-grain {
-  0% { transform: translate(0, 0); } 20% { transform: translate(-7%, 4%); } 40% { transform: translate(5%, -6%); }
-  60% { transform: translate(-3%, -9%); } 80% { transform: translate(8%, 6%); }
+  0% { transform: translate(0, 0); } 20% { transform: translate(-3%, 2%); } 40% { transform: translate(2.5%, -3%); }
+  60% { transform: translate(-1.5%, -4%); } 80% { transform: translate(4%, 3%); }
 }
 .ls-screen { position: absolute; inset: 0; overflow: hidden; }
-/* a screen is a window wider than the viewport (so it still covers it when skewed into the slanted
-   panel it slides in as), holding the viewport-sized picture in the middle */
-.ls-on .ls-screen { left: -60%; right: -60%; }
-.ls-inner { position: absolute; top: 0; bottom: 0; left: 27.2727%; width: 45.4545%; overflow: hidden; }
-.ls-pan { position: absolute; inset: -6%; }
+/* a screen is a window a little wider than the viewport (so it still covers it when skewed into the
+   slanted panel it slides in as), holding the viewport-sized picture in the middle; kept within
+   ~1.1x the viewport so Firefox animates it off the main thread */
+.ls-on .ls-screen { left: -5%; right: -5%; }   /* EDGE in loading.js */
+.ls-inner { position: absolute; top: 0; bottom: 0; left: 4.5455%; width: 90.9091%; overflow: hidden; }
+.ls-pan { position: absolute; inset: -5%; }
 .ls-bg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; }   /* colour grade baked in by tools/loading/capture.py */
 .ls-grade { position: absolute; inset: 0;
   background: linear-gradient(180deg, rgba(255, 170, 90, .16), rgba(0, 0, 0, 0) 40%, rgba(10, 8, 30, .45) 100%),
