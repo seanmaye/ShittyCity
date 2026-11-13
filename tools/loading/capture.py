@@ -12,7 +12,6 @@ Run:  python -I tools/loading/capture.py              every city
       python -I tools/loading/capture.py nyc          one city
       python -I tools/loading/capture.py nyc --only poi-unisphere.webp
       python -I tools/loading/capture.py --headed     watch it
-Then rebuild the bundle (python -I tools/bundle.py).
 """
 import argparse
 import base64

@@ -1,7 +1,4 @@
 # Keep these out of the Cloudflare upload.
-# city-models.html is the 37 MB single-file build: over the 25 MiB per-file limit,
-# and not needed online because index.html + js/ + css/ + data/ is the same app.
-city-models.html
 .git
 .gitignore
 .claude

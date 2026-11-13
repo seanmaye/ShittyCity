@@ -2,8 +2,6 @@
 
 usage: python -I build_trolley1953.py PTC_MAP3.GIF osm/streets_cc.json osm/oldtram.json data/phl/trolley1953.json [--write] [--overlay out.png]
 
-Then run tools/bundle.py to refresh city-models.html.
-
 Needs Pillow (pip install pillow).
 
 Source map: the Center City panel of the Philadelphia Transportation Company system map,
@@ -214,4 +212,4 @@ if OVERLAY:
 
 if WRITE:
     with open(OUT, "w", encoding="utf-8") as f: json.dump(block, f, separators=(",", ":"), ensure_ascii=False)
-    print("wrote", OUT, "- now run tools/bundle.py")
+    print("wrote", OUT)
