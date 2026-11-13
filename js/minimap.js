@@ -83,8 +83,22 @@ export function createMinimap(api, { eats = () => null } = {}) {
     scaleEl.textContent = nice >= 1000 ? `${nice / 1000} km` : `${nice} m`; scaleEl.style.width = '';
   }
 
+  // on a phone the map starts folded to a small map button (css/style.css .minimap.folded); the
+  // choice is kept. Folded only matters there: on bigger screens the button isn't shown.
+  const small = matchMedia('(max-width:640px),(max-height:500px)'), tog = document.getElementById('mm-tog');
+  let folded = true; try { folded = localStorage.getItem('minimap-open') !== '1'; } catch (e) { /* default */ }
+  const fold = f => {
+    folded = f; wrap.classList.toggle('folded', f); last = 0;
+    tog.setAttribute('aria-expanded', String(!f));
+    const t = f ? 'Show the map' : 'Hide the map'; tog.setAttribute('aria-label', t); tog.title = t;
+    tog.firstElementChild.innerHTML = f ? '<path d="M9 4 3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5zM9 4v13.5M15 6.5V20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>'
+      : '<path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>';
+  };
+  tog.addEventListener('click', () => { fold(!folded); try { localStorage.setItem('minimap-open', folded ? '0' : '1'); } catch (e) { /* not kept */ } });
+  fold(folded);
+
   function update(camera, now) {
-    if (wrap.hidden || now - last < 90) return;
+    if (wrap.hidden || (folded && small.matches) || now - last < 90) return;
     last = now; draw(camera);
   }
   const zoom = d => { level = Math.max(0, Math.min(LEVELS.length - 1, level + d)); last = 0; };

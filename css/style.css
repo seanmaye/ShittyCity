@@ -243,6 +243,7 @@ button.fold svg{transition:transform .2s}
 .minimap canvas{display:block;width:100%;height:100%;cursor:crosshair;border-radius:13px}
 .mm-ctl{position:absolute;right:6px;bottom:6px;display:flex;flex-direction:column;gap:4px}
 .mm-ctl button{width:26px;height:26px;padding:0;font-size:16px;line-height:1;background:var(--panel);color:var(--ink);border-color:var(--line)}
+.mm-tog{display:none}
 .mm-scale{position:absolute;left:8px;bottom:6px;font-size:10.5px;font-weight:600;color:#1d2b36;background:rgba(255,255,255,.75);border-radius:4px;padding:1px 5px}
 /* the line diagram while riding (js/ridebar.js): bottom centre, or in the space right of the open
    panel (--hud-w, js/ui.js) so it never runs under it; a small screen docks it (.dock, below) */
@@ -528,6 +529,13 @@ body:has(#ridebar:not([hidden])) .credit{display:none}   /* riding: the line dia
   .dock>.persona{max-height:min(38vh,300px);max-height:min(38dvh,300px);overflow:auto;overscroll-behavior:contain}
   body:has(#ridebar:not([hidden])) .credit,body:has(#persona:not([hidden])) .credit,body:has(#actions:not([hidden])) .credit{display:none}
   .minimap{width:120px;height:120px;top:calc(env(safe-area-inset-top,0px) + 10px);right:calc(env(safe-area-inset-right,0px) + 10px)}
+  /* folded by default: just a round map button where the map's corner would be (js/minimap.js) */
+  .mm-tog{display:flex;align-items:center;justify-content:center;position:absolute;top:4px;right:4px;z-index:1;width:30px;height:30px;padding:0;border-radius:50%;background:var(--panel);color:var(--ink);border:1px solid var(--line);box-shadow:0 1px 4px rgba(0,0,0,.15)}
+  .mm-tog svg{width:16px;height:16px}
+  .minimap.folded{width:44px;height:44px;border-radius:50%;background:none;border:0;box-shadow:none}
+  .minimap.folded>:not(.mm-tog){display:none}
+  .minimap.folded .mm-tog{inset:0;width:44px;height:44px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+  .minimap.folded .mm-tog svg{width:22px;height:22px}
   .dock>.toast{position:static;transform:none;align-self:center;max-width:100%;border-radius:14px}   /* stacked above the ride bar or card */
 }
 /* phones upright: the panel across the top, the minimap under it (when folded) */
