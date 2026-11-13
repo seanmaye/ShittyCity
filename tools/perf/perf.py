@@ -101,7 +101,8 @@ class _SnapHandler(_Handler):
 
 
 def serve(root=ROOT):
-    srv = _Server(('127.0.0.1', 0), functools.partial(_Handler if os.path.samefile(root, ROOT) else _SnapHandler, directory=root))
+    # every root through the same handler, so the two sides of an ab are served alike (a cheaper handler for one side biased its load)
+    srv = _Server(('127.0.0.1', 0), functools.partial(_SnapHandler, directory=root))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv, f'http://127.0.0.1:{srv.server_address[1]}'
 
@@ -917,7 +918,10 @@ def cmd_ab(a):
                     rounds['load' if key.startswith('load.') else 'frames'][key]['AB'.index(k)].append(v)
     try:
         with sync_playwright() as pw:
-            print('warm-up (discarded)…', flush=True)   # the first browser of a session runs differently
+            # the first browser of a session runs differently, and the side that warms up keeps an edge (same code on both sides:
+            # whole-city frame time came out 18% better for the warmed side, 6/6 rounds), so warm up both
+            print('warm-up (discarded)…', flush=True)
+            block(pw, 'A', keep=False)
             block(pw, 'B', keep=False)
             for i in range(a.rounds):
                 for k in ('AB' if i % 2 == 0 else 'BA'):
