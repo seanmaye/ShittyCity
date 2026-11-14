@@ -20,10 +20,14 @@ import { setTerrain, terrain, seat, surface, profile } from './terrain.ts';
 // Jersey Shore: its own elevation grid (not Philadelphia's lidar format), and everything laid onto it
 import { loadTerrain as loadGrid, buildTerrain as buildGrid, drape as drapeGrid, groundAt as gridAt } from './jsh/terrain.ts';
 import { buildPlaces } from './jsh/places.ts';
+import type { RideLine, SceneApi, View } from '../types/scene.ts';
+import type { TransitLine } from '../types/data.ts';
 // let the status line paint between build steps (a timer, so it also works in background tabs)
 const nextFrame = () => new Promise(r => setTimeout(r, 16));
+/** a feature's own object (a city's landmarks, the yard park, the concert, ...): each module's has its own members */
+type Feature = Record<string, any>;
 // what a feature contributes when the city doesn't have it (another city's landmarks, say)
-const none = () => ({ labels: [], views: [], nightOnly: [], duskOnly: [], boatLines: [], curves: [], trains: [], lines: [], slots: [], legend: [], update() {}, setOverlay() {} });
+const none = (): Feature => ({ labels: [], views: [], nightOnly: [], duskOnly: [], boatLines: [], curves: [], trains: [], lines: [], slots: [], legend: [], update() {}, setOverlay() {} });
 
 /** the rail yard's floor under the park deck (median of the ground inside its outline) */
 function yardFloor(yp) {
@@ -74,8 +78,8 @@ function liftTransit(T) {
   if (T.columns) { const C = T.columns.slice(); for (let i = 0; i < C.length; i += 3) { const x = C[i] / 10, z = C[i + 1] / 10; C[i + 2] = Math.max(10, Math.round(C[i + 2] + (near(x, z) - surface(x, z)) * 10)); } T.columns = C; }
 }
 
-/** @returns {Promise<import('../types/scene').SceneApi>} (window.__city) */
-export async function buildScene(canvas, data, status = () => {}, own = {}) {
+/** resolves to the scene API (window.__city) */
+export async function buildScene(canvas, data, status: (message: string, percent?: number) => void = () => {}, own: Record<string, any> = {}): Promise<SceneApi> {
   // the city's own code (js/scene/<city>/<city>.js, which main.js loads for this city alone): another city's names are undefined, never called
   const { buildLandmarks, buildMonorail, buildSports, courtTest, buildYardPark, buildConcert, buildCityMarks, buildOldTrolleys, buildPromenade, onPromenade, buildPedestrians, buildBoats, buildAnglers, buildChinatown, buildRestaurants,
     buildNycLandmarks, buildNycBridges, buildBoroughMarks, buildShowdown, buildTown, buildFarms, buildDetassel, buildCornLOD, pickLateField, buildHarvest, overlookSite, buildOverlook, churchSite, buildChurch } = own;
@@ -125,7 +129,7 @@ export async function buildScene(canvas, data, status = () => {}, own = {}) {
   buildTrees(scene, data.trees);
   // Jersey Shore's crop fields, barns and silos (data/jsh/farms.json.gz)
   // and, near the camera, the corn as single plants (cornlod.ts)
-  let corn = { update() {}, stats: () => null }, harvest = { update() {}, spot: () => null };
+  let corn: Feature = { update() {}, stats: () => null }, harvest: Feature = { update() {}, spot: () => null };
   // the overlook on Bald Eagle Mountain (jsh/overlook.js), and the one corn field in full view of
   // it that is left standing for a combine to take off late (jsh/harvest.js)
   const lookout = data.grid && data.places ? overlookSite(data.places) : null;
@@ -164,7 +168,7 @@ export async function buildScene(canvas, data, status = () => {}, own = {}) {
   const updateShells = data.landmarks ? buildShells(scene, river) : () => {};
   let sports = none(), yard = none();
   // the show in the Railyard Bowl: Alvin and the Chipmunks and a crowd of punks to be (phl/concert.js)
-  let concert = { view: null, update() {}, frame() {}, lookAt() {}, pick: () => null, inhabit: () => null, leave: () => null, act: () => false, getInhabited: () => null, on: () => false };
+  let concert: Feature = { view: null, update() {}, frame() {}, lookAt() {}, pick: () => null, inhabit: () => null, leave: () => null, act: () => false, getInhabited: () => null, on: () => false };
   if (data.sports) { status('Building the sports parks…', 82); await nextFrame(); sports = buildSports(scene, data.sports, river, ground.bridgeSegs, data.ground.lines); }
   if (data.yardpark) {
     status('Capping the rail yard…', 85); await nextFrame();
@@ -178,7 +182,7 @@ export async function buildScene(canvas, data, status = () => {}, own = {}) {
   // the city's transit; Philadelphia also has its citywide network in data/phl/metro.json.gz,
   // whose full-length runs replace the Center City runs of the lines they extend
   const T = data.transit, Mt = data.metro || { lines: [], tracks: [], runs: [], platforms: [], stations: [] }, replace = new Set(Mt.replaceRuns || []);
-  const lineById = new Map(T.lines.map(l => [l.id, { ...l }]));
+  const lineById: Map<string, TransitLine> = new Map(T.lines.map(l => [l.id, { ...l }]));
   for (const l of Mt.lines) {
     const had = lineById.get(l.id);
     lineById.set(l.id, had ? Object.assign(had, { group: l.group }) : { ...l });   // keep the original names and colours
@@ -196,7 +200,7 @@ export async function buildScene(canvas, data, status = () => {}, own = {}) {
   if (terrain.on) scene.children.filter(o => !before.has(o)).forEach(o => { if (!o.userData.terrain) o.userData.terrain = 'done'; });
   const old53 = data.trolley1953 ? buildOldTrolleys(scene, data.trolley1953, renderer) : none();   // 1953 streetcar track and cars
   // no snow on the rail network (tunnels, stations, cars and their insides) or on the rivers
-  scene.children.filter(o => !before.has(o)).forEach(o => o.traverse(m => { if (m.material) [].concat(m.material).forEach(x => { x.userData.noSnow = true; }); }));
+  scene.children.filter(o => !before.has(o)).forEach(o => o.traverse((m: THREE.Mesh) => { if (m.material) [].concat(m.material).forEach(x => { x.userData.noSnow = true; }); }));
   river.waterMat.userData.noSnow = true;
   // the monorails' cars can be boarded like any transit car (positioned by their own modules)
   const monoSlots = [];
@@ -240,9 +244,9 @@ export async function buildScene(canvas, data, status = () => {}, own = {}) {
   if (terrain.on) { status('Setting the city on its hills…', 92); await nextFrame(); seat(scene); }
   // cut-aways: clip every material by the section plane, except what the subway marks noClip
   // winter snow on whatever faces the sky (roofs, ground, parks, decks, conifers): season.ts
-  scene.traverse(o => { if (o.isMesh) [].concat(o.material).forEach(m => addSnow(m, m.userData.snowAmt ?? 1)); });
+  scene.traverse((o: THREE.Mesh) => { if (o.isMesh) [].concat(o.material).forEach(m => addSnow(m, m.userData.snowAmt ?? 1)); });
   renderer.localClippingEnabled = true;
-  scene.traverse(o => {
+  scene.traverse((o: THREE.Mesh) => {
     if (!o.material) return;
     (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (!m.userData.noClip) { m.clippingPlanes = subway.planes; m.clipShadows = true; } });
   });
@@ -258,7 +262,7 @@ export async function buildScene(canvas, data, status = () => {}, own = {}) {
   if (terrain.on) for (const l of labels) if (!l.abs && l.pos) l.pos.y += surface(l.pos.x, l.pos.z);
   // instanced meshes hold instances far from their own origin: never let three cull them as a whole,
   // except those that carry the bounds of their instances (geometry.ts withBounds)
-  scene.traverse(o => { if (o.isInstancedMesh && !o.userData.bounded) o.frustumCulled = false; });
+  scene.traverse((o: THREE.InstancedMesh) => { if (o.isInstancedMesh && !o.userData.bounded) o.frustumCulled = false; });
 
   // "Show transit lines": every rail line plus the proposed monorails
   const mono = [...(monorail.curve ? [{ id: 'loop', color: '#d6452f', P: monorail.curve.getSpacedPoints(1500) }] : []),
@@ -266,7 +270,7 @@ export async function buildScene(canvas, data, status = () => {}, own = {}) {
     ...proposedMono.routes.map(r => ({ id: r.id, color: r.color, P: r.curve.getSpacedPoints(1500) }))];
   const tmap = buildTransitMap(scene, renderer, [...subway.routes, ...mono, ...boats.routes]);
 
-  let riding = false;
+  let riding: string | number | false = false;
   // 24-hour clock: the sun's real position over the city today drives the sky and lighting
   const sky = createSky({
     scene, sun, hemi, litMats, nightOnly: [...lm.boatLines, ...yard.duskOnly, ...marks.nightOnly, ...lm.nightOnly, ...blds.nightOnly, ...city.nightOnly],
@@ -279,7 +283,7 @@ export async function buildScene(canvas, data, status = () => {}, own = {}) {
   // rideable lines: the proposed monorails (riverfront loop, one shuttle per former expressway),
   // then every real rail line, grouped by network
   const PROPOSED = 'Monorails (proposed)';
-  const lines = (monorail.curve ? [{ id: 'loop', name: 'Riverfront loop', group: PROPOSED, color: '#d6452f', hint: 'You’re in the lead car. The loop runs along the east bank past the Art Museum and Boathouse Row, then back down the west bank past 30th Street.' }] : [])
+  const lines: RideLine[] = (monorail.curve ? [{ id: 'loop', name: 'Riverfront loop', group: PROPOSED, color: '#d6452f', hint: 'You’re in the lead car. The loop runs along the east bank past the Art Museum and Boathouse Row, then back down the west bank past 30th Street.' }] : [])
     .concat(sports.lines.map((l, i) => ({ id: i, group: PROPOSED, color: '#1f9a8f', ...l })))
     .concat(proposedMono.routes.map(r => ({ id: 'm:mono:' + r.id, name: r.name, group: PROPOSED, color: r.color,
       hint: `You’re in the lead car of the proposed ${r.name}. Look through the front or side windows as the monorail crosses the river.` })));
@@ -304,7 +308,7 @@ export async function buildScene(canvas, data, status = () => {}, own = {}) {
 
   // camera presets for the "Go to" buttons: the overview plus the proposals
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
-  const views = [
+  const views: View[] = [
     { id: 'home', name: 'Overview', pos: core.HOME_POS.clone(), target: core.HOME_TGT.clone() },
     city.view,
   ];
@@ -332,7 +336,7 @@ export async function buildScene(canvas, data, status = () => {}, own = {}) {
   });
   // New York's named views (data/nyc/landmarks.json; its overview is the home view) and the bridges
   views.push(...showdown.views);
-  for (const v of (data.nycLandmarks || {}).views || []) if (v.id !== 'overview') views.push({ id: v.id, name: v.name, pos: V(...v.pos), target: V(...v.target) });
+  for (const v of (data.nycLandmarks || {}).views || []) if (v.id !== 'overview') views.push({ id: v.id, name: v.name, pos: V(...v.pos as THREE.Vector3Tuple), target: V(...v.target as THREE.Vector3Tuple) });
   if (nycBridges.length) views.push({ id: 'bridges', name: 'East River bridges', pos: V(1260, 475, 5070), target: V(-460, 70, 4030) });
   // the overlook's view ends with you standing there, looking around for yourself
   const arriveAtOverlook = () => { controls.update(); overlook.stand(camera); controls.enabled = false; camera.near = .05; camera.updateProjectionMatrix(); };
@@ -592,12 +596,12 @@ export async function buildScene(canvas, data, status = () => {}, own = {}) {
       if (free && !cine.on()) church.clamp(camera, controls.target);   // in the sanctuary, the camera stays inside
       // (from the overlook you look right across the valley: the haze stays as far off as in the wide views)
       const focus = free ? controls.target : camera.position, d = free ? camera.position.distanceTo(controls.target) : creative ? Math.max(300, camera.position.y * 1.6) : overlook.on() ? 7000 : 300;
-      scene.fog.near = Math.max(2200, d * .8); scene.fog.far = Math.max(9000, d * 3.2);
+      (scene.fog as THREE.Fog).near = Math.max(2200, d * .8); (scene.fog as THREE.Fog).far = Math.max(9000, d * 3.2);
       if (Math.hypot(sun.target.position.x - focus.x, sun.target.position.z - focus.z) > 150) {
         sunOff.subVectors(sun.position, sun.target.position);
         sun.target.position.set(focus.x, 0, focus.z); sun.position.copy(sun.target.position).add(sunOff);
       }
-      city.update(camera, scene.fog.far);
+      city.update(camera, (scene.fog as THREE.Fog).far);
       showdown.update(dt, camera, subway.getCut());
       // a block that starts casting must be in the map at once, or its shadow blinks in late
       if (cullShadowCasters() || ++shadowTick >= SHADOW_EVERY || !shadowSun.equals(sun.position)) {
@@ -606,7 +610,7 @@ export async function buildScene(canvas, data, status = () => {}, own = {}) {
       renderer.render(scene, camera); onFrame(camera);
       requestAnimationFrame(frame);
     }
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       requestAnimationFrame(() => {
         try {
           frame();

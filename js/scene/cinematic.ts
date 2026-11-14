@@ -21,6 +21,7 @@
 // index.ts drives it: step(dt) each frame while it is on (the orbit controls are off meanwhile),
 // and ui.js draws the letterbox, the fade and the caption from state.
 import * as THREE from 'three';
+import type { Label, View } from '../types/scene.ts';
 
 const CELL = 50;                 // m: the skyline grid
 const FADE = .9, BLACK = .35;    // s: each fade, and the hold in black between shots
@@ -30,13 +31,32 @@ const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
 /** mostly constant speed, easing only at the very ends (the fades hide those) */
 const glide = t => t - .5 * Math.sin(2 * Math.PI * t) / (2 * Math.PI);
 
+/** a point with h, its height above the ground (subway.ts: below -1 is underground) */
+type Pt = THREE.Vector3 & { h?: number };
+/** a car to film (subway.ts cars()): at(t, out), for our own trains, is where it will be t seconds from now */
+interface Vehicle { pos: THREE.Vector3; dir: THREE.Vector3; speed?: number; hidden(): boolean; at?: ((t: number, out: THREE.Vector3) => Pt) | null }
+/** something to film (subjects(), wander()): tgt the point to look at; a line's raw id, points P and length L; a spot's front, street and moves left */
+interface Subject {
+  id: string; title: string; uses: number; tgt?: THREE.Vector3; off?: THREE.Vector3; h?: number; when?: View['when']; place?: boolean; fails?: number;
+  raw?: string; P?: THREE.Vector3[]; L?: number; turns?: number; rest?: number; sub?: string; front?: THREE.Vector3; street?: THREE.Vector3; moves?: string[];
+}
+/** what a shot showed (a subject from az, d away; a stretch of a line; a spot), so it isn't shown again */
+interface Mark { x: number; z: number; az?: number; d?: number; route?: string; eat?: string; style?: string; title?: string }
+/** a shot: at(u, pos, tgt, dt) places the camera u (0 to 1) along it */
+interface Shot { title: string; sub?: string; kind: string; subj: Subject; at: (u: number, p: THREE.Vector3, t: THREE.Vector3, dt?: number) => void; dur: number; live?: boolean; style?: string; take?: () => void; mark: Mark }
+
 /**
  * scene, camera: the city's. views: its "Go to" presets ({ id, name, pos, target, when?, hour?,
  * cut?, arrive? }). home: { pos, target }. labels: [{ text, pos, layer?, section?, stn? }].
  * routes: [{ id, P: [{x, y, z}] }]. ground(x, z): the ground height. getDay(): the day of the year
  * (a view of something seasonal is left out of season). name: the city's name, for the captions.
  */
-export function createCinematic({ scene, camera, views, home, labels = [], routes = [], vehicles = () => [], spots = [], ground = () => 0, getDay = () => 0, name = '' }) {
+export function createCinematic({ scene, camera, views, home, labels = [], routes = [], vehicles = () => [], spots = [], ground = () => 0, getDay = () => 0, name = '' }: {
+  scene: THREE.Scene; camera: THREE.Camera; views: View[]; home: { pos: THREE.Vector3; target: THREE.Vector3 };
+  labels?: (Label & { layer?: unknown; section?: unknown; stn?: unknown })[]; routes?: { id: string; name?: string; P: THREE.Vector3[] }[]; vehicles?: (line: string) => Vehicle[];
+  spots?: { title: string; sub?: string; target: THREE.Vector3; front: THREE.Vector3; street: THREE.Vector3 }[];
+  ground?: (x: number, z: number) => number; getDay?: () => number; name?: string;
+}) {
   let grid = null;   // { x0, z0, nx, nz, h: Float32Array } how far the highest thing in each cell stands above the ground
 
   // ---------------------------------------------------------------- the skyline
@@ -44,7 +64,7 @@ export function createCinematic({ scene, camera, views, home, labels = [], route
     scene.updateMatrixWorld(true);
     const box = new THREE.Box3(), all = new THREE.Box3(), tmp = new THREE.Box3(), m = new THREE.Matrix4();
     const meshes = [];
-    scene.traverse(o => {
+    scene.traverse((o: THREE.Mesh) => {
       if (!o.isMesh || !o.geometry || !o.geometry.attributes.position) return;
       if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
       meshes.push(o);
@@ -216,10 +236,10 @@ export function createCinematic({ scene, camera, views, home, labels = [], route
   const nearRecent = (x, z) => recent.some(o => Math.hypot(o.x - x, o.z - z) < 400);
 
   /** one try at a shot of `kind`: a shot, or null */
-  function attempt(kind, first, relaxed) {
+  function attempt(kind, first, relaxed): Shot | null {
     if (kind === 'route') return routeShot();
     if (kind === 'eat') return eatShot(relaxed);
-    let subj;
+    let subj: Subject;
     if (kind === 'wander') subj = wander();
     else {
       const day = getDay(), ok = S[kind].filter(o => (o.fails || 0) < 40 && !(o.when && (day < o.when.days[0] || day > o.when.days[1])));   // (out of season: the Season slider)
@@ -230,7 +250,7 @@ export function createCinematic({ scene, camera, views, home, labels = [], route
     if (!subj || (!first && !relaxed && nearRecent(subj.tgt.x, subj.tgt.z))) return null;
     // a fresh camera for it: a few goes at a side, distance and height no shot of it has had yet
     const tgt = subj.tgt;
-    let off, kinds, sight, close, d, az;
+    let off: THREE.Vector3, kinds: string[], sight: boolean, close: boolean, d: number, az: number;
     for (let k = 0; ; k++) {
       ({ off, kinds, sight, close } = aim(kind, subj, first)); d = off.length(); az = Math.atan2(off.x, off.z);
       if (!seenShot(tgt.x, tgt.z, az, d)) break;
@@ -242,7 +262,7 @@ export function createCinematic({ scene, camera, views, home, labels = [], route
   }
   /** where the camera stands for a shot of subj: its offset from the subject, the moves it may make */
   function aim(kind, subj, first) {
-    let off, kinds = KINDS, sight = true, close = false;
+    let off: THREE.Vector3, kinds = KINDS, sight = true, close = false;
     if (kind === 'city') {   // the whole city: towers may cross the line of sight, the camera just stays clear of them
       off = subj.off.clone().multiplyScalar(rnd(1, 1.6)).applyAxisAngle(Y, first ? rnd(-.3, .3) : rnd(-Math.PI, Math.PI)); off.y *= rnd(.9, 1.6);
       kinds = ['orbit', 'orbit-', 'pull', 'push']; sight = false;
@@ -272,7 +292,7 @@ export function createCinematic({ scene, camera, views, home, labels = [], route
     const tgt = sp.tgt, F = sp.front, St = sp.street;
     const n = new THREE.Vector3(F.x - tgt.x, 0, F.z - tgt.z), D = n.length(); n.normalize();   // out from the shop front, and how far the clear view stands
     const side = new THREE.Vector3(-n.z, 0, n.x), eye = F.y - tgt.y;
-    let at;
+    let at: (u: number, p: THREE.Vector3, t: THREE.Vector3) => void;
     if (mv === 'push' || mv === 'pull') {   // between up the street and the door
       const a = St.clone(), b = F.clone().lerp(St, rnd(.05, .3)), [p0, p1] = mv === 'push' ? [a, b] : [b, a], aim = tgt.clone(); aim.y += rnd(0, 1.5);
       at = (u, p, t) => { p.lerpVectors(p0, p1, u); t.copy(aim); };
@@ -337,7 +357,7 @@ export function createCinematic({ scene, camera, views, home, labels = [], route
     // speed (monorails and boats, which never go underground)
     const path = [];
     for (let k = 0; k <= 12; k++) {
-      const t = dur * k / 12, p = new THREE.Vector3();
+      const t = dur * k / 12, p: Pt = new THREE.Vector3();
       if (car.at) { car.at(t, p); if (p.h < -.5) return 'underground'; }
       else p.copy(car.pos).addScaledVector(fv.set(car.dir.x, 0, car.dir.z).normalize(), (car.speed || 8) * t);
       path.push(p);

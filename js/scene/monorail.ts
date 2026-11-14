@@ -214,14 +214,14 @@ function makeTrain(scene, route, carCount = 3, shared = null) {
       }
     }
   // Trains move every frame, while the city's shadow map is cached between view changes.
-  car.traverse(o => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });
+  car.traverse((o: THREE.Mesh) => { if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; } });
     scene.add(car); cars.push(car);
   }
   return { cars, carLength, gap, shared };
 }
 
 /** Build the proposed network from local-metre route data. */
-export function buildMonorail(scene, proposal = {}, groundAt = () => 0) {
+export function buildMonorail(scene, proposal: { height?: number, speed?: number, routes?: Record<string, any>[] } = {}, groundAt: (x: number, z: number) => number = () => 0) {
   const height = proposal.height || H, routes = [], objects = [], labels = [], allStations = [];
   const stationBatch = createStationBatch(scene);
   const speed = proposal.speed || 22;

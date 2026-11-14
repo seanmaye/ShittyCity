@@ -142,7 +142,7 @@ export function buildShells(scene, river) {
   const shells = [[-25, .1, 1.6], [18, .35, 1.2], [-5, .6, 1.4], [30, .85, 1.0]].map(([off, f, sp]) => {
     const g = new THREE.Group(); g.add(new THREE.Mesh(hull, hm));
     for (let k = 0; k < 8; k++) { const r = new THREE.Mesh(rw, rm); r.position.set(0, .65, -7 + k * 1.9); g.add(r); }
-    g.traverse(o => { if (o.isMesh) o.castShadow = true; }); g.userData.terrain = 'done'; scene.add(g);
+    g.traverse((o: THREE.Mesh) => { if (o.isMesh) o.castShadow = true; }); g.userData.terrain = 'done'; scene.add(g);
     return { g, off, f: i0 + f * (i1 - i0), sp };
   });
   function rsAt(f) { const i = Math.max(0, Math.min(NS - 2, Math.floor(f))), fr = f - i; return { p: RS[i].p.clone().lerp(RS[i + 1].p, fr), n: RS[i].n, t: RS[i].t, w: RS[i].w }; }

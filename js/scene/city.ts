@@ -15,8 +15,11 @@ import { seasonalGrass } from './season.ts';
 import { terrain, surface, footprint, buildTerrain, TOL_LAWN } from './terrain.ts';
 import { facadeKind, facadeColor, hash, addRooftop, aviationLights } from './buildings.ts';
 import { CITY } from '../cities.js';
+import type { Pair } from '../types/data.ts';
 
 const TILE = 1000, FULL = 5000, TREE_FAR = 7000;
+/** a TILE m square of the city: boxes drawn near (full), roofs far off (roof), outlines whenever in view (always) */
+interface Tile { cx: number; cz: number; r: number; top: number; base?: number; full: THREE.Object3D[]; roof: THREE.Object3D[]; trees: THREE.Object3D[]; always: THREE.Object3D[] }
 
 /** Decode city_buildings.bin (PHB1; written by tools/phl/build_city.py and tools/nyc/import_nyc.py). */
 export function decode(buf) {
@@ -59,9 +62,9 @@ export function rectInRing(ring, [x0, z0, x1, z1]) {
 /** clear: rings ([[x, z], ...]) kept free of park trees (playing fields);
  *  sea: everything outside the land outlines (city.limits) is water, not countryside;
  *  core: the Center City extent [x0, z0, x1, z1] in metres, which buildGround paves itself; onPromenade: for drawLines */
-export async function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea = false, core = null, onPromenade }) {
+export async function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea = false, core = null, onPromenade }: { waterMat: THREE.Material, status?: (message: string) => unknown, clear?: Pair[][], sea?: boolean, core?: [number, number, number, number] | null, onPromenade?: (pts: Pair[]) => boolean }) {
   const city = data.city, B = decode(data.cityBuildings);
-  const tiles = new Map();   // key -> { cx, cz, r, full: [], roof: [], trees: [] }
+  const tiles: Map<string, Tile> = new Map();   // key -> { cx, cz, r, full: [], roof: [], trees: [] }
   const tileOf = (x, z) => {
     const i = Math.floor(x / TILE), j = Math.floor(z / TILE), k = i + ',' + j;
     let t = tiles.get(k);
@@ -147,7 +150,7 @@ export async function buildCity(scene, data, { waterMat, status = () => {}, clea
   // ---- buildings
   await status(`Raising ${(B.nB + B.nP).toLocaleString()} more buildings…`);
   // one instanced mesh per facade style per tile up close, one roof-only mesh per tile far away
-  const per = new Map();   // tile -> { style: [indices] }
+  const per: Map<Tile, Record<string, number[]>> = new Map();   // tile -> { style: [indices] }
   const lights = [];
   // on terrain: each box from the lowest ground under its corners to its height above the middle
   const base = new Float32Array(B.nB), roofY = new Float32Array(B.nB);
@@ -174,7 +177,7 @@ export async function buildCity(scene, data, { waterMat, status = () => {}, clea
   };
   // bounds: [centre, radius] of the instances, so the mesh can be frustum-culled (and, by the
   // sun's shadow box, skipped in the shadow pass) like any mesh; see geometry.ts withBounds
-  const instanced = (geo, mat, mat4, cols, bounds = null) => {
+  const instanced = (geo, mat, mat4, cols, bounds: [THREE.Vector3, number] = null) => {
     const m = new THREE.InstancedMesh(geo, mat, mat4.length / 16); if (bounds) withBounds(m, ...bounds);
     m.instanceMatrix = new THREE.InstancedBufferAttribute(mat4, 16); m.instanceColor = new THREE.InstancedBufferAttribute(cols, 3);
     m.frustumCulled = !!bounds; m.userData.bounded = !!bounds; m.receiveShadow = true; m.userData.tiled = true; m.userData.terrain = 'done'; scene.add(m); return m;
@@ -186,7 +189,7 @@ export async function buildCity(scene, data, { waterMat, status = () => {}, clea
       place(rm4, j, i);
       reach = Math.max(reach, Math.hypot(B.bx[i] / 10 - t.cx, B.bz[i] / 10 - t.cz) + Math.hypot(B.bw[i], B.bd[i]) / 20); high = Math.max(high, roofY[i] + 10); low = Math.min(low, base[i]);
     });
-    const bounds = [new THREE.Vector3(t.cx, (high + low) / 2, t.cz), Math.hypot(reach, (high - low) / 2)];
+    const bounds: [THREE.Vector3, number] = [new THREE.Vector3(t.cx, (high + low) / 2, t.cz), Math.hypot(reach, (high - low) / 2)];
     t.roof.push(instanced(geoRoof, instancedWinMat('office'), rm4, new Float32Array(all.length * 3).fill(1)));
     for (const [kind, list] of Object.entries(kinds)) {
       const mat4 = new Float32Array(list.length * 16), cols = new Float32Array(list.length * 3);
@@ -207,7 +210,7 @@ export async function buildCity(scene, data, { waterMat, status = () => {}, clea
     }
   }
   // large irregular buildings: real outlines, merged per tile and facade style
-  const pBuild = new Map();
+  const pBuild: Map<Tile, Record<string, Builder>> = new Map();
   for (let i = 0, v = 0; i < B.nP; i++) {
     const n = B.pn[i], ring = [];
     let x = 0, z = 0;

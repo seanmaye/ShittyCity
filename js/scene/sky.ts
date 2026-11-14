@@ -15,7 +15,7 @@ function isDST(d) {
 
 /** Sun elevation and azimuth (degrees; azimuth clockwise from north) at local clock time `h`. NOAA approximation. */
 export function sunAt(h, date = new Date()) {
-  const doy = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 864e5);
+  const doy = Math.floor(((date as unknown as number) - (new Date(date.getFullYear(), 0, 0) as unknown as number)) / 864e5);
   const g = 2 * Math.PI / 365 * (doy - 1 + (h - 12) / 24);
   const eqt = 229.18 * (.000075 + .001868 * Math.cos(g) - .032077 * Math.sin(g) - .014615 * Math.cos(2 * g) - .040849 * Math.sin(2 * g));
   const dec = .006918 - .399912 * Math.cos(g) + .070257 * Math.sin(g) - .006758 * Math.cos(2 * g) + .000907 * Math.sin(2 * g) - .002697 * Math.cos(3 * g) + .00148 * Math.sin(3 * g);
@@ -50,7 +50,7 @@ const LIGHT = [ // [elevation, hemi sky, hemi ground, hemi intensity, water]
 ];
 const smooth = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 const ca = new THREE.Color(), cb = new THREE.Color();
-function lerpKeys(keys, e, idx, out) {
+function lerpKeys(keys, e, idx, out?) {
   const k = keys.findIndex(r => r[0] > e);
   const A = keys[k < 0 ? keys.length - 1 : Math.max(0, k - 1)], B = keys[k < 0 ? keys.length - 1 : k];
   const t = A === B ? 0 : (e - A[0]) / (B[0] - A[0]);
@@ -80,7 +80,7 @@ export function createSky({ scene, sun, hemi, litMats, nightOnly, onChange }) {
 
   const top = new THREE.Color(), mid = new THREE.Color(), hor = new THREE.Color(), fog = new THREE.Color(), tmp = new THREE.Color();
   const dir = new THREE.Vector3();
-  let hour = 12, state = { el: 0, az: 0, night: 0 };
+  let hour = 12, state: { el: number, az: number, night: number, water?: string } = { el: 0, az: 0, night: 0 };
 
   function setTime(h) {
     hour = ((h % 24) + 24) % 24;

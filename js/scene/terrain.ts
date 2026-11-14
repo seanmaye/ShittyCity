@@ -62,7 +62,7 @@ export function profile(P, smooth = 60) {
   const s = new Float64Array(n), h = new Float64Array(n), wet = new Uint8Array(n);
   for (let i = 0; i < n; i++) {
     if (i) s[i] = s[i - 1] + Math.hypot(P[i].x - P[i - 1].x, P[i].z - P[i - 1].z);
-    wet[i] = isWet(P[i].x, P[i].z); h[i] = surface(P[i].x, P[i].z);
+    wet[i] = isWet(P[i].x, P[i].z) as unknown as number; h[i] = surface(P[i].x, P[i].z);
   }
   // windowed mean over the dry points (arc length), prefix sums
   const cs = new Float64Array(n + 1), cn = new Float64Array(n + 1);
@@ -104,7 +104,7 @@ export const TOL_LAWN = [.15, .45], TOL_WATER = [.3, .5];
 export function subdivide(geo, sample = SAMPLE, fn = null, [below, above] = TOL) {
   const pos = geo.attributes.position; if (!pos) return geo;
   const names = Object.keys(geo.attributes), src = names.map(k => geo.attributes[k]);
-  const data = src.map(a => Array.from(a.array)), size = src.map(a => a.itemSize);
+  const data: number[][] = src.map(a => Array.from(a.array)), size = src.map(a => a.itemSize);
   const isLine = geo.userData.lines, P = data[names.indexOf('position')];
   const idx = geo.index ? Array.from(geo.index.array) : [...Array(pos.count).keys()];
   const F = [];   // fn at each vertex, filled as needed

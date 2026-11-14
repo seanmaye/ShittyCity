@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import { litMats } from './materials.ts';
 import { Builder } from './geometry.ts';
+import type { ColorBuilder } from './geometry.ts';
 import { CITY } from '../cities.js';
 import { terrain, surface, water } from './terrain.ts';
 export const SPEC = {
@@ -31,6 +32,31 @@ const GAUGE = 1.588;     // Pennsylvania trolley gauge (5 ft 2.5 in): both the L
 const COL = 2;           // cut-face column width (m)
 const TOP = .15;         // the cut face's top edge (city plate height)
 
+/** a point with h, its height above the ground (pts3) */
+type Pt = THREE.Vector3 & { h?: number };
+/** a car's inside (buildInterior), car-local metres: see the comment over CAR_IN */
+interface CarIn {
+  model: string; layout?: string; F: number; sill: number; wt: number; c: number; hw: number; z0: number; z1: number; cab?: number;
+  doorZ: number[]; doorW: number; sides: number[]; seats?: number[]; spawnZ?: number; deck?: { z0: number; hw: number }; col: Record<string, string>;
+}
+/** a looping path (runner(), or another module's): at(s, out) puts the point s m along it in out; stops and strip are
+ *  worked out for the next-stop sign and the line diagram (stopsOn, rideStrip) */
+interface Run {
+  L: number; at(s: number, out: THREE.Vector3): THREE.Vector3; P?: Pt[]; S?: number[]; stops?: { s: number; t: string }[];
+  strip?: { back: boolean; out: number; fold(s: number): number; u(s: number): number; stops: { t: string; f: number }[] };
+}
+/** a car on a line (buildSubway's fleets, or another module's: registerFleet) */
+interface Slot {
+  line: string; pos: THREE.Vector3; dir: THREE.Vector3; run?: Run; path?: Run; k?: number; c?: number; s?: number; h?: number; hidden?: boolean;
+  lineName?: string; color?: string; led?: string; q?: THREE.Quaternion; sync?(): void; onBoard?(on: boolean): void;
+}
+/** sp: SPEC[kind], or what registerFleet was given (car length; scale and dress: a cabin smaller than life, the passenger's
+ *  clothes); parts: the instanced car parts (none for an external fleet) */
+interface Fleet {
+  sp: { car: number; speed?: number; pickY?: number; scale?: number; dress?(person: unknown): void };
+  slots: Slot[]; parts: THREE.InstancedMesh[]; external?: boolean;
+}
+
 const noClip = m => { m.userData.noClip = true; return m; };
 const mat = (color, o = {}) => noClip(new THREE.MeshStandardMaterial(Object.assign({ color, roughness: .9, side: THREE.DoubleSide }, o)));
 
@@ -39,7 +65,7 @@ const mat = (color, o = {}) => noClip(new THREE.MeshStandardMaterial(Object.assi
  *  Street, El and tunnel are told apart by h, never by y. */
 function pts3(f, g) {
   const o = [];
-  for (let i = 0; i < f.length; i += 3) { const v = new THREE.Vector3(f[i] / 10, f[i + 2] / 10, f[i + 1] / 10); v.h = v.y - (g ? g[i / 3] / 10 : 0); o.push(v); }
+  for (let i = 0; i < f.length; i += 3) { const v: Pt = new THREE.Vector3(f[i] / 10, f[i + 2] / 10, f[i + 1] / 10); v.h = v.y - (g ? g[i / 3] / 10 : 0); o.push(v); }
   return o;
 }
 /** unit left-of-travel normals (x, z) per point */
@@ -243,7 +269,7 @@ export function buildSubway(scene, data, river) {
     const keys = [...cols.keys()].sort((a, b) => a - b);
 
     // gallery: floor, roof, back wall and end walls of each run of columns
-    const gb = new Builder({ color: true });
+    const gb: ColorBuilder = new Builder({ color: true });
     const cFloor = new THREE.Color('#55524d'), cRoof = new THREE.Color('#cfcac0'), cWall = new THREE.Color('#9ea7a8'), cEnd = new THREE.Color('#8d877d'), cTop = new THREE.Color('#4a453f'); // tiled walls, lit ceiling, slab top
     // quad() calls Builder.v without a colour, so gq() sets the colour Builder.v reads (b.c) first
     const gq = (A, B, C, D, nn, col) => { gb.c = col; quad(gb, A, B, C, D, nn); };
@@ -304,7 +330,7 @@ export function buildSubway(scene, data, river) {
           quad(lb, W(u, 0, f), W(u + s * LINE, 0, f), W(u + s * LINE, 0, r), W(u, 0, r), toward);
         }
       }
-      if (A.wet && B.wet) { const la = terrain.on ? water(...[W(A.u, 0, 0)].map(p => [p[0], p[2]])[0]) + .15 : .6, lb_ = terrain.on ? water(...[W(B.u, 0, 0)].map(p => [p[0], p[2]])[0]) + .15 : .6; quad(wb, W(A.u, 0, A.top), W(B.u, 0, B.top), W(B.u, 0, lb_), W(A.u, 0, la), toward); }
+      if (A.wet && B.wet) { const la = terrain.on ? water(...[W(A.u, 0, 0)].map((p): [number, number] => [p[0], p[2]])[0]) + .15 : .6, lb_ = terrain.on ? water(...[W(B.u, 0, 0)].map((p): [number, number] => [p[0], p[2]])[0]) + .15 : .6; quad(wb, W(A.u, 0, A.top), W(B.u, 0, B.top), W(B.u, 0, lb_), W(A.u, 0, la), toward); }
     }
 
     const group = new THREE.Group(); group.visible = false; scene.add(group);
@@ -345,7 +371,7 @@ export function buildSubway(scene, data, river) {
   };
   const labels = [];
   for (const s of data.stations) {
-    let text;
+    let text: string;
     if (s.lines) text = `${s.t} · ${CITY.stationLines(s, LINES)}`;   // how a tag reads its lines is per city (js/cities.js)
     else { const parts = []; if (s.k.includes('metro')) parts.push('L'); if (s.k.includes('trolley')) parts.push(range(s.T || [])); text = `${s.t} · ${parts.join(' · ')}`; }
     const under = (s.u || []).length > 0;
@@ -389,7 +415,7 @@ export function buildSubway(scene, data, river) {
       }
       if (!best) continue;
       const clear = (x, z) => Math.min(...surf.map(p => Math.hypot(p.x - x, p.z - z)));
-      const c = [1, -1].map(sd => [best.px - best.tz * 3 * sd, best.pz + best.tx * 3 * sd]).sort((A, B) => clear(...B) - clear(...A))[0];
+      const c = [1, -1].map((sd): [number, number] => [best.px - best.tz * 3 * sd, best.pz + best.tx * 3 * sd]).sort((A, B) => clear(...B) - clear(...A))[0];
       post(c[0], c[1], 'trolley', Math.atan2(best.tx, best.tz) + Math.PI / 2);
     }
     for (const e of data.entrances || []) {
@@ -426,7 +452,7 @@ export function buildSubway(scene, data, river) {
   };
   // car-local frame: x left, y up from the rail head, z forward. F floor, sill/wt window bottom/top
   // and c ceiling above the floor; hw inner half width; doors: centres (z), width, which sides.
-  const CAR_IN = {
+  const CAR_IN: Record<string, CarIn> = {
     metro: { model: 'M-4 car', F: 1.0, sill: .85, wt: 1.8, c: 2.15, hw: 1.33, z0: -8.05, z1: 8.05, cab: 6.7,
       doorZ: [-4.7, 0, 4.7], doorW: 1.3, sides: [1, -1],
       col: { wall: '#dcd9d2', ceil: '#eeede8', floor: '#4a4b4e', seat: '#3d5d86', steel: '#c3c8cd', door: '#aeb4ba', cab: '#cfccc4', dark: '#2a2c2f' } },
@@ -563,7 +589,7 @@ export function buildSubway(scene, data, river) {
 
   function buildInterior(kind, lineId, run, title, colour) {
     const S = CAR_IN[kind], C = S.col, F = S.F, HW = S.hw, Y = F + S.c, SL = F + S.sill, WT = F + S.wt, T = .05, LAY = S.layout;
-    const K = {}; ['wall', 'ceil', 'floor', 'seat', 'steel', 'door', 'cab', 'dark', 'yellow', 'light', 'glass'].forEach(k => { K[k] = new Builder(); });
+    const K: Record<string, Builder> = {}; ['wall', 'ceil', 'floor', 'seat', 'steel', 'door', 'cab', 'dark', 'yellow', 'light', 'glass'].forEach(k => { K[k] = new Builder(); });
     const ads = new Builder({ uv: true }), maps = new Builder({ uv: true });
     const mid = (S.z0 + S.z1) / 2, len = S.z1 - S.z0, front = LAY === 'trolley' ? S.z1 - 1.9 : S.cab;
 
@@ -939,7 +965,7 @@ export function buildSubway(scene, data, river) {
   }
 
   // --- trains: instanced per kind; every car is one instance of each part
-  const fleets = {};
+  const fleets: Record<string, Fleet> = {};
   for (const kind of Object.keys(SPEC)) {
     const sp = SPEC[kind], slots = [];
     data.runs.forEach((r, ri) => {
@@ -961,8 +987,8 @@ export function buildSubway(scene, data, river) {
     ].map(([g, m]) => { const im = new THREE.InstancedMesh(g, m, slots.length); im.frustumCulled = false; scene.add(im); return im; });
     fleets[kind] = { sp, slots, parts };
   }
-  const p = new THREE.Vector3(), q = new THREE.Vector3(), dummy = new THREE.Object3D();
-  function update(dt, camera) {
+  const p: Pt = new THREE.Vector3(), q: Pt = new THREE.Vector3(), dummy = new THREE.Object3D();
+  function update(dt, camera?) {
     for (const { sp, slots, parts, external } of Object.values(fleets)) {
       if (external) {   // positioned by their own module (the monorails): just follow them
         slots.forEach(sl => sl.sync());

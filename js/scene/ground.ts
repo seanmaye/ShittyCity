@@ -6,6 +6,7 @@ import { Builder, addPolygon, addRibbon } from './geometry.ts';
 import { seasonalGrass } from './season.ts';
 import { terrain, surface, TOL_LAWN } from './terrain.ts';
 import { CITY } from '../cities.js';
+import type { Flat, Pair } from '../types/data.ts';
 // Colours sampled to match summer aerial imagery: mown grass, darker park woodland, asphalt,
 // gravel and dirt trails, rail ballast, the mixed concrete, asphalt and yards between buildings,
 // and the wooded, suburban country beyond the city limits.
@@ -16,7 +17,7 @@ const ROAD = '#55585c', TRAIL = '#cbbd9c', RAIL = '#6b625a';
 /** Ground between buildings: the base colour mottled at lot scale (parking, yards, paving).
  *  UVs are world metres / 400, so one texture tile spans 400 m. */
 let groundTex = null;
-export function groundMat(color, side = THREE.DoubleSide) {
+export function groundMat(color, side: THREE.Side = THREE.DoubleSide) {
   if (!groundTex) {
     const N = 256, c = document.createElement('canvas'); c.width = c.height = N;
     const g = c.getContext('2d'), img = g.createImageData(N, N);
@@ -97,7 +98,7 @@ function countryside(cover, size = 30000, cell = 250) {
  * so neither the countryside nor a paved rectangle is drawn here.
  * paved: outline of the paved city plate that buildCity lays over the countryside plane.
  */
-export function buildGround(scene, data, river, capRings = [], { sea = false, paved = [], onPromenade } = {}) {
+export function buildGround(scene, data, river, capRings = [], { sea = false, paved = [], onPromenade }: { sea?: boolean, paved?: Flat[], onPromenade?: (pts: Pair[]) => boolean } = {}) {
   const cap = capRings.map(pairs);
   if (!sea && !terrain.on && !CITY.grid) {   // with terrain, city.ts lays the ground mesh (paved and country); Jersey Shore's grid has its own country (jsh/terrain.js)
     const outer = new THREE.Mesh(countryside(paved.map(pairs)), seasonalGrass(M(COUNTRY, { roughness: 1, side: THREE.FrontSide })));
@@ -130,7 +131,7 @@ export function buildGround(scene, data, river, capRings = [], { sea = false, pa
  * tile: if set, split the meshes into tile x tile metre squares so off-screen ones are culled.
  * onPromenade: Philadelphia's Walnut St test (phl/promenade.js, from its own code: js/scene/phl/phl.ts).
  */
-export function drawLines(scene, lines, { cap = [], wet = () => false, tile = 0, onPromenade } = {}) {
+export function drawLines(scene, lines, { cap = [], wet = () => false, tile = 0, onPromenade }: { cap?: Pair[][], wet?: (x: number, z: number) => boolean, tile?: number, onPromenade?: (pts: Pair[]) => boolean } = {}) {
   // streets, trails and rail at grade (one set of builders per tile when tiled)
   const tiles = new Map();
   const T = key => { let t = tiles.get(key); if (!t) { t = { rb: new Builder(), pb: new Builder(), tb: new Builder(), xb: new Builder(), bc: new Builder(), bd: new Builder(), bg: new Builder() }; tiles.set(key, t); } return t; };

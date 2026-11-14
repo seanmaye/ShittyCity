@@ -23,11 +23,14 @@ const pick = a => a[Math.floor(rnd() * a.length)];
 const WARM = [[255, 206, 140], [255, 196, 122], [255, 222, 168], [248, 184, 110], [255, 232, 196], [255, 214, 156]];
 const COOL = [[222, 236, 255], [238, 245, 255], [206, 224, 250], [255, 250, 236], [232, 240, 232]];
 const TV = [[118, 150, 255], [150, 176, 255], [170, 140, 255]];
+/** facade()'s put(buf, x0, y0, w, h, r, g, b, a = 255): fill a w x h rectangle of a map; the colour typed as a rest
+ *  parameter, as the calls spread colour arrays into it */
+type Put = (buf: Uint8Array, x0: number, y0: number, w: number, h: number, ...rgba: number[]) => void;
 
 /** Build the day and night maps for one facade style. */
 function facade(style) {
   const day = new Uint8Array(TW * TH * 4), night = new Uint8Array(TW * TH * 4);
-  const put = (buf, x0, y0, w, h, r, g, b, a = 255) => {
+  const put: Put = (buf, x0, y0, w, h, r, g, b, a = 255) => {
     for (let y = Math.max(0, y0); y < Math.min(TH, y0 + h); y++) for (let x = x0; x < x0 + w; x++) {
       const xx = ((x % TW) + TW) % TW; if (BLANK(xx, y)) continue;
       const i = (y * TW + xx) * 4; buf[i] = r; buf[i + 1] = g; buf[i + 2] = b; buf[i + 3] = a;
@@ -117,7 +120,7 @@ function facade(style) {
             for (let j = 2; j < 14; j += 2) put(day, X, Y + j, 16, 1, 120, 122, 124);
             continue;
           }
-          let wx, wy, ww, wh;
+          let wx: number, wy: number, ww: number, wh: number;
           if (glass) {
             wx = 0; wy = 2; ww = 16; wh = 14;
             const p = panel.map(v => v * (.94 + rnd() * .08) * (rnd() < .04 ? 1.12 : 1));
@@ -161,7 +164,7 @@ const SMALLTOWN = ['clap', 'brickh', 'plain', 'block', 'metal', 'church'];
 const DOORS = [[74, 48, 36], [120, 30, 28], [40, 52, 44], [30, 34, 48], [235, 232, 222], [96, 70, 50]];
 const SHUTTERS = [[40, 46, 40], [30, 32, 36], [70, 34, 30], [46, 58, 76], [90, 80, 66]];
 const SIGNS = [[38, 64, 48], [96, 34, 30], [28, 30, 34], [34, 44, 74], [120, 96, 52], [70, 58, 44]];
-function smallTown(style, day, night, put, room, homeOff, shopOff, glassCol, A) {
+function smallTown(style, day, night, put: Put, room, homeOff, shopOff, glassCol, A) {
   const mul = (x0, y0, w, h, k) => {
     for (let y = y0; y < y0 + h; y++) for (let x = x0; x < x0 + w; x++) { if (BLANK(x, y)) continue; const i = (y * TW + x) * 4; for (let c = 0; c < 3; c++) day[i + c] *= k; }
   };
@@ -275,7 +278,7 @@ export function setWindowHour(h) {
 }
 
 // roof coverings: silver coating and black tar on rowhouses, white and grey membranes, gravel
-export const ROOFS = [[.42, '#a9aaa7'], [.6, '#424244'], [.74, '#77787a'], [.87, '#cfcfca'], [.95, '#8c867c'], [1, '#58595c']];
+export const ROOFS: [number, string][] = [[.42, '#a9aaa7'], [.6, '#424244'], [.74, '#77787a'], [.87, '#cfcfca'], [.95, '#8c867c'], [1, '#58595c']];
 export const roofColor = r => ROOFS.find(([p]) => r < p)[1];
 const glslRoof = (() => {
   const c = new THREE.Color();
@@ -363,7 +366,7 @@ export function instancedWinMat(kind) {
 export function fixBoxUV(g) { const uv = g.attributes.uv; for (let i = 8; i < 16; i++) uv.setXY(i, -1, -1); uv.needsUpdate = true; return g; }
 export const bx = (w, h, d) => fixBoxUV(new THREE.BoxGeometry(w, h, d));
 /** How many 14 m x 29 m window blocks fit a face w wide and h tall (for winMat). */
-export const reps = (w, h) => [Math.max(1, Math.round(w / 14)), Math.max(1, Math.round(h / 29))];
+export const reps = (w, h): [number, number] => [Math.max(1, Math.round(w / 14)), Math.max(1, Math.round(h / 29))];
 
 // ---- display lights: the coloured lighting on the skyline (crowns, Liberty Place's gables,
 // the Cira Centre's LED facade, the FMC Tower's crown, Boathouse Row, New York's Empire State and

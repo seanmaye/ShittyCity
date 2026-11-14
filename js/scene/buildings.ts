@@ -1,8 +1,8 @@
-// @ts-check
 // Real building footprints (each city's footprints and heights: data/<city>/buildings.json),
 // extruded and merged into tiled meshes with lit-window facades.
 import * as THREE from 'three';
 import { pairs } from '../data.js';
+import type { Buildings } from '../types/data.ts';
 import { worldWinMat, WIN_W, WIN_H, roofColor, M, addDisplay } from './materials.ts';
 import { Builder, addPrism, addLoft, colorOf } from './geometry.ts';
 import { terrain, footprint } from './terrain.ts';
@@ -80,15 +80,14 @@ function displayShell(ring, y0, y1) {
   const mesh = new THREE.Mesh(b.geometry(), m); mesh.visible = false; mesh.renderOrder = 2; return mesh;
 }
 
-/** @param {THREE.Scene} scene @param {import('../types/data').Buildings} data */
-export function buildBuildings(scene, data) {
+export function buildBuildings(scene: THREE.Scene, data: Buildings) {
   const styles = data.styles;
   // sort footprints into tiles first so each tile's buffers can be built and released in turn
   const tiles = new Map(), top = new Builder({ color: true }), lights = [], shells = [];
   for (let i = 0; i < data.b.length; i++) {
     const [hdm, style, outerFlat] = data.b[i];
     const h = hdm / 10, outer = pairs(outerFlat);
-    let kind, color;
+    let kind: string, color: string;
     if (style) {
       kind = styles[style].kind; color = styles[style].color;
       const id = styles[style].id;
