@@ -11,9 +11,9 @@ import { M, litMats } from '../materials.js';
 import { Builder, addRibbon } from '../geometry.js';
 import { SPEC } from '../subway.js';
 import { onWalnut } from './promenade.js';
-import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
-import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
-import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { terrain, surface, drape } from '../terrain.js';
 
 // shades picked to stand apart from the live lines' colours (PATCO and monorail reds, Broad St

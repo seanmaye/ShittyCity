@@ -11,7 +11,7 @@
 // need the main thread, and froze half-way through a transition while a city loaded.
 // Each city lists its screens in js/cities.js (loadingScreens).
 import * as THREE from 'three';
-import { OutlineEffect } from 'three/examples/jsm/effects/OutlineEffect.js';
+import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
 import { makeFigure, pose as runPose } from './scene/phl/people.js';
 import { makeRenderer, LIGHT } from './three-setup.js';
 

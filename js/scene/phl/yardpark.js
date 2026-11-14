@@ -1,7 +1,7 @@
 // Proposal: a deck over the 30th Street rail yard with a park and a concert bowl on top.
 // Outline, paths, trees and the bowl's site come from data/phl/yardpark.json (tools/phl/cap.py).
 import * as THREE from 'three';
-import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { pairs } from '../../data.js';
 import { M, litMats } from '../materials.js';
 import { Builder, addPolygon, addRibbon } from '../geometry.js';

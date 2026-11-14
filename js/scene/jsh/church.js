@@ -20,7 +20,7 @@
 // so the room reads the same at noon or midnight and adds no lights to the scene. The "Go to"
 // view ends with the camera held inside the hall (hold/clamp) until another view is chosen.
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { pairs } from '../../data.js';
 import { groundAt } from './terrain.js';
 import { makeFigure } from '../phl/people.js';
