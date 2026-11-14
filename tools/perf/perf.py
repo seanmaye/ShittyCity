@@ -246,15 +246,35 @@ def side_inputs(src=None, ref=None):
 
 
 def _run(cmd, cwd, what):
-    r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, shell=sys.platform == 'win32')
+    try:
+        r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, shell=sys.platform == 'win32')
+    except FileNotFoundError:
+        sys.exit(f'{cmd[0]} not found: the harness builds sides with a package.json, so it needs Node 24 and npm on PATH')
     if r.returncode:
         sys.exit(f'{what} failed ({" ".join(cmd)} in {cwd}):\n{r.stdout[-3000:]}\n{r.stderr[-3000:]}')
     return r.stdout
 
 
+_NODE_CHECKED = set()
+
+
+def _check_node(src, ref):
+    """Warn once if Node's major version differs from the side's .nvmrc."""
+    want = side_read(src, ref, '.nvmrc').decode().strip().lstrip('v').split('.')[0] if side_has(src, ref, '.nvmrc') else ''
+    have = _run(['node', '--version'], ROOT, 'node --version').strip().lstrip('v').split('.')[0]
+    if want and want != have and want not in _NODE_CHECKED:
+        _NODE_CHECKED.add(want)
+        print(f'warning: Node {have} builds this side, whose .nvmrc asks for Node {want}', flush=True)
+
+
 def _prune(parent, prefix, keep):
-    """Keep the `keep` most recently used <parent>/<prefix>* folders."""
-    ds = sorted((os.path.join(parent, d) for d in os.listdir(parent) if d.startswith(prefix) and '.tmp-' not in d), key=os.path.getmtime, reverse=True)
+    """Keep the `keep` most recently used <parent>/<prefix>* folders, and drop stage-* and *.tmp-* folders that
+    runs killed earlier left over a day ago."""
+    for d in os.listdir(parent):
+        p = os.path.join(parent, d)
+        if (d.startswith('stage-') or '.tmp-' in d) and os.path.isdir(p) and time.time() - os.path.getmtime(p) > 86400:
+            shutil.rmtree(p, ignore_errors=True)
+    ds = sorted((os.path.join(parent, d) for d in os.listdir(parent) if d.startswith(prefix) and '.tmp-' not in d and not d.startswith('stage-')), key=os.path.getmtime, reverse=True)
     for d in ds[keep:]:
         shutil.rmtree(d, ignore_errors=True)
 
@@ -268,15 +288,24 @@ def node_modules(src, ref, lock_sha):
         tmp = f'{d}.tmp-{os.getpid()}'
         shutil.rmtree(tmp, ignore_errors=True)
         os.makedirs(tmp)
-        for f in ('package.json', 'package-lock.json'):
-            with open(os.path.join(tmp, f), 'wb') as fh:
-                fh.write(side_read(src, ref, f))
-        _run(['npm', 'ci', '--no-audit', '--no-fund', '--loglevel=error'], tmp, 'npm ci')
-        shutil.rmtree(d, ignore_errors=True)
-        os.rename(tmp, d)
-        _prune(CACHE, 'npm-', 2)
+        try:
+            for f in ('package.json', 'package-lock.json'):
+                with open(os.path.join(tmp, f), 'wb') as fh:
+                    fh.write(side_read(src, ref, f))
+            _run(['npm', 'ci', '--no-audit', '--no-fund', '--loglevel=error'], tmp, 'npm ci')
+            shutil.rmtree(d, ignore_errors=True)
+            os.rename(tmp, d)
+        finally:   # a failed npm ci leaves nothing behind
+            shutil.rmtree(tmp, ignore_errors=True)
     os.utime(d)
+    _prune(CACHE, 'npm-', 2)
     return os.path.join(d, 'node_modules')
+
+
+def harness_version():
+    """A hash of what the harness puts into a perf build: the patch text and tools/perf/build.mjs."""
+    with open(BUILD, encoding='utf-8') as f:
+        return hashlib.sha1(json.dumps([UUID_FIND, UUID_PATCH, TAG_PATCH, f.read()]).encode()).hexdigest()[:12]
 
 
 def build_side(src, ref, mode):
@@ -291,13 +320,12 @@ def build_side(src, ref, mode):
     if not lock:
         sys.exit(f'{ref or src}: a package.json but no package-lock.json; the harness installs with npm ci')
     opt = {'find': UUID_FIND, 'replace': UUID_PATCH, 'append': TAG_PATCH if mode == 'perf-tag' else ''}
-    with open(BUILD, encoding='utf-8') as f:
-        script = f.read()
-    key = hashlib.sha1(json.dumps([mode, inputs] + ([opt, script] if mode != 'prod' else [])).encode()).hexdigest()[:16]
+    key = hashlib.sha1(json.dumps([mode, inputs] + ([opt, harness_version()] if mode != 'prod' else [])).encode()).hexdigest()[:16]
     out = os.path.join(CACHE, 'build', f'{mode}-{key}')
     if os.path.exists(os.path.join(out, BUILT)):
         os.utime(out)
         return out
+    _check_node(src, ref)
     nm = node_modules(src, ref, lock)
     os.makedirs(os.path.dirname(out), exist_ok=True)
     stage, tmp = os.path.join(CACHE, f'stage-{os.getpid()}'), f'{out}.tmp-{os.getpid()}'
@@ -330,7 +358,7 @@ def build_side(src, ref, mode):
             if patched != 1:
                 sys.exit(f'the perf-mode build patched {patched} files, not 1: no three.js build file holds {UUID_FIND!r} (did three change?)')
         with open(os.path.join(tmp, BUILT), 'w', encoding='utf-8') as f:
-            json.dump({'mode': mode, 'key': key, 'source': ref or os.path.abspath(src), 'files': len(inputs), 'patched': patched}, f)
+            json.dump({'mode': mode, 'key': key, 'source': ref or os.path.abspath(src), 'files': len(inputs), 'patched': patched, 'harness': harness_version()}, f)
         shutil.rmtree(out, ignore_errors=True)
         os.rename(tmp, out)
     finally:
@@ -475,10 +503,12 @@ def source_profile(p):
         cf = n['callFrame']
         if cf.get('lineNumber', -1) < 0:
             continue
-        url, ln, col, _ = source_of(cf['url'], cf['lineNumber'], cf['columnNumber'])
+        url, ln, col, name = source_of(cf['url'], cf['lineNumber'], cf['columnNumber'])
         if url == cf['url']:
             continue
-        fn = RENAMED.sub('', cf['functionName'])   # (the map's name at a renamed function's position is the same: buildMonorail)
+        fn = cf['functionName']
+        if RENAMED.search(fn):   # the map names a renamed function at its position (buildMonorail); else drop the $N in app code only (three has its own: checkIntersection$1)
+            fn = name or (RENAMED.sub('', fn) if re.match(r'https?://[^/]+/js/', url) else fn)
         if 'positionTicks' in n:   # line hit counts: generated line -> source line
             n['positionTicks'] = [{**t, 'line': source_of(cf['url'], t['line'] - 1, 0)[1] + 1} for t in n['positionTicks']]
         cf.update(url=url, lineNumber=ln, columnNumber=col, functionName=fn)
@@ -790,6 +820,8 @@ def ablate(page, sc, a, census):
     items += [('hide', b) for b in picked[:a.ablate_max]]
     res = []
     for kind, name in items:
+        if kind == 'hide':   # objects added since the census (a ride, a lazy part) get their builder first
+            tag_objects(page)
         js = f'__perf.applyToggle({json.dumps(name)})' if kind == 'toggle' else f'__perf.hideBuilder({json.dumps(name)})'
         res.append({'what': name if kind == 'toggle' else f'hide {name}', **measure_with(js)})
     base2 = measure_with()
@@ -1200,23 +1232,13 @@ def cmd_ab(a):
     scene runs 12-50% slower than the first (tested), which would bias whichever loads second."""
     scen = pick_scenarios(a)
     out = out_dir(a, '-ab')
-    if a.a_snap:   # side A is a snapshot folder (perf.py snap), not a commit
-        commit, root_a = 'snapshot ' + a.a_snap, snap_dir(a.a_snap)
-        kind_a, done_a = snap_kind(root_a), lambda: None
-    else:
-        commit = git('rev-parse', '--short', a.base)
-        if not commit:
-            sys.exit(f'unknown git ref: {a.base}')
-        root_a, kind_a, done_a = prepare_side(ref=a.base, tmp=os.path.join(OUT, '.ab-base'))
-    if a.b_snap:
-        root_b, kind_b, done_b = snap_dir(a.b_snap), snap_kind(snap_dir(a.b_snap)), lambda: None
-    else:
-        root_b, kind_b, done_b = prepare_side(ROOT)
+    commit = 'snapshot ' + a.a_snap if a.a_snap else git('rev-parse', '--short', a.base)   # side A: a snapshot folder (perf.py snap) or a commit
+    if not commit:
+        sys.exit(f'unknown git ref: {a.base}')
     b_name = 'snapshot ' + a.b_snap if a.b_snap else 'working tree'
     from playwright.sync_api import sync_playwright
-    (sa, base_a), (sb, base_b) = serve(root_a), serve(root_b)
     rounds = {'frames': defaultdict(lambda: ([], [])), 'load': defaultdict(lambda: ([], []))}   # metric -> (A values, B values), paired by index
-    env, errors = {}, []
+    env, errors, notes, servers, done = {}, [], [], [], []
 
     def block(pw, k, keep=True, shots=False):
         browser = launch(pw, a)
@@ -1242,7 +1264,31 @@ def cmd_ab(a):
             for key, v in got.items():
                 if v is not None:
                     rounds['load' if key.startswith('load.') else 'frames'][key]['AB'.index(k)].append(v)
-    try:
+    try:   # the sides and servers too, so a side that fails to build still cleans up the other
+        if a.a_snap:
+            root_a = snap_dir(a.a_snap)
+            kind_a = snap_kind(root_a)
+        else:
+            root_a, kind_a, d = prepare_side(ref=a.base, tmp=os.path.join(OUT, '.ab-base'))
+            done.append(d)
+        if a.b_snap:
+            root_b = snap_dir(a.b_snap)
+            kind_b = snap_kind(root_b)
+        else:
+            root_b, kind_b, d = prepare_side(ROOT)
+            done.append(d)
+        for k, name in (('A', a.a_snap), ('B', a.b_snap)):   # a build snapshot keeps the patches of the harness that made it
+            if name and snap_kind(snap_dir(name)) == 'perf build':
+                with open(os.path.join(snap_dir(name), BUILT), encoding='utf-8') as f:
+                    h = json.load(f).get('harness')
+                if h != harness_version():
+                    notes.append(f'**Warning:** side {k} (snapshot {name}) was built by another harness version ({h or "unrecorded"}; this one is '
+                                 f'{harness_version()}), so the two sides may be patched or built differently. Make the snapshot again.')
+                    print(notes[-1].replace('**', ''), flush=True)
+        sa, base_a = serve(root_a)
+        servers.append(sa)
+        sb, base_b = serve(root_b)
+        servers.append(sb)
         with sync_playwright() as pw:
             # the first browser of a session runs differently, and the side that warms up keeps an edge (same code on both sides:
             # whole-city frame time came out 18% better for the warmed side, 6/6 rounds), so warm up both
@@ -1254,10 +1300,10 @@ def cmd_ab(a):
                     print(f'round {i + 1}/{a.rounds}: {k} ({"base " + commit if k == "A" else b_name})…', flush=True)
                     block(pw, k, shots=a.shots and i == a.rounds - 1)
     finally:
-        sa.shutdown()
-        sb.shutdown()
-        done_a()
-        done_b()
+        for srv in servers:
+            srv.shutdown()
+        for d in done:
+            d()
     dirty = bool(git('status', '--porcelain', '--', 'js', 'css', 'index.html', 'data'))
     gl = (env.get('gl') or {}).get('renderer', '?')
     side_a = f'{commit} ({kind_a})' if a.a_snap else f'base {a.base} ({commit}, {kind_a})'
@@ -1265,6 +1311,7 @@ def cmd_ab(a):
     lines = [f'# A/B: {side_a} vs {side_b}\n',
              f'GPU: {gl}. {a.rounds} paired rounds (A B, B A, …), each side a fresh browser that loads the app'
              f'{" (load metrics recorded)" if a.load else ""} and measures each scenario for {a.seconds} s.\n',
+             *[n + '\n' for n in notes],
              f'Δ = B − A (mean over paired rounds). A verdict needs |Δ| ≥ {a.threshold}% and a paired t-test: '
              f'"better"/"worse" at 99%, "likely" at 95%. Higher is better only for fps. {"Every metric shown." if a.all else "Only metrics past the threshold are shown (--all for every row)."}\n']
     verdicts = []
