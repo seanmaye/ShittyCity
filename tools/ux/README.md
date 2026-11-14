@@ -54,6 +54,12 @@ uv run python -I tools/ux/ux.py compare tools/ux/out/<before> tools/ux/out/<afte
 | `--headed --keep-open` | watch it, and pause after each device to poke around |
 | `--no-annotate` | clean screenshots only |
 
+`compare` lists the screens whose errors, warnings or chrome % changed, then the share of
+changed pixels for every screen in both runs (a channel off by more than 8 of 255; needs
+Pillow), with `diff/<city>/<device>/<state>.png` in the second run's folder marking them red.
+Rides and anything moving differ between two runs of the same code, so read the shares
+against a same-code pair, not against zero.
+
 One device takes the city's load (2–20 s) plus about 1–4 s per state. A full city on five
 devices is a few minutes. While iterating, run just the states and devices you are changing.
 

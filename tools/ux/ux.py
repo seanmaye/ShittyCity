@@ -26,7 +26,7 @@ from collections import Counter, defaultdict
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, os.path.join(ROOT, 'tools', 'perf'))
-from perf import CDN, FIXED_DATE, PROBE, cdn_handler, gpu_args, git, serve  # noqa: E402
+from perf import CDN, FIXED_DATE, PROBE, cdn_handler, diff_note, diff_table, gpu_args, git, serve  # noqa: E402
 
 AUDIT = os.path.join(HERE, 'audit.js')
 OUT = os.path.join(HERE, 'out')
@@ -498,6 +498,9 @@ def cmd_compare(a):
         if (ea, wa, ca) != (eb, wb, cb):
             print(f"| {' | '.join(k)} | {ea} → {eb} | {wa} → {wb} | {ca} → {cb} |")
     print(f'\nTotal change: errors {te:+d}, warnings {tw:+d}')
+    t, _ = diff_table([(' · '.join(k), os.path.join(a.a, fa[k]['png']), os.path.join(a.b, fb[k]['png']), os.path.join(a.b, 'diff', fb[k]['png']))
+                       for k in sorted(set(fa) & set(fb))], 'city · device · state')
+    print('\n## Pixels\n\n' + diff_note(os.path.join(a.b, 'diff', '<city>/<device>/<state>.png')) + '\n' + '\n'.join(t))
     if a.detail:
         for k in sorted(set(fa) & set(fb)):
             ka = Counter(key(f) for f in fa[k]['findings'] if f['sev'] != 'info')
