@@ -1,8 +1,8 @@
 // @ts-check
 // The data worker: a module worker that js/data.js loadData starts for one load. It fetches the city's data files, gunzips
 // the .gz ones as they stream in, decodes the binary ones (js/formats.js) and posts each file back as soon as it is done,
-// its buffers transferred, not copied. JSON comes back as its bytes, for the page to parse. It never reads CITY: the page
-// sends { files: [[key, file, url], ...], origin: the page's performance.timeOrigin }.
+// its buffers transferred, not copied. JSON is parsed here and comes back as a copy (structured clone: an object cannot be
+// transferred). It never reads CITY: the page sends { files: [[key, file, url], ...], origin: its performance.timeOrigin }.
 import { decode, readGrid, readTerrain } from './formats.js';
 
 // the binary files decoded here, by their key in CITY.files (js/cities.js; phl's terrain and jsh's grid are both terrain.bin.gz)
@@ -27,11 +27,12 @@ addEventListener('message', ({ data: { files, origin } }) => {
     try {
       const r = await fetch(url);
       if (!r.ok) return scope.postMessage({ i, status: r.status });
-      const buf = file.endsWith('.json') ? await r.arrayBuffer() : await gunzip(r.body), out = READ[key] ? READ[key](buf) : buf;
+      const buf = file.endsWith('.json') ? await r.arrayBuffer() : await gunzip(r.body), json = /\.json(\.gz)?$/.test(file);
+      const out = READ[key] ? READ[key](buf) : json ? JSON.parse(new TextDecoder().decode(buf)) : buf;
       // the fetch's Resource Timing, which only this worker's timeline has, in the page's time (js/data.js puts it on the page's)
       const e = /** @type {PerformanceResourceTiming | undefined} */ (performance.getEntriesByName(r.url, 'resource').at(-1));
       const rt = e && { name: e.name, startTime: e.startTime + shift, responseEnd: e.responseEnd + shift, encodedBodySize: e.encodedBodySize };
-      scope.postMessage({ i, out, rt }, buffers(out));
+      scope.postMessage({ i, out, rt }, json ? [] : buffers(out));
     } catch (err) {
       scope.postMessage({ i, error: String(err?.message ?? err) });
     }

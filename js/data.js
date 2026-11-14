@@ -21,7 +21,7 @@ export function pairs(flat) {
 }
 
 /** load the active city's files (CITY.files, from CITY.dir): the data worker (js/load-worker.js) fetches, gunzips and decodes
- *  them and hands over their bytes and typed arrays as each is done; the JSON is parsed here */
+ *  them, parses the JSON, and hands over each as it is done (typed arrays transferred, JSON as a copy) */
 /** @param {(done: number, key: string) => void} [onProgress] @returns {Promise<CityData>} */
 export async function loadData(onProgress = () => {}) {
   const FILES = CITY.files, parts = [];
@@ -37,7 +37,7 @@ export async function loadData(onProgress = () => {}) {
           if (error != null) throw new Error(error);
           // the worker's fetch on the page's timeline (tools/perf reads it as the file's Resource Timing)
           if (rt) performance.measure(rt.name, { start: rt.startTime, end: rt.responseEnd, detail: { encodedBodySize: rt.encodedBodySize } });
-          parts[i] = /\.json(\.gz)?$/.test(file) ? JSON.parse(new TextDecoder().decode(out)) : out;
+          parts[i] = out;
           onProgress(++done / FILES.length, key);
           if (done === FILES.length) resolve(parts);
         } catch (e) { reject(e); }

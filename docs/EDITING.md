@@ -348,7 +348,7 @@ js/main.js       the start menu, then setCity -> loadData -> buildScene -> creat
                  Exposes window.__city.
 js/data.js       projection (G(lat,lon), latOf, using CITY.frame) and the data loader: its module worker js/load-worker.js
                  fetches CITY.files by the URLs the build gave them (CITY.urls, set by main.js from its URLS), gunzips the
-                 .gz ones as they stream in and decodes the binary ones (js/formats.js), handing over their typed arrays; the page parses the JSON
+                 .gz ones as they stream in, decodes the binary ones (js/formats.js) and parses the JSON, handing over typed arrays and objects
 js/scene/core.js  renderer, camera, OrbitControls, sun, fog. HOME_POS and HOME_TGT
                  (from CITY.home) are the overview camera.
 js/scene/sky.js  the 24-hour clock: sunAt(h) = the real sun position over the city (CITY.sun)
