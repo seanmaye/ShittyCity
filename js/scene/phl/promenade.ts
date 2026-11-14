@@ -136,7 +136,7 @@ export function buildPromenade(scene, { buildings, cityB, roads, trees }) {
 
   // ---- instanced furniture: each kind collects matrices (and colours) first
   const kinds = new Map();
-  const put = (name, x, y, z, ry, sx = 1, sy = 1, sz = 1, color) => {
+  const put = (name, x, y, z, ry, sx = 1, sy = 1, sz = 1, color?) => {
     let k = kinds.get(name); if (!k) kinds.set(name, k = { m: [], c: [] });
     const o = new THREE.Object3D(); o.position.set(x, y, z); o.rotation.y = ry; o.scale.set(sx, sy, sz); o.updateMatrix();
     k.m.push(o.matrix.clone()); k.c.push(color);
@@ -151,7 +151,7 @@ export function buildPromenade(scene, { buildings, cityB, roads, trees }) {
   treePts.forEach(([x, z]) => obst.push([x, z, .7]));
   for (let s0 = 6; s0 < WALNUT_LENGTH - 4; s0 += 24) {
     for (const sd of [-1, 1]) {
-      const items = [[0, 'lamp'], [7, 'bench'], [12, 'planter'], [17, 'bench']];
+      const items = [[0, 'lamp'], [7, 'bench'], [12, 'planter'], [17, 'bench']] as [number, string][];
       for (const [ds, what] of items) {
         const s = s0 + ds; if (s > WALNUT_LENGTH - 4) continue;
         const p = at(s, sd * KERB);
@@ -236,7 +236,7 @@ export function buildPromenade(scene, { buildings, cityB, roads, trees }) {
   }
 
   // ---- geometry for each kind (local +z = forward, y up from the paving)
-  const G = {};
+  const G: Record<string, THREE.BufferGeometry> = {};
   const cyl = (r0, r1, h, y, seg = 8) => { const g = new THREE.CylinderGeometry(r0, r1, h, seg); g.translate(0, y + h / 2, 0); return g; };
   const box = (w, h, d, x, y, z) => { const g = new THREE.BoxGeometry(w, h, d); g.translate(x, y + h / 2, z); return g; };
   G.pole = cyl(.07, .12, 4.1, 0); G.lantern = cyl(.26, .18, .62, 4.1, 6); G.cap = (() => { const g = new THREE.ConeGeometry(.34, .3, 6); g.translate(0, 4.87, 0); return g; })();
@@ -269,7 +269,7 @@ export function buildPromenade(scene, { buildings, cityB, roads, trees }) {
   // on terrain: the paving drapes over the street's real slope, every fixture stands on it
   if (terrain.on) {
     group.updateMatrixWorld(true);
-    for (const o of [...group.children]) {
+    for (const o of [...group.children] as (THREE.Object3D & Partial<THREE.InstancedMesh>)[]) {
       if (o.isInstancedMesh) { const a = o.instanceMatrix.array; for (let i = 0; i < o.count; i++) a[i * 16 + 13] += surface(a[i * 16 + 12], a[i * 16 + 14]); o.instanceMatrix.needsUpdate = true; }
       else if (o.isMesh) drape(o, surface, 10);
     }

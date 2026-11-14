@@ -23,7 +23,7 @@
 // aboard); js/ui.js draws the card and the action buttons from that state.
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
-import { geo, pose } from './people.ts';
+import { geo, pose, type Joints } from './people.ts';
 import { punkProfile } from './punkprofiles.ts';
 import { litMats } from '../materials.js';
 import { LIGHT, makeRenderer } from '../../three-setup.js';
@@ -76,7 +76,7 @@ const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
 const bell = (t, a, b, e = .6) => smooth((t - a) / e) * (1 - smooth((t - b) / e));   // 0 → 1 from a, 1 → 0 by b
 function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const M4 = (x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)), new THREE.Vector3(sx, sy, sz));
-function canvasTex(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; const t = new THREE.CanvasTexture(c); t.redraw = () => { draw(c.getContext('2d'), w, h); t.needsUpdate = true; }; t.redraw(); return t; }
+function canvasTex(w, h, draw) { const c = document.createElement('canvas'); c.width = w; c.height = h; const t = new THREE.CanvasTexture(c) as THREE.CanvasTexture & { redraw?: () => void }; t.redraw = () => { draw(c.getContext('2d'), w, h); t.needsUpdate = true; }; t.redraw(); return t; }
 /** a soft round spot: white in the middle, clear at the edge (smoke) */
 /** Stage lighting at night, faked in the shader (the city has no real lights): the dusk glow
  *  (litMats) takes each part's own colour (vertex or instance colour) instead of one flat tint,
@@ -128,13 +128,21 @@ function bake(root, material) {
   }
 }
 
+/** a skeleton with Kyle's joints (people.ts), as chipmunk() and rig() build it joint by joint */
+interface Rig extends Joints {
+  root: THREE.Object3D; chest?: THREE.Object3D; head?: THREE.Object3D; handL?: THREE.Object3D; handR?: THREE.Object3D; footL?: THREE.Object3D; footR?: THREE.Object3D;
+  spec?: ChipSpec;
+}
+/** a chipmunk's look (buildConcert SPECS) */
+interface ChipSpec { fur: string; belly: string; shirt: string; cap?: string; letter?: string; letterColor?: string; glasses?: string; chubby?: boolean; hair?: string; style?: string; lashes?: boolean }
+
 // ---- a chipmunk: about 1.4 m (before the stage's scale), facing +z, joints like Kyle's figures
-function chipmunk(spec) {
-  const F = { root: new THREE.Group(), spec };
+function chipmunk(spec: ChipSpec) {
+  const F: Rig = { root: new THREE.Group(), spec };
   const fur = stdMat(spec.fur), belly = stdMat(spec.belly), cloth = stdMat(spec.shirt), black = stdMat('#141414'), white = stdMat('#fbfbf6'), dark = stdMat('#5a3a1c');
   const hair = spec.hair ? stdMat(spec.hair) : null, w = spec.chubby ? 1.2 : 1;
   const P = F.pelvis = grp(F.root, 0, .42, 0);
-  for (const [s, sx] of [['L', 1], ['R', -1]]) {
+  for (const [s, sx] of [['L', 1], ['R', -1]] as [string, number][]) {
     const hip = F['hip' + s] = grp(P, sx * .12 * w, 0, 0); tube(hip, fur, [0, 0, 0], [0, -.2, 0], .085, .075);
     const knee = F['knee' + s] = grp(hip, 0, -.2, 0); tube(knee, fur, [0, 0, 0], [0, -.16, 0], .07, .06); ball(knee, fur, .08, 0, -.19, .06, 1, .55, 1.7);
   }
@@ -143,7 +151,7 @@ function chipmunk(spec) {
   // the tail: bushy, curling up the back
   ball(P, fur, .12, 0, .05, -.3, 1, 1, 1.1); ball(P, fur, .15, 0, .36, -.44); ball(P, fur, .14, 0, .68, -.4, 1, 1.1, 1); ball(P, fur, .1, 0, .88, -.28); ball(P, dark, .06, 0, .9, -.2);
   const C = F.chest = grp(P, 0, .42, 0);
-  for (const [s, sx] of [['L', 1], ['R', -1]]) {
+  for (const [s, sx] of [['L', 1], ['R', -1]] as [string, number][]) {
     const sh = F['sh' + s] = grp(C, sx * .27 * w, 0, 0); tube(sh, cloth, [0, 0, 0], [0, -.24, 0], .078, .068);
     const el = F['el' + s] = grp(sh, 0, -.24, 0); tube(el, cloth, [0, 0, 0], [0, -.17, 0], .068, .064); ball(el, fur, .066, 0, -.21, 0);
     F['hand' + s] = grp(el, 0, -.22, 0);
@@ -208,9 +216,9 @@ function amp(w, h) { const g = new THREE.Group(); box(g, stdMat('#141416'), w, h
 // ---- the punks: one skeleton each (posed on the CPU), drawn by part
 function rig() {
   const n = (p, x, y, z) => { const o = new THREE.Object3D(); o.position.set(x, y, z); if (p) p.add(o); return o; };
-  const F = { root: n(null, 0, 0, 0) };
+  const F: Rig = { root: n(null, 0, 0, 0) };
   F.pelvis = n(F.root, 0, .92, 0); F.chest = n(F.pelvis, 0, .56, 0); F.head = n(F.chest, 0, .17, 0);
-  for (const [s, sx] of [['L', 1], ['R', -1]]) {
+  for (const [s, sx] of [['L', 1], ['R', -1]] as [string, number][]) {
     F['hip' + s] = n(F.pelvis, sx * .1, 0, 0); F['knee' + s] = n(F['hip' + s], 0, -.45, 0); F['foot' + s] = n(F['knee' + s], 0, -.45, 0);
     F['sh' + s] = n(F.chest, sx * .23, -.04, 0); F['el' + s] = n(F['sh' + s], 0, -.3, 0); F['hand' + s] = n(F['el' + s], 0, -.29, 0);
   }
@@ -247,7 +255,13 @@ function outfit(r) {
 // The parts: geometry, the joint it hangs from, its offset (or offsets, one per slot) and colour.
 // col(look) null leaves that part off that punk; dyn(P) decides each frame (props, the head while
 // you're looking out of it).
-function partList() {
+interface Part {
+  key: string; geo: THREE.BufferGeometry; joint: string; at?: THREE.Matrix4 | THREE.Matrix4[]; col: (L: ReturnType<typeof outfit>) => string;
+  shadow?: boolean; head?: boolean; dyn?: (P: { prop: string }) => boolean; scale?: (P: { bagK: number }) => number;
+  /** set by buildConcert: the offsets, the instanced mesh, and which punks show it */
+  offs?: THREE.Matrix4[]; mesh?: THREE.InstancedMesh; on?: Uint8Array;
+}
+function partList(): Part[] {
   const G = geo(1), skin = L => L.skin, head = { head: true };
   const capG = new THREE.SphereGeometry(.118, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2.2);
   const spikeG = new THREE.ConeGeometry(.024, .2, 5); spikeG.translate(0, .1, 0);
@@ -325,7 +339,7 @@ export function buildConcert(bowl, { canvas = null, night = () => 0, avoid = [] 
     jeanette: { fur: '#b8844e', belly: '#efd2a8', shirt: '#7b4fc4', hair: '#5a3a24', style: 'bun', lashes: true, glasses: '#4a2a6a' },
     eleanor: { fur: '#c39058', belly: '#f4dab2', shirt: '#3fae8a', hair: '#f0cf66', style: 'pigtails', lashes: true, chubby: true },
   };
-  const band = {};
+  const band: Record<string, Rig> = {};
   for (const [id, spec] of Object.entries(SPECS)) { const F = chipmunk(spec); F.root.scale.setScalar(scale); band[id] = F; group.add(F.root); }
   const { alvin, simon, theodore, brittany, jeanette, eleanor } = band;
   // Alvin's microphone; Simon's guitar; Theodore's kit and sticks; a mic each for the Chipettes
@@ -423,7 +437,7 @@ export function buildConcert(bowl, { canvas = null, night = () => 0, avoid = [] 
 
   // ---- poses solved once on a bare skeleton: each hand to the mouth, the right to the nose, a
   // needle into the crook of the left arm
-  const A = {};
+  const A: Record<string, number[]> = {};
   {
     const F = rig(); rest(F); F.root.updateMatrixWorld(true);
     const mouth = F.head.localToWorld(new THREE.Vector3(0, -.05, .14)), nose = F.head.localToWorld(new THREE.Vector3(0, -.005, .14));
@@ -487,7 +501,7 @@ export function buildConcert(bowl, { canvas = null, night = () => 0, avoid = [] 
     theodore.head.rotation.x = playing ? .1 * Math.sin(b) : 0; theodore.kneeR.rotation.x = 1.45 + (playing ? .12 * Math.max(0, Math.sin(b)) : 0);
     // ---- the Chipettes: out from the wing for their songs, back off at the end
     const theirs = now.s.chipettes && playing, t = now.t;
-    for (const [n, id] of [[0, 'brittany'], [1, 'jeanette'], [2, 'eleanor']]) {
+    for (const [n, id] of [[0, 'brittany'], [1, 'jeanette'], [2, 'eleanor']] as [number, string][]) {
       const F = band[id], [hx, hz] = HOME[id];
       const walkIn = theirs ? smooth((t - n * .5) / 4) : 0, walkOut = theirs ? smooth((t - (now.s.len - 5) - n * .4) / 4) : 1;
       const k2 = theirs ? walkIn * (1 - walkOut) : 0;
@@ -700,6 +714,7 @@ export function buildConcert(bowl, { canvas = null, night = () => 0, avoid = [] 
   // ---------------------------------------------------------------- being one of them
   const kholeK = P => (P.fx.khole > 0 && P.fx.khole < 1e8 ? smooth((KHOLE - P.fx.khole) / 4) * smooth(P.fx.khole / 5) : 0);
   const sway = { yaw: 0, pitch: 0, roll: 0, fov: 1, oob: 0 };
+  function effects(dt?: number): void;   // (update passes dt, which it does not use)
   function effects() {
     const P = inside, f = P.fx, t = clock;
     const kH = Math.min(1, f.high / 30), kHu = Math.min(1, f.huff / 8), kK = kholeK(P), kS = Math.min(1, f.speed / 6), kD = Math.min(1, f.drunk / 5);

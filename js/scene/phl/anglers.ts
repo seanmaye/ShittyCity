@@ -9,7 +9,7 @@ import { makeFigure } from './people.ts';
 import { terrain, surface, water } from '../terrain.js';
 
 // [label, lat, side (1 east bank, -1 west bank)] on the river centreline; and boat-pier banks
-const BANK_SPOTS = [
+const BANK_SPOTS: [string, number, number][] = [
   ['below the Fairmount Dam', 39.9652, 1], ['on the Schuylkill Banks boardwalk', 39.9478, 1], ['at the Walnut Street dock', 39.9503, 1],
   ['on Kelly Drive', 39.9718, 1], ['on MLK Drive', 39.9745, -1], ['across from the Water Works', 39.9640, -1],
 ];
@@ -87,7 +87,7 @@ export function buildAnglers(scene, river, boats, waterPolys = []) {
     const bk = new THREE.Mesh(new THREE.CylinderGeometry(.16, .13, .36, 10), bucket); bk.position.set(-.6, .18, -.2); g.add(bk);
     const co = new THREE.Mesh(new THREE.BoxGeometry(.55, .38, .36), cooler); co.position.set(.7, .19, -.3); g.add(co);
     const cl = new THREE.Mesh(new THREE.BoxGeometry(.57, .06, .38), lid); cl.position.set(.7, .41, -.3); g.add(cl);
-    g.traverse(o => { if (o.isMesh) o.castShadow = true; });
+    g.traverse(o => { if ((o as THREE.Mesh).isMesh) o.castShadow = true; });
     const head = V(0, 0, 0);
     return { name, hello, spot: sp.label, g, F, bobber, line, tip: tipL, cast, by, phase: i * 1.3, nibble: 0, head, sit,
       view: { pos: g.localToWorld(V(-2.2, 3.4, -4.2)), target: g.localToWorld(V(.4, .9, cast * .6)), abs: true } };

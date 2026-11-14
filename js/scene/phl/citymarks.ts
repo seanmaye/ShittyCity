@@ -141,7 +141,7 @@ function ballpark(scene, st) {
   if (!st.field || !plate) return;
   const field = pairs(st.field), B = (g, y, col) => { const m = new THREE.Mesh(g, M(col, { side: THREE.FrontSide })); m.position.y = y; m.receiveShadow = true; scene.add(m); };
   const fb = new Builder(); addPolygon(fb, [field], 0); B(fb.geometry(), 1.0, '#a8774f');          // warning track
-  const inner = field.map(([x, z]) => [plate[0] + (x - plate[0]) * .95, plate[1] + (z - plate[1]) * .95]);
+  const inner = field.map(([x, z]): [number, number] => [plate[0] + (x - plate[0]) * .95, plate[1] + (z - plate[1]) * .95]);
   const gb = new Builder(); addPolygon(gb, [inner], 0); B(gb.geometry(), 1.05, '#3f8a3a');
   const mound = [plate[0] + cf[0] * 18.4, plate[1] + cf[1] * 18.4];
   const disc = (r, x, z, y, col, seg = 48) => { const g = new THREE.CircleGeometry(r, seg); g.rotateX(-Math.PI / 2); const m = new THREE.Mesh(g, M(col, { side: THREE.FrontSide })); m.position.set(x, y, z); m.receiveShadow = true; scene.add(m); };
@@ -226,7 +226,7 @@ function lebron(scene, ring, dx, dz) {
   F.root.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(F.root);   // stand him on the right toe on the plinth
   F.root.position.y = 2.4 - (box.min.y - g.position.y);
-  F.root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  F.root.traverse(o => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return { x, z };
 }
 
@@ -291,7 +291,7 @@ function memorialHall(scene, h) {
 function bridge(scene, b, nightOnly) {
   const [ax, az] = b.a, [bx, bz] = b.b, L = Math.hypot(bx - ax, bz - az), dx = (bx - ax) / L, dz = (bz - az) / L, nx = -dz, nz = dx;
   const W = b.width, [t1, t2] = b.towers, [a1, a2] = b.anchors, deckY = s => Math.min(b.deckH, 1 + .045 * Math.min(s, L - s));
-  const at = (s, o, y) => [ax + dx * s + nx * o, y, az + dz * s + nz * o];
+  const at = (s, o, y): [number, number, number] => [ax + dx * s + nx * o, y, az + dz * s + nz * o];
   // deck: road surface, sides and underside every 10 m
   const top = [], sides = [], under = [];
   for (let s = 0; s < L; s += 10) {

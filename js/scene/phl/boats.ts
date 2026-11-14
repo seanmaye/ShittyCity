@@ -23,6 +23,12 @@ function loopRun(P) {
   } };
 }
 
+/** a loopRun(), with the stops and the line diagram (subway.js rideStrip) that buildBoats adds */
+type Run = ReturnType<typeof loopRun> & {
+  stops?: { s: number; t: string }[];
+  strip?: { back: boolean; out: number; u: (s: number) => number; fold: (s: number) => number; stops: { t: string; f: number }[] };
+};
+
 /** the boat: white hull with a pointed bow, a cabin with a band of windows, the wheelhouse on
  *  top forward, a roof in the line's colour and a railed open deck at the stern */
 function boatModel(color, winMat) {
@@ -82,7 +88,7 @@ export function buildBoats(scene, data) {
   };
   const slots = [], lines = [], routes = [], labels = [], fleet = [], seen = new Set();
   for (const ln of data.lines) {
-    const P = pairs(ln.p).map(([x, z]) => V(x, terrain.on ? water(x, z) + .6 : WATER_Y, z)), run = loopRun(P), id = 'boat:' + ln.id;
+    const P = pairs(ln.p).map(([x, z]) => V(x, terrain.on ? water(x, z) + .6 : WATER_Y, z)), run: Run = loopRun(P), id = 'boat:' + ln.id;
     // stops on the way out and the way back, in loop order (the next-stop sign and line diagram)
     run.stops = [...ln.stops.map(s => ({ s: Math.min(s.s, run.half - .01), t: s.t })), ...ln.stops.slice(0, -1).reverse().map(s => ({ s: run.L - s.s, t: s.t }))].sort((a, b) => a.s - b.s);
     // the line diagram (subway.js rideStrip): out to the last stop and back, known exactly

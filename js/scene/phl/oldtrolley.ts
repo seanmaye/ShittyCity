@@ -33,7 +33,7 @@ const TRACKS = 1.9;       // half the spacing of the two tracks on two-way stree
 const SP = SPEC.pcc, SPEED = 7, HEADWAY = 420;   // m/s; one car about every 420 m of loop
 // one-way pairs (out on one street, back on the other) and two-way streets
 const PAIRS = [['23rd', '22nd'], ['20th', '19th'], ['18th', '17th'], ['16th', '15th'], ['13th', '12th'], ['11th', '10th'],
-  ['9th', '8th'], ['7th', '6th'], ['5th', '4th'], ['3rd', '2nd']].map(([a, b]) => [a + ' Street', b + ' Street', 1])
+  ['9th', '8th'], ['7th', '6th'], ['5th', '4th'], ['3rd', '2nd']].map(([a, b]): [string, string, number] => [a + ' Street', b + ' Street', 1])
   .concat([['Chestnut Street', 'Walnut Street', 0], ['Lombard Street', 'South Street', 0]]);
 const TWO_WAY = ['Arch Street', 'Market Street'];
 // streets that take another name for a block or two
@@ -125,7 +125,7 @@ export function buildOldTrolleys(scene, data, renderer) {
 
   // --- the loops the cars run on
   const loops = [];
-  const routesOf = names => [...new Set(names.flatMap(n => (byStreet.get(n) || []).flatMap(o => o.r)))].sort((a, b) => a - b);
+  const routesOf = (names: string[]) => [...new Set(names.flatMap(n => (byStreet.get(n) || []).flatMap(o => o.r)))].sort((a, b) => a - b);
   for (const [a, b, ax] of PAIRS) {
     if (!byStreet.has(a) || !byStreet.has(b)) continue;
     const A = chain(byStreet.get(a).map(o => o.pts), ax), B = chain(byStreet.get(b).map(o => o.pts), ax);
@@ -164,7 +164,7 @@ export function buildOldTrolleys(scene, data, renderer) {
     [geo(SP.w + .04, .55, SP.car - .2, 1.35), body('#3c6e47')],                                 // green belt
     [geo(SP.w + .06, 1.0, SP.car - 2.2, .9 + SP.ch * .58), win],                                // windows
     [geo(SP.w * .72, .8, SP.car * .8, .45), body('#2b2b2b')],                                   // trucks and underframe
-  ].map(([g, m]) => { const im = new THREE.InstancedMesh(g, m, Math.max(1, slots.length)); im.frustumCulled = false; im.castShadow = true; group.add(im); return im; });
+  ].map(([g, m]: [THREE.BoxGeometry, THREE.MeshStandardMaterial]) => { const im = new THREE.InstancedMesh(g, m, Math.max(1, slots.length)); im.frustumCulled = false; im.castShadow = true; group.add(im); return im; });
 
   const p = new THREE.Vector3(), q = new THREE.Vector3(), dummy = new THREE.Object3D();
   function update(dt) {

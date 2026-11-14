@@ -350,7 +350,7 @@ export function buildRestaurants(scene, data) {
   P.forEach((p, i) => {
     const kind = KIND[p.k] || KIND.restaurant, ground = terrain.on ? surface(p.x, p.z) : 0;
     const base = M(p.x, ground, p.z, p.ry);
-    const add = (mat, g, m, c) => B.add(mat, g, base.clone().multiply(m), c);
+    const add = (mat, g, m, c?) => B.add(mat, g, base.clone().multiply(m), c);
     const nx = Math.sin(p.ry), nz = Math.cos(p.ry);
     const frameC = C(pick(FRAME, p.n, 2)), awnC = kind.awn && kind.awn.length ? C(pick(kind.awn, p.n, 3)) : null;
     const uv = atlas.uv(i), cozy = p.k === 'cafe' || p.k === 'bakery' || p.c.includes('brunch');

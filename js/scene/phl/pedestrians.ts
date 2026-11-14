@@ -30,20 +30,34 @@ const BOOK = ['#8c2f2f', '#2f4a6b', '#3d6b4a', '#d9b44a', '#e8e4da', '#5a4a6b'];
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const rnd = (a, b) => a + Math.random() * (b - a);
 
+/** rig()'s joints by name */
+type Rig = Record<string, THREE.Object3D>;
+/** a shop door (promenade.ts nav.doors: x, z on the facade, nx, nz outward, ry), and what buildPedestrians adds to it */
+interface Door {
+  x: number; z: number; nx: number; nz: number; ry: number; ox?: number; oz?: number; ix?: number; iz?: number;
+  e?: { s: number; side: number; x: number; z: number }; shop?: string; i?: number; angle?: number; until?: number;
+}
+/** a person on the promenade (buildPedestrians people) */
+interface Walker {
+  i: number; F: Rig; x: number; z: number; h: number; sp: number; path: number[][]; then: string; state: string; t: number; k: number;
+  seat: number; slot: number; act: string; sipT: number; ph: number; hidden: boolean; lod: number; dirty: boolean;
+  prof?: ReturnType<typeof makeProfile>; col?: Record<string, string>; long?: boolean; door?: Door; exiting?: boolean; hiddenOut?: boolean; posed?: boolean;
+}
+
 /** a skeleton with Kyle's joint layout (people.ts makeFigure), without meshes */
 function rig() {
   const n = (parent, x, y, z) => { const o = new THREE.Object3D(); o.position.set(x, y, z); if (parent) parent.add(o); return o; };
-  const root = n(null, 0, 0, 0), F = { root };
+  const root = n(null, 0, 0, 0), F: Rig = { root };
   F.pelvis = n(root, 0, .92, 0); F.chest = n(F.pelvis, 0, .56, 0);
   F.neck = n(F.chest, 0, .08, 0); F.head = n(F.chest, 0, .17, 0); F.hair = n(F.head, 0, .01, -.01);
-  for (const [s, sx] of [['L', 1], ['R', -1]]) {
+  for (const [s, sx] of [['L', 1], ['R', -1]] as [string, number][]) {
     F['hip' + s] = n(F.pelvis, sx * .1, 0, 0); F['knee' + s] = n(F['hip' + s], 0, -.45, 0); F['foot' + s] = n(F['knee' + s], 0, -.45, 0);
     F['sh' + s] = n(F.chest, sx * .23, -.04, 0); F['el' + s] = n(F['sh' + s], 0, -.3, 0); F['hand' + s] = n(F['el' + s], 0, -.29, 0);
   }
   return F;
 }
 // body parts: [geometry in people.ts geo(), joints it hangs from, colour]
-const PARTS = [
+const PARTS: [string, string[], string, string?][] = [
   ['torso', ['pelvis'], 'shirt'], ['shorts', ['pelvis'], 'pants'], ['neck', ['neck'], 'skin'], ['head', ['head'], 'skin'],
   ['hairF', ['hair'], 'hair'], ['upper', ['shL', 'shR'], 'shirt'], ['fore', ['elL', 'elR'], 'arm'], ['hand', ['handL', 'handR'], 'skin'],
   ['thigh', ['hipL', 'hipR'], 'pants'], ['shin', ['kneeL', 'kneeR'], 'leg'], ['foot', ['footL', 'footR'], 'shoe'],
@@ -53,7 +67,7 @@ const PARTS = [
 ];
 /** Kyle's limb geometry, plus the face and a hair cap tilted back to show the forehead */
 function crowdGeometry() {
-  const G = { ...geo(1) };
+  const G: Record<string, THREE.BufferGeometry> = { ...geo(1) };
   const at = (g, x, y, z) => { g.translate(x, y, z); return g; };
   G.hairF = G.hair.clone(); G.hairF.rotateX(-.6);
   G.eyeL = at(new THREE.SphereGeometry(.017, 8, 6), .038, .022, .098); G.eyeR = at(new THREE.SphereGeometry(.017, 8, 6), -.038, .022, .098);
@@ -159,11 +173,11 @@ export function buildPedestrians(scene, nav, count = 200) {
   for (let i = 0; i < count; i++) {
     const long = Math.random() < .7, sleeves = Math.random() < .4;
     const prof = makeProfile(i);   // a made-up life: name, age, sex, height, weight, biography (profiles.ts)
-    const c = { shirt: pick(SHIRT), pants: pick(PANTS), skin: pick(SKIN), hair: prof.grey ? pick(['#9a9a96', '#c8c8c4', '#e2e0da']) : pick(HAIR), shoe: pick(SHOE) };
+    const c: Record<string, string> = { shirt: pick(SHIRT), pants: pick(PANTS), skin: pick(SKIN), hair: prof.grey ? pick(['#9a9a96', '#c8c8c4', '#e2e0da']) : pick(HAIR), shoe: pick(SHOE) };
     c.leg = long ? c.pants : c.skin; c.arm = sleeves ? c.shirt : c.skin; c.eye = '#1b1512'; c.lip = '#7a3b34';
     parts.forEach(p => p.joints.forEach((j, k) => p.im.setColorAt(i * p.joints.length + k, col.set(c[p.col]))));
     books.setColorAt(i, col.set(pick(BOOK)));
-    const P = { i, F: rig(), x: 0, z: 0, h: 0, sp: rnd(SPEED[0], SPEED[1]), path: [], then: null, state: 'walk', t: 0, k: 0,
+    const P: Walker = { i, F: rig(), x: 0, z: 0, h: 0, sp: rnd(SPEED[0], SPEED[1]), path: [], then: null, state: 'walk', t: 0, k: 0,
       seat: null, slot: 0, act: 'rest', sipT: rnd(0, 6), ph: rnd(0, 6), hidden: false, lod: i % 8, dirty: true };
     P.prof = prof; P.col = c; P.F.root.scale.setScalar(prof.scale);
     P.long = Math.random() < (prof.sex === 'Female' ? .6 : prof.sex === 'Male' ? .08 : .4);
@@ -307,7 +321,7 @@ export function buildPedestrians(scene, nav, count = 200) {
   }
 
   let frame = 0, enabled = true, inside = null;
-  const swinging = new Set();
+  const swinging = new Set<Door>();
   function update(dt, camera) {
     frame++; clock += dt;
     const cp = camera.position, far = cp.y > 1500;   // from very high up nobody is visible anyway

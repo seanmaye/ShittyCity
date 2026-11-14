@@ -61,7 +61,7 @@ function setbacks(samples, side, pref, blocked) {
 }
 const ease = (a, r) => a.map((_, i) => { const w = a.slice(Math.max(0, i - r), i + r + 1); return w.reduce((p, q) => p + q) / w.length; });
 
-export function buildMonorail(scene, river, bridgeSegs, buildings, lm, onCourt = () => false) {
+export function buildMonorail(scene, river, bridgeSegs, buildings, lm, onCourt: (x: number, z: number) => boolean = () => false) {
   const { RS, NS, atLat } = river;
   const blocked = obstacles(buildings, lm);
   // Offset from the centreline along smoothed normals.
@@ -99,7 +99,7 @@ export function buildMonorail(scene, river, bridgeSegs, buildings, lm, onCourt =
     for (let i = 1; i < 12; i++) r.push(c.getPoint(i / 12).setY(H));
     return r;
   }
-  let E, W, curve;
+  let E: ReturnType<typeof untangle>, W: ReturnType<typeof untangle>, curve: THREE.CatmullRomCurve3;
   const build = () => {
     E = untangle(1, offE); W = untangle(-1, offW);
     // control points every ~40 m: the spline then follows the eased line, not its sample noise
@@ -213,7 +213,7 @@ export function train(scene, nc, stripe) {
       const nose = new THREE.Mesh(new THREE.SphereGeometry(1.6, 20, 14), shellMat); nose.scale.set(1, .98, 2.4); nose.position.z = sg * CAR / 2; g.add(nose);
       const nw = new THREE.Mesh(new THREE.SphereGeometry(1.62, 20, 14, 0, Math.PI * 2, 0, Math.PI * .42), trainWinMat); nw.scale.set(1, .98, 2.4); nw.rotation.x = sg * Math.PI / 2; nw.position.set(0, .2, sg * CAR / 2); g.add(nw);
     }
-    g.traverse(o => { if (o.isMesh) o.castShadow = true; }); g.userData.terrain = 'done'; scene.add(g); cars.push(g);
+    g.traverse(o => { if ((o as THREE.Mesh).isMesh) o.castShadow = true; }); g.userData.terrain = 'done'; scene.add(g); cars.push(g);
   }
   return { cars, trainWinMat, CAR, GAP };
 }

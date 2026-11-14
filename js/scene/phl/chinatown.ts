@@ -27,6 +27,11 @@ const GATE_S = 347;           // along 10th from Vine: just north of Arch
 const LOT_S = [187, 199.4];   // 10th St frontage of the night-market lot (its frame sits at the middle)
 const LOT_Y = .32;            // the market's paving (the paved city is at .15, streets at .8)
 
+/** a facade facing a street (buildChinatown facades()) */
+interface Facade { ax: number; az: number; ux: number; uz: number; nx: number; nz: number; L: number; h: number; o: number; s: number }
+/** a street() with its facades and each side's facade line (buildChinatown) */
+type Street = ReturnType<typeof street> & { fac?: Facade[]; side?: number[] };
+
 /** a street polyline: arc length, point at (s, offset), nearest point; +offset = left of travel */
 function street(pts) {
   const seg = []; let s = 0;
@@ -110,7 +115,7 @@ function mergeGeos(list) {
 function batch() {
   const sets = new Map();
   return {
-    add(mat, g, m, c) { let s = sets.get(mat); if (!s) sets.set(mat, s = []); s.push({ g, m, c }); },
+    add(mat, g, m, c?) { let s = sets.get(mat); if (!s) sets.set(mat, s = []); s.push({ g, m, c }); },
     build(group) {
       for (const [mat, list] of sets) {
         const mesh = new THREE.Mesh(mergeGeos(list), mat);
@@ -242,7 +247,7 @@ export function buildChinatown(scene, { buildings }) {
   const awnGeo = (() => { const a = new THREE.BoxGeometry(1, .05, 1.25); a.rotateX(.42); a.translate(0, 3.05, .6); const v = new THREE.BoxGeometry(1, .28, .04); v.translate(0, 2.68, 1.16); return mergeGeos([{ g: a }, { g: v }]); })();
   const hash = (a, b = 0) => { const h = Math.sin(a * 12.9898 + b * 78.233) * 43758.5453; return h - Math.floor(h); };
 
-  const streets = { race: street(RACE), tenth: street(TENTH), ninth: street(NINTH), eleventh: street(ELEVENTH), arch: street(ARCH) };
+  const streets: Record<string, Street> = { race: street(RACE), tenth: street(TENTH), ninth: street(NINTH), eleventh: street(ELEVENTH), arch: street(ARCH) };
 
   // ---- the facades that face each street (core footprints, 5-26 m tall: shops, not the towers)
   function facades(st) {
@@ -336,7 +341,7 @@ export function buildChinatown(scene, { buildings }) {
 
   // ---- the Friendship Gate on 10th Street (local x across the street to the east, z to the south)
   const T10 = streets.tenth, g0 = T10.at(GATE_S, .5), gateYaw = yaw(g0.tx, g0.tz);
-  const gateM = M(g0.x, 0, g0.z, gateYaw), GM = (...a) => gateM.clone().multiply(M(...a));
+  const gateM = M(g0.x, 0, g0.z, gateYaw), GM = (...a: Parameters<typeof M>) => gateM.clone().multiply(M(...a));
   {
     const MAIN = 4.4, SIDE = 6.5;   // pillar positions either side of the middle
     for (const sx of [-1, 1]) {
@@ -373,7 +378,7 @@ export function buildChinatown(scene, { buildings }) {
   // lot frame: x east from 10th's centreline (u), z south along 10th (v). Between the footprints the
   // lot is open for u 8..46.5 and v -8.2..3.7, and behind the south row for u 26..46.5 as far as v 20
   const l0 = T10.at((LOT_S[0] + LOT_S[1]) / 2, 0), lotYaw = yaw(l0.tx, l0.tz), lotM = M(l0.x, LOT_Y, l0.z, lotYaw);
-  const LM = (...a) => lotM.clone().multiply(M(...a)), LP = (x, y, z) => V(x, y, z).applyMatrix4(lotM);
+  const LM = (...a: Parameters<typeof M>) => lotM.clone().multiply(M(...a)), LP = (x, y, z) => V(x, y, z).applyMatrix4(lotM);
   B.add(MAT.pave, box(39, LOT_Y - .02, 12), M(...V(27.3, -LOT_Y, -2.6).applyMatrix4(lotM).toArray(), lotYaw));
   B.add(MAT.pave, box(20.5, LOT_Y - .02, 17.1), M(...V(36.25, -LOT_Y, 11.95).applyMatrix4(lotM).toArray(), lotYaw));
   const NORTH = -6.6, SOUTH = 2.0, TABLES = -2.2;   // the two rows of stalls and the tables in the aisle
@@ -398,7 +403,7 @@ export function buildChinatown(scene, { buildings }) {
     emissive: '#ffffff', emissiveMap: arcadePrint, emissiveIntensity: .28 });
   const stalls = [];
   function stall(x, z, dir, kind, board, w = 3.6, color = 0) {
-    const ry = dir > 0 ? 0 : Math.PI, SM = (...a) => LM(x, 0, z).multiply(M(0, 0, 0, ry)).multiply(M(...a));
+    const ry = dir > 0 ? 0 : Math.PI, SM = (...a: Parameters<typeof M>) => LM(x, 0, z).multiply(M(0, 0, 0, ry)).multiply(M(...a));
     const D = 2.2, cm = STALL_COLORS[color % STALL_COLORS.length];
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) B.add(MAT.red, cyl(.05, .05, 2.6, 6), SM(sx * (w / 2 - .1), 0, sz * (D / 2 - .1)));
     B.add(cm, box(w, 2.2, .05), SM(0, 0, -D / 2 + .05));                                    // back cloth
@@ -457,7 +462,7 @@ export function buildChinatown(scene, { buildings }) {
   };
   drawScreen(0);
   for (const sx of [-1, 1]) {
-    const CM = (...a) => SM_ARC(sx * 1.55, 0, 1.75).multiply(M(...a));
+    const CM = (...a: Parameters<typeof M>) => SM_ARC(sx * 1.55, 0, 1.75).multiply(M(...a));
     B.add(MAT.dark, box(.78, 1.8, .72), CM(0, 0, 0)); B.add(sx < 0 ? MAT.red : MAT.blue, box(.8, 1.5, .6), CM(0, .1, -.02));
     B.add(MAT.dark, box(.82, .2, .4), CM(0, .95, .3, 0, 1, 1, 1, .35));
     B.add(MAT.gold, sph(.04, 6, 5), CM(-.15, 1.1, .38)); B.add(MAT.neonP, sph(.035, 6, 5), CM(.05, 1.08, .4)); B.add(MAT.neonC, sph(.035, 6, 5), CM(.17, 1.08, .4));
@@ -599,7 +604,7 @@ export function buildChinatown(scene, { buildings }) {
   const signMesh = new THREE.Mesh(SIGNS.geometry(), MAT.sign); signMesh.receiveShadow = true; group.add(signMesh);
   const wires = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(wire), new THREE.LineBasicMaterial({ color: '#2a2a2a' })); group.add(wires);
   // on terrain: each built piece rises by the ground right under it (the dragon dance does so as it moves)
-  if (terrain.on) { group.updateMatrixWorld(true); for (const o of [...group.children]) if (o !== dragon && (o.isMesh || o.isLineSegments)) drape(o); }
+  if (terrain.on) { group.updateMatrixWorld(true); for (const o of [...group.children]) if (o !== dragon && ((o as THREE.Mesh).isMesh || (o as THREE.LineSegments).isLineSegments)) drape(o); }
   group.userData.terrain = 'done';
 
   // the arcade stall: where to click, and the view the camera flies to

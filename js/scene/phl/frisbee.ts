@@ -29,7 +29,7 @@ export function buildFrisbee(scene, f) {
     for (const z of [-.11, 0, .11]) { const s = new THREE.Mesh(new THREE.CylinderGeometry(.018, .018, .71, 5), chalk); s.position.set(x, .8, off + z); g.add(s); }
   }
 
-  if (terrain.on) { g.updateMatrixWorld(true); [...g.children].forEach(o => { if (o.isMesh && o.geometry.type === 'PlaneGeometry') drape(o, surface, 10); else if (o.isMesh) o.position.y += gy(o.position.x, o.position.z); }); }
+  if (terrain.on) { g.updateMatrixWorld(true); [...g.children].forEach((o: THREE.Object3D & Partial<THREE.Mesh>) => { if (o.isMesh && o.geometry.type === 'PlaneGeometry') drape(o, surface, 10); else if (o.isMesh) o.position.y += gy(o.position.x, o.position.z); }); }
   const disc = new THREE.Mesh(new THREE.CylinderGeometry(.135, .12, .03, 16), new THREE.MeshStandardMaterial({ color: '#f2f04a', roughness: .5 }));
   disc.castShadow = true; g.add(disc);
   const SKIN = ['#8d5a3c', '#c99370', '#e0b48f', '#6b4430', '#b07a55', '#f0c9a6'], HAIR = ['#1d1410', '#3a2a20', '#6b4a2b', '#2a1d16', '#a07a4a'];

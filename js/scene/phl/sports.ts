@@ -123,7 +123,7 @@ function buildCourts(scene, data) {
     };
     const surf = new THREE.PlaneGeometry(t.w, t.d); surf.rotateX(-Math.PI / 2); surf.translate(0, .95, 0);
     add(surf, new THREE.MeshStandardMaterial({ map: canvas(t.w, t.d, g => SURFACE[t.name](g, t.w, t.d)), roughness: .9 }), false);
-    const groups = {};
+    const groups: Record<string, THREE.BufferGeometry[]> = {};
     for (const [geo, key] of EQUIP[t.name](t.w, t.d)) (groups[key] = groups[key] || []).push(geo.toNonIndexed());
     for (const [key, geos] of Object.entries(groups)) add(BufferGeometryUtils.mergeGeometries(geos), mats[key], key !== 'fence' && key !== 'net');
   });

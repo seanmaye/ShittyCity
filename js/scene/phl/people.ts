@@ -3,12 +3,35 @@
 // elbows to swing limbs (negative = forward), .x on the pelvis to lean.
 import * as THREE from 'three';
 
-const GEO = new Map();
+/** geo()'s shared limb geometry */
+export interface LimbGeo {
+  thigh: THREE.CylinderGeometry; shin: THREE.CylinderGeometry; upper: THREE.CylinderGeometry; fore: THREE.CylinderGeometry;
+  torso: THREE.CylinderGeometry; shorts: THREE.CylinderGeometry; head: THREE.SphereGeometry; neck: THREE.CylinderGeometry;
+  hand: THREE.SphereGeometry; foot: THREE.BoxGeometry; hair: THREE.SphereGeometry;
+}
+/** makeFigure's colours; a part left out gets the default */
+export interface Outfit { shirt?: THREE.ColorRepresentation; shorts?: THREE.ColorRepresentation; skin?: THREE.ColorRepresentation; shoe?: THREE.ColorRepresentation; hair?: THREE.ColorRepresentation }
+/**
+ * the joints pose() moves. Optional, so a rig built up joint by joint (pedestrians.ts rig(), the Jersey Shore figures)
+ * can be passed as well as a makeFigure() figure.
+ */
+export interface Joints {
+  pelvis?: THREE.Object3D; hipL?: THREE.Object3D; hipR?: THREE.Object3D; kneeL?: THREE.Object3D; kneeR?: THREE.Object3D;
+  shL?: THREE.Object3D; shR?: THREE.Object3D; elL?: THREE.Object3D; elR?: THREE.Object3D;
+}
+/** a makeFigure() figure */
+export interface Figure extends Joints {
+  root: THREE.Group; pelvis: THREE.Group; chest: THREE.Group; head: THREE.Mesh;
+  hipL: THREE.Group; hipR: THREE.Group; kneeL: THREE.Group; kneeR: THREE.Group;
+  shL: THREE.Group; shR: THREE.Group; elL: THREE.Group; elR: THREE.Group; handL: THREE.Mesh; handR: THREE.Mesh;
+}
+
+const GEO = new Map<number, LimbGeo>();
 /** shared limb geometry; bulk thickens limbs and torso (an athlete's statue) */
-export function geo(bulk = 1) {
+export function geo(bulk = 1): LimbGeo {
   if (GEO.has(bulk)) return GEO.get(bulk);
-  const b = bulk, seg = b > 1 ? 12 : 7, G = {};
-  const cyl = (r0, r1, len) => { const g = new THREE.CylinderGeometry(r0 * b, r1 * b, len, seg); g.translate(0, -len / 2, 0); return g; };
+  const b = bulk, seg = b > 1 ? 12 : 7, G = {} as LimbGeo;
+  const cyl = (r0: number, r1: number, len: number) => { const g = new THREE.CylinderGeometry(r0 * b, r1 * b, len, seg); g.translate(0, -len / 2, 0); return g; };
   G.thigh = cyl(.085, .065, .45); G.shin = cyl(.06, .045, .45); G.upper = cyl(.055, .045, .3); G.fore = cyl(.045, .038, .27);
   G.torso = new THREE.CylinderGeometry(.19 * b, .15 * b, .56, seg + 1); G.torso.translate(0, .28, 0);
   G.shorts = new THREE.CylinderGeometry(.165 * b, .17 * b, .2, seg + 1); G.shorts.translate(0, .02, 0);
@@ -23,19 +46,19 @@ export function geo(bulk = 1) {
  * bulk > 1 thickens the build.
  * Returns { root, pelvis, chest, head, hipL, hipR, kneeL, kneeR, shL, shR, elL, elR, handL, handR }.
  */
-export function makeFigure(colors = {}, mat = null, bulk = 1) {
+export function makeFigure(colors: Outfit = {}, mat: THREE.Material = null, bulk = 1): Figure {
   const g = geo(bulk);
   const m = k => mat || new THREE.MeshStandardMaterial({ color: colors[k] || { shirt: '#d8d8d8', shorts: '#2e3542', skin: '#c99370', shoe: '#222222', hair: '#2a1d16' }[k], roughness: .8 });
   const M = { shirt: m('shirt'), shorts: m('shorts'), skin: m('skin'), shoe: m('shoe'), hair: m('hair') };
   const mesh = (gg, mm, x = 0, y = 0, z = 0) => { const o = new THREE.Mesh(gg, mm); o.position.set(x, y, z); o.castShadow = true; return o; };
   const grp = (parent, x, y, z) => { const o = new THREE.Group(); o.position.set(x, y, z); parent.add(o); return o; };
-  const root = new THREE.Group(), F = { root };
+  const root = new THREE.Group(), F = { root } as Figure;
   F.pelvis = grp(root, 0, .92, 0);
   F.pelvis.add(mesh(g.torso, M.shirt), mesh(g.shorts, M.shorts));
   F.chest = grp(F.pelvis, 0, .56, 0);
   F.chest.add(mesh(g.neck, M.skin, 0, .08, 0));
   F.head = mesh(g.head, M.skin, 0, .17, 0); F.head.add(mesh(g.hair, M.hair, 0, .01, -.01)); F.chest.add(F.head);
-  for (const [s, sx] of [['L', 1], ['R', -1]]) {
+  for (const [s, sx] of [['L', 1], ['R', -1]] as [string, number][]) {
     const hip = F['hip' + s] = grp(F.pelvis, sx * .1, 0, 0);
     hip.add(mesh(g.thigh, M.shorts));
     const knee = F['knee' + s] = grp(hip, 0, -.45, 0);
@@ -50,7 +73,7 @@ export function makeFigure(colors = {}, mat = null, bulk = 1) {
 }
 
 /** Running (speed in m/s; 0 stands) at phase p (radians, advance by speed * dt * 1.6). */
-export function pose(F, p, speed) {
+export function pose(F: Joints, p: number, speed: number) {
   const a = Math.min(1, speed / 6), s = Math.sin(p);
   F.hipL.rotation.x = -s * .9 * a; F.hipR.rotation.x = s * .9 * a;
   F.kneeL.rotation.x = (.15 + .9 * Math.max(0, Math.sin(p + 1.2))) * a; F.kneeR.rotation.x = (.15 + .9 * Math.max(0, Math.sin(p + 1.2 + Math.PI))) * a;
