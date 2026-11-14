@@ -234,7 +234,7 @@ function buildScreen(city, s) {
   const root = el('div', 'ls-screen'); root.dataset.side = side;
   const inner = el('div', 'ls-inner', root);
   const pan = el('div', 'ls-pan', inner), bg = el('img', 'ls-bg', pan);
-  bg.alt = ''; bg.decoding = 'async'; bg.src = `${city.dir}/${s.file}`;
+  bg.alt = ''; bg.decoding = 'async'; bg.src = city.urls[s.file];
   el('div', 'ls-grade', inner);
   const glow = el('div', 'ls-glow', inner), dim = el('div', 'ls-dim', inner);
   const drift = el('div', 'ls-drift', inner), hero = el('img', 'ls-hero', drift);

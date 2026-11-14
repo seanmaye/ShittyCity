@@ -5,7 +5,7 @@
 //
 // Loads the side's own vite.config.js with the side's own installed vite, and builds it as production does
 // (same plugins, same chunking, production's CSS), with the harness's overrides: JS not minified, source maps whose sources are
-// root-relative (js/…, node_modules/…), fixed file names, symlinks kept (node_modules is a link to
+// root-relative (js/…, node_modules/…), fixed file names (production's without the hash), symlinks kept (node_modules is a link to
 // perf.py's cache, so every side's bundle reads the same), and a plugin that applies perf.py's patches to
 // three's core file. The patch text comes from perf.py in <json>: { find, replace, append }, so both sides of
 // an A/B are patched by the same code.
@@ -34,7 +34,15 @@ const patch = {
     return { code: code.replace(opt.find, opt.replace) + (opt.append || ''), map: null };
   },
 };
-const names = { entryFileNames: 'assets/[name].js', chunkFileNames: 'assets/[name].js', assetFileNames: 'assets/[name][extname]' };
+// production's file names without the hash: the side's own (vite.config.js: a city's chunks and data files are named for it,
+// which smoke checks), else Vite's defaults, so a file has the same name in every build of the side
+const own = loaded?.config.build?.rolldownOptions?.output || {};
+const unhash = n => (typeof n === 'function' ? i => unhash(n(i)) : n.replace(/-?\[hash(?::\d+)?\]/g, ''));
+const names = {
+  entryFileNames: unhash(own.entryFileNames ?? 'assets/[name]-[hash].js'),
+  chunkFileNames: unhash(own.chunkFileNames ?? 'assets/[name]-[hash].js'),
+  assetFileNames: unhash(own.assetFileNames ?? 'assets/[name]-[hash][extname]'),
+};
 await vite.build(vite.mergeConfig(loaded ? loaded.config : {}, {
   configFile: false, root, mode: 'production', logLevel: 'warn',
   resolve: { preserveSymlinks: true },

@@ -61,7 +61,7 @@ Shared code sits at the top level. Each city has a folder of the same name in `d
 
 ```
 index.html            page shell, start menu, HUD markup; the entry Vite builds from
-vite.config.js        the build: dist/, with data/ copied to dist/data/
+vite.config.js        the build: dist/, each data/<city>/ file under a content-hashed name in dist/assets/ (js/urls/<city>.js)
 css/fonts.css         the Archivo font from npm, both axes, upright and italic
 css/style.css         HUD, menu and label styles
 js/three-setup.js     three.js settings that keep the r128-tuned look (colours, light scale)

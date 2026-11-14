@@ -162,6 +162,7 @@ export const CITIES = {
   },
 };
 
-/** the active city (filled in place by setCity, so every importer sees the same object) */
+/** the active city (filled in place by setCity, so every importer sees the same object; main.js then adds
+ *  urls: each data file's and loading screen's URL in the build, by file name, from js/urls/<city>.js) */
 export const CITY = {};
 export function setCity(id) { return Object.assign(CITY, CITIES[id]); }
