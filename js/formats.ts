@@ -105,7 +105,7 @@ export function decodeJcol(u8: Uint8Array): unknown {
   const isHole = (x: unknown) => Array.isArray(x) && !x.length;
   const walk = (v: unknown) => {
     if (Array.isArray(v)) { for (let i = 0; i < v.length; i++) if (isHole(v[i])) v[i] = fill(); else walk(v[i]); }
-    else if (v && typeof v === 'object') for (const k of Object.keys(v)) if (isHole(v[k])) v[k] = fill(); else walk(v[k]);
+    else if (v && typeof v === 'object') for (const k in v) if (isHole(v[k])) v[k] = fill(); else walk(v[k]);   // (JSON.parse's objects: own keys only, in order)
   };
   if (isHole(root)) return fill();
   walk(root);
@@ -130,12 +130,17 @@ export function decodeGrid(u8: Uint8Array, o: number, W: number, H: number): [In
   const A = new Int16Array(W * H);
   const next = () => { const b = u8[o++]; if (b !== 0x80) return (b << 24) >> 24; const r = u8[o] | (u8[o + 1] << 8); o += 2; return (r << 16) >> 16; };
   for (let i = 0; i < W; i++) A[i] = (i ? A[i - 1] : 0) + next();
+  // the rows after the first: left and upper-left kept in locals (wrapped to int16 as the array stores them), so each
+  // sample reads one value back (above) instead of three
   for (let j = 1, k = W; j < H; j++) {
-    A[k] = A[k - W] + next(); k++;
-    for (let e = k + W - 1; k < e; k++) {
-      let b = u8[o++], r: number;
-      if (b !== 0x80) r = (b << 24) >> 24; else { b = u8[o] | (u8[o + 1] << 8); o += 2; r = (b << 16) >> 16; }
-      A[k] = A[k - 1] + A[k - W] - A[k - W - 1] + r;
+    let ul = A[k - W], left = ((ul + next()) << 16) >> 16;
+    A[k++] = left;
+    for (const e = k + W - 1; k < e; k++) {
+      const up = A[k - W];
+      let b = u8[o++];
+      if (b !== 0x80) b = (b << 24) >> 24; else { b = ((u8[o] | (u8[o + 1] << 8)) << 16) >> 16; o += 2; }
+      left = ((left + up - ul + b) << 16) >> 16;
+      A[k] = left; ul = up;
     }
   }
   return [A, o];
@@ -199,8 +204,12 @@ export function decodePhb2(buf: ArrayBuffer): CityBuildings {
   if (tag(u8) !== 'PHB2') throw new Error('city buildings: bad header');
   const nB = dv.getUint32(4, true), nP = dv.getUint32(8, true), nV = dv.getUint32(12, true);
   let o = 16;
-  const z32 = (n: number) => { const a = new Int32Array(n); for (let k = 0; k < n; k++) a[k] = fromPlanes32(u8, o, n, k); o += 4 * n; return a; };
-  const p16 = (n: number) => { const a = new Uint16Array(n); for (let k = 0; k < n; k++) a[k] = u8[o + k] | (u8[o + n + k] << 8); o += 2 * n; return a; };
+  const z32 = (n: number) => {
+    const a = new Int32Array(n), p0 = u8.subarray(o, o + n), p1 = u8.subarray(o + n, o + 2 * n), p2 = u8.subarray(o + 2 * n, o + 3 * n), p3 = u8.subarray(o + 3 * n, o + 4 * n);
+    for (let k = 0; k < n; k++) { const z = p0[k] | (p1[k] << 8) | (p2[k] << 16) | (p3[k] << 24); a[k] = (z >>> 1) ^ -(z & 1); }
+    o += 4 * n; return a;
+  };
+  const p16 = (n: number) => { const a = new Uint16Array(n), p0 = u8.subarray(o, o + n), p1 = u8.subarray(o + n, o + 2 * n); for (let k = 0; k < n; k++) a[k] = p0[k] | (p1[k] << 8); o += 2 * n; return a; };
   const b8 = (n: number) => { const a = new Uint8Array(buf, o, n); o += n; return a; };
   const bx = z32(nB), bz = z32(nB), vx = z32(nV), vz = z32(nV);
   const bw = p16(nB), bd = p16(nB), br = p16(nB), bh = p16(nB), pn = p16(nP), ph = p16(nP);
