@@ -59,6 +59,13 @@ function chooseCity() {
 
 const asked = new URLSearchParams(location.search).get('city');
 const city = setCity(Object.hasOwn(CITIES, asked) ? asked : await chooseCity());
+// After a deploy, a page opened before it asks for chunks under their old names, which the site no longer has: reload once,
+// into this city, to get the new ones (Vite's import() wrapper fires vite:preloadError). A flag in sessionStorage stops a
+// loop; without storage, nothing reloads and the error shows as before.
+addEventListener('vite:preloadError', () => {
+  try { if (sessionStorage.getItem('reloaded-after-deploy')) return; sessionStorage.setItem('reloaded-after-deploy', '1'); } catch (e) { return; }
+  const u = new URL(location.href); u.searchParams.set('city', city.id); location.replace(u);
+});
 // the city's own code, a chunk of its own: asked for now, it arrives while the data loads. (This module awaits at top level,
 // so a city's chunk must never import the chunk this module is in: each would wait for the other. The build keeps the
 // modules both use in chunks of their own; tools/perf's smoke would time out if that changed.)
@@ -95,6 +102,7 @@ try {
     await firstFrame;
   }
   status('', 100);
+  try { sessionStorage.removeItem('reloaded-after-deploy'); } catch (e) { /* fine */ }   // (loaded: a later deploy may reload again)
   const screen = $('city-loading'), view = $('city-view');
   const hadFocus = screen.contains(document.activeElement);
   view.inert = false;
