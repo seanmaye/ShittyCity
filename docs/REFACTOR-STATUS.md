@@ -422,7 +422,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 ### P6. `.ts` renames (P6a) and smaller data (P6b), one pull request
 
 - State: **in review**. Branch `refactor/p6`, rebased on `a926cc2` (Micah's Jersey Shore extension,
-  pushed while the gates ran); PR: PR-LINK. Micah asked for P6a and P6b together in one pull request,
+  pushed while the gates ran); PR: https://github.com/seanmaye/ShittyCity/pull/18. Micah asked for P6a and P6b together in one pull request,
   not one per folder and one per format as the plan has it; the commits keep the plan's structure
   (per folder a pure rename, then its typing; P6b after).
 - Built by a P6 session: the orchestrator wrote the prep, the renames (`rename_ts.py`: `git mv`,
