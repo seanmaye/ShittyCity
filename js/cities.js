@@ -1,4 +1,3 @@
-// @ts-check
 // The cities this model can show, and the active one. Everything that differs between cities
 // and isn't data (projection, camera, sun, HUD text, which data files to load) lives here.
 // js/main.js calls setCity() once, before any data is loaded or scene module runs, so modules
