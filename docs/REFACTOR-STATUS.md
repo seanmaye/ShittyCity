@@ -5,7 +5,7 @@ this file. It is how the work is picked up again after a context summary or in a
 
 Last updated: 2026-11-14 (P1a, P1b, P1c in review; P2 gates passed, #9 ready for review; P3 #10
 gates passed, #10 ready for review, stacked on #9; P4a gates passed, #12 on #10, waiting on
-Micah's kitchen look; P4b gates passed, #13 on #12; P4c started). Orchestrator from P3 on: a new session (the P0–P2 one handed over).
+Micah's kitchen look; P4b gates passed, #13 on #12; P4c gates passed, #14 on #13; P5 started). Orchestrator from P3 on: a new session (the P0–P2 one handed over).
 
 ## Standing facts
 
@@ -377,7 +377,22 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P4c. Typed contracts, opt-in checking
 
-- State: not started.
+- State: **in review, gates passed** (2026-11-14). https://github.com/seanmaye/ShittyCity/pull/14,
+  base `refactor/p4b-split-cache`.
+- Branch `refactor/p4c-types`: `943bd63` js/types/ (data.d.ts, city.d.ts, scene.d.ts; index.js one
+  `@returns` line), `288a664` `// @ts-check` on data.js, cities.js, geometry.js, season.js and
+  `"strict": false` (TypeScript 7 defaults strict on: 108 errors strict, 1 non-strict), `83ec748`
+  core.js, river.js, buildings.js, `2327970` (orchestrator) cities.js unchecked: 8 of its 24 commits
+  on main added an entry field, each a TS2353 that would stop the deploy; its JSDoc types stay, so
+  checked files still see CITY typed. **Departure from the plan** (it names cities.js); one line to
+  turn back on. Left unchecked: terrain.js, sky.js (runtime change), nature.js, monorail.js (cast in
+  a dense line), ground.js, city.js, subway.js, fishing.js. No real bug found.
+- Gates: check passes (a deliberate TS2345 fails it); production JS byte-identical to `8a40f33`;
+  smoke all 5 ok (phl 0.0006%, pine 0.0102%); `ab --quick --shots` phl vs `8a40f33`: no
+  significant difference, shots within tolerance (`20261114-101830-ab-p4c-phl`, gate worktree).
+- Known gaps: `skipLibCheck` hides errors inside js/types/; scene.d.ts unchecked against the
+  harnesses' Python strings.
+- Implementer worktree `.claude/worktrees/agent-a3ca99e35c3917330`.
 
 ### P5. Data decoding in a worker (go or no-go)
 
