@@ -177,10 +177,20 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 - Branch `refactor/p2-build`, local for now: P1a + P1b with P1c's two commits cherry-picked
   (`5ac3781`, `2ac1357`) on `7fe4426`. Rebase onto `main` once #4, #7 and #8 merge; the P1
   commits then drop out.
-- Build implementer (xhigh, own worktree) started: Vite 8, three@0.186.1 and Archivo from npm,
-  data/ copied to dist/data, wrangler → ./dist, minimal GitHub Actions job, serve.py and
-  `.assetsignore` deleted. Brief: scratchpad `brief-p2-build.md`. Next: harness implementer
-  (xhigh), then a reviewer (xhigh), then the gates.
+- Build done (`1161e44`, `aa7f9da`, `b272a50`; diff read by the orchestrator): vite 8.3.8
+  (rolldown 1.2.19), three 0.186.1, wrangler 4.162.0, @fontsource-variable/archivo 5.3.0,
+  npm 11.19.1, `.nvmrc` 24. Own `@font-face` "Archivo" (vietnamese, latin-ext, latin; upright
+  and italic; both axes): text widths identical to Google's in 7 style/weight/stretch cases.
+  `target: 'esnext'` keeps top-level await; `appType: 'mpa'` so a missing file is a 404; a
+  `raw-gz` middleware stops dev/preview sending `Content-Encoding: gzip` for data/*.gz. Linux
+  binaries in the lockfile (simulated `npm ci --os=linux`); CI job not run yet (nothing pushed).
+  Dev and preview: all 5 cities load, 0 errors, 0 failed requests, every request to localhost;
+  `#err` shows when the main chunk fails. Smoke on dist: all pass; pixel shares vs 2ac1357 3.1%
+  phl, 11.0% jsh (trees: three's UUID patch can't apply to the bundle), text identical.
+- Harness implementer (xhigh) started: build-aware sides, harness-owned perf-mode Vite build
+  with both patches, node_modules cache, strict serving of builds, source-map attribution,
+  `snap` builds, `smoke --prod/--url`. Brief: scratchpad `brief-p2-harness.md`. Then a reviewer
+  (xhigh), then the gates.
 - **Blocks merge:** P1a/P1b/P1c merged; the dashboard readout and the Build-command change
   (human step) before the cutover; the contributor message about `npm ci` / `npm run dev`.
 
