@@ -347,7 +347,8 @@ js/three-setup.js  three.js settings that keep the look tuned under r128: colour
 js/main.js       the start menu, then setCity -> loadData -> buildScene -> createUI -> start.
                  Exposes window.__city.
 js/data.js       projection (G(lat,lon), latOf, using CITY.frame) and the data loader
-                 (fetches CITY.files from CITY.dir: .gz files gunzipped with DecompressionStream)
+                 (fetches CITY.files by the URLs the build gave them, CITY.urls, set by main.js from its
+                 URLS: .gz files gunzipped with DecompressionStream)
 js/scene/core.js  renderer, camera, OrbitControls, sun, fog. HOME_POS and HOME_TGT
                  (from CITY.home) are the overview camera.
 js/scene/sky.js  the 24-hour clock: sunAt(h) = the real sun position over the city (CITY.sun)
@@ -885,10 +886,12 @@ Add, move or delete a sports court (Philadelphia)
 New 3D object or landmark
     Add a function in the city's landmarks module (js/scene/<city>/landmarks.js; use
     group()/part() as the others do) and call it from buildLandmarks(). Or add a new module
-    js/scene/<city>/extra.js that exports buildExtra (and imports THREE from 'three'), then in
-    js/scene/index.js add
-        import { buildExtra } from './<city>/extra.js';
-    and call it in buildScene() when that city's data is loaded.
+    js/scene/<city>/extra.js that exports buildExtra (and imports THREE from 'three'), re-export it
+    from the city's own module, js/scene/<city>/<city>.js:
+        export { buildExtra } from './extra.js';
+    then add buildExtra to the names buildScene() takes from `own` in js/scene/index.js and call it
+    when that city's data is loaded. (main.js loads the city's module for that city alone; importing
+    extra.js into js/scene/index.js would put it in the code every city downloads.)
 
 Change buildings outside the core (data-<city>-city_buildings)
     boxes, polys = decode_city()
@@ -1003,4 +1006,5 @@ index.js builds whatever the city's blocks contain: each city's own parts (js/sc
 only when their blocks are there.
 
 Adding a city: put its data in data/<id>/ in these schemas (its own tools in tools/<id>/), add
-an entry to CITIES, and any hand-built parts in js/scene/<id>/ (called from index.js).
+an entry to CITIES, and any hand-built parts in js/scene/<id>/ (re-exported from js/scene/<id>/<id>.js,
+which goes in CODE in js/main.js, and called from index.js through `own`).

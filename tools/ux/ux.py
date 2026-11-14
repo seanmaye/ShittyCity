@@ -230,7 +230,8 @@ def run_device(browser, base, city, dname, device, states, a, art, first_city):
                     page.wait_for_selector('#menu:not([hidden])', timeout=20000)
                     page.wait_for_timeout(400)
                 elif st['pre'] == 'error':
-                    page.route(re.compile(r'/data/[a-z]+/river\.json$'), lambda r: r.abort())
+                    # the city's river.json: data/<city>/river.json, or assets/data-<city>-river[-<hash>].json in a build that names data so (vite.config.js)
+                    page.route(re.compile(r'/(?:data/[a-z]+/|assets/data-(?:[a-z]+-)+)river(?:-[\w-]{8})?\.json$'), lambda r: r.abort())
                     page.goto(base + '/index.html?city=' + city, wait_until='load')
                     page.wait_for_selector('#loading-back:not([hidden])', timeout=60000)
                     page.wait_for_timeout(300)

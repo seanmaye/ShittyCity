@@ -22,6 +22,7 @@ import http.server
 import io
 import json
 import os
+import posixpath
 import re
 import shutil
 import statistics
@@ -30,6 +31,7 @@ import sys
 import tarfile
 import threading
 import time
+import urllib.request
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -1346,9 +1348,81 @@ SMOKE_WAIT = """() => ((window.__city || window.__kitchen) && window.__perf && _
     || /Couldn|needs a local/.test(document.getElementById('status').textContent)"""
 # the fixed view for a smoke screenshot: a city's home view at 12:30 (the kitchen opens on its one fixed view and has no clock)
 SMOKE_VIEW = 'async () => { const api = window.__city; if (!api) return;\n' + RESET + "api.flyTo('home'); api.setTime(12.5);\n}"
+# A content hash in a production file name (none in a perf build): name-<8 characters>.ext
+HASHED = re.compile(r'-[\w-]{8}\.\w+$')
 
 
-def smoke_city(browser, a, base, cid, out):
+def owners(path, ids):
+    """The cities a served file belongs to, by the names vite.config.js gives a build: a city's code <city>.js, its data
+    files data-<city>[-<city>…]-<file> (one file for several cities that have the same bytes), each with -<hash> in
+    production; urls-<city>.js and data/<city>/<file> in older builds. [] for a shared file."""
+    m = re.match(r'/data/([^/]+)/', path)
+    if m:
+        return [m.group(1)]
+    m = re.match(r'/assets/(?:data-|urls-)?([^/]+)$', path)
+    out = []
+    for tok in re.split(r'[-.]', m.group(1)) if m else []:
+        if tok not in ids:
+            break
+        out.append(tok)
+    return out
+
+
+def requests_of(urls, sizes, base, ids):
+    """The requests a page made to the served origin, first time each, in order: path, kind (js, data, other), bytes
+    (response body as served, from Resource Timing; None for the page itself), owners, hashed."""
+    out, seen = [], set()
+    for u in urls:
+        if not u.startswith(base + '/') or u in seen:
+            continue
+        seen.add(u)
+        path = re.sub(r'[?#].*', '', u[len(base):])
+        kind = 'data' if re.match(r'/(?:data/|assets/data-)', path) else 'js' if path.endswith('.js') else 'other'
+        out.append({'url': u[len(base):], 'kind': kind, 'bytes': sizes.get(u), 'owners': owners(path, ids), 'hashed': bool(HASHED.search(path)),
+                    'assets': path.startswith('/assets/')})
+    return out
+
+
+# Modules in a city's folder that other cities load by design, so they sit in shared chunks: phl/people.js (the loading
+# screen's figures, in every city), jsh/terrain.js (the elevation grid that buildings.js and nature.js ask in every city) and
+# jsh/places.js (labels and views, which New Orleans uses too). Any other js/scene/<city>/ module in a chunk another city
+# loads is that city's code where it should not be (an import from js/scene/index.js puts it in the shared code).
+SHARED_CITY_FILES = {'js/scene/phl/people.js', 'js/scene/jsh/terrain.js', 'js/scene/jsh/places.js'}
+_SOURCES = {}
+
+
+def chunk_sources(base, url):
+    """The source files a JS file the page loaded was built from: its own path for a source the dev server serves
+    (/js/...), else the `sources` of its source map (the file its sourceMappingURL names), read from the served folder or,
+    for --url, fetched from the site. None if there is no map to read: then only the file's name was checked."""
+    path = re.sub(r'[?#].*', '', url)
+    if path.startswith('/js/'):
+        return [path[1:]]
+    if (base, path) not in _SOURCES:
+        root, got = _SERVED.get(base), None
+        read = (lambda p: open(os.path.join(root, p.lstrip('/')), 'rb').read()) if root else (lambda p: urllib.request.urlopen(base + p, timeout=60).read())
+        try:
+            m = re.search(r'//# sourceMappingURL=(\S+)\s*$', read(path).decode('utf-8', 'replace'))
+            if m and not m.group(1).startswith('data:'):
+                got = json.loads(read(posixpath.join(posixpath.dirname(path), m.group(1))))['sources']
+        except (OSError, ValueError, KeyError):   # no map (or none served): names only
+            pass
+        _SOURCES[(base, path)] = got
+    return _SOURCES[(base, path)]
+
+
+def foreign_code(sources, cid, ids):
+    """The js/scene/<another city>/ files among a chunk's sources, less SHARED_CITY_FILES (paths as maps give them:
+    root-relative in a perf build, ../../js/… in production)."""
+    out = []
+    for src in sources or []:
+        m = re.search(r'(?:^|/)(js/scene/([^/]+)/[^/]+)$', src)
+        if m and m.group(2) in ids and m.group(2) != cid and m.group(1) not in SHARED_CITY_FILES:
+            out.append(m.group(1))
+    return out
+
+
+def smoke_city(browser, a, base, cid, out, ids):
     from playwright.sync_api import TimeoutError as PwTimeout
     ctx = app_context(browser, a)
     page = ctx.new_page()
@@ -1357,6 +1431,8 @@ def smoke_city(browser, a, base, cid, out):
     page.on('console', lambda m: errors.append(f'console.error: {m.text}') if m.type == 'error' else None)
     page.on('requestfailed', lambda q: errors.append(f'request failed: {q.method} {q.url} ({q.failure})'))
     page.on('response', lambda q: errors.append(f'HTTP {q.status}: {q.request.method} {q.url}') if q.status >= 400 else None)
+    urls = []
+    page.on('request', lambda q: urls.append(q.url))
     state = "() => ({ frames: window.__perf ? __perf.frameCount : 0, status: document.getElementById('status').textContent, up: !!(window.__city || window.__kitchen) })"
     t0 = time.time()
     try:
@@ -1390,6 +1466,24 @@ def smoke_city(browser, a, base, cid, out):
     except Exception as e:   # noqa: BLE001  (one city failing must not stop the others)
         errors.append(f'{type(e).__name__}: {e}'.strip())
     finally:
+        # what the city loaded: nothing named for another city (its code or data), no JS built from another city's
+        # js/scene/<city>/ (by its source map: city code inside a shared chunk has no city in its name), and in
+        # production no file under /assets/ (cached for a year: public/_headers) without a content hash
+        try:
+            sizes = dict(page.evaluate("() => performance.getEntriesByType('resource').map(e => [e.name, e.encodedBodySize])"))
+        except Exception:   # noqa: BLE001  (a page that crashed: no sizes)
+            sizes = {}
+        r['requests'] = requests_of(urls, sizes, base, ids)
+        for q in r['requests']:
+            if q['owners'] and cid not in q['owners']:
+                errors.append(f"loads another city's file ({', '.join(q['owners'])}'s): {q['url']}")
+            if (a.prod or a.url) and q['assets'] and not q['hashed']:
+                errors.append(f'a file under /assets/ without a content hash (it would be cached for a year): {q["url"]}')
+            if q['kind'] == 'js':
+                src = chunk_sources(base, q['url'])
+                q['checked'], q['foreign'] = src is not None, foreign_code(src, cid, ids)
+                if q['foreign']:
+                    errors.append(f"loads another city's code in {q['url']}: {', '.join(q['foreign'])}")
         r['errors'] = list(errors)
         r['ok'] = not r['errors']
         ctx.close()
@@ -1399,7 +1493,9 @@ def smoke_city(browser, a, base, cid, out):
 def cmd_smoke(a):
     """Load every city in js/cities.js from a served side the way the harness does (seeded, date
     pinned; a side built in perf mode), fail on any
-    page error, console error or failed request, and save one screenshot per city in a fixed view.
+    page error, console error, failed request, file named for another city (owners) or JS built from another city's code
+    (chunk_sources, its source map), list what each city loaded, and
+    save one screenshot per city in a fixed view.
     --prod serves the side's own production build instead, --url loads a deployed site. --against
     diffs the screenshots with an earlier smoke's."""
     out = out_dir(a, '-smoke')
@@ -1436,7 +1532,7 @@ def cmd_smoke(a):
                     sys.exit(f'unknown city id(s): {", ".join(bad)}; js/cities.js has {", ".join(ids)}')
                 for cid in want:
                     print(f'{cid}…', flush=True)
-                    res[cid] = smoke_city(browser, a, base, cid, out)
+                    res[cid] = smoke_city(browser, a, base, cid, out, ids)
                     gl = gl or res[cid].get('gl')
                     res[cid].pop('gl', None)
                     print(f"  {'ok' if res[cid]['ok'] else 'FAILED'} ({res[cid].get('loadS', '-')} s)" + ''.join(f'\n    {e}' for e in res[cid]['errors'][:5]), flush=True)
@@ -1449,7 +1545,7 @@ def cmd_smoke(a):
     failed = [c for c, r in res.items() if not r['ok']]
     lines = [f'# Smoke: {what}\n',
              f'GPU: {gl or "?"}. {a.size} @ dpr {a.dpr}. Each city loads in a fresh page (seeded Math.random, pinned date) and must draw frames and close its '
-             f'loading screen within {a.timeout} s with no page error, console error or failed request; then the home view at 12:30 '
+             f'loading screen within {a.timeout} s with no page error, console error, failed request or file of another city\'s; then the home view at 12:30 '
              f'(the kitchen: its opening view), {a.settle} ms to settle, and `<city>.png`.\n',
              '| city | result | load s | first error |', '|---|---|---:|---|']
     for c, r in res.items():
@@ -1457,6 +1553,21 @@ def cmd_smoke(a):
     for c in failed:
         lines.append(f'\n### {c}\n')
         lines += [f'- {e}' for e in res[c]['errors'][:30]]
+    # what each city loaded, by kind, and each request: a file named for another city fails the city (smoke_city)
+    lines += ['\n## What each city loaded\n',
+              'Every request to the served origin, first time each, in order. Bytes are response bodies as served (Resource Timing '
+              '`encodedBodySize`; the page itself has none). A file named for a city (vite.config.js: `<city>.js`, '
+              '`data-<city>-…`; `urls-<city>.js` and `data/<city>/…` in older builds) must be the loading city\'s, and no JS file may be built from another city\'s '
+              '`js/scene/<city>/` (its source map; `SHARED_CITY_FILES` in perf.py are shared by design)' + (', and every file under `/assets/` must carry a content hash' if a.prod or a.url else '') + '.\n',
+              '| city | JS files | JS bytes | data files | data bytes | other files | other bytes | another city\'s files | JS with another city\'s code | JS without a source map |',
+              '|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|']
+    for c, r in res.items():
+        q, row = r.get('requests', []), []
+        for k in ('js', 'data', 'other'):
+            xs = [x for x in q if x['kind'] == k]
+            row += [str(len(xs)), f"{sum(x['bytes'] or 0 for x in xs):,}"]
+        js = [x for x in q if x['kind'] == 'js']
+        lines.append(f"| {c} | {' | '.join(row)} | {sum(1 for x in q if x['owners'] and c not in x['owners'])} | {sum(1 for x in js if x.get('foreign'))} | {sum(1 for x in js if not x.get('checked'))} |")
     changed = {}
     if a.against:
         t, changed = diff_table([(c, os.path.join(a.against, c + '.png'), os.path.join(out, c + '.png'), os.path.join(out, c + '.diff.png')) for c in res], 'city')
@@ -1464,6 +1575,11 @@ def cmd_smoke(a):
         if a.prod or a.url:
             lines.append('\nInformational only: production code has no uuid patch (UUID_PATCH), so the seeded random stream shifts and trees '
                          'move against a patched side. What counts here is no error and no failed request.')
+    lines.append('\n## Requests\n\nEach city\'s, in order: kind, bytes, the cities a file is named for' + (', and whether a file under `/assets/` carries a content hash' if a.prod or a.url else '') + '.')
+    for c, r in res.items():
+        lines.append(f'\n### {c}\n')
+        lines += [f"- `{x['url']}` {x['kind']}" + (f", {x['bytes']:,} B" if x['bytes'] is not None else '') + (f", {'+'.join(x['owners'])}" if x['owners'] else '')
+                  + ((', hashed' if x['hashed'] else ', **not hashed**') if (a.prod or a.url) and x['assets'] else '') for x in r.get('requests', [])]
     lines.append('\n**Result:** ' + (f'failed: {", ".join(failed)}.' if failed else f'all {len(res)} cities passed.'))
     md = '\n'.join(lines) + '\n'
     with open(os.path.join(out, 'smoke.md'), 'w', encoding='utf-8') as f:
