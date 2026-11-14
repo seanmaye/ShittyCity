@@ -87,7 +87,7 @@ export interface CityRest {
 /** data-<city>-city_buildings: gzip binary "PHB1", as bytes (layout: EDITING.md; decoded by js/scene/city.js decode) */
 export type CityBuildings = ArrayBuffer;
 
-/** data-<city>-places, Jersey Shore and New Orleans (js/scene/jsh/places.js): y m above the ground there */
+/** data-<city>-places, Jersey Shore and New Orleans (js/scene/jsh/places.ts): y m above the ground there */
 export interface Places {
   labels: { t: string; x: number; z: number; y: number; far?: number }[];
   /** y already includes the ground */
@@ -224,10 +224,10 @@ export interface NycLandmarks {
 
 // ---- Jersey Shore (EDITING.md "Jersey Shore only")
 
-/** data-jsh-terrain: gzip binary "TER1", NOT data-phl-terrain's layout (EDITING.md; read by js/scene/jsh/terrain.js loadTerrain) */
+/** data-jsh-terrain: gzip binary "TER1", NOT data-phl-terrain's layout (EDITING.md; read by js/scene/jsh/terrain.ts loadTerrain) */
 export type JshGrid = ArrayBuffer;
 
-/** data-jsh-farms (gzip JSON; js/scene/jsh/farms.js). m unless said */
+/** data-jsh-farms (gzip JSON; js/scene/jsh/farms.ts). m unless said */
 export interface JshFarms {
   year: number;
   /** a: row direction rad; s: planting group 0..1; p: [outer ring dm, holes...] */

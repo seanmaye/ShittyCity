@@ -226,7 +226,7 @@ function rig() {
 }
 const JOINTS = ['pelvis', 'chest', 'head', 'hipL', 'hipR', 'kneeL', 'kneeR', 'shL', 'shR', 'elL', 'elR'];
 function rest(F) { for (const k of JOINTS) F[k].rotation.set(0, 0, 0); F.pelvis.position.set(0, .92, 0); }
-/** bend an arm (shoulder x and z, elbow x) so `eff` comes as near as it can to `target` (as overlook.js) */
+/** bend an arm (shoulder x and z, elbow x) so `eff` comes as near as it can to `target` (as overlook.ts) */
 function reach(sh, el, eff, target) {
   const p = new THREE.Vector3(); let best = [0, 0, -.4], bd = Infinity;
   const cost = (rx, rz, ex) => { sh.rotation.set(rx, 0, rz); el.rotation.x = ex; return eff.getWorldPosition(p).distanceTo(target) + .012 * Math.abs(rz); };

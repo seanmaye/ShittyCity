@@ -7,7 +7,7 @@ import { onSeason } from './season.js';
 import { terrain, water, surface } from './terrain.js';
 import { withBounds } from './geometry.js';
 // Jersey Shore's grid (0 elsewhere)
-import { groundAt } from './jsh/terrain.js';
+import { groundAt } from './jsh/terrain.ts';
 
 const C = h => new THREE.Color(h);
 const SUMMER = ['#4f7d45', '#5d8c4c', '#3f6b3c', '#6b9a4e', '#628f4a'].map(C), FRESH = C('#93c45a');

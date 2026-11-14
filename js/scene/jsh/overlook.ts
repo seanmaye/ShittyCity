@@ -12,7 +12,7 @@
 // around, as a visitor. Click him, or "See through his eyes", to see through his eyes (inhabit()),
 // with a card about him like the people on Walnut St and the detasseling crew, and three things
 // to do (act()): take a drag, drink beer, or check out the view through the binoculars, which
-// come up and pan to whatever opts.spot() says is worth watching (the combine in harvest.js,
+// come up and pan to whatever opts.spot() says is worth watching (the combine in harvest.ts,
 // or the bridge in town), zoomed right in. Leaving him puts you back behind the chair; leaving
 // again hands the camera back.
 //
@@ -20,7 +20,7 @@
 // "car" you are aboard); js/ui.js draws the buttons and the binocular mask from that state.
 import * as THREE from 'three';
 import { geo } from '../phl/people.ts';
-import { groundAt } from './terrain.js';
+import { groundAt } from './terrain.ts';
 import { buildTrees } from '../nature.js';
 import { LIGHT, makeRenderer } from '../../three-setup.js';
 
@@ -28,7 +28,7 @@ const CANS = 40, EMPTY = 6;          // cans in the case when he got here; how m
 const SEAT = .43, EYE = 1.72;        // the chair's seat and the visitor's eye, above the ground (m)
 const GLASS = { up: 9, min: .3, max: 12 };   // binoculars: field of view as they come up, and the zoom's limits (degrees)
 const WRIST = [3.5, .15];            // the cigarette across his fingers: turned ember up at rest, filter to his mouth for a drag
-// Everyone here is fictional (as in crewprofiles.js).
+// Everyone here is fictional (as in crewprofiles.ts).
 const WHO = { name: 'Duane Kepner', sex: 'Male', age: 57, height: 178, kg: 97, lb: 214,
   bio: 'From Antes Fort, at the foot of this mountain. He put in thirty-one years at the paper mill and retired in the spring, and has been up here most days since. He took the eight-point at first light a quarter mile down the ridge, had it dragged to the truck by nine, and has been celebrating ever since. The 40-pack was full this morning. He has told his wife he only smokes when he hunts, and he hunts a lot.' };
 
@@ -543,7 +543,7 @@ export function buildOverlook(scene, site, { night = () => 0, spot = () => null 
       hintTouch: `Seeing the valley through ${WHO.name}’s eyes, from his chair on Bald Eagle Mountain. Take a drag, drink beer, or check out the view through his binoculars (spread two fingers to zoom). Drag to look around; “Leave” to step back behind him.` };
   }
 
-  // a head-and-shoulders portrait for his card (as detassel.js): a fresh figure, standing, facing the camera
+  // a head-and-shoulders portrait for his card (as detassel.ts): a fresh figure, standing, facing the camera
   let pr = null;
   function portrait(size = 176) {
     if (!pr) {

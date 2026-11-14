@@ -1,6 +1,6 @@
 // Crossroads Church, off Old Fort Road by Antes Fort ("Go to: Take me to church").
 //
-// Outside, the real building in place of the generic church town.js would put on its footprint:
+// Outside, the real building in place of the generic church town.ts would put on its footprint:
 // a long steel-sided hall under a dark brown roof, gable end to the parking lot on the east, its
 // lower walls brick. On the gable: a tall window with a white cross in its mullions, a window
 // either side, the CROSSROADS CHURCH sign, three pairs of brown doors between evergreens, and on
@@ -22,7 +22,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { pairs } from '../../data.js';
-import { groundAt } from './terrain.js';
+import { groundAt } from './terrain.ts';
 import { makeFigure } from '../phl/people.ts';
 
 const TAU = Math.PI * 2;

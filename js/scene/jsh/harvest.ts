@@ -1,8 +1,8 @@
 // The last corn standing in the valley, and the combine taking it off.
 //
-// Every other corn field is cut on its group's day (farms.js stage()): one day standing, the next
+// Every other corn field is cut on its group's day (farms.ts stage()): one day standing, the next
 // stubble. This one field, picked because all of it can be seen from the overlook on Bald Eagle
-// Mountain (overlook.js), is left until late and comes off slowly, between HARVEST[0] and
+// Mountain (overlook.ts), is left until late and comes off slowly, between HARVEST[0] and
 // HARVEST[1] (days of the year), so there is something to watch through the binoculars up there.
 //
 // A combine with an eight-row corn head works it from HOURS[0] to HOURS[1] (lights on after
@@ -10,18 +10,18 @@
 // follows the date (nothing cut on the first day, the last swath on the last), and from there
 // it carries on in real time. Behind it the field is stubble.
 //
-// The field is drawn here instead of in farms.js: its ground and its canopy slab, both with a
+// The field is drawn here instead of in farms.ts: its ground and its canopy slab, both with a
 // shader hook that knows what has been cut (CUT: the current swath and how far along it the
 // head is). The slab also has a wall along every swath edge, shown only where one side is cut
 // and the other still stands. Near the camera the slab gives way to real plants like any corn
-// field (cornlod.js), which asks cut(x, z) for each plant of this field.
+// field (cornlod.ts), which asks cut(x, z) for each plant of this field.
 import * as THREE from 'three';
 import { pairs } from '../../data.js';
 import { M } from '../materials.js';
 import { Builder, addPolygon } from '../geometry.js';
 import { onSeason } from '../season.js';
-import { groundAt } from './terrain.js';
-import { stage, rows, cutHole, CORN_HOLE } from './farms.js';
+import { groundAt } from './terrain.ts';
+import { stage, rows, cutHole, CORN_HOLE } from './farms.ts';
 
 export const HARVEST = [286, 334];   // October 14 to December 1
 const HOURS = [7, 21.5];             // the combine's working day
@@ -163,7 +163,7 @@ bool cutAt(vec2 p) { return cutSw(floor((p.y * uCutF.x - p.x * uCutF.y - uCutF.z
     return m;
   }
 
-  // ---- the field: ground, and the canopy slab with its outer walls (as farms.js) and swath walls
+  // ---- the field: ground, and the canopy slab with its outer walls (as farms.ts) and swath walls
   const uv = (x, z) => [U(x, z) / 40, V(x, z) / 3.05];
   const gb = new Builder({ uv: true }), cb = new Builder({ uv: true });
   addPolygon(gb, rings, 0, uv); addPolygon(cb, rings, 0, uv);

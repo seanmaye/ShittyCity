@@ -15,8 +15,8 @@ Writes, in the shared formats (docs/EDITING.md section 3):
   transit.json            the RTA streetcar lines (kind "trolley"), tracks, out-and-back runs, stops
   city.json.gz            the land outlines (everything not water), parks, streets, rail, water,
                          streams and park trees
-  terrain.bin.gz          the elevation grid the scene drapes everything over (js/scene/jsh/terrain.js)
-  places.json             labels and "Go to" views (js/scene/jsh/places.js)
+  terrain.bin.gz          the elevation grid the scene drapes everything over (js/scene/jsh/terrain.ts)
+  places.json             labels and "Go to" views (js/scene/jsh/places.ts)
   monorail.json           the proposed Mississippi riverfront loop (js/scene/monorail.js)
 """
 import gzip, json, math, os, random, struct, sys, csv

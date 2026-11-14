@@ -2,22 +2,22 @@
 //
 // A field holds millions of plants, so they are only made where you can tell them apart: within
 // FAR metres of the camera (fewer as it rises, none once it is about 95 m above the ground), and
-// only in the view. Within NEAR they are the full plants of the seed-corn block (detassel.js:
+// only in the view. Within NEAR they are the full plants of the seed-corn block (detassel.ts:
 // stalk, seven leaves, an ear and, in season, a tassel); further out a cheap plant with three
-// leaves and no shadow. Beyond that the canopy slab of farms.js stands as before; it has a hole
+// leaves and no shadow. Beyond that the canopy slab of farms.ts stands as before; it has a hole
 // (CORN_HOLE, colour and shadow) exactly where the plants are.
 //
 // Plants sit on each field's own rows (0.76 m apart, a plant every 0.3 m, across the field's
 // row direction), made a 16 m square at a time the first time a square is needed and kept (the
 // last CACHE squares). Every frame the camera has moved, the plants in range are copied into
 // two instanced meshes, each plant scaled to its field's planting group's height and coloured
-// by its stage (farms.js stage()), so they grow, turn and are harvested with the slab.
+// by its stage (farms.ts stage()), so they grow, turn and are harvested with the slab.
 import * as THREE from 'three';
 import { pairs } from '../../data.js';
-import { groundAt } from './terrain.js';
+import { groundAt } from './terrain.ts';
 import { onSeason } from '../season.js';
-import { stage, CORN_HOLE } from './farms.js';
-import { plantGeometry, tasselGeometry } from './detassel.js';
+import { stage, CORN_HOLE } from './farms.ts';
+import { plantGeometry, tasselGeometry } from './detassel.ts';
 
 const CHUNK = 16, ROW = .76, STEP = .3, NEAR = 30, FAR = 90, CACHE = 500;
 const NEAR_MAX = 12000, MID_MAX = 36000, BUDGET = 3;   // instances; ms a frame for making new squares
@@ -35,11 +35,11 @@ function midGeometry() {
   return g;
 }
 
-/** seed: the seed-corn block (detassel.js draws its plants), left out here with its 8 m headlands.
- *  late: the field still standing while a combine takes it off (harvest.js): its own stage(day),
+/** seed: the seed-corn block (detassel.ts draws its plants), left out here with its 8 m headlands.
+ *  late: the field still standing while a combine takes it off (harvest.ts): its own stage(day),
  *  cut(x, z) for what the combine has taken, and rev, which changes as the cut moves on. */
 export function buildCornLOD(scene, fields, seed = null, late = null) {
-  // the corn fields: outline, row direction, planting group (as farms.js groups them; 3: the late field), bounds
+  // the corn fields: outline, row direction, planting group (as farms.ts groups them; 3: the late field), bounds
   const corn = fields.map((f, i) => [f, i]).filter(([f]) => f.k === 'corn').map(([f, i]) => {
     const rings = f.p.map(pairs), xs = rings[0].map(p => p[0]), zs = rings[0].map(p => p[1]);
     return { rings, a: f.a, c: late && i === late.index ? 3 : Math.min(2, Math.floor(f.s * 3)), x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };

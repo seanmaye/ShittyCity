@@ -10,7 +10,7 @@ import { startLoadingScreens } from './loading.js';
 // Each city's own code (js/scene/<city>/<city>.js), as a chunk of its own that no other city downloads. (Here rather than in
 // js/cities.js, whose chunk the shared code and every city's chunk import: a change to one city's code then renames only this
 // chunk and that city's, and the shared ones stay cached.)
-const CODE = { phl: () => import('./scene/phl/phl.ts'), nyc: () => import('./scene/nyc/nyc.ts'), jsh: () => import('./scene/jsh/jsh.js'), pine: () => import('./scene/pine/pine.js') };
+const CODE = { phl: () => import('./scene/phl/phl.ts'), nyc: () => import('./scene/nyc/nyc.ts'), jsh: () => import('./scene/jsh/jsh.ts'), pine: () => import('./scene/pine/pine.js') };
 // Every city's data files and loading screens, keyed by their path on disk (/data/<city>/<file>): the URL each has in the build
 // (content-hashed under /assets/: vite.config.js; the dev server serves data/ as it is). A few kB in this chunk, so once a city
 // is picked its loading screen and data start without waiting for another chunk.

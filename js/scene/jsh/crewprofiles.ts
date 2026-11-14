@@ -1,4 +1,4 @@
-// Made-up lives for the detasseling crew in Jersey Shore's seed-corn field (detassel.js): four
+// Made-up lives for the detasseling crew in Jersey Shore's seed-corn field (detassel.ts): four
 // teenagers on their summer job and the crew boss who walks behind them. Built like the Walnut St
 // profiles (phl/profiles.js: a name, sex, age, height, weight and a short biography from a seed,
 // with {he} {his} {is} ... filled in), but with their own lives. Everyone here is fictional.

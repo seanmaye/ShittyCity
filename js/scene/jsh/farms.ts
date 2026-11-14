@@ -13,9 +13,9 @@ import { pairs } from '../../data.js';
 import { M } from '../materials.js';
 import { Builder, addPolygon } from '../geometry.js';
 import { onSeason } from '../season.js';
-import { groundAt, groundBase } from './terrain.js';
+import { groundAt, groundBase } from './terrain.ts';
 
-/** where real corn plants stand in for the canopy slab (cornlod.js sets it each frame): x, z, radius */
+/** where real corn plants stand in for the canopy slab (cornlod.ts sets it each frame): x, z, radius */
 export const CORN_HOLE = { value: new THREE.Vector3(0, 0, 0) };
 /** discard a material's fragments inside CORN_HOLE (the slab's colour and its shadow), or with
  *  inside = true everywhere else (the plants, which stand only in the hole; reach: metres past its edge) */
@@ -58,7 +58,7 @@ export function rows() {
 /**
  * What a field of crop `k` looks like on `day`, `dd` days behind the earliest group:
  * { ground: colour, canopy: height (m, 0 = none), top: canopy colour, bales: hay just cut }
- * harvestDay: the day this field comes off, when it isn't its group's (harvest.js: the last corn standing)
+ * harvestDay: the day this field comes off, when it isn't its group's (harvest.ts: the last corn standing)
  */
 export function stage(k, day, dd, harvestDay) {
   const d = day - dd;
@@ -69,7 +69,7 @@ export function stage(k, day, dd, harvestDay) {
     const h = tall * smooth(plant + 18, corn ? 215 : 205, d);
     const top = corn ? mix(mix(C('#5d8f37'), C('#47752b'), smooth(170, 200, d)), C('#c2a96e'), smooth(238, 268, d))
       : mix(mix(C('#6a9a3e'), C('#cdb84a'), smooth(240, 258, d)), C('#8f7448'), smooth(258, 272, d));
-    // under a closed canopy the ground is in leaf shade (it shows only between the near plants, cornlod.js)
+    // under a closed canopy the ground is in leaf shade (it shows only between the near plants, cornlod.ts)
     return { ground: mix(SOIL, top.clone().multiplyScalar(.5), smooth(plant + 30, plant + 70, d) * .85), canopy: h, top };
   }
   if (k === 'grain') {   // winter wheat: sown in October, cut in July
@@ -86,7 +86,7 @@ export function stage(k, day, dd, harvestDay) {
   return { ground: since < 12 ? mix(C('#b3b06a'), grow, since / 12) : grow, canopy: 0, bales: since < 26 };
 }
 
-/** skip: the index of a field that is drawn elsewhere (harvest.js) */
+/** skip: the index of a field that is drawn elsewhere (harvest.ts) */
 export function buildFarms(scene, data, skip = -1) {
   const tex = rows(), groups = new Map();   // "kind:cohort" -> { k, dd, fields: [] }
   for (const [i, f] of data.fields.entries()) {
@@ -126,7 +126,7 @@ export function buildFarms(scene, data, skip = -1) {
     if (cb.count) {
       cm = M('#ffffff', { map: tex, roughness: .95 }); canopy = new THREE.Mesh(cb.geometry(), cm);
       canopy.castShadow = canopy.receiveShadow = true; scene.add(canopy);
-      if (g.k === 'corn') {   // near the camera, real plants stand here instead (cornlod.js)
+      if (g.k === 'corn') {   // near the camera, real plants stand here instead (cornlod.ts)
         cutHole(cm); canopy.customDepthMaterial = cutHole(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }));
       }
     }

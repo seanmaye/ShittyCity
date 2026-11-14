@@ -10,15 +10,15 @@
 // they start a second pull, and the tassels that came up since are back.
 //
 // The people are Kyle's jointed figures (phl/people.js geo() and pose()), each with a face; click
-// one to see through their eyes, with a card about them (crewprofiles.js), the same way as the
+// one to see through their eyes, with a card about them (crewprofiles.ts), the same way as the
 // people on Philadelphia's Walnut St promenade. This module offers the same interface as
 // phl/pedestrians.js, so js/scene/index.js and js/ui.js use it in that one's place.
 import * as THREE from 'three';
 import { geo, pose } from '../phl/people.ts';
-import { groundAt } from './terrain.js';
+import { groundAt } from './terrain.ts';
 import { onSeason } from '../season.js';
-import { stage, cutHole, CORN_HOLE } from './farms.js';
-import { detasselerProfile, bossProfile } from './crewprofiles.js';
+import { stage, cutHole, CORN_HOLE } from './farms.ts';
+import { detasselerProfile, bossProfile } from './crewprofiles.ts';
 import { LIGHT, makeRenderer } from '../../three-setup.js';
 
 export const SEASON = [186, 218];   // July 5 to August 6: when the tassels are out
@@ -142,7 +142,7 @@ export function buildDetassel(scene, seed, { hour = () => 9 } = {}) {
   const tasMat = new THREE.MeshStandardMaterial({ color: '#d2b866', roughness: .9, side: THREE.DoubleSide });
   const fm = new THREE.InstancedMesh(plantGeometry(true), leafMat, female.length), mm = new THREE.InstancedMesh(plantGeometry(false), leafMat, male.length);
   const tf = new THREE.InstancedMesh(tasselGeometry(), tasMat, female.length), tm = new THREE.InstancedMesh(tasselGeometry(), tasMat, male.length);
-  // like every corn field (cornlod.js), the plants stand only in the circle around the camera
+  // like every corn field (cornlod.ts), the plants stand only in the circle around the camera
   // (CORN_HOLE); everywhere else the block is under its field's canopy (the field isn't cut for it)
   cutHole(leafMat, true); cutHole(tasMat, true);
   const plantDepth = cutHole(new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking }), true);

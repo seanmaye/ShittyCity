@@ -60,7 +60,7 @@ export interface MapCityEntry extends CityBase {
   sun: { lat: number; lon: number };
   /** true: everything outside data-<city>-city `limits` is water; false: countryside */
   sea: boolean;
-  /** true (Jersey Shore): data-jsh-terrain loads as data.grid and everything is laid onto it (js/scene/jsh/terrain.js) */
+  /** true (Jersey Shore): data-jsh-terrain loads as data.grid and everything is laid onto it (js/scene/jsh/terrain.ts) */
   grid?: boolean;
   /** "Cut away ..." button and its hint; '' for none */
   cutButton: string;

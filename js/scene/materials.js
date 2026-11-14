@@ -149,11 +149,11 @@ function facade(style) {
   return { day: mk(day), night: mk(night) };
 }
 
-// ---- small-town facades (Jersey Shore: js/scene/jsh/town.js)
+// ---- small-town facades (Jersey Shore: js/scene/jsh/town.ts)
 //  clap   clapboard or vinyl siding: a shadow line under every board, double-hung windows with
 //         white trim, shutters on some houses, a front door per house
 //  brickh brick houses: the same windows in brick, with stone sills and lintels
-//  plain  siding with no windows (garages, sheds; town.js adds their doors)
+//  plain  siding with no windows (garages, sheds; town.ts adds their doors)
 //  block  19th-century brick storefront blocks: shop windows, a sign band, tall upper windows
 //  metal  ribbed steel siding: mills and warehouses, overhead doors, a few small windows
 //  church tall pointed windows of coloured glass, two floors high

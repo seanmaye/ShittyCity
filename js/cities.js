@@ -111,7 +111,7 @@ export const CITIES = {
     home: { pos: [41.2190, -77.2640, 520], target: [41.1965, -77.2560, 20] },
     sunTarget: [41.2025, -77.2560], sun: { lat: 41.2025, lon: -77.2536 },
     sea: false,
-    grid: true,   // data/jsh/terrain.bin.gz (as data.grid): everything is laid onto the hills (js/scene/jsh/terrain.js)
+    grid: true,   // data/jsh/terrain.bin.gz (as data.grid): everything is laid onto the hills (js/scene/jsh/terrain.ts)
     storage: 'jsh3d:',
     title: 'Jersey Shore, PA: a river town on the West Branch',
     heading: 'Jersey Shore, on the West Branch',

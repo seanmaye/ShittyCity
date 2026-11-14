@@ -50,7 +50,7 @@ Python helper below.
           (data-phl-terrain, NAVD88 metres): heights in the data are ABOVE THE GROUND
           (building, El and label heights; tunnel depths below it), and the page sets
           everything on the ground as it loads (js/scene/terrain.js, section 4).
-          Jersey Shore has terrain of its own kind (data-jsh-terrain, js/scene/jsh/terrain.js).
+          Jersey Shore has terrain of its own kind (data-jsh-terrain, js/scene/jsh/terrain.ts).
 
   City           LAT0      LON0       MX         origin
   Philadelphia   39.9560   -75.1760   85390      near 22nd and Arch Streets
@@ -313,7 +313,7 @@ data-jsh-places         labels [{t, x, z, y (m above the ground there), far?}] a
                         The "Bald Eagle Vista w/ Mr. Kepner" view is NOT here: overlook.js computes it from the
                         "Bald Eagle Mountain" label (build_jsh.py keeps it that way)
 
-data-jsh-farms          (gzip JSON) {year, fields, barns, silos} (js/scene/jsh/farms.js)
+data-jsh-farms          (gzip JSON) {year, fields, barns, silos} (js/scene/jsh/farms.ts)
   fields: [{k: "corn" | "soy" | "grain" | "hay" | "veg", a: row direction (rad, in x-z), s: 0..1
           (which of three planting groups), p: [outer_ring_dm, hole_ring_dm...]}]
   barns:  [{x, z, w (long side), d, ry, t: "gambrel" | "gable" | "pole", c: wall colour, r: roof colour}] METRES
@@ -372,7 +372,7 @@ js/scene/materials.js  M(color) quick material; litMats = materials that glow at
                  Display lights: addDisplay(apply) registers a coloured skyline light;
                  setDisplayColors(colors) deals a scheme's colours out to them in turn;
                  DISPLAY_PRESETS = every scheme (a city shows the ids in CITY.presets).
-js/scene/jsh/terrain.js  Jersey Shore's elevation grid (data-jsh-terrain, as data.grid; with CITY.grid):
+js/scene/jsh/terrain.ts  Jersey Shore's elevation grid (data-jsh-terrain, as data.grid; with CITY.grid):
                  loadTerrain, groundAt(x, z) and groundBase(ring) (the lowest ground under a
                  footprint, where buildings.js stands it; nature.js stands trees on groundAt),
                  buildTerrain (the surface in 2 km tiles, coloured by cover, plus flat country

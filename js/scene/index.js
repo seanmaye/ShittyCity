@@ -18,8 +18,8 @@ import { buildCity } from './city.js';
 import { buildTransitMap } from './transitmap.js';
 import { setTerrain, terrain, seat, surface, profile } from './terrain.js';
 // Jersey Shore: its own elevation grid (not Philadelphia's lidar format), and everything laid onto it
-import { loadTerrain as loadGrid, buildTerrain as buildGrid, drape as drapeGrid, groundAt as gridAt } from './jsh/terrain.js';
-import { buildPlaces } from './jsh/places.js';
+import { loadTerrain as loadGrid, buildTerrain as buildGrid, drape as drapeGrid, groundAt as gridAt } from './jsh/terrain.ts';
+import { buildPlaces } from './jsh/places.ts';
 // let the status line paint between build steps (a timer, so it also works in background tabs)
 const nextFrame = () => new Promise(r => setTimeout(r, 16));
 // what a feature contributes when the city doesn't have it (another city's landmarks, say)
@@ -124,7 +124,7 @@ export async function buildScene(canvas, data, status = () => {}, own = {}) {
   const showdown = CITY.id === 'nyc' ? buildShowdown(scene) : none();
   buildTrees(scene, data.trees);
   // Jersey Shore's crop fields, barns and silos (data/jsh/farms.json.gz)
-  // and, near the camera, the corn as single plants (cornlod.js)
+  // and, near the camera, the corn as single plants (cornlod.ts)
   let corn = { update() {}, stats: () => null }, harvest = { update() {}, spot: () => null };
   // the overlook on Bald Eagle Mountain (jsh/overlook.js), and the one corn field in full view of
   // it that is left standing for a combine to take off late (jsh/harvest.js)
