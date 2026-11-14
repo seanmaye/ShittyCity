@@ -147,7 +147,7 @@ The L and trolley data (`data/phl/transit.json`) and the 1953 streetcars have th
 
 ### The rest of the city and the transit network
 
-The OpenStreetMap data comes from Geofabrik's Pennsylvania extract (about 350 MB), read with pyosmium in a local virtual environment. That's much faster and more reliable than querying Overpass for an area this size.
+The OpenStreetMap data comes from Geofabrik's Pennsylvania extract (about 350 MB), read with pyosmium (the `data` group, `uv sync --group data`). That's much faster and more reliable than querying Overpass for an area this size.
 
 ```bash
 python -I tools/phl/fetch_city.py
@@ -158,19 +158,19 @@ curl -L -o tools/phl/raw/osm/pennsylvania.osm.pbf https://download.geofabrik.de/
 ```
 
 ```bash
-python -m venv tools/.venv && tools/.venv/Scripts/pip install osmium
+uv sync --group data
 ```
 
 ```bash
-tools/.venv/Scripts/python -I tools/phl/extract_osm.py
+uv run python -I tools/phl/extract_osm.py
 ```
 
 ```bash
-tools/.venv/Scripts/python -I tools/phl/extract_landmarks.py
+uv run python -I tools/phl/extract_landmarks.py
 ```
 
 ```bash
-tools/.venv/Scripts/python -I tools/phl/extract_bridges.py
+uv run python -I tools/phl/extract_bridges.py
 ```
 
 ```bash

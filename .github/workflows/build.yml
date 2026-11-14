@@ -1,0 +1,23 @@
+name: Build
+# The lockfile is written on macOS: a Linux `npm ci && npm run build` must pass before Cloudflare builds it.
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7   # caches ~/.npm by lockfile, since packageManager names npm
+        with:
+          node-version-file: .nvmrc
+      - name: Use the npm that package.json pins
+        run: |
+          want=$(node -p "require('./package.json').packageManager.split('@')[1]")
+          [ "$(npm -v)" = "$want" ] || npm install -g "npm@$want"
+      - run: node -v && npm -v
+      - run: npm ci
+      - run: npm run build

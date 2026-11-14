@@ -26,7 +26,7 @@ from collections import Counter, defaultdict
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, os.path.join(ROOT, 'tools', 'perf'))
-from perf import CDN, FIXED_DATE, PROBE, cdn_handler, gpu_args, git, serve  # noqa: E402
+from perf import CDN, FIXED_DATE, PROBE, cdn_handler, diff_note, diff_table, gpu_args, git, prepare_side, serve, side_has  # noqa: E402
 
 AUDIT = os.path.join(HERE, 'audit.js')
 OUT = os.path.join(HERE, 'out')
@@ -420,8 +420,8 @@ def cmd_run(a):
     stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
     art = os.path.join(OUT, stamp + ('-' + re.sub(r'[^\w.-]+', '-', a.label) if a.label else ''))
     os.makedirs(art, exist_ok=True)
-    root, snap = ROOT, None
-    if a.ref:   # the app as it was at a commit (index.html, css/, js/; data/ from the working tree)
+    snap = None
+    if a.ref and not side_has(ROOT, a.ref, 'package.json'):   # the app as it was at a commit (index.html, css/, js/; data/ from the working tree)
         sha = git('rev-parse', '--short', a.ref)
         if not sha:
             raise SystemExit(f'unknown git ref {a.ref}')
@@ -429,6 +429,11 @@ def cmd_run(a):
         os.makedirs(snap, exist_ok=True)
         arc = subprocess.run(['git', 'archive', a.ref, 'index.html', 'css', 'js'], cwd=ROOT, capture_output=True, check=True).stdout
         subprocess.run(['tar', '-x', '-C', snap], input=arc, check=True)
+        done = lambda: None   # noqa: E731
+    else:   # the working tree, or a commit with a package.json: built in perf mode like perf.py's sides (perf.prepare_side)
+        if a.ref and not git('rev-parse', '--short', a.ref):
+            raise SystemExit(f'unknown git ref {a.ref}')
+        root, _, done = prepare_side(ROOT, a.ref)
     srv, base = serve(root)
     report = {'header': {'time': stamp, 'label': a.label, 'git': git('rev-parse', '--short', a.ref) if a.ref else git('rev-parse', '--short', 'HEAD'),
                          'dirty': False if a.ref else bool(git('status', '--porcelain', '--', 'index.html', 'css', 'js')),
@@ -452,6 +457,7 @@ def cmd_run(a):
             browser.close()
     finally:
         srv.shutdown()
+        done()
         if snap:
             shutil.rmtree(snap, ignore_errors=True)
         # 'all' (menu, load error) first
@@ -498,6 +504,9 @@ def cmd_compare(a):
         if (ea, wa, ca) != (eb, wb, cb):
             print(f"| {' | '.join(k)} | {ea} → {eb} | {wa} → {wb} | {ca} → {cb} |")
     print(f'\nTotal change: errors {te:+d}, warnings {tw:+d}')
+    t, _ = diff_table([(' · '.join(k), os.path.join(a.a, fa[k]['png']), os.path.join(a.b, fb[k]['png']), os.path.join(a.b, 'diff', fb[k]['png']))
+                       for k in sorted(set(fa) & set(fb))], 'city · device · state')
+    print('\n## Pixels\n\n' + diff_note(os.path.join(a.b, 'diff', '<city>/<device>/<state>.png')) + '\n' + '\n'.join(t))
     if a.detail:
         for k in sorted(set(fa) & set(fb)):
             ka = Counter(key(f) for f in fa[k]['findings'] if f['sev'] != 'info')

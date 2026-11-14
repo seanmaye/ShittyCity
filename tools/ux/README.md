@@ -10,37 +10,39 @@ every screen:
   every finding outlined and numbered;
 - writes `summary.md`, `report.json` and a contact sheet, `index.html` (states × devices).
 
-It reuses the perf harness's server, CDN cache and GPU flags (`tools/perf/perf.py`), and the
+It reuses the perf harness's sides (the working tree or `--ref` built in perf mode, see "Sides" in
+[tools/perf/README.md](../perf/README.md)), server, CDN cache and GPU flags (`tools/perf/perf.py`), and the
 same deterministic seed and date, so two runs of the same code give the same pictures.
 
 ## Setup
 
-Python 3.10+ with Playwright and its Chromium. The venv in `tools/.venv` is git-ignored:
+Python 3.12 with Playwright and its Chromium, from the `qa` group of the repo's uv environment
+(see "Run it" in [README.md](../../README.md)):
 
 ```bash
-uv venv tools/.venv --python 3.12 && VIRTUAL_ENV=tools/.venv uv pip install playwright
+uv sync --group qa
 ```
 
 ```bash
-tools/.venv/bin/python -m playwright install chromium
+uv run python -m playwright install chromium
 ```
 
 ## Commands
 
 ```bash
-tools/.venv/bin/python -I tools/ux/ux.py list
+uv run python -I tools/ux/ux.py list
 ```
 
 ```bash
-tools/.venv/bin/python -I tools/ux/ux.py run -c phl -d phone,phone-land --label before
+uv run python -I tools/ux/ux.py run -c phl -d phone,phone-land --label before
 ```
 
 ```bash
-tools/.venv/bin/python -I tools/ux/ux.py run -c jsh -d phone -s hunter,binoculars
+uv run python -I tools/ux/ux.py run -c jsh -d phone -s hunter,binoculars
 ```
 
 ```bash
-tools/.venv/bin/python -I tools/ux/ux.py compare tools/ux/out/<before> tools/ux/out/<after> --detail
+uv run python -I tools/ux/ux.py compare tools/ux/out/<before> tools/ux/out/<after> --detail
 ```
 
 | option | |
@@ -52,6 +54,12 @@ tools/.venv/bin/python -I tools/ux/ux.py compare tools/ux/out/<before> tools/ux/
 | `--settle ms` | wait after each setup (default 700; states set their own) |
 | `--headed --keep-open` | watch it, and pause after each device to poke around |
 | `--no-annotate` | clean screenshots only |
+
+`compare` lists the screens whose errors, warnings or chrome % changed, then the share of
+changed pixels for every screen in both runs (a channel off by more than 8 of 255; needs
+Pillow), with `diff/<city>/<device>/<state>.png` in the second run's folder marking them red.
+Rides and anything moving differ between two runs of the same code, so read the shares
+against a same-code pair, not against zero.
 
 One device takes the city's load (2–20 s) plus about 1–4 s per state. A full city on five
 devices is a few minutes. While iterating, run just the states and devices you are changing.
@@ -132,4 +140,3 @@ somewhere in the setup if the view matters.
    went away because something got hidden is not a fix.
 3. `run` again with the same cities, devices and states, then `compare <before> <after>
    --detail`. Errors should go down without new ones; desktop must not get worse.
-4. The README's "Sharing as one file" step (`tools/bundle.py`) is only for shipping; leave it.

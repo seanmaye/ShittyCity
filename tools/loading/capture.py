@@ -5,14 +5,15 @@ time of day (hours from sunset) and the day of the year. This opens the real app
 the GPU on, flies to each one, waits for it to settle, and saves what the city's canvas drew (no
 panel or labels), with the loading screens' colour grade, as data/<city>/<file>, a 1920x1080 WebP.
 
-Needs the local server (python -I tools/serve.py) and Playwright, like tools/perf:
-    pip install playwright && python -m playwright install chromium
+Needs the dev server running (npm ci, then npm run dev, which serves http://localhost:5173: the app
+as its sources, so the city list comes from importing /js/cities.js in the page) and Playwright, like
+tools/perf (uv sync --group qa; uv run python -m playwright install chromium). If Vite picked another
+port, pass --base.
 
 Run:  python -I tools/loading/capture.py              every city
       python -I tools/loading/capture.py nyc          one city
       python -I tools/loading/capture.py nyc --only poi-unisphere.webp
       python -I tools/loading/capture.py --headed     watch it
-Then rebuild the bundle (python -I tools/bundle.py).
 """
 import argparse
 import base64
@@ -71,7 +72,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('cities', nargs='*', help='city ids (default: every city with loadingScreens)')
     ap.add_argument('--only', action='append', default=[], help='just this file (repeatable)')
-    ap.add_argument('--base', default='http://localhost:8765')
+    ap.add_argument('--base', default='http://localhost:5173', help='the dev server (npm run dev)')
     ap.add_argument('--headed', action='store_true')
     a = ap.parse_args()
 

@@ -3,7 +3,10 @@ tools/phl/raw/
 tools/nola/src/
 __pycache__/
 tools/.venv/
+.venv/
 tools/perf/out/
 tools/perf/.cache/
 .claude/launch.json
 tools/ux/out/
+node_modules/
+dist/

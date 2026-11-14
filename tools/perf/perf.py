@@ -7,14 +7,19 @@ that open in Chrome DevTools. See tools/perf/README.md.
   python -I tools/perf/perf.py compare tools/perf/out/<before> tools/perf/out/<after>
   python -I tools/perf/perf.py hot tools/perf/out/<run>/overview-dusk.cpuprofile [--focus frame]
   python -I tools/perf/perf.py list
+  python -I tools/perf/perf.py smoke [--ref REF | --root DIR | --url ORIGIN] [--prod] [--cities phl,pine] [--against tools/perf/out/<smoke>]
 
 Needs Python Playwright and its Chromium (pip install playwright; python -m playwright install chromium).
+The pixel diffs (ab --shots, smoke --against) also need Pillow. A side with a package.json is built
+(prepare_side), which needs Node 24 and npm.
 """
 import argparse
+import bisect
 import datetime
 import functools
 import hashlib
 import http.server
+import io
 import json
 import os
 import re
@@ -22,7 +27,9 @@ import shutil
 import statistics
 import subprocess
 import sys
+import tarfile
 import threading
+import time
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -31,31 +38,35 @@ sys.path.insert(0, HERE)
 from scenarios import QUICK, RESET, SCENARIOS  # noqa: E402
 
 PROBE = os.path.join(HERE, 'probe.js')
+BUILD = os.path.join(HERE, 'build.mjs')
 CACHE = os.path.join(HERE, '.cache')
 OUT = os.path.join(HERE, 'out')
+BUILT = '.perf-build.json'   # marks a build the harness made (prepare_side); serve() serves such a folder strictly
 CDN = re.compile(r'^https://(cdn\.jsdelivr\.net|fonts\.googleapis\.com|fonts\.gstatic\.com)/')
 FIXED_DATE = '2026-10-15T12:00:00-04:00'   # the sun's path depends on the date: pin it
 MB = 1048576
 
-# Appended to three.module.js for --census/--ablate: records which app code added each object.
-# `builder` is the outermost build*/create* function under buildScene (one per scene module,
-# e.g. buildCity, buildSubway); `site` is the app file:line that called add().
+# The patches to three's core file (three.module.js up to r170, three.core.js since), applied to every side:
+# by cdn_handler to the CDN file for a side served as sources, by tools/perf/build.mjs (a Vite plugin) for a
+# built side. three draws four random numbers for every object's uuid: give those their own stream, so creating
+# one object more or fewer doesn't reshuffle the app's seeded Math.random (tree shapes and colours), and
+# screenshots stay comparable across code changes.
+UUID_FIND = 'function generateUUID() {'
+UUID_PATCH = 'function generateUUID() { const Math = { random: globalThis.__perfUuidRandom || globalThis.Math.random };'
+# Appended to the same file for --census/--ablate: keeps the stack of every add() per object. perf.py resolves
+# the stacks (tag_objects, through the source maps for a build) to `site`, the app file:line that called add(),
+# and `builder`, the outermost build*/create* function under buildScene (one per scene module, e.g. buildCity).
 TAG_PATCH = r"""
 ;(() => {   // appended by tools/perf/perf.py: who added each object to the scene
-  const SRC = globalThis.__perfSrc = new WeakMap(), add = Object3D.prototype.add;
-  const FRAME = /at (?:(.+?) \()?(?:[a-z]+:\/\/[^/]+)?\/(js\/[^\s():]+):(\d+):\d+\)?$/;
+  const SRC = globalThis.__perfSrc = new WeakMap(), ALL = globalThis.__perfStacks = [], BY = new Map(), add = Object3D.prototype.add;
+  globalThis.__perfTHREE = { Vector2, WebGLRenderTarget };   // for probe.js's diagnostics, where import('three') can't resolve (a build)
   Object3D.prototype.add = function (...objs) {
     const lim = Error.stackTraceLimit; Error.stackTraceLimit = 80;
-    const stack = new Error().stack.split('\n'); Error.stackTraceLimit = lim;
-    let site = null, builder = null;
-    for (const line of stack) {
-      const m = FRAME.exec(line.trim()); if (!m) continue;
-      if (!site) site = m[2] + ':' + m[3];
-      const fn = (m[1] || '').split(/[ .]/).pop();
-      if (fn === 'buildScene') break;
-      if (/^(build|create)[A-Z]/.test(fn)) builder = fn;
-    }
-    if (site) for (const o of objs) if (o && o !== this && !SRC.has(o)) SRC.set(o, { b: builder || site.replace(/^.*\//, '').replace(/:\d+$/, ''), s: site });
+    const stack = new Error().stack; Error.stackTraceLimit = lim;
+    let t = BY.get(stack);
+    if (!t) { BY.set(stack, t = { stack }); ALL.push(t); }
+    // every distinct stack an object was added from, first one first: probe.js's tagOf takes the first with an app site
+    for (const o of objs) if (o && o !== this) { const x = SRC.get(o); if (!x) SRC.set(o, t); else if (x !== t && !(Array.isArray(x) && x.includes(t))) SRC.set(o, [].concat(x, t)); }
     return add.apply(this, objs);
   };
 })();
@@ -87,20 +98,31 @@ class _Server(http.server.ThreadingHTTPServer):
 
 
 class _SnapHandler(_Handler):
-    """Serves a snapshot folder (perf.py snap); anything it does not hold (data/) comes from ROOT."""
+    """Serves a folder of sources (a snapshot, a worktree); anything it does not hold (data/) comes from ROOT.
+    strict (a build): a missing file is a 404, as in production."""
+
+    def __init__(self, *args, strict=False, **kw):
+        self.strict = strict
+        super().__init__(*args, **kw)
 
     def translate_path(self, path):
         p = super().translate_path(path)
         if os.path.exists(p):
             return p
         rel = os.path.relpath(p, self.directory)
-        return p if rel.startswith('..') else os.path.join(ROOT, rel)
+        return p if self.strict or rel.startswith('..') else os.path.join(ROOT, rel)
+
+
+_SERVED = {}   # base URL -> the folder served there, to resolve stacks and profiles of built code (source_of)
 
 
 def serve(root=ROOT):
-    srv = _Server(('127.0.0.1', 0), functools.partial(_Handler if os.path.samefile(root, ROOT) else _SnapHandler, directory=root))
+    # every root through the same handler, so the two sides of an ab are served alike (a cheaper handler for one side biased its load)
+    srv = _Server(('127.0.0.1', 0), functools.partial(_SnapHandler, directory=root, strict=os.path.exists(os.path.join(root, BUILT))))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
-    return srv, f'http://127.0.0.1:{srv.server_address[1]}'
+    base = f'http://127.0.0.1:{srv.server_address[1]}'
+    _SERVED[base] = root
+    return srv, base
 
 
 def cdn_handler(tag_three):
@@ -126,12 +148,8 @@ def cdn_handler(tag_three):
                     f.write(body)
                 with open(mp, 'w', encoding='utf-8') as f:
                     json.dump(meta, f)
-        if '/three@' in url and '/build/' in url and b'function generateUUID() {' in body:
-            # three's core file (three.module.js up to r170, three.core.js since). three draws four
-            # random numbers for every object's uuid. Give those their own stream, so creating one
-            # object more or fewer doesn't reshuffle the app's seeded Math.random (tree
-            # shapes and colours): screenshots then stay comparable across code changes.
-            body = body.replace(b'function generateUUID() {', b'function generateUUID() { const Math = { random: globalThis.__perfUuidRandom || globalThis.Math.random };', 1)
+        if '/three@' in url and '/build/' in url and UUID_FIND.encode() in body:   # three's core file: the patches (UUID_PATCH)
+            body = body.replace(UUID_FIND.encode(), UUID_PATCH.encode(), 1)
             if tag_three:
                 body += TAG_PATCH.encode()
         route.fulfill(status=meta['status'], body=body, headers={'content-type': meta['type'], 'access-control-allow-origin': '*'})
@@ -157,6 +175,344 @@ def git(*args):
         return subprocess.run(['git', *args], cwd=ROOT, capture_output=True, text=True, timeout=10).stdout.strip()
     except (OSError, subprocess.SubprocessError):
         return ''
+
+
+# ---------------------------------------------------------------- sides: what a run serves
+
+NOT_BUILT = {'tools', 'docs', 'node_modules', 'dist', 'pyproject.toml', 'uv.lock'}   # top-level entries no build reads (nor dot-entries, nor top-level *.md)
+
+
+def _built_input(path):
+    top = path.split('/', 1)[0]
+    return not (top.startswith('.') or top in NOT_BUILT or ('/' not in path and path.endswith('.md')))
+
+
+def side_has(src, ref, path):
+    if ref:
+        return subprocess.run(['git', 'cat-file', '-e', f'{ref}:{path}'], cwd=ROOT, capture_output=True).returncode == 0
+    return os.path.exists(os.path.join(src, path))
+
+
+def side_read(src, ref, path):
+    if ref:
+        return subprocess.run(['git', 'show', f'{ref}:{path}'], cwd=ROOT, capture_output=True, check=True).stdout
+    with open(os.path.join(src, path), 'rb') as f:
+        return f.read()
+
+
+def city_ids(src=ROOT, ref=None):
+    """The city ids in the side's js/cities.js (the keys of `export const CITIES = {…}`), read from the source:
+    a build has no js/cities.js to import."""
+    s = side_read(src, ref, 'js/cities.js').decode('utf-8')
+    i, depth, ids = s.index('export const CITIES = {') + len('export const CITIES = {'), 1, []
+    tok = re.compile(r"""'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`|//[^\n]*|/\*.*?\*/|[{}()\[\]]|([A-Za-z_$][\w$]*)\s*:""", re.S)
+    for m in tok.finditer(s, i):
+        t = m.group(0)
+        if t in '{([':
+            depth += 1
+        elif t in '})]':
+            depth -= 1
+            if not depth:
+                return ids
+        elif depth == 1 and m.group(1):
+            ids.append(m.group(1))
+    raise ValueError('js/cities.js: no end to `export const CITIES = {`')
+
+
+def side_inputs(src=None, ref=None):
+    """[(path, git blob sha)] of every file a build of the side can read: a commit's tree, or a folder's files
+    (tracked and untracked, not ignored), less NOT_BUILT. A clean working tree and its HEAD give the same list."""
+    if ref:
+        out = []
+        for e in subprocess.run(['git', 'ls-tree', '-r', '-z', ref], cwd=ROOT, capture_output=True, check=True).stdout.decode('utf-8').split('\0'):
+            if e and _built_input(e.split('\t', 1)[1]):
+                out.append((e.split('\t', 1)[1], e.split()[2]))
+        return sorted(out)
+    if os.path.exists(os.path.join(src, '.git')):
+        files = subprocess.run(['git', 'ls-files', '-z', '--cached', '--others', '--exclude-standard'], cwd=src, capture_output=True, check=True).stdout.decode('utf-8').split('\0')
+    else:
+        files = []
+        for d, ds, fs in os.walk(src):
+            ds[:] = [x for x in ds if _built_input(os.path.relpath(os.path.join(d, x), src).replace(os.sep, '/'))]
+            files += [os.path.relpath(os.path.join(d, f), src).replace(os.sep, '/') for f in fs]
+    out = []
+    for p in sorted(set(files)):
+        fp = os.path.join(src, p)
+        if p and _built_input(p) and os.path.isfile(fp):
+            with open(fp, 'rb') as f:
+                b = f.read()
+            out.append((p, hashlib.sha1(b'blob %d\0' % len(b) + b).hexdigest()))
+    return out
+
+
+def _run(cmd, cwd, what):
+    try:
+        r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, shell=sys.platform == 'win32')
+    except FileNotFoundError:
+        sys.exit(f'{cmd[0]} not found: the harness builds sides with a package.json, so it needs Node 24 and npm on PATH')
+    if r.returncode:
+        sys.exit(f'{what} failed ({" ".join(cmd)} in {cwd}):\n{r.stdout[-3000:]}\n{r.stderr[-3000:]}')
+    return r.stdout
+
+
+_NODE_CHECKED = set()
+
+
+def _check_node(src, ref):
+    """Warn once if Node's major version differs from the side's .nvmrc."""
+    want = side_read(src, ref, '.nvmrc').decode().strip().lstrip('v').split('.')[0] if side_has(src, ref, '.nvmrc') else ''
+    have = _run(['node', '--version'], ROOT, 'node --version').strip().lstrip('v').split('.')[0]
+    if want and want != have and want not in _NODE_CHECKED:
+        _NODE_CHECKED.add(want)
+        print(f'warning: Node {have} builds this side, whose .nvmrc asks for Node {want}', flush=True)
+
+
+def _prune(parent, prefix, keep):
+    """Keep the `keep` most recently used <parent>/<prefix>* folders, and drop stage-* and *.tmp-* folders that
+    runs killed earlier left over a day ago."""
+    for d in os.listdir(parent):
+        p = os.path.join(parent, d)
+        if (d.startswith('stage-') or '.tmp-' in d) and os.path.isdir(p) and time.time() - os.path.getmtime(p) > 86400:
+            shutil.rmtree(p, ignore_errors=True)
+    ds = sorted((os.path.join(parent, d) for d in os.listdir(parent) if d.startswith(prefix) and '.tmp-' not in d and not d.startswith('stage-')), key=os.path.getmtime, reverse=True)
+    for d in ds[keep:]:
+        shutil.rmtree(d, ignore_errors=True)
+
+
+def node_modules(src, ref, lock_sha):
+    """node_modules for this package-lock.json: `npm ci` once into tools/perf/.cache/npm-<lockfile sha>/, then
+    reused by every side with the same lockfile (never the user's own node_modules)."""
+    d = os.path.join(CACHE, 'npm-' + lock_sha[:16])
+    if not os.path.isdir(os.path.join(d, 'node_modules')):
+        print(f'npm ci (lockfile {lock_sha[:12]}) into {os.path.relpath(d, ROOT)}…', flush=True)
+        tmp = f'{d}.tmp-{os.getpid()}'
+        shutil.rmtree(tmp, ignore_errors=True)
+        os.makedirs(tmp)
+        try:
+            for f in ('package.json', 'package-lock.json'):
+                with open(os.path.join(tmp, f), 'wb') as fh:
+                    fh.write(side_read(src, ref, f))
+            _run(['npm', 'ci', '--no-audit', '--no-fund', '--loglevel=error'], tmp, 'npm ci')
+            shutil.rmtree(d, ignore_errors=True)
+            os.rename(tmp, d)
+        finally:   # a failed npm ci leaves nothing behind
+            shutil.rmtree(tmp, ignore_errors=True)
+    os.utime(d)
+    _prune(CACHE, 'npm-', 2)
+    return os.path.join(d, 'node_modules')
+
+
+def harness_version():
+    """A hash of what the harness puts into a perf build: the patch text and tools/perf/build.mjs."""
+    with open(BUILD, encoding='utf-8') as f:
+        return hashlib.sha1(json.dumps([UUID_FIND, UUID_PATCH, TAG_PATCH, f.read()]).encode()).hexdigest()[:12]
+
+
+def build_side(src, ref, mode):
+    """Build a side that has a package.json; returns the output folder. mode: 'perf' (tools/perf/build.mjs:
+    production's chunking, not minified, source maps, the uuid patch), 'perf-tag' (also TAG_PATCH: census and
+    ablation only, so the timing builds carry no tagging code) or 'prod' (the side's own `npm run build`,
+    unpatched). Builds are cached by their inputs in tools/perf/.cache/build/: the same files give the same
+    folder, so both sides of an ab from the same tree serve one build. Each build reads a staged copy of exactly
+    the inputs it is keyed by, with node_modules linked from the lockfile's cache."""
+    inputs = side_inputs(src, ref)
+    lock = dict(inputs).get('package-lock.json')
+    if not lock:
+        sys.exit(f'{ref or src}: a package.json but no package-lock.json; the harness installs with npm ci')
+    opt = {'find': UUID_FIND, 'replace': UUID_PATCH, 'append': TAG_PATCH if mode == 'perf-tag' else ''}
+    key = hashlib.sha1(json.dumps([mode, inputs] + ([opt, harness_version()] if mode != 'prod' else [])).encode()).hexdigest()[:16]
+    out = os.path.join(CACHE, 'build', f'{mode}-{key}')
+    if os.path.exists(os.path.join(out, BUILT)):
+        os.utime(out)
+        return out
+    _check_node(src, ref)
+    nm = node_modules(src, ref, lock)
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    stage, tmp = os.path.join(CACHE, f'stage-{os.getpid()}'), f'{out}.tmp-{os.getpid()}'
+    shutil.rmtree(stage, ignore_errors=True)
+    os.makedirs(stage)
+    try:
+        if ref:
+            arc = subprocess.run(['git', 'archive', ref, '--', *sorted({p.split('/', 1)[0] for p, _ in inputs})], cwd=ROOT, capture_output=True, check=True).stdout
+            with tarfile.open(fileobj=io.BytesIO(arc)) as t:
+                t.extractall(stage, filter='data')
+        else:
+            for p, _ in inputs:
+                os.makedirs(os.path.dirname(os.path.join(stage, p)), exist_ok=True)
+                shutil.copyfile(os.path.join(src, p), os.path.join(stage, p))
+        try:
+            os.symlink(nm, os.path.join(stage, 'node_modules'), target_is_directory=True)
+        except OSError:   # Windows without symlink rights: a junction
+            import _winapi
+            _winapi.CreateJunction(nm, os.path.join(stage, 'node_modules'))
+        print(f'building {ref or os.path.relpath(src, ROOT) or "."} ({mode})…', flush=True)
+        shutil.rmtree(tmp, ignore_errors=True)
+        if mode == 'prod':
+            _run(['npm', 'run', 'build'], stage, 'npm run build')
+            if not os.path.isfile(os.path.join(stage, 'dist', 'index.html')):
+                sys.exit(f'npm run build in {stage} wrote no dist/index.html')
+            shutil.move(os.path.join(stage, 'dist'), tmp)
+            patched = 0
+        else:   # cwd = the staged side: the bundle's module comments are relative to it, so every side's bundle reads alike
+            patched = json.loads(_run(['node', BUILD, stage, tmp, json.dumps(opt)], stage, 'the perf-mode build').strip().splitlines()[-1])['patched']
+            if patched != 1:
+                sys.exit(f'the perf-mode build patched {patched} files, not 1: no three.js build file holds {UUID_FIND!r} (did three change?)')
+        with open(os.path.join(tmp, BUILT), 'w', encoding='utf-8') as f:
+            json.dump({'mode': mode, 'key': key, 'source': ref or os.path.abspath(src), 'files': len(inputs), 'patched': patched, 'harness': harness_version()}, f)
+        shutil.rmtree(out, ignore_errors=True)
+        os.rename(tmp, out)
+    finally:
+        shutil.rmtree(stage, ignore_errors=True)
+        shutil.rmtree(tmp, ignore_errors=True)
+    _prune(os.path.dirname(out), '', 8)
+    return out
+
+
+def prepare_side(src=ROOT, ref=None, tag=False, prod=False, tmp=None):
+    """One side of a run, as a folder to serve(): (folder, kind, cleanup). The side is a folder (src) or a commit
+    (ref). With a package.json it is built (build_side: the perf-mode build, with the census patch if `tag`, or
+    with `prod` the side's own `npm run build`) and its output is served strictly. Without one it is served as
+    sources, as before the build existed: three.js and the font from the CDN cache with the same patches
+    (cdn_handler), anything missing from ROOT; a commit is checked out into the worktree `tmp` for that.
+    The no-build path exists until P3 of docs/REFACTOR-PLAN.md removes it."""
+    if side_has(src, ref, 'package.json'):
+        mode = 'prod' if prod else 'perf-tag' if tag else 'perf'
+        return build_side(src, ref, mode), ('production build' if prod else 'perf build'), lambda: None
+    if prod:
+        sys.exit(f'--prod: {ref or src} has no package.json, so no production build')
+    if not ref:
+        return src, 'sources', lambda: None
+    tmp = tmp or os.path.join(OUT, f'.side-{os.getpid()}')
+    if os.path.exists(tmp):
+        subprocess.run(['git', 'worktree', 'remove', '--force', tmp], cwd=ROOT, capture_output=True)
+    r = subprocess.run(['git', 'worktree', 'add', '--detach', tmp, ref], cwd=ROOT, capture_output=True, text=True)
+    if r.returncode:
+        sys.exit('git worktree add failed: ' + r.stderr)
+    return tmp, 'sources', lambda: subprocess.run(['git', 'worktree', 'remove', '--force', tmp], cwd=ROOT, capture_output=True)
+
+
+# ---------------------------------------------------------------- built code back to the sources
+
+_B64 = {c: i for i, c in enumerate('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/')}
+
+
+class _SourceMap:
+    """A .map file: lookup(line, column) in the generated file -> (source, line, column, name or None), 0-based."""
+
+    def __init__(self, path):
+        with open(path, encoding='utf-8') as f:
+            m = json.load(f)
+        self.sources, self.names, self.lines = m['sources'], m.get('names', []), []
+        src = oline = ocol = name = 0
+        for text in m['mappings'].split(';'):
+            segs, col = [], 0
+            for s in text.split(','):
+                if not s:
+                    continue
+                vals, v, shift = [], 0, 0
+                for ch in s:   # base64 VLQ
+                    d = _B64[ch]
+                    v += (d & 31) << shift
+                    if d & 32:
+                        shift += 5
+                    else:
+                        vals.append(-(v >> 1) if v & 1 else v >> 1)
+                        v = shift = 0
+                col += vals[0]
+                if len(vals) < 4:   # generated code with no source (bundler runtime)
+                    segs.append((col, -1, 0, 0, -1))
+                    continue
+                src, oline, ocol = src + vals[1], oline + vals[2], ocol + vals[3]
+                if len(vals) > 4:
+                    name += vals[4]
+                segs.append((col, src, oline, ocol, name if len(vals) > 4 else -1))
+            self.lines.append(segs)
+
+    def lookup(self, line, col):
+        segs = self.lines[line] if 0 <= line < len(self.lines) else []
+        i = max(0, bisect.bisect_right(segs, (col, float('inf'))) - 1)   # before the line's first segment: indentation, take the first
+        if not segs or segs[i][1] < 0:
+            return None
+        _, s, ol, oc, n = segs[i]
+        return self.sources[s], ol, oc, (self.names[n] if n >= 0 else None)
+
+
+_MAPS = {}
+RENAMED = re.compile(r'\$\d+$')   # a bundler renames a top-level name that collides in the chunk: buildMonorail -> buildMonorail$1
+
+
+def source_of(url, line, col):
+    """A position (0-based) in code a side served -> (url, line, col, name) in its sources. For a build, through
+    the chunk's source map: the url becomes <origin>/js/… or <origin>/node_modules/…, name is the identifier
+    the map names there. Sources served as they are, and other URLs, come back as they are (name None)."""
+    m = re.match(r'(https?://[^/]+)/([^?#]*)', url or '')
+    root = _SERVED.get(m.group(1)) if m else None
+    if root:
+        mp = os.path.join(root, m.group(2) + '.map')
+        if mp not in _MAPS:
+            _MAPS[mp] = _SourceMap(mp) if os.path.isfile(mp) else None
+        r = _MAPS[mp] and _MAPS[mp].lookup(line, col)
+        if r:
+            return f'{m.group(1)}/{r[0]}', r[1], r[2], r[3]
+    return url, line, col, None
+
+
+STACK_FRAME = re.compile(r'at (?:(.+?) \()?(\S+?):(\d+):(\d+)\)?$')
+
+
+def attribute(stack):
+    """An add() call's stack (TAG_PATCH) -> (builder, site): site = the first app file:line (js/…), builder =
+    the outermost build*/create* function under buildScene, else the site's file name. (None, None) without an
+    app frame. Built frames go through the source map; renamed functions get their names back."""
+    site = builder = None
+    for line in stack.split('\n'):
+        m = STACK_FRAME.search(line.strip())
+        if not m:
+            continue
+        url, ln, _, _ = source_of(m.group(2), int(m.group(3)) - 1, int(m.group(4)) - 1)
+        p = re.match(r'(?:[a-z]+://[^/]+)?/(js/[^\s():]+)$', url)   # an app file, as the old in-page FRAME regex took it
+        if not p:
+            continue
+        if not site:
+            site = f'{p.group(1)}:{ln + 1}'
+        fn = RENAMED.sub('', re.split(r'[ .]', m.group(1) or '')[-1])
+        if fn == 'buildScene':
+            break
+        if re.match(r'(build|create)[A-Z]', fn):
+            builder = fn
+    return (builder or re.sub(r':\d+$', '', site.rsplit('/', 1)[-1]), site) if site else (None, None)
+
+
+def tag_objects(page):
+    """Resolve the add() stacks TAG_PATCH recorded since the last call, for probe.js's tagOf (census, inventory
+    by builder, ablation's hideBuilder)."""
+    rows = [[i, *attribute(s)] for i, s in page.evaluate('__perf.stacks()')]
+    if rows:
+        page.evaluate('r => __perf.setTags(r)', rows)
+
+
+def source_profile(p):
+    """Rewrite a .cpuprofile's or .heapprofile's call frames in built code to the sources (url, line, column,
+    function name), in place, so `hot` and DevTools read a saved profile in source terms after the build is gone."""
+    nodes, st = (p['nodes'], []) if 'nodes' in p else ([], [p['head']])
+    while st:
+        n = st.pop()
+        nodes.append(n)
+        st.extend(n.get('children', []))
+    for n in nodes:
+        cf = n['callFrame']
+        if cf.get('lineNumber', -1) < 0:
+            continue
+        url, ln, col, name = source_of(cf['url'], cf['lineNumber'], cf['columnNumber'])
+        if url == cf['url']:
+            continue
+        fn = cf['functionName']
+        if RENAMED.search(fn):   # the map names a renamed function at its position (buildMonorail); else drop the $N in app code only (three has its own: checkIntersection$1)
+            fn = name or (RENAMED.sub('', fn) if re.match(r'https?://[^/]+/js/', url) else fn)
+        if 'positionTicks' in n:   # line hit counts: generated line -> source line
+            n['positionTicks'] = [{**t, 'line': source_of(cf['url'], t['line'] - 1, 0)[1] + 1} for t in n['positionTicks']]
+        cf.update(url=url, lineNumber=ln, columnNumber=col, functionName=fn)
+    return p
 
 
 # ---------------------------------------------------------------- numbers
@@ -224,8 +580,8 @@ def short_url(u):
     if not u:
         return ''
     m = re.match(r'https?://(?:127\.0\.0\.1|localhost):\d+/(.*)', u)
-    if m:
-        return m.group(1)
+    if m:   # three in a build (source_profile) reads as from the CDN
+        return 'three/' + m.group(1).rsplit('/', 1)[-1] if m.group(1).startswith('node_modules/three/') else m.group(1)
     if 'three@' in u:
         return 'three/' + u.rsplit('/', 1)[-1]
     return u
@@ -464,6 +820,8 @@ def ablate(page, sc, a, census):
     items += [('hide', b) for b in picked[:a.ablate_max]]
     res = []
     for kind, name in items:
+        if kind == 'hide':   # objects added since the census (a ride, a lazy part) get their builder first
+            tag_objects(page)
         js = f'__perf.applyToggle({json.dumps(name)})' if kind == 'toggle' else f'__perf.hideBuilder({json.dumps(name)})'
         res.append({'what': name if kind == 'toggle' else f'hide {name}', **measure_with(js)})
     base2 = measure_with()
@@ -500,8 +858,8 @@ def run_scenario(page, cdp, sc, a, art):
         cdp.send('Profiler.setSamplingInterval', {'interval': 100})
         cdp.send('Profiler.start')
         page.wait_for_timeout(int(secs * 1000))
-        prof = cdp.send('Profiler.stop')['profile']
-        heap = cdp.send('HeapProfiler.stopSampling')['profile'] if heap_ok else None
+        prof = source_profile(cdp.send('Profiler.stop')['profile'])
+        heap = source_profile(cdp.send('HeapProfiler.stopSampling')['profile']) if heap_ok else None
         frames = page.evaluate('__perf.frameCount') - f0
         with open(os.path.join(art, name + '.cpuprofile'), 'w') as f:
             json.dump(prof, f)
@@ -513,6 +871,7 @@ def run_scenario(page, cdp, sc, a, art):
     if art:
         page.screenshot(path=os.path.join(art, name + '.png'))
     if a.census or a.ablate:
+        tag_objects(page)
         rows = page.evaluate('__perf.census()')
         s['census'] = census_tables(rows)
         if art:
@@ -546,16 +905,24 @@ def launch(pw, a):
     return pw.chromium.launch(headless=not a.headed, channel=a.channel, args=gpu_args())
 
 
-def open_app(browser, a, base, tag=False, profile_load=False):
-    """A new context and page with the probe, loaded until the scene has drawn 10 frames.
-    Returns (page, cdp, errors, load report); with profile_load, load['profile'] is the CPU
-    profile of the whole load."""
+def app_context(browser, a, tag=False, cdn=True):
+    """A new context with the fixed viewport, the probe (seeded Math.random, pinned date), and
+    three.js and the font served from the cache (with the uuid patch) for a side served as sources."""
     w, h = (int(v) for v in a.size.lower().split('x'))
     ctx = browser.new_context(viewport={'width': w, 'height': h}, device_scale_factor=a.dpr)
     ctx.add_init_script(script='window.__PERF_CFG = ' + json.dumps({'seed': 1, 'date': FIXED_DATE}) + ';')
     ctx.add_init_script(path=PROBE)
-    ctx.route(CDN, cdn_handler(tag))
+    if cdn:
+        ctx.route(CDN, cdn_handler(tag))
     ctx.route(re.compile(r'/__blank$'), lambda r: r.fulfill(body='<!doctype html><title>perf</title>', content_type='text/html'))
+    return ctx
+
+
+def open_app(browser, a, base, tag=False, profile_load=False):
+    """A new context and page with the probe, loaded until the scene has drawn 10 frames.
+    Returns (page, cdp, errors, load report); with profile_load, load['profile'] is the CPU
+    profile of the whole load."""
+    ctx = app_context(browser, a, tag)
     page = ctx.new_page()
     errors = []
     page.on('pageerror', lambda e: errors.append(f'pageerror: {e}'))
@@ -575,7 +942,9 @@ def open_app(browser, a, base, tag=False, profile_load=False):
         raise RuntimeError('the scene did not start: ' + page.evaluate("document.getElementById('status').textContent") + '\n' + '\n'.join(errors))
     L = page.evaluate('__perf.loadReport()')
     if profile_load:
-        L['profile'] = cdp.send('Profiler.stop')['profile']
+        L['profile'] = source_profile(cdp.send('Profiler.stop')['profile'])
+    if tag:
+        tag_objects(page)
     L['phaseList'] = load_phases(L)
     L['heapMB'] = round(metrics(cdp)['JSHeapUsedSize'] / MB, 1)
     L['inventory'] = page.evaluate('__perf.inventory()')
@@ -753,6 +1122,47 @@ def summary_md(rep):
     return '\n'.join(out) + '\n'
 
 
+# ---------------------------------------------------------------- screenshots
+
+DIFF_THRESHOLD = 8   # a pixel counts as changed when a channel differs by more than this (of 255): dithering stays under it
+
+
+def pixel_diff(pa, pb, out=None):
+    """Share (0-1) of the pixels that differ between two PNGs, None if their sizes differ. With
+    `out`, also saves a diff image: B faded to grey, the changed pixels red."""
+    from PIL import Image, ImageChops   # only the pixel diffs need Pillow
+    a, b = Image.open(pa).convert('RGB'), Image.open(pb).convert('RGB')
+    if a.size != b.size:
+        return None
+    mask = functools.reduce(ImageChops.lighter, ImageChops.difference(a, b).point(lambda v: 255 if v > DIFF_THRESHOLD else 0).split())
+    if out:
+        os.makedirs(os.path.dirname(out), exist_ok=True)
+        grey = Image.blend(b.convert('L').convert('RGB'), Image.new('RGB', b.size, 'white'), .6)
+        Image.composite(Image.new('RGB', b.size, (230, 0, 40)), grey, mask).save(out)
+    return mask.histogram()[255] / (b.size[0] * b.size[1])
+
+
+def diff_table(pairs, what):
+    """pairs: [(name, A png, B png, diff png)] -> (markdown table lines, {name: share, None if the sizes differ})."""
+    lines, shares = [f'| {what} | changed pixels |', '|---|---:|'], {}
+    for name, pa, pb, pd in pairs:
+        gone = [side for side, p in (('A', pa), ('B', pb)) if not os.path.exists(p)]
+        if gone:
+            lines.append(f'| {name} | no image on side {" and ".join(gone)} |')
+            continue
+        try:
+            shares[name] = pixel_diff(pa, pb, pd)
+        except ImportError:
+            return ['Pillow is not installed, so no pixel diff (pip install pillow).'], {}
+        lines.append(f'| {name} | {"size differs" if shares[name] is None else f"{100 * shares[name]:.4f}%"} |')
+    return lines, shares
+
+
+def diff_note(img):
+    return (f'Share of pixels that differ between A and B (a channel off by more than {DIFF_THRESHOLD} of 255; `{img}` marks them red). '
+            'Trains, boats and people move, so the same code on both sides does not give 0.\n')
+
+
 # ---------------------------------------------------------------- commands
 
 def pick_scenarios(a):
@@ -798,7 +1208,8 @@ def cmd_run(a):
     scen = pick_scenarios(a)
     out = out_dir(a)
     from playwright.sync_api import sync_playwright
-    srv, base = serve()
+    root, _, done = prepare_side(ROOT, tag=a.census or a.ablate)
+    srv, base = serve(root)
     runs = []
     try:
         with sync_playwright() as pw:
@@ -807,6 +1218,7 @@ def cmd_run(a):
                 runs.append(run_once(pw, a, base, scen, out if i == 0 else None))
     finally:
         srv.shutdown()
+        done()
     dirty = bool(git('status', '--porcelain', '--', 'js', 'css', 'index.html', 'data'))
     _, md = write_report(a, runs, scen, out, git('rev-parse', '--short', 'HEAD'), dirty, a.label)
     print(md)
@@ -820,25 +1232,13 @@ def cmd_ab(a):
     scene runs 12-50% slower than the first (tested), which would bias whichever loads second."""
     scen = pick_scenarios(a)
     out = out_dir(a, '-ab')
-    tmp = os.path.join(OUT, '.ab-base')
-    if a.a_snap:   # side A is a snapshot folder (perf.py snap), not a commit
-        commit, root_a = 'snapshot ' + a.a_snap, snap_dir(a.a_snap)
-    else:
-        commit = git('rev-parse', '--short', a.base)
-        if not commit:
-            sys.exit(f'unknown git ref: {a.base}')
-        if os.path.exists(tmp):
-            subprocess.run(['git', 'worktree', 'remove', '--force', tmp], cwd=ROOT, capture_output=True)
-        r = subprocess.run(['git', 'worktree', 'add', '--detach', tmp, a.base], cwd=ROOT, capture_output=True, text=True)
-        if r.returncode:
-            sys.exit('git worktree add failed: ' + r.stderr)
-        root_a = tmp
-    root_b = snap_dir(a.b_snap) if a.b_snap else ROOT
+    commit = 'snapshot ' + a.a_snap if a.a_snap else git('rev-parse', '--short', a.base)   # side A: a snapshot folder (perf.py snap) or a commit
+    if not commit:
+        sys.exit(f'unknown git ref: {a.base}')
     b_name = 'snapshot ' + a.b_snap if a.b_snap else 'working tree'
     from playwright.sync_api import sync_playwright
-    (sa, base_a), (sb, base_b) = serve(root_a), serve(root_b)
     rounds = {'frames': defaultdict(lambda: ([], [])), 'load': defaultdict(lambda: ([], []))}   # metric -> (A values, B values), paired by index
-    env, errors = {}, []
+    env, errors, notes, servers, done = {}, [], [], [], []
 
     def block(pw, k, keep=True, shots=False):
         browser = launch(pw, a)
@@ -864,26 +1264,54 @@ def cmd_ab(a):
             for key, v in got.items():
                 if v is not None:
                     rounds['load' if key.startswith('load.') else 'frames'][key]['AB'.index(k)].append(v)
-    try:
+    try:   # the sides and servers too, so a side that fails to build still cleans up the other
+        if a.a_snap:
+            root_a = snap_dir(a.a_snap)
+            kind_a = snap_kind(root_a)
+        else:
+            root_a, kind_a, d = prepare_side(ref=a.base, tmp=os.path.join(OUT, '.ab-base'))
+            done.append(d)
+        if a.b_snap:
+            root_b = snap_dir(a.b_snap)
+            kind_b = snap_kind(root_b)
+        else:
+            root_b, kind_b, d = prepare_side(ROOT)
+            done.append(d)
+        for k, name in (('A', a.a_snap), ('B', a.b_snap)):   # a build snapshot keeps the patches of the harness that made it
+            if name and snap_kind(snap_dir(name)) == 'perf build':
+                with open(os.path.join(snap_dir(name), BUILT), encoding='utf-8') as f:
+                    h = json.load(f).get('harness')
+                if h != harness_version():
+                    notes.append(f'**Warning:** side {k} (snapshot {name}) was built by another harness version ({h or "unrecorded"}; this one is '
+                                 f'{harness_version()}), so the two sides may be patched or built differently. Make the snapshot again.')
+                    print(notes[-1].replace('**', ''), flush=True)
+        sa, base_a = serve(root_a)
+        servers.append(sa)
+        sb, base_b = serve(root_b)
+        servers.append(sb)
         with sync_playwright() as pw:
-            print('warm-up (discarded)…', flush=True)   # the first browser of a session runs differently
+            # the first browser of a session runs differently, and the side that warms up keeps an edge (same code on both sides:
+            # whole-city frame time came out 18% better for the warmed side, 6/6 rounds), so warm up both
+            print('warm-up (discarded)…', flush=True)
+            block(pw, 'A', keep=False)
             block(pw, 'B', keep=False)
             for i in range(a.rounds):
                 for k in ('AB' if i % 2 == 0 else 'BA'):
                     print(f'round {i + 1}/{a.rounds}: {k} ({"base " + commit if k == "A" else b_name})…', flush=True)
                     block(pw, k, shots=a.shots and i == a.rounds - 1)
     finally:
-        sa.shutdown()
-        sb.shutdown()
-        if not a.a_snap:
-            subprocess.run(['git', 'worktree', 'remove', '--force', tmp], cwd=ROOT, capture_output=True)
+        for srv in servers:
+            srv.shutdown()
+        for d in done:
+            d()
     dirty = bool(git('status', '--porcelain', '--', 'js', 'css', 'index.html', 'data'))
     gl = (env.get('gl') or {}).get('renderer', '?')
-    side_a = commit if a.a_snap else f'base {a.base} ({commit})'
-    side_b = b_name if a.b_snap else f'the working tree ({git("rev-parse", "--short", "HEAD")}{" + uncommitted changes" if dirty else ""})'
+    side_a = f'{commit} ({kind_a})' if a.a_snap else f'base {a.base} ({commit}, {kind_a})'
+    side_b = f'{b_name} ({kind_b})' if a.b_snap else f'the working tree ({git("rev-parse", "--short", "HEAD")}{" + uncommitted changes" if dirty else ""}, {kind_b})'
     lines = [f'# A/B: {side_a} vs {side_b}\n',
              f'GPU: {gl}. {a.rounds} paired rounds (A B, B A, …), each side a fresh browser that loads the app'
              f'{" (load metrics recorded)" if a.load else ""} and measures each scenario for {a.seconds} s.\n',
+             *[n + '\n' for n in notes],
              f'Δ = B − A (mean over paired rounds). A verdict needs |Δ| ≥ {a.threshold}% and a paired t-test: '
              f'"better"/"worse" at 99%, "likely" at 95%. Higher is better only for fps. {"Every metric shown." if a.all else "Only metrics past the threshold are shown (--all for every row)."}\n']
     verdicts = []
@@ -925,15 +1353,156 @@ def cmd_ab(a):
                                        else 'no significant difference.'))
     if a.rounds < 4:
         lines.append('\nFewer than 4 rounds: the t-test can only catch large effects. Use --rounds 6 for small ones.')
+    shots = {}
+    if a.shots:
+        t, shots = diff_table([(sc['name'], *(os.path.join(out, f'{k}-{sc["name"]}.png') for k in ('A', 'B', 'diff'))) for sc in scen], 'scenario')
+        lines += ['\n## Screenshots\n', diff_note('diff-<scenario>.png'), *t]
     md = '\n'.join(lines) + '\n'
     with open(os.path.join(out, 'ab.md'), 'w', encoding='utf-8') as f:
         f.write(md)
     with open(os.path.join(out, 'ab.json'), 'w', encoding='utf-8') as f:
-        json.dump({'base': a.base, 'commit': commit, 'dirty': dirty, 'env': env, 'errors': sorted(set(errors)), 'rounds': a.rounds,
-                   'seconds': a.seconds, 'scenarios': [s['name'] for s in scen], 'values': raw,
+        json.dump({'base': a.base, 'commit': commit, 'dirty': dirty, 'sides': {'A': kind_a, 'B': kind_b}, 'env': env, 'errors': sorted(set(errors)), 'rounds': a.rounds,
+                   'seconds': a.seconds, 'scenarios': [s['name'] for s in scen], 'values': raw, 'shots': shots,
                    'verdicts': [{'metric': k, 'verdict': v.strip('*'), 'pct': round(p, 2)} for k, v, p in verdicts]}, f, indent=1)
     print(md)
     print(f'Wrote {os.path.relpath(out, ROOT)} (ab.md, ab.json)')
+
+
+# smoke: the scene is up (a city sets window.__city, the kitchen window.__kitchen), frames run and the
+# loading screen has gone, or the page shows a load error
+SMOKE_WAIT = """() => ((window.__city || window.__kitchen) && window.__perf && __perf.frameCount >= 10 && document.getElementById('city-loading').hidden)
+    || getComputedStyle(document.getElementById('err')).display !== 'none'
+    || /Couldn|needs a local/.test(document.getElementById('status').textContent)"""
+# the fixed view for a smoke screenshot: a city's home view at 12:30 (the kitchen opens on its one fixed view and has no clock)
+SMOKE_VIEW = 'async () => { const api = window.__city; if (!api) return;\n' + RESET + "api.flyTo('home'); api.setTime(12.5);\n}"
+
+
+def smoke_city(browser, a, base, cid, out):
+    from playwright.sync_api import TimeoutError as PwTimeout
+    ctx = app_context(browser, a, cdn=not (a.prod or a.url))   # the real production output: nothing intercepted
+    page = ctx.new_page()
+    errors, r, started = [], {'ok': False}, False
+    page.on('pageerror', lambda e: errors.append(f'pageerror: {e}'))
+    page.on('console', lambda m: errors.append(f'console.error: {m.text}') if m.type == 'error' else None)
+    page.on('requestfailed', lambda q: errors.append(f'request failed: {q.method} {q.url} ({q.failure})'))
+    page.on('response', lambda q: errors.append(f'HTTP {q.status}: {q.request.method} {q.url}') if q.status >= 400 else None)
+    state = "() => ({ frames: window.__perf ? __perf.frameCount : 0, status: document.getElementById('status').textContent, up: !!(window.__city || window.__kitchen) })"
+    t0 = time.time()
+    try:
+        page.goto(base + ('/?city=' if a.url else '/index.html?city=') + cid, wait_until='load', timeout=a.timeout * 1000)
+        try:
+            page.wait_for_function(SMOKE_WAIT, timeout=max(1000, a.timeout * 1000 - (time.time() - t0) * 1000), polling=250)
+        except PwTimeout:
+            st = page.evaluate(state)
+            errors.append(f'timed out after {a.timeout} s waiting for the scene to start and the loading screen to close '
+                          f'({st["frames"]} frames drawn, scene {"built" if st["up"] else "not built"}, status "{st["status"]}"): a frame loop that died looks like this')
+        else:
+            st = page.evaluate(state)
+            started = st['up'] and st['frames'] >= 10
+            if not started:
+                errors.append(f'the scene did not start: {st["status"]}')
+        if started:
+            r['loadS'] = round(time.time() - t0, 1)
+            page.evaluate(SMOKE_VIEW)
+            f0 = page.evaluate('__perf.frameCount')
+            page.wait_for_timeout(a.settle)
+            if page.evaluate('() => !!window.__city'):
+                page.evaluate(SHOT_ALIGN)
+            page.wait_for_timeout(400)
+            r['frames'] = page.evaluate('__perf.frameCount') - f0
+            if not r['frames']:
+                errors.append(f'the frame loop stopped: no frame drawn in the {a.settle + 400} ms before the screenshot')
+            r['gl'] = page.evaluate('() => __perf.api ? __perf.glInfo().renderer : null')
+            page.screenshot(path=os.path.join(out, cid + '.png'))
+        else:
+            page.screenshot(path=os.path.join(out, cid + '.fail.png'))
+    except Exception as e:   # noqa: BLE001  (one city failing must not stop the others)
+        errors.append(f'{type(e).__name__}: {e}'.strip())
+    finally:
+        r['errors'] = list(errors)
+        r['ok'] = not r['errors']
+        ctx.close()
+    return r
+
+
+def cmd_smoke(a):
+    """Load every city in js/cities.js from a served side the way the harness does (seeded, date
+    pinned; a built side in perf mode, a side of sources with CDN files from the cache), fail on any
+    page error, console error or failed request, and save one screenshot per city in a fixed view.
+    --prod serves the side's own production build instead, --url loads a deployed site. --against
+    diffs the screenshots with an earlier smoke's."""
+    out = out_dir(a, '-smoke')
+    done, srv = (lambda: None), None
+    if a.url:   # a deployed site: serve nothing; the city ids from the working tree
+        if a.prod:
+            sys.exit('--prod and --url: pick one')
+        base, what, ids = a.url.rstrip('/'), a.url, city_ids()
+    else:
+        if a.ref:   # a commit: built from git, or checked out into a temporary worktree (data/ included)
+            sha = git('rev-parse', '--short', a.ref)
+            if not sha:
+                sys.exit(f'unknown git ref: {a.ref}')
+            src, what = ROOT, f'{a.ref} ({sha})'
+        elif a.root:
+            src, what = os.path.abspath(a.root), a.root
+        else:
+            dirty = bool(git('status', '--porcelain', '--', 'js', 'css', 'index.html', 'data'))
+            src, what = ROOT, f'the working tree ({git("rev-parse", "--short", "HEAD")}{" + uncommitted changes" if dirty else ""})'
+        # a folder without js/cities.js (a dist/) gets it from the working tree, as its other missing files
+        ids = city_ids(src if a.ref or side_has(src, None, 'js/cities.js') else ROOT, a.ref)
+        root, kind, done = prepare_side(src, a.ref, prod=a.prod, tmp=os.path.join(OUT, f'.smoke-{os.getpid()}'))
+        what += f', {kind}'
+        srv, base = serve(root)
+    from playwright.sync_api import sync_playwright
+    res, gl = {}, None
+    try:
+        with sync_playwright() as pw:
+            browser = launch(pw, a)
+            try:
+                want = [c.strip() for c in a.cities.split(',') if c.strip()] if a.cities else ids
+                bad = [c for c in want if c not in ids]
+                if bad:
+                    sys.exit(f'unknown city id(s): {", ".join(bad)}; js/cities.js has {", ".join(ids)}')
+                for cid in want:
+                    print(f'{cid}…', flush=True)
+                    res[cid] = smoke_city(browser, a, base, cid, out)
+                    gl = gl or res[cid].get('gl')
+                    res[cid].pop('gl', None)
+                    print(f"  {'ok' if res[cid]['ok'] else 'FAILED'} ({res[cid].get('loadS', '-')} s)" + ''.join(f'\n    {e}' for e in res[cid]['errors'][:5]), flush=True)
+            finally:
+                browser.close()
+    finally:
+        if srv:
+            srv.shutdown()
+        done()
+    failed = [c for c, r in res.items() if not r['ok']]
+    lines = [f'# Smoke: {what}\n',
+             f'GPU: {gl or "?"}. {a.size} @ dpr {a.dpr}. Each city loads in a fresh page (seeded Math.random, pinned date) and must draw frames and close its '
+             f'loading screen within {a.timeout} s with no page error, console error or failed request; then the home view at 12:30 '
+             f'(the kitchen: its opening view), {a.settle} ms to settle, and `<city>.png`.\n',
+             '| city | result | load s | first error |', '|---|---|---:|---|']
+    for c, r in res.items():
+        lines.append(f"| {c} | {'ok' if r['ok'] else '**FAILED**'} | {r.get('loadS', '-')} | {(r['errors'][0] if r['errors'] else '').replace('|', '/')[:200]} |")
+    for c in failed:
+        lines.append(f'\n### {c}\n')
+        lines += [f'- {e}' for e in res[c]['errors'][:30]]
+    changed = {}
+    if a.against:
+        t, changed = diff_table([(c, os.path.join(a.against, c + '.png'), os.path.join(out, c + '.png'), os.path.join(out, c + '.diff.png')) for c in res], 'city')
+        lines += [f'\n## Pixel diff: A = {a.against}, B = this run\n', diff_note('<city>.diff.png'), *t]
+        if a.prod or a.url:
+            lines.append('\nInformational only: production code has no uuid patch (UUID_PATCH), so the seeded random stream shifts and trees '
+                         'move against a patched side. What counts here is no error and no failed request.')
+    lines.append('\n**Result:** ' + (f'failed: {", ".join(failed)}.' if failed else f'all {len(res)} cities passed.'))
+    md = '\n'.join(lines) + '\n'
+    with open(os.path.join(out, 'smoke.md'), 'w', encoding='utf-8') as f:
+        f.write(md)
+    with open(os.path.join(out, 'smoke.json'), 'w', encoding='utf-8') as f:
+        json.dump({'root': what, 'gl': gl, 'size': a.size, 'dpr': a.dpr, 'cities': res, 'against': a.against, 'changed': changed, 'failed': failed}, f, indent=1)
+    print(md)
+    print(f'Wrote {os.path.relpath(out, ROOT)} (smoke.md, smoke.json, <city>.png)')
+    if failed:
+        sys.exit(1)
 
 
 def snap_dir(name):
@@ -943,13 +1512,22 @@ def snap_dir(name):
     return d
 
 
+def snap_kind(d):
+    return 'perf build' if os.path.exists(os.path.join(d, BUILT)) else 'sources'
+
+
 def cmd_snap(a):
-    """Copy the app sources (index.html, css/, js/) to out/.snap/<name>, to use as a side of `ab`
-    later: stacked changes can then be measured one at a time without committing. --ref copies
-    them from a commit instead of the working tree."""
+    """Freeze the app as it is now in out/.snap/<name>, to use as a side of `ab` later: stacked
+    changes can then be measured one at a time without committing. A side with a package.json is
+    built in perf mode and the snapshot is that build (served strictly); one without gets its sources
+    copied (index.html, css/, js/). --ref snapshots a commit instead of the working tree."""
     d = os.path.join(OUT, '.snap', a.name)
     if os.path.exists(d):
         shutil.rmtree(d)
+    if side_has(ROOT, a.ref, 'package.json'):
+        shutil.copytree(build_side(ROOT, a.ref, 'perf'), d)
+        print(f'Wrote {os.path.relpath(d, ROOT)} (a perf build)')
+        return
     os.makedirs(d)
     src = ROOT
     if a.ref:
@@ -1094,11 +1672,28 @@ def main():
     h.add_argument('--tree-pct', type=float, default=1.0, help='hide tree branches under this %% of the time')
     h.add_argument('--seconds', type=float, help='heap profiles: the window length, to report MB/s')
     h.set_defaults(fn=cmd_hot)
-    sn = sub.add_parser('snap', help='snapshot the sources for a later ab --a-snap / --b-snap')
+    sn = sub.add_parser('snap', help='snapshot the app (its perf build, or its sources) for a later ab --a-snap / --b-snap')
     sn.add_argument('name')
     sn.add_argument('--ref', help='snapshot this commit instead of the working tree')
     sn.set_defaults(fn=cmd_snap)
     sub.add_parser('list', help='list scenarios').set_defaults(fn=cmd_list)
+    sm = sub.add_parser('smoke', help='load every city: no page error, console error or failed request; one screenshot each')
+    src = sm.add_mutually_exclusive_group()
+    src.add_argument('--ref', help='this commit instead of the working tree (built, or checked out into a temporary worktree)')
+    src.add_argument('--root', help='this folder instead of the working tree: built if it has a package.json, else served as it is (what it lacks comes from the working tree)')
+    src.add_argument('--url', help='load the deployed site at this origin instead of serving anything (city ids from the working tree)')
+    sm.add_argument('--prod', action='store_true', help="serve the side's own production build (npm run build, unpatched) instead of the perf-mode build")
+    sm.add_argument('--cities', help='comma-separated city ids (default: every city in js/cities.js)')
+    sm.add_argument('--against', help='an earlier smoke output folder: report the share of changed pixels per city')
+    sm.add_argument('--label', default='', help='appended to the output folder name')
+    sm.add_argument('--out', help='output folder (default tools/perf/out/<time>-smoke[-label])')
+    sm.add_argument('--timeout', type=int, default=180, help='seconds a city may take to load before it counts as failed')
+    sm.add_argument('--settle', type=int, default=3000, help='ms in the fixed view before the screenshot')
+    sm.add_argument('--size', default='1600x900', help='viewport WxH')
+    sm.add_argument('--dpr', type=float, default=1, help='device pixel ratio')
+    sm.add_argument('--headed', action='store_true', help='show the browser window')
+    sm.add_argument('--channel', default=None, help='e.g. chrome to use an installed browser instead of Playwright\'s Chromium')
+    sm.set_defaults(fn=cmd_smoke)
     a = ap.parse_args()
     if getattr(a, 'ablate', False):
         a.census = True
