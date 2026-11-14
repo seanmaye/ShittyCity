@@ -61,6 +61,11 @@ unless a load or frame row moves with them.
 pillow==13.0.0 python -I tools/perf/perf.py …` (zsh: wrap in a function or script; a command in a
 variable is not word-split).
 
+**Branch builds fail (pre-existing):** the "Workers Builds: shittycity" check fails on every
+non-`main` branch, including contributors' PRs (#1 `nola`, #5 `extra-stool`); `main` succeeds.
+Logs are only in the dashboard. So a branch's Cloudflare check gives no signal until someone
+reads a log; P2's GitHub Actions job is the pre-merge Linux build check.
+
 **Contributors:** `main` moves about 16 commits a day from several people and their agents.
 Re-list files before every phase.
 
@@ -135,6 +140,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
   222 barns, one farm field. Upgrading it is a separate change that regenerates `data/jsh`.
 - pyproj is in `data` too (`build_jsh.py` imports it at top level). uv 0.13.4, CPython 3.12.15.
 - Unverified: New Orleans rebuild (sources git-ignored). Script docstrings still say `pip install`.
+- Rebased onto `7fe4426` (now `41ed31a`); no overlap with #5, gate not rerun.
 - After merge, worktrees use `uv sync --group qa` (and `data`/`fetch` as needed).
 
 ### P1b. Retire the single-file bundle
@@ -147,6 +153,8 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 - Also changed `tools/phl/build_transit.py` (it edited the bundle in place): now reads/writes
   `data/phl/`, output identical. `COLLABORATING.md`: minimal edits; full rewrite drafted in the PR
   for Micah.
+- Rebased onto `7fe4426` (#5 touched `city-models.html` and the kitchen; conflict resolved by
+  deleting the file); smoke rerun: all ok, within tolerance (phl 0.0075%, pine 0.0069%).
 - **Blocks merge:** contributor message (in the PR) sent by Micah — not yet.
 
 ### P1c. Smoke check and pixel diff
