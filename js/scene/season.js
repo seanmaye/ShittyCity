@@ -1,3 +1,4 @@
+// @ts-check
 // Time of year: one day of the year (0 = 1 January) drives everything seasonal.
 //  snow     ground, roofs, parks and conifers white in deep winter (roads ploughed)
 //  bare     deciduous trees drop their leaves in late November and leaf out in April
@@ -21,12 +22,15 @@ const CURVES = {
 };
 const at = (keys, d) => { const k = keys.findIndex(p => p[0] > d); if (k <= 0) return keys[keys.length - 1][1]; const [a, va] = keys[k - 1], [b, vb] = keys[k]; return va + (vb - va) * (d - a) / (b - a); };
 
+/** @typedef {{ day: number } & Record<keyof typeof CURVES, number>} SeasonState  the day and each curve's value there */
 export const SNOW = { value: 0 };   // shared shader uniform
 const listeners = [];
 let state = null;
 
 /** Day of the year for a local date, and back. Use UTC for the difference across DST. */
+/** @param {Date} d */
 export const dayOfYear = d => (Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(d.getFullYear(), 0, 1)) / 864e5;
+/** @param {number} day @param {number} [year] */
 export const dateOfDay = (day, year = new Date().getFullYear()) => new Date(year, 0, 1 + day, 12);
 const daysInYear = year => dayOfYear(new Date(year, 11, 31)) + 1;
 
@@ -38,7 +42,9 @@ const curveDay = (day, days) => {
 };
 
 /** fn(state) now and on every change; state = { day, snow, bare, fall, bloom, flowers, fresh, dormant } */
+/** @param {(state: SeasonState) => void} fn */
 export function onSeason(fn) { listeners.push(fn); if (state) fn(state); }
+/** @param {number} day @param {number} [year] @returns {SeasonState} */
 export function setSeason(day, year = new Date().getFullYear()) {
   const days = daysInYear(year);
   day = ((Math.round(day) % days) + days) % days;
@@ -49,10 +55,12 @@ export function setSeason(day, year = new Date().getFullYear()) {
   listeners.forEach(fn => fn(state));
   return state;
 }
+/** @returns {SeasonState | null} (null before the first setSeason) */
 export const getSeason = () => state;
 
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 /** "Nov 11 · fall" (astronomical seasons) */
+/** @param {number} day @param {number} [year] */
 export function formatDay(day, year = new Date().getFullYear()) {
   const d = dateOfDay(day, year), seasonDay = curveDay(day, daysInYear(year));
   const name = seasonDay < 78 || seasonDay >= 354 ? 'winter' : seasonDay < 171 ? 'spring' : seasonDay < 264 ? 'summer' : 'fall';
@@ -61,6 +69,7 @@ export function formatDay(day, year = new Date().getFullYear()) {
 
 /** Grass and other planted ground: dormant tan over winter, a brighter green in spring. */
 const DORMANT = new THREE.Color('#9d956b'), SPRING = new THREE.Color('#7fbf52');
+/** @template {{ color: THREE.Color }} M @param {M} mat @returns {M} */
 export function seasonalGrass(mat) {
   const base = mat.color.clone();
   onSeason(s => mat.color.copy(base).lerp(DORMANT, s.dormant * .65).lerp(SPRING, s.fresh * .25));

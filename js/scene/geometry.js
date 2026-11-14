@@ -1,7 +1,10 @@
+// @ts-check
 // Geometry builders for map data: flat polygons, street ribbons and extruded footprints.
 import * as THREE from 'three';
+/** @import { Pair } from '../types/data' */
 /** Growable typed-array buffers for one merged BufferGeometry. */
 export class Builder {
+  /** @param {{ uv?: boolean, color?: boolean }} [opts] uv: texture coordinates, color: vertex colours */
   constructor(opts = {}) {
     this.n = 0; this.cap = 256;   // vertices used, and room for
     this.pos = new Float32Array(this.cap * 3); this.nrm = new Float32Array(this.cap * 3);
@@ -16,6 +19,7 @@ export class Builder {
     if (this.col) this.col = more(this.col, 3);
     this.cap = cap;
   }
+  /** @type {(x: number, y: number, z: number, nx: number, ny: number, nz: number, u?: number, w?: number, c?: THREE.Color | null) => number} */
   v(x, y, z, nx, ny, nz, u, w, c) {
     if (this.n === this.cap) this.grow();
     const i = this.n++, j = i * 3, p = this.pos, q = this.nrm;
@@ -24,6 +28,7 @@ export class Builder {
     if (this.col) { const k = this.col; k[j] = c.r; k[j + 1] = c.g; k[j + 2] = c.b; }
     return i;
   }
+  /** @param {number} a @param {number} b @param {number} c */
   tri(a, b, c) { this.idx.push(a, b, c); }
   geometry() {
     const g = new THREE.BufferGeometry(), attr = (a, k) => new THREE.BufferAttribute(a.slice(0, this.n * k), k);   // exact-size copies
@@ -39,7 +44,10 @@ export class Builder {
 
 const V2 = r => r.map(p => new THREE.Vector2(p[0], p[1]));
 
+/** @typedef {Builder & { c?: THREE.Color | null }} ColorBuilder  c: the colour addPolygon gives a coloured builder's vertices (set by its caller) */
+
 /** Triangulate a polygon (outer ring + holes, [[x,z],...]) into b at height y, facing up. */
+/** @type {(b: ColorBuilder, rings: Pair[][], y: number, uvFn?: (x: number, z: number) => number[]) => void} */
 export function addPolygon(b, rings, y, uvFn) {
   const contour = V2(rings[0]), holes = rings.slice(1).map(V2);
   let faces;
@@ -59,6 +67,7 @@ export function addPolygon(b, rings, y, uvFn) {
 }
 
 /** Flat ribbon along a polyline ([[x,z],...]) of width w at height y. Segments overlap at joints. */
+/** @type {(b: Builder, pts: Pair[], w: number, y: number) => void} */
 export function addRibbon(b, pts, w, y) {
   const h = w / 2;
   for (let i = 0; i < pts.length - 1; i++) {
@@ -78,6 +87,7 @@ export function addRibbon(b, pts, w, y) {
 
 /** Extrude a footprint (outer ring CCW-positive-area + holes) from y0 to y1 with window UVs.
  *  The roof gets roofColor and UV (-1, -1), which facade materials map to a blank patch. */
+/** @type {(b: ColorBuilder, rings: Pair[][], y0: number, y1: number, uOff: number, tileW: number, tileH: number, color: THREE.Color | null, roofColor?: THREE.Color | null, vBase?: number) => void} */
 export function addPrism(b, rings, y0, y1, uOff, tileW, tileH, color, roofColor = color, vBase = 0) {   // vBase: where window rows count from (the ground)
   for (const r of rings) {
     let u = uOff;
@@ -102,6 +112,7 @@ export function addPrism(b, rings, y0, y1, uOff, tileW, tileH, color, roofColor 
  * local origin, so it can taper), with window UVs in texture-tile units, and a flat top
  * (roof UV) unless cap is false. ring: [[x, z], ...] with positive area, like addPrism.
  */
+/** @type {(b: ColorBuilder, ring: Pair[], y0: number, y1: number, s0: number, s1: number, tileW: number, tileH: number, color: THREE.Color | null, cap?: boolean, uOff?: number) => void} */
 export function addLoft(b, ring, y0, y1, s0, s1, tileW, tileH, color, cap = true, uOff = 0) {
   const n = ring.length; let u = uOff;
   const e = new THREE.Vector3(), up = new THREE.Vector3(), nn = new THREE.Vector3();
@@ -126,6 +137,7 @@ export function addLoft(b, ring, y0, y1, s0, s1, tileW, tileH, color, cap = true
  * pass. (three.js would otherwise compute the sphere itself, instance by instance, the first
  * time it is drawn.) Marks the mesh userData.bounded; returns it.
  */
+/** @template {THREE.InstancedMesh} M @param {M} mesh @param {THREE.Vector3} center @param {number} radius @returns {M} */
 export function withBounds(mesh, center, radius) {
   mesh.boundingSphere = new THREE.Sphere(center, radius); mesh.userData.bounded = true;
   return mesh;
@@ -133,4 +145,5 @@ export function withBounds(mesh, center, radius) {
 
 /** One shared THREE.Color per colour string (palette entries), not one per building. Don't modify it. */
 const colorCache = new Map();
+/** @param {THREE.ColorRepresentation} c @returns {THREE.Color} */
 export function colorOf(c) { let o = colorCache.get(c); if (!o) colorCache.set(c, o = new THREE.Color(c)); return o; }

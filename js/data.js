@@ -1,14 +1,19 @@
+// @ts-check
 // Data loading and the local map projection shared by every scene module.
 // Each city's generated files live in data/<city>/ (tools/<city>/ makes them); coordinates there
 // are integer decimetres in that city's frame (js/cities.js).
 import * as THREE from 'three';
 import { CITY } from './cities.js';
+/** @import { CityData, Pair } from './types/data' */
 
 /** lat/lon -> scene position (x metres east, z metres south of the city's origin) */
+/** @param {number} lat @param {number} lon */
 export const G = (lat, lon) => { const f = CITY.frame; return new THREE.Vector3((lon - f.LON0) * f.MX, 0, -(lat - f.LAT0) * f.MZ); };
+/** @param {number} z */
 export const latOf = z => CITY.frame.LAT0 - z / CITY.frame.MZ;
 
 /** flat [x,z,x,z...] decimetres -> [[x,z],...] metres */
+/** @param {ArrayLike<number>} flat @returns {Pair[]} */
 export function pairs(flat) {
   const out = new Array(flat.length / 2);
   for (let i = 0; i < flat.length; i += 2) out[i / 2] = [flat[i] / 10, flat[i + 1] / 10];
@@ -22,6 +27,7 @@ async function gunzip(bytes) {
 }
 
 /** load the active city's files (CITY.files, from CITY.dir) */
+/** @param {(done: number, key: string) => void} [onProgress] @returns {Promise<CityData>} */
 export async function loadData(onProgress = () => {}) {
   const FILES = CITY.files;
   let done = 0;
@@ -39,5 +45,5 @@ export async function loadData(onProgress = () => {}) {
     onProgress(++done / FILES.length, key);
     return out;
   }));
-  return Object.fromEntries(FILES.map(([k], i) => [k, parts[i]]));
+  return /** @type {CityData} */ (Object.fromEntries(FILES.map(([k], i) => [k, parts[i]])));
 }

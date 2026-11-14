@@ -1,3 +1,4 @@
+// @ts-check
 // Water: real OSM water polygons, plus an optional river centreline (with true bank-to-bank
 // width) that Philadelphia's monorail, boathouses and rowing shells follow (the Schuylkill).
 import * as THREE from 'three';
@@ -5,6 +6,7 @@ import { latOf, pairs } from '../data.js';
 import { M } from './materials.js';
 import { Builder, addPolygon, addRibbon } from './geometry.js';
 import { terrain } from './terrain.js';
+/** @param {THREE.Scene} scene @param {import('../types/data').River} data */
 export function buildRiver(scene, data) {
   const c = data.center, NS = c.length / 3, RS = [];
   for (let i = 0; i < NS; i++) RS.push({ p: new THREE.Vector3(c[i * 3] / 10, 0, c[i * 3 + 1] / 10), w: c[i * 3 + 2] / 10 });

@@ -74,6 +74,7 @@ function liftTransit(T) {
   if (T.columns) { const C = T.columns.slice(); for (let i = 0; i < C.length; i += 3) { const x = C[i] / 10, z = C[i + 1] / 10; C[i + 2] = Math.max(10, Math.round(C[i + 2] + (near(x, z) - surface(x, z)) * 10)); } T.columns = C; }
 }
 
+/** @returns {Promise<import('../types/scene').SceneApi>} (window.__city) */
 export async function buildScene(canvas, data, status = () => {}, own = {}) {
   // the city's own code (js/scene/<city>/<city>.js, which main.js loads for this city alone): another city's names are undefined, never called
   const { buildLandmarks, buildMonorail, buildSports, courtTest, buildYardPark, buildConcert, buildCityMarks, buildOldTrolleys, buildPromenade, onPromenade, buildPedestrians, buildBoats, buildAnglers, buildChinatown, buildRestaurants,
