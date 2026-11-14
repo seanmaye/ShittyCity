@@ -72,7 +72,7 @@ export function createRidebar(api) {
     }
     // the train, between the stop it passed and the next, in proportion to the real distance
     const p = j - start, cell = k => (k + .5) / m * 100;
-    let x;
+    let x: number;
     if (!loop && j >= n) x = cell(m - 1) + 35 / m;                 // past the last stop, running out to the end
     else if (!loop && j === 0) x = Math.max(2, cell(0) - 35 / m);    // not yet at the first
     else {

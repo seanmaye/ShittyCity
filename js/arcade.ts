@@ -240,11 +240,15 @@ const FORTUNES = ['Luck favours the hungry.', 'Good things come in steamers of t
   'Today, the cats fear you.', 'You will find treasure in small things.', 'Patience is a slow-cooked broth.', 'Your next adventure is just around the corner.'];
 const CATS = [['#ff6a3c', 'Ginger'], ['#f2a7c3', 'Peaches'], ['#7ec8e3', 'Misty'], ['#e8c04a', 'Butterscotch']];
 const DIRS = [[0, -1], [-1, 0], [0, 1], [1, 0]];
+/** the dumpling (P) or a cat: at tile (tx, ty), p (0..1) of the way on toward dir; want: the turn asked for */
+interface Mover { tx?: number; ty?: number; dir?: number[]; want?: number[] | null; p?: number; face?: number; bob?: number }
+/** a cat: mode 'pen' | 'out' | 'eyes', fright (s left), release (when it leaves the pen) */
+interface Cat extends Mover { i: number; color: string; name: string; mode?: string; fright?: number; release?: number; wander?: number[]; wanderT?: number }
 function dumplingDash() {
-  let grid, seeds;
+  let grid: string[][], seeds: number;
   const s = { score: 0, lives: 3, level: 1, t: 0, mode: 0, modeT: 0, pause: 1.5, dying: 0, clear: 0, chain: 0, fortune: '', fortuneT: 0, pops: [], over: false };
   const SCHEDULE = [7, 20, 7, 20, 5, 1e9];   // scatter, chase, ... seconds
-  const P = {}, cats = CATS.map(([c, n], i) => ({ i, color: c, name: n }));
+  const P: Mover = {}, cats = CATS.map(([c, n], i): Cat => ({ i, color: c, name: n }));
   const cell = (x, y) => (y < 0 || y >= ROWS ? '#' : grid[y][((x % COLS) + COLS) % COLS]);
   const open = (x, y) => { if (y === 9 && (x < 0 || x >= COLS)) return true; const c = cell(x, y); return c !== '#' && c !== '-' && c !== 'C' && !(c === ' ' && y !== 9); };
   function resetMaze() { grid = MAZE.map(r => r.split('')); seeds = 0; for (const r of grid) for (const c of r) if (c === '.' || c === 'o') seeds++; }
@@ -302,7 +306,7 @@ function dumplingDash() {
     if (!opts.length) opts = [back];
     if (k.fright > 0) { k.dir = opts[Math.floor(Math.random() * opts.length)]; return; }
     const [gx, gy] = catTarget(k);
-    k.dir = opts.reduce((b, d) => { const v = (k.tx + d[0] - gx) ** 2 + (k.ty + d[1] - gy) ** 2; return v < b[0] ? [v, d] : b; }, [1e9, opts[0]])[1];
+    k.dir = opts.reduce((b, d) => { const v = (k.tx + d[0] - gx) ** 2 + (k.ty + d[1] - gy) ** 2; return v < b[0] ? [v, d] : b; }, [1e9, opts[0]] as [number, number[]])[1];
   };
   return {
     help: say('Arrow keys or W A S D (or swipe) to steer. Eat every sesame seed; a fortune cookie lets you chase the cats.',
@@ -411,7 +415,7 @@ export function createArcade(api) {
   const save = v => { try { localStorage.setItem(K, JSON.stringify(v)); } catch (e) { /* not kept */ } };
   let best = load();
 
-  const el = (tag, cls, parent, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; if (parent) parent.appendChild(e); return e; };
+  const el = (tag, cls, parent, text?) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; if (parent) parent.appendChild(e); return e; };
   const modal = el('div', 'arc-modal', document.body); modal.hidden = true;
   modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-modal', 'true'); modal.setAttribute('aria-labelledby', 'arc-title');
   const card = el('div', 'arc-card', modal), head = el('div', 'arc-head', card), title = el('h2', '', head, 'Lucky Arcade 幸運街機'); title.id = 'arc-title';

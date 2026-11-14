@@ -3,7 +3,7 @@
 // js/main.ts calls setCity() once, before any data is loaded or scene module runs, so modules
 // may read CITY inside their functions (never at module top level: imported modules run their
 // top level before main.ts calls setCity()).
-/** @import { City, CityEntry } from './types/city' */
+import type { City, CityEntry } from './types/city.ts';
 
 // Philadelphia's SEPTA station tags: Metro ids, trolley ranges, then the networks
 export function septaLines(s, LINES) {
@@ -14,8 +14,9 @@ export function septaLines(s, LINES) {
   return [...parts, ...groups].join(' · ');
 }
 
-/** @type {Record<string, CityEntry>} */
-export const CITIES = {
+// Each entry is checked as a CityEntry (js/types/city.d.ts), and may also carry fields that type doesn't list yet: a new
+// field on a city is not an error (the & Record<string, unknown>).
+export const CITIES: Record<string, CityEntry & Record<string, unknown>> = {
   phl: {
     id: 'phl', name: 'Philadelphia',
     // the loading slideshow (js/loading.ts): frames of the 3D city at its points of interest, made
@@ -166,5 +167,5 @@ export const CITIES = {
 
 /** the active city (filled in place by setCity, so every importer sees the same object; main.ts then adds
  *  urls: each data file's and loading screen's URL in the build, by file name, from its URLS) */
-export const CITY = /** @type {City} */ ({});
-export function setCity(id) { return Object.assign(CITY, CITIES[id]); }
+export const CITY = {} as City;
+export function setCity(id: string) { return Object.assign(CITY, CITIES[id]); }

@@ -10,13 +10,13 @@ const IDLE = 150;   // s with no input before it starts by itself
  * on (no train, no dialog, no flying). onStop(): the UI catches up (no Go-to view is current).
  * The clock, season and Speed slider run on underneath: the tour is the live city.
  */
-export function createCinema(api, { canStart = () => true, onStop = () => {} } = {}) {
+export function createCinema(api, { canStart = () => true, onStop = () => {} }: { canStart?: () => boolean; onStop?: () => void } = {}) {
   const el = document.createElement('div'); el.className = 'cine'; el.id = 'cine'; el.hidden = true;
   el.innerHTML = '<div class="cine-bar top"></div><div class="cine-bar bot"></div><div class="cine-fade"></div>'
     + '<div class="cine-cap" aria-live="polite"><b class="cine-title"></b><span class="cine-sub"></span></div>'
     + '<p class="cine-exit">Cinematic mode · press any key, click or tap to exit</p>';
   document.getElementById('city-view').appendChild(el);
-  const fade = el.querySelector('.cine-fade'), cap = el.querySelector('.cine-cap'), title = el.querySelector('.cine-title'), sub = el.querySelector('.cine-sub'), exitHint = el.querySelector('.cine-exit');
+  const fade = el.querySelector<HTMLElement>('.cine-fade'), cap = el.querySelector('.cine-cap'), title = el.querySelector('.cine-title'), sub = el.querySelector<HTMLElement>('.cine-sub'), exitHint = el.querySelector('.cine-exit');
   let on = false, shown = -1, lastInput = performance.now(), hintTimer = 0;
 
   function start() {

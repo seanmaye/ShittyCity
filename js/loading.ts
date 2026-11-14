@@ -113,7 +113,7 @@ const POSES = {
   folded(F) {
     F.root.rotation.y = .36;
     F.hipL.rotation.z = .16; F.hipR.rotation.z = -.16;
-    for (const [s, k] of [['L', 1], ['R', -1]]) {
+    for (const [s, k] of [['L', 1], ['R', -1]] as [string, number][]) {
       F['sh' + s].rotation.set(-.42, 0, k * .26, 'XZY');
       F['el' + s].rotation.set(-1.62, k * -1.1, 0, 'YXZ');
     }
@@ -170,7 +170,7 @@ function dress(F, o) {
  */
 function sticker(src, edge = 11, shadow = [30, 39]) {
   const w = src.width, h = src.height;
-  const mk = () => { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; };
+  const mk = (): [HTMLCanvasElement, CanvasRenderingContext2D] => { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; };
   const tint = (color, alpha = 1) => {   // the figure's silhouette in one colour
     const [c, x] = mk(); x.drawImage(src, 0, 0); x.globalCompositeOperation = 'source-in';
     x.globalAlpha = alpha; x.fillStyle = color; x.fillRect(0, 0, w, h); return c;
@@ -210,7 +210,7 @@ function renderHero(poseName, outfit, { mirror = false, dusk = false } = {}) {
   heroRenderer.autoClear = true; heroRenderer.clear();
   new OutlineEffect(heroRenderer, { defaultThickness: .0085, defaultColor: [.04, .03, .05] }).render(scene, cam);
   const url = sticker(heroRenderer.domElement);
-  scene.traverse(m => { if (m.isMesh) m.material.dispose(); });
+  scene.traverse((m: THREE.Mesh) => { if (m.isMesh) (m.material as THREE.Material).dispose(); });
   return url;
 }
 
@@ -226,7 +226,7 @@ const TIPS = [
   'Skyline lights paint the towers and bridges in any colour you like.',
 ];
 
-const el = (tag, cls, parent) => { const e = document.createElement(tag); if (cls) e.className = cls; if (parent) parent.append(e); return e; };
+const el = (tag, cls, parent?) => { const e = document.createElement(tag); if (cls) e.className = cls; if (parent) parent.append(e); return e; };
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
 function buildScreen(city, s) {
@@ -265,12 +265,12 @@ export function startLoadingScreens(city, host) {
   gx.putImageData(px, 0, 0);
   host.style.setProperty('--grain', `url(${g.toDataURL()})`);
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const tips = shuffle(TIPS.slice()), timers = new Set(), anims = new Set();
+  const tips = shuffle(TIPS.slice()), timers = new Set<ReturnType<typeof setTimeout>>(), anims = new Set<Animation>();
   const screens = shuffle(list.map((_, i) => i)).map(i => buildScreen(city, list[i]));
   const PERIOD = HOLD + IN;   // from one screen starting to slide in to the next
   let stopped = false, settled = false, tipN = 0;
 
-  const now = () => document.timeline.currentTime;
+  const now = () => document.timeline.currentTime as number;
   const later = (fn, ms) => { const t = setTimeout(() => { timers.delete(t); if (!stopped) fn(); }, Math.max(0, ms)); timers.add(t); };
   let collect = null;   // while planning a slide, its animations are gathered here (see settle)
   const animate = (node, frames, opts) => { const a = node.animate(frames, { fill: 'both', ...opts }); anims.add(a); collect?.push(a); a.finished.then(() => anims.delete(a), () => {}); return a; };

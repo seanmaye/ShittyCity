@@ -6,7 +6,7 @@ const LEVELS = [0, 14000, 6000, 2500, 1100];   // metres across the map (0 = the
 const COUNTRY = '#dfe3d6', CITY = '#f2efe9', PARK = '#bcd8a4', WATER = '#8dbad6', EDGE = '#6b7a86';
 
 export function createMinimap(api, { eats = () => null } = {}) {
-  const wrap = document.getElementById('minimap'), cv = document.getElementById('mm'), ctx = cv.getContext('2d');
+  const wrap = document.getElementById('minimap'), cv = document.getElementById('mm') as HTMLCanvasElement, ctx = cv.getContext('2d');
   const scaleEl = document.getElementById('mm-scale');
   const D = api.mapData, [bx0, bz0, bx1, bz1] = D.bbox.map(v => v / 10);
   const span = Math.max(bx1 - bx0, bz1 - bz0), cx0 = (bx0 + bx1) / 2, cz0 = (bz0 + bz1) / 2;

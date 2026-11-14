@@ -7,6 +7,13 @@ import { loadData } from './data.ts';
 import { buildScene } from './scene/index.ts';
 import { createUI } from './ui.ts';
 import { startLoadingScreens } from './loading.ts';
+import type { buildKitchen } from './scene/pine/kitchen.ts';
+declare global {
+  interface Window {
+    /** the kitchen's API, set below for a kitchen city (a map city sets window.__city: js/types/scene.d.ts) */
+    __kitchen?: ReturnType<typeof buildKitchen>;
+  }
+}
 // Each city's own code (js/scene/<city>/<city>.js), as a chunk of its own that no other city downloads. (Here rather than in
 // js/cities.ts, whose chunk the shared code and every city's chunk import: a change to one city's code then renames only this
 // chunk and that city's, and the shared ones stay cached.)
@@ -16,7 +23,7 @@ const CODE = { phl: () => import('./scene/phl/phl.ts'), nyc: () => import('./sce
 // is picked its loading screen and data start without waiting for another chunk.
 const URLS = import.meta.glob('/data/*/*', { query: '?url', import: 'default', eager: true });
 const $ = id => document.getElementById(id);
-const statusEl = $('status'), progress = $('loading-progress');
+const statusEl = $('status'), progress = $('loading-progress') as HTMLProgressElement;
 const changeCity = () => location.assign(location.href.split(/[?#]/)[0]);
 
 function status(message, value) {
@@ -36,7 +43,7 @@ function showLoading(city) {
 }
 
 /** show the start menu and resolve with the id of the city picked */
-function chooseCity() {
+function chooseCity(): Promise<string> {
   document.body.classList.add('choosing');
   const menu = $('menu'), list = $('cities');
   return new Promise(resolve => {

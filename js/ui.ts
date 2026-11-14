@@ -21,7 +21,8 @@ const controlsHint = trains => TOUCH.matches
   ? 'Drag to turn the view, pinch to zoom, and drag with two fingers to move.' + (trains ? ' Tap any train to ride inside it.' : '')
   : 'Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom.' + (trains ? ' Click any train to ride inside it.' : '');
 // createFishing, createArcade: Philadelphia's minigames (js/fishing.ts, js/arcade.ts), from its own code (js/scene/phl/phl.ts)
-export function createUI(api, { createFishing, createArcade } = {}) {
+interface Games { createFishing?: typeof import('./fishing.ts').createFishing; createArcade?: typeof import('./arcade.ts').createArcade }
+export function createUI(api, { createFishing, createArcade }: Games = {}) {
   const toastEl = document.getElementById('toast'); let toastTimer = 0;
   const toast = (msg, ms) => { toastEl.textContent = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => { toastEl.textContent = ''; }, ms); };
   const tagsEl = document.getElementById('tags');
@@ -139,7 +140,7 @@ export function createUI(api, { createFishing, createArcade } = {}) {
     });
   }
 
-  const lblBtn = document.getElementById('lbl'), rideBtn = document.getElementById('ride'), hint = document.getElementById('hint');
+  const lblBtn = document.getElementById('lbl') as HTMLButtonElement, rideBtn = document.getElementById('ride') as HTMLButtonElement, hint = document.getElementById('hint');
   const hintMore = document.getElementById('hint-more');
   // on small screens the hint shows three lines; More opens the rest
   const syncMore = () => { hintMore.hidden = hint.classList.contains('open') ? false : !(hint.scrollHeight > hint.clientHeight + 1); };
@@ -155,7 +156,7 @@ export function createUI(api, { createFishing, createArcade } = {}) {
   const HINT0 = CITY.hint + ' ' + controlsHint(api.lines.length > 0);
   const CUT_HINT = CITY.cutHint;
   const baseHint = () => (api.getCut() ? CUT_HINT : HINT0);
-  const cutBtn = document.getElementById('cut'), CUT_VIEW = api.views.find(v => v.cut);
+  const cutBtn = document.getElementById('cut') as HTMLButtonElement, CUT_VIEW = api.views.find(v => v.cut);
   cutBtn.hidden = !CUT_VIEW;   // a city without a cut-away section
   // on a phone the panel folds away to show the cut, hint and all: a line at the bottom says what
   // you're looking at and closes it (css/style.css .cut-mini: small screens, panel folded, not aboard)
@@ -171,13 +172,13 @@ export function createUI(api, { createFishing, createArcade } = {}) {
     if (!riding && !api.getCar()) setHint(baseHint());
   };
   // 24-hour clock slider (sun position for today's date in the city)
-  const timeIn = document.getElementById('time'), timeOut = document.getElementById('time-out');
+  const timeIn = document.getElementById('time') as HTMLInputElement, timeOut = document.getElementById('time-out');
   const showTime = h => { timeOut.textContent = formatHour(h); timeIn.setAttribute('aria-valuetext', formatHour(h)); };
   timeIn.value = String(api.getTime()); showTime(api.getTime());
   timeIn.addEventListener('input', () => showTime(api.setTime(+timeIn.value)));
   // day/night speed: frozen at the left end; to the right the clock runs ever faster, up to a
   // whole day in 4 seconds (cubic, so the slow end has room: real time sits near 4%)
-  const speedIn = document.getElementById('speed'), speedOut = document.getElementById('speed-out');
+  const speedIn = document.getElementById('speed') as HTMLInputElement, speedOut = document.getElementById('speed-out');
   const MAX_RATE = 24 / 4;   // hours of model time per real second at the right end
   let rate = 0, clockT = 0, clockUI = 0;
   const showSpeed = () => {
@@ -197,7 +198,7 @@ export function createUI(api, { createFishing, createArcade } = {}) {
     requestAnimationFrame(tick);
   })(0);
   // time of year: snow in winter, blossom and flower beds in spring, autumn colour, bare trees
-  const dayIn = document.getElementById('day'), dayOut = document.getElementById('day-out');
+  const dayIn = document.getElementById('day') as HTMLInputElement, dayOut = document.getElementById('day-out');
   const showDay = d => { dayOut.textContent = api.formatDay(d); dayIn.setAttribute('aria-valuetext', api.formatDay(d)); };
   dayIn.max = String(api.lastDay);
   dayIn.value = String(api.getDay()); showDay(api.getDay());
@@ -243,7 +244,7 @@ export function createUI(api, { createFishing, createArcade } = {}) {
   });
 
   // "Go to" buttons fly the camera to a preset view (and step off the train if riding)
-  const viewEl = document.getElementById('view-btns'), viewBtns = {};
+  const viewEl = document.getElementById('view-btns'), viewBtns: Record<string, HTMLButtonElement> = {};
   const markView = id => Object.entries(viewBtns).forEach(([k, b]) => b.setAttribute('aria-current', String(k === id)));
   api.views.forEach(v => {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'ghost'; b.textContent = v.name;
@@ -264,7 +265,7 @@ export function createUI(api, { createFishing, createArcade } = {}) {
   // neighbourhood picker and a button per place; a place's button or label flies there and opens its card
   const EATS = (api.restaurants && api.restaurants.places) || [], eatsEl = document.getElementById('eats');
   const eatCard = document.getElementById('eatcard'), eatBtn = document.getElementById('eat-lbl');
-  const hoodSel = document.getElementById('eat-hood'), eatList = document.getElementById('eat-list');
+  const hoodSel = document.getElementById('eat-hood') as HTMLSelectElement, eatList = document.getElementById('eat-list');
   const STAR_WORDS = (api.restaurants && api.restaurants.stars) || {};
   const KIND_WORD = { restaurant: 'Restaurant', bar: 'Bar', cafe: 'Café', bakery: 'Bakery', brewery: 'Brewery', truck: 'Food truck', market: 'Farmers market' };
   let eatOn = null;
@@ -284,7 +285,7 @@ export function createUI(api, { createFishing, createArcade } = {}) {
     openPicker(false); api.flyTo(p.view); markView(null); openEat(i);
   }
   // the card's link to djour opens in a new tab
-  eatCard.querySelector('.eat-src a').addEventListener('click', e => { e.preventDefault(); window.open(e.currentTarget.href, '_blank', 'noopener'); });
+  eatCard.querySelector('.eat-src a').addEventListener('click', e => { e.preventDefault(); window.open((e.currentTarget as HTMLAnchorElement).href, '_blank', 'noopener'); });
   const eatTag = []; LABELS.forEach((l, k) => { if (l.layer === 'eat') eatTag[api.labels[k].eat] = l.el; });
   document.getElementById('eat-x').addEventListener('click', () => { eatCard.hidden = true; eatOn = null; LABELS.forEach(l => l.el.classList.remove('on')); });
   if (EATS.length) {
@@ -366,7 +367,7 @@ export function createUI(api, { createFishing, createArcade } = {}) {
   });
   const lift = e => { fingers.delete(e.pointerId); if (fingers.size < 2) pinch = null; };
   canvas.addEventListener('pointerup', lift); canvas.addEventListener('pointercancel', lift);
-  const rel = e => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  const rel = (e): [number, number] => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   function syncCar() {
     const c = api.getCar(); carOn = !!c; offBtn.hidden = !carOn; canvas.style.cursor = carOn ? 'grab' : '';
     const walk = carOn && !['seat', 'person', 'vista'].includes(c.kind);
@@ -465,7 +466,7 @@ export function createUI(api, { createFishing, createArcade } = {}) {
   const applyFly = () => api.setFly((flyKeys.has('f') ? 1 : 0) - (flyKeys.has('b') ? 1 : 0), (flyKeys.has('r') ? 1 : 0) - (flyKeys.has('l') ? 1 : 0), (flyKeys.has('u') ? 1 : 0) - (flyKeys.has('d') ? 1 : 0));
   window.addEventListener('keydown', e => {
     if (e.ctrlKey || e.metaKey || e.altKey || fishing.active() || arcade.active()) return;   // the fishing and arcade dialogs have the keys
-    const t = e.target, typing = t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'range'));
+    const t = e.target as HTMLInputElement, typing = t && (t.tagName === 'TEXTAREA' || (t.tagName === 'INPUT' && t.type !== 'range'));
     if (typing) return;
     if (carOn) {
       // Esc gets off any train or stands up from a seat; Space also stands up from a seat
@@ -497,7 +498,7 @@ export function createUI(api, { createFishing, createArcade } = {}) {
   });
   offBtn.addEventListener('click', () => { api.leaveCar(); syncCar(); });
   // "Show transit lines": highlight every line in its colour, with a legend
-  const trBtn = document.getElementById('transit'), legendEl = document.getElementById('legend');
+  const trBtn = document.getElementById('transit') as HTMLButtonElement, legendEl = document.getElementById('legend');
   trBtn.hidden = !api.legend.length && !api.oldTrolleyLegend.length;
   for (const it of api.legend) {
     const s = document.createElement('span'), i = document.createElement('i'); i.style.background = it.color; i.setAttribute('aria-hidden', 'true');
@@ -547,9 +548,9 @@ export function createUI(api, { createFishing, createArcade } = {}) {
 
   // skyline display lights: a colour scheme for the towers' crowns, the Cira Centre's LED skin,
   // the FMC crown and Boathouse Row, as the city does for teams and holidays
-  const swatches = document.getElementById('swatches'), skyName = document.getElementById('sky-name'), skyColor = document.getElementById('sky-color');
+  const swatches = document.getElementById('swatches'), skyName = document.getElementById('sky-name'), skyColor = document.getElementById('sky-color') as HTMLInputElement;
   const customSw = skyColor.closest('.swatch'), swBtns = [];
-  function setScheme(id, colors, name, quiet) {
+  function setScheme(id, colors, name, quiet?) {
     api.setDisplayLights(colors); skyName.textContent = name;
     swBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
     customSw.classList.toggle('on', id === 'custom');
@@ -566,7 +567,7 @@ export function createUI(api, { createFishing, createArcade } = {}) {
   }
   skyColor.addEventListener('input', () => setScheme('custom', [skyColor.value], 'Your colour'));
   const sk = store.get('skyline') || 'white', pre = api.displayPresets.find(p => p.id === sk);
-  swatches.closest('.skyline').hidden = !api.displayPresets.length;   // a city with no lit skyline (CITY.presets [])
+  swatches.closest<HTMLElement>('.skyline').hidden = !api.displayPresets.length;   // a city with no lit skyline (CITY.presets [])
   if (!api.displayPresets.length) { /* nothing to light */ }
   else if (sk.startsWith('custom:')) { skyColor.value = sk.slice(7); setScheme('custom', [skyColor.value], 'Your colour', true); }
   else setScheme(pre ? pre.id : 'white', (pre || api.displayPresets[0]).colors, (pre || api.displayPresets[0]).name, true);
@@ -574,7 +575,7 @@ export function createUI(api, { createFishing, createArcade } = {}) {
   const minimap = createMinimap(api, { eats: () => (showEats && EATS.length ? EATS : null) }), ridebar = createRidebar(api);
   // Cinematic mode (js/cinema.ts, js/scene/cinematic.ts): hands-free fly-arounds; also starts by itself
   // after a while with nobody at the controls
-  const cineBtn = document.getElementById('cine-btn');
+  const cineBtn = document.getElementById('cine-btn') as HTMLButtonElement;
   const cinema = createCinema(api, {
     canStart: () => !carOn && !riding && !locked && !flyKeys.size && !fishing.active() && !arcade.active(),
     onStop: () => markView(null),

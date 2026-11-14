@@ -16,10 +16,15 @@ export const RARITY = {
   rare: { w: 10, color: '#2f78c9', label: 'Rare' }, epic: { w: 4, color: '#8a46c9', label: 'Epic' }, legendary: { w: 1, color: '#d9961a', label: 'Legendary' },
 };
 const RANK = Object.keys(RARITY);
+/** what rollCatch weighs a catch by: the day of the year, the hour, and how far you cast (0..1) */
+interface Ctx { day: number; hour: number; power: number }
 const spring = c => (c.day >= 80 && c.day <= 150), night = c => (c.hour < 6 || c.hour >= 20), dusk = c => ((c.hour >= 17 && c.hour < 21) || (c.hour >= 5 && c.hour < 8));
 // fish: draw = { r: length/height, top, side, belly, fin?, pat?: bars|stripes|spots|blotch|scales|stripe, ear?, whisk?, fork?, snout?, eel?, scutes?, dorsal? }
-const F = (id, name, r, lb, fight, draw, note, when) => ({ id, name, kind: 'fish', r, lb, fight, draw, note, when });
-const T = (id, name, r, glyph, fight, note, kind = 'trash') => ({ id, name, kind, r, glyph, fight, note });
+interface Draw { r: number; top: string; side: string; belly: string; fin?: string; pat?: string; ear?: string; whisk?: number; fork?: number; snout?: number; eel?: number; scutes?: number; dorsal?: number }
+/** a catch: a fish (lb: its weight range, draw, when: how keen it is now) or anything else (glyph) */
+interface Item { id: string; name: string; kind: string; r: keyof typeof RARITY; fight: number; note: string; lb?: [number, number]; draw?: Draw; when?: (c: Ctx) => number; glyph?: string }
+const F = (id, name, r, lb, fight, draw, note, when?): Item => ({ id, name, kind: 'fish', r, lb, fight, draw, note, when });
+const T = (id, name, r, glyph, fight, note, kind = 'trash'): Item => ({ id, name, kind, r, glyph, fight, note });
 export const ITEMS = [
   F('bluegill', 'Bluegill', 'common', [.1, .9], .35, { r: 1.9, top: '#3f5a3a', side: '#6f8a5a', belly: '#e0a040', pat: 'bars', ear: '#1a2a40' }, 'The sunfish every Philly kid catches first.'),
   F('pumpkinseed', 'Pumpkinseed', 'common', [.1, .7], .3, { r: 1.9, top: '#5a6a3a', side: '#c9a24a', belly: '#f0b040', pat: 'spots', ear: '#d0302a' }, 'Look for the red tip on its ear flap.'),
@@ -73,7 +78,7 @@ export const ITEMS = [
 
 /** what bites: rarity weights, shifted toward the rare by a long cast (power 0..1), fish only
  *  half as keen in winter, each item's own season and hour (when) */
-export function rollCatch(c) {
+export function rollCatch(c: Ctx) {
   const winter = c.day < 60 || c.day >= 340;
   const w = ITEMS.map(it => {
     const k = RANK.indexOf(it.r);
@@ -183,6 +188,14 @@ const HARD = { swing: 5.2, nibbles: 1.4, strike: .5, strikeStep: .06,
   tenUp: .5, runUp: 1.0, tenDown: .7, band: [.3, .85], reel: .3, reelFight: .1, runReel: .3, takeLine: .05, snap: .24, slack: 1.2,
   shake: .12, s0: .15, s1: .2, s2: .55, n0: .9, n1: 1.8, tire: .3, tireT: 45 };
 
+/** the game's state: aim t, power; cast ct; wait (s left), nib; bite item, bt, win; reel prog, ten, over, slack, surge,
+ *  next, rt; over result, why, endT, yell, oneMore, weight, isNew */
+interface St {
+  t?: number; power?: number; ct?: number; wait?: number; nib?: number; item?: Item; bt?: number; win?: number;
+  prog?: number; ten?: number; over?: number; slack?: number; surge?: number; next?: number; rt?: number;
+  result?: Item | null; why?: string; endT?: number; yell?: string; oneMore?: string; weight?: number; isNew?: boolean;
+}
+
 // ---- the game
 export function createFishing(api) {
   const K = CITY.storage + 'creel';
@@ -191,7 +204,7 @@ export function createFishing(api) {
   let creel = load();
 
   // the invitation, and the game dialog
-  const el = (tag, cls, parent, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; if (parent) parent.appendChild(e); return e; };
+  const el = (tag, cls, parent, text?) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; if (parent) parent.appendChild(e); return e; };
   const modal = el('div', 'fish-modal', document.body); modal.hidden = true;
   modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-modal', 'true'); modal.setAttribute('aria-labelledby', 'fish-title');
   const card = el('div', 'fish-card', modal);
@@ -212,7 +225,7 @@ export function createFishing(api) {
   const g = cv.getContext('2d'), H = 400;
   let W = 720, k = 1;
 
-  let angler = null, state = 'idle', st = {}, raf = 0, last = 0, holding = false, lastFocus = null;
+  let angler = null, state = 'idle', st: St = {}, raf = 0, last = 0, holding = false, lastFocus = null;
   const show = part => { invite.hidden = part !== 'invite'; game.hidden = part !== 'game'; log.hidden = part !== 'log'; card.dataset.part = part; };
   function open(i) {
     angler = api.anglerInfo(i); if (!angler) return;
@@ -239,7 +252,7 @@ export function createFishing(api) {
     cv.width = Math.round((r.width || W) * dpr); cv.height = Math.round(cv.width * H / W); g.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
   }
   // a font for words in the picture: px, or more when the picture is small on screen (at least min CSS px)
-  const font = (px, min, w = 600) => `${w} ${Math.round(Math.max(px, min * k))}px Archivo, system-ui, sans-serif`;
+  const font = (px, min, w: number | string = 600) => `${w} ${Math.round(Math.max(px, min * k))}px Archivo, system-ui, sans-serif`;
 
   const ctx = () => { const day = api.getDay ? api.getDay() : 180, hour = api.getTime(); return { day, hour, power: st.power || 0 }; };
   function press() {
