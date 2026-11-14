@@ -69,6 +69,9 @@ export default defineConfig({
       },
     },
   },
+  // the data worker (js/load-worker.js, a module worker: new Worker(new URL(...), { type: 'module' })) is built as an ES module,
+  // as the dev server serves it, not as Vite's default classic script; its own asset, assets/load-worker-[hash].js
+  worker: { format: 'es' },
   // Vitest (npm test): the unit tests in test/ run in Node, without a browser
   test: { include: ['test/**/*.test.js'], environment: 'node' },
 });

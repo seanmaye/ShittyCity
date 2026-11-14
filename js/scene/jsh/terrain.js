@@ -13,17 +13,13 @@ import * as THREE from 'three';
 import { M } from '../materials.js';
 import { Builder } from '../geometry.js';
 import { seasonalGrass } from '../season.js';
+import { readGrid } from '../../formats.js';
 
 let T = null;   // { n, half, cell, base, h: Float32Array (m), cover: Uint8Array }
 
-/** decode terrain.bin: "TER1", n u32, half f32, cell f32, base f32, heights i16[n*n] (dm), cover u8[n*n] (0 open, 1 forest, 2 river bed, 3 cropland) */
-export function loadTerrain(buf) {
-  const dv = new DataView(buf);
-  if (String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3)) !== 'TER1') throw new Error('terrain: bad header');
-  const n = dv.getUint32(4, true), half = dv.getFloat32(8, true), cell = dv.getFloat32(12, true), base = dv.getFloat32(16, true);
-  const raw = new Int16Array(buf.slice(20, 20 + n * n * 2)), h = new Float32Array(n * n);
-  for (let i = 0; i < n * n; i++) h[i] = raw[i] / 10;
-  T = { n, half, cell, base, h, cover: new Uint8Array(buf, 20 + n * n * 2, n * n) };
+/** set the grid from terrain.bin as js/formats.js readGrid decodes it (in the data worker), or from the bytes themselves */
+export function loadTerrain(t) {
+  T = t instanceof ArrayBuffer ? readGrid(t) : t;
   return T;
 }
 export const hasTerrain = () => !!T;

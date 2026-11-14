@@ -18,21 +18,8 @@ import { CITY } from '../cities.js';
 
 const TILE = 1000, FULL = 5000, TREE_FAR = 7000;
 
-/** Decode city_buildings.bin (PHB1; written by tools/phl/build_city.py and tools/nyc/import_nyc.py). */
-export function decode(buf) {
-  const dv = new DataView(buf);
-  if (String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3)) !== 'PHB1') throw new Error('city buildings: bad header');
-  const nB = dv.getUint32(4, true), nP = dv.getUint32(8, true), nV = dv.getUint32(12, true);
-  let o = 16;
-  const i32 = n => { const a = new Int32Array(buf.slice(o, o + n * 4)); o += n * 4; return a; };
-  const u16 = n => { const a = new Uint16Array(buf.slice(o, o + n * 2)); o += n * 2; return a; };
-  const u8 = n => { const a = new Uint8Array(buf, o, n); o += n; return a; };
-  const bx = i32(nB), bz = i32(nB), vx = i32(nV), vz = i32(nV);
-  const bw = u16(nB), bd = u16(nB), br = u16(nB), bh = u16(nB), pn = u16(nP), ph = u16(nP);
-  const bk = u8(nB), pk = u8(nP);
-  for (let i = 1; i < nB; i++) { bx[i] += bx[i - 1]; bz[i] += bz[i - 1]; }
-  return { nB, nP, bx, bz, bw, bd, br, bh, bk, vx, vz, pn, ph, pk };
-}
+// PHB1's reader is js/formats.js decode, which the data worker runs (test/roundtrip.test.js reads it here)
+export { decode } from '../formats.js';
 
 function unitBox() {   // 1 x 1 x 1 box standing on y = 0, without a bottom face
   const g = new THREE.BoxGeometry(1, 1, 1); g.translate(0, .5, 0);
@@ -60,7 +47,7 @@ export function rectInRing(ring, [x0, z0, x1, z1]) {
  *  sea: everything outside the land outlines (city.limits) is water, not countryside;
  *  core: the Center City extent [x0, z0, x1, z1] in metres, which buildGround paves itself; onPromenade: for drawLines */
 export async function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea = false, core = null, onPromenade }) {
-  const city = data.city, B = decode(data.cityBuildings);
+  const city = data.city, B = data.cityBuildings;   // decoded in the data worker (js/formats.js decode)
   const tiles = new Map();   // key -> { cx, cz, r, full: [], roof: [], trees: [] }
   const tileOf = (x, z) => {
     const i = Math.floor(x / TILE), j = Math.floor(z / TILE), k = i + ',' + j;

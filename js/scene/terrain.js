@@ -9,24 +9,15 @@
 //   drape / seat   fit flat-built ground geometry onto the terrain, or set objects down on it
 //   buildTerrain   the ground mesh itself (index.js; city.js colours it)
 import * as THREE from 'three';
+import { readTerrain } from '../formats.js';
 
 export const terrain = { on: false, x0: 0, z0: 0, cell: 1, W: 0, H: 0, G: null, D: null, S: null };
 
-/** decode TER1: header, then two Int16 grids (decimetres, rows delta-coded) */
-export function setTerrain(buf) {
+/** set the terrain from TER1 as js/formats.js readTerrain decodes it (in the data worker), or from the bytes themselves */
+export function setTerrain(t) {
   terrain.on = false;
-  if (!buf) return terrain;
-  const dv = new DataView(buf);
-  if (String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3)) !== 'TER1') throw new Error('terrain: bad header');
-  const x0 = dv.getInt32(4, true) / 10, z0 = dv.getInt32(8, true) / 10, cell = dv.getInt32(12, true) / 10, W = dv.getInt32(16, true), H = dv.getInt32(20, true);
-  const read = off => {
-    const a = new Int16Array(buf.slice(off, off + W * H * 2));
-    for (let j = 0; j < H; j++) { let v = 0; for (let i = j * W, e = i + W; i < e; i++) { v += a[i]; a[i] = v; } }
-    return a;
-  };
-  const G = read(24), D = read(24 + W * H * 2), S = new Int16Array(W * H);   // S: ground or water, whichever is higher
-  for (let i = 0; i < S.length; i++) S[i] = D[i] > 0 ? G[i] + D[i] : G[i];
-  Object.assign(terrain, { on: true, x0, z0, cell, W, H, G, D, S });
+  if (!t) return terrain;
+  Object.assign(terrain, { on: true }, t instanceof ArrayBuffer ? readTerrain(t) : t);
   return terrain;
 }
 

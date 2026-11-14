@@ -1,5 +1,5 @@
 // The data files as js/data.js loadData() returns them: one key per [key, file] in the city's CITY.files (js/cities.js),
-// each file decoded by its name (.json and .json.gz: JSON; .bin.gz: the gunzipped bytes as an ArrayBuffer). Shapes from
+// each file decoded by its name (.json and .json.gz: JSON; .bin.gz: decoded by js/formats.js in the data worker). Shapes from
 // docs/EDITING.md section 3 and the modules that read them (named per block). Units (EDITING.md section 2): dm = integer
 // decimetres in the city's frame, m = metres. Types only: nothing here is checked against the files when they load.
 
@@ -84,8 +84,8 @@ export interface CityRest {
   trees: Flat;
 }
 
-/** data-<city>-city_buildings: gzip binary "PHB1", as bytes (layout: EDITING.md; decoded by js/scene/city.js decode) */
-export type CityBuildings = ArrayBuffer;
+/** data-<city>-city_buildings: gzip binary "PHB1" (layout: EDITING.md), decoded by js/formats.js decode (read by js/scene/city.js) */
+export type CityBuildings = ReturnType<typeof import('../formats.js').decode>;
 
 /** data-<city>-places, Jersey Shore and New Orleans (js/scene/jsh/places.js): y m above the ground there */
 export interface Places {
@@ -209,8 +209,8 @@ export interface Restaurant {
   look?: Record<string, unknown>;
 }
 
-/** data-phl-terrain: gzip binary "TER1" in Philadelphia's layout (EDITING.md; read by js/scene/terrain.js setTerrain) */
-export type PhlTerrain = ArrayBuffer;
+/** data-phl-terrain: gzip binary "TER1" in Philadelphia's layout (EDITING.md), decoded by js/formats.js readTerrain (for js/scene/terrain.js setTerrain) */
+export type PhlTerrain = ReturnType<typeof import('../formats.js').readTerrain>;
 
 // ---- New York (EDITING.md "New York only")
 
@@ -224,8 +224,8 @@ export interface NycLandmarks {
 
 // ---- Jersey Shore (EDITING.md "Jersey Shore only")
 
-/** data-jsh-terrain: gzip binary "TER1", NOT data-phl-terrain's layout (EDITING.md; read by js/scene/jsh/terrain.js loadTerrain) */
-export type JshGrid = ArrayBuffer;
+/** data-jsh-terrain: gzip binary "TER1", NOT data-phl-terrain's layout (EDITING.md), decoded by js/formats.js readGrid (for js/scene/jsh/terrain.js loadTerrain) */
+export type JshGrid = ReturnType<typeof import('../formats.js').readGrid>;
 
 /** data-jsh-farms (gzip JSON; js/scene/jsh/farms.js). m unless said */
 export interface JshFarms {

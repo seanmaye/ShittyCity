@@ -346,9 +346,9 @@ js/three-setup.js  three.js settings that keep the look tuned under r128: colour
                  every frame), restoreAnisotropy() for nearest-magnified textures. main.js imports it first, before any colour is made.
 js/main.js       the start menu, then setCity -> loadData -> buildScene -> createUI -> start.
                  Exposes window.__city.
-js/data.js       projection (G(lat,lon), latOf, using CITY.frame) and the data loader
-                 (fetches CITY.files by the URLs the build gave them, CITY.urls, set by main.js from its
-                 URLS: .gz files gunzipped with DecompressionStream)
+js/data.js       projection (G(lat,lon), latOf, using CITY.frame) and the data loader: its module worker js/load-worker.js
+                 fetches CITY.files by the URLs the build gave them (CITY.urls, set by main.js from its URLS), gunzips the
+                 .gz ones as they stream in and decodes the binary ones (js/formats.js), handing over their typed arrays; the page parses the JSON
 js/scene/core.js  renderer, camera, OrbitControls, sun, fog. HOME_POS and HOME_TGT
                  (from CITY.home) are the overview camera.
 js/scene/sky.js  the 24-hour clock: sunAt(h) = the real sun position over the city (CITY.sun)
@@ -973,7 +973,7 @@ Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, hei
   module you changed.
 - Type checks: the modules with `// @ts-check` at the top are type-checked against the types
   in js/types/ (data.d.ts: the blocks in section 3; city.d.ts: a city entry and CITY;
-  scene.d.ts: window.__city), through JSDoc comments. They are js/data.js,
+  scene.d.ts: window.__city), through JSDoc comments. They are js/data.js, formats.js, load-worker.js,
   js/scene/geometry.js, season.js, core.js, river.js and buildings.js. `npm run check`, which
   every deploy runs, fails on a type error in them. js/cities.js is not checked (city entries
   change often), but its types are what the checked files see: a new field a checked file

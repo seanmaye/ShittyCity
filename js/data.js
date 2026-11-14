@@ -20,31 +20,37 @@ export function pairs(flat) {
   return out;
 }
 
-/** a .gz file's body, gunzipped as it streams in (its first bytes, read from a tee of it, say whether it is gzip at all) */
-async function gunzip(body) {
-  const [peek, all] = body.tee(), reader = peek.getReader(), head = [];
-  for (let c; head.length < 2 && !(c = await reader.read()).done;) head.push(...c.value.subarray(0, 2 - head.length));
-  reader.cancel();
-  return new Response(head[0] === 0x1f && head[1] === 0x8b ? all.pipeThrough(new DecompressionStream('gzip')) : all).arrayBuffer();   // else already decoded by the server
-}
-
-/** load the active city's files (CITY.files, from CITY.dir) */
+/** load the active city's files (CITY.files, from CITY.dir): the data worker (js/load-worker.js) fetches, gunzips and decodes
+ *  them and hands over their bytes and typed arrays as each is done; the JSON is parsed here */
 /** @param {(done: number, key: string) => void} [onProgress] @returns {Promise<CityData>} */
 export async function loadData(onProgress = () => {}) {
-  const FILES = CITY.files;
+  const FILES = CITY.files, parts = [];
+  for (const [, file] of FILES) if (!CITY.urls[file]) throw new Error(`${CITY.dir}/${file}: not in the build's URL map (js/main.js URLS)`);
+  const worker = new Worker(new URL('./load-worker.js', import.meta.url), { type: 'module' });
   let done = 0;
-  const parts = await Promise.all(FILES.map(async ([key, file]) => {
-    if (!CITY.urls[file]) throw new Error(`${CITY.dir}/${file}: not in the build's URL map (js/main.js URLS)`);
-    const r = await fetch(CITY.urls[file]);   // its URL in the build (CITY.urls, set by main.js)
-    if (!r.ok) throw new Error(`${CITY.dir}/${file}: HTTP ${r.status}`);
-    let out;
-    if (file.endsWith('.json')) out = JSON.parse(new TextDecoder().decode(await r.arrayBuffer()));
-    else {
-      const buf = await gunzip(r.body);
-      out = file.endsWith('.json.gz') ? JSON.parse(new TextDecoder().decode(buf)) : buf;
-    }
-    onProgress(++done / FILES.length, key);
-    return out;
-  }));
-  return /** @type {CityData} */ (Object.fromEntries(FILES.map(([k], i) => [k, parts[i]])));
+  try {
+    await new Promise((resolve, reject) => {
+      worker.onmessage = ({ data: { i, out, rt, status, error } }) => {
+        try {
+          const [key, file] = FILES[i];
+          if (status) throw new Error(`${CITY.dir}/${file}: HTTP ${status}`);
+          if (error != null) throw new Error(error);
+          // the worker's fetch on the page's timeline (tools/perf reads it as the file's Resource Timing)
+          if (rt) performance.measure(rt.name, { start: rt.startTime, end: rt.responseEnd, detail: { encodedBodySize: rt.encodedBodySize } });
+          parts[i] = /\.json(\.gz)?$/.test(file) ? JSON.parse(new TextDecoder().decode(out)) : out;
+          onProgress(++done / FILES.length, key);
+          if (done === FILES.length) resolve(parts);
+        } catch (e) { reject(e); }
+      };
+      // a worker that does not start, or fails outside a file, is a load error too, not a load that never ends
+      worker.onerror = e => reject(new Error(`${CITY.dir}: the data worker failed${e.message ? `: ${e.message}` : ''}`));
+      worker.onmessageerror = () => reject(new Error(`${CITY.dir}: a message from the data worker could not be read`));
+      // each file's URL in the build (CITY.urls, set by main.js)
+      worker.postMessage({ files: FILES.map(([key, file]) => [key, file, CITY.urls[file]]), origin: performance.timeOrigin });
+      if (!FILES.length) resolve(parts);
+    });
+    return /** @type {CityData} */ (Object.fromEntries(FILES.map(([k], i) => [k, parts[i]])));
+  } finally {
+    worker.terminate();
+  }
 }
