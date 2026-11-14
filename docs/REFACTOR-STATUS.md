@@ -3,11 +3,11 @@
 Kept by the orchestrator of [REFACTOR-PLAN.md](REFACTOR-PLAN.md). Only the orchestrator edits
 this file. It is how the work is picked up again after a context summary or in a new session.
 
-Last updated: 2026-11-14, by the P6 session. **P0 to P4c are all merged and live** (#3, #4, #8,
-#7, #9, #10, #12, #13, #14; `main` at `f718a5b`), and the cutover and cache checks passed on
-production. P5 is closed as no-go. **P6 (a and b) is built and gated as one pull request** at Micah's
-go-ahead (2026-11-14: "implement P6 ... as one PR"); see "P6" below. See "Merge log" at the end;
-the sections above it are the record of how each phase was built and gated.
+Last updated: 2026-11-14, by the P6 session. **P0 to P4c and P6 are merged and live** (#3, #4, #8,
+#7, #9, #10, #12, #13, #14, #18; `main` at `72b4b98`), and the live checks passed on production. P5
+is closed as no-go. P6 (a and b) went in as one pull request at Micah's go-ahead (2026-11-14:
+"implement P6 ... as one PR"). See "Merge log" at the end; the sections above it are the record of
+how each phase was built and gated.
 
 ## Standing facts
 
@@ -421,7 +421,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P6. `.ts` renames (P6a) and smaller data (P6b), one pull request
 
-- State: **in review**. Branch `refactor/p6`, rebased on `a926cc2` (Micah's Jersey Shore extension,
+- State: **merged** (2026-11-14, `72b4b98`; live checks below, in "Merge log"). Branch `refactor/p6`, rebased on `a926cc2` (Micah's Jersey Shore extension,
   pushed while the gates ran); PR: https://github.com/seanmaye/ShittyCity/pull/18. Micah asked for P6a and P6b together in one pull request,
   not one per folder and one per format as the plan has it; the commits keep the plan's structure
   (per folder a pure rename, then its typing; P6b after).
@@ -633,3 +633,25 @@ in a local `smoke --prod`).
 **Not done:** the three contributor messages (in #8, #9, #13) were not sent by this session:
 Micah sends them. Safari was not checked. The failing branch builds are not explained. Local
 branches of the same names in the implementers' worktrees still point at the gated tips.
+
+**P6, merged** (2026-11-14, P6 session): #18 as merge commit `72b4b98` on `a926cc2`, at Micah's
+word ("Yes, merge it"). CI (`web`, `python`) passed on the tip and on the merge commit; Workers
+Builds on `72b4b98`: success (on the branch it reported nothing, as before). Production serves its
+build: phl's terrain is `TER2`, its JSON `.jcol.gz`. Cloudflare's gzip differs from this Mac's (its
+Node's zlib), so the hashed names differ from a local build and the files are a little smaller
+(phl terrain 3,875,221 B against 3,930,995 locally); the decoded values are the same.
+- `smoke --url https://ashitty.city` (`20261114-165055-smoke-p6-live`): all 5 cities pass, no file
+  or code of another city. Bytes as Chromium received them (Resource Timing), against the P6b
+  measurement's run on the same site before P6 (jsh: `a926cc2`'s data, by `curl`, plus its loading
+  screens):
+
+  | city | data before | data after | first load before | first load after |
+  |---|---:|---:|---:|---:|
+  | phl | 16,737,060 | 10,717,287 (-36.0%) | 17,305,521 | 11,286,998 (-34.8%) |
+  | nyc | 9,055,094 | 5,735,939 (-36.7%) | 9,538,784 | 6,220,756 (-34.8%) |
+  | jsh | 3,070,318 | 1,836,051 (-40.2%) | 3,585,204 | 2,352,274 (-34.4%) |
+  | nola | 3,392,012 | 2,176,067 (-35.8%) | 3,861,752 | 2,647,093 (-31.5%) |
+
+- Not done: Safari; decode time on a slow device. Whether the contributor message (in #18) went
+  out before the merge is Micah's to say.
+
