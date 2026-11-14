@@ -4,7 +4,7 @@
 //   directory: the bundle's module comments are relative to it, so every side's bundle reads alike)
 //
 // Loads the side's own vite.config.js with the side's own installed vite, and builds it as production does
-// (same plugins, same chunking), with the harness's overrides: not minified, source maps whose sources are
+// (same plugins, same chunking, production's CSS), with the harness's overrides: JS not minified, source maps whose sources are
 // root-relative (js/…, node_modules/…), fixed file names, symlinks kept (node_modules is a link to
 // perf.py's cache, so every side's bundle reads the same), and a plugin that applies perf.py's patches to
 // three's core file. The patch text comes from perf.py in <json>: { find, replace, append }, the same strings
@@ -18,6 +18,10 @@ const [rootArg, outDir, json] = process.argv.slice(2), root = resolve(rootArg);
 const opt = JSON.parse(json);
 const vite = await import(pathToFileURL(createRequire(join(root, 'package.json')).resolve('vite')).href);
 const loaded = await vite.loadConfigFromFile({ command: 'build', mode: 'production', isSsrBuild: false, isPreview: false }, undefined, root, 'warn');
+// the CSS exactly as production minifies it (the config's cssMinify, else production's default, which follows build.minify):
+// only the JS is left unminified, for attribution, so every gate sees the CSS that ships
+const prod = await vite.resolveConfig({ ...(loaded ? loaded.config : {}), configFile: false, root, mode: 'production' }, 'build', 'production');
+const cssMinify = prod.environments.client.build.cssMinify;
 
 let patched = 0;
 const patch = {
@@ -36,7 +40,7 @@ await vite.build(vite.mergeConfig(loaded ? loaded.config : {}, {
   resolve: { preserveSymlinks: true },
   plugins: [patch],
   build: {
-    outDir: resolve(outDir), emptyOutDir: true, minify: false, sourcemap: true, chunkSizeWarningLimit: 1e9,
+    outDir: resolve(outDir), emptyOutDir: true, minify: false, cssMinify, sourcemap: true, chunkSizeWarningLimit: 1e9,
     rolldownOptions: { output: { ...names, sourcemapPathTransform: (rel, map) => relative(root, resolve(dirname(map), rel)).split(sep).join('/') } },
   },
 }));
