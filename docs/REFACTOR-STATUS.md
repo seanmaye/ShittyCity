@@ -3,9 +3,10 @@
 Kept by the orchestrator of [REFACTOR-PLAN.md](REFACTOR-PLAN.md). Only the orchestrator edits
 this file. It is how the work is picked up again after a context summary or in a new session.
 
-Last updated: 2026-11-14 (P1a, P1b, P1c in review; P2 gates passed, #9 ready for review; P3 #10
-gates passed, #10 ready for review, stacked on #9; P4a gates passed, #12 on #10, waiting on
-Micah's kitchen look; P4b gates passed, #13 on #12; P4c gates passed, #14 on #13; P5 no-go, #15 closed with its numbers; closing report below). Orchestrator from P3 on: a new session (the P0–P2 one handed over).
+Last updated: 2026-11-14, by the merge session. **P0 to P4c are all merged and live** (#3, #4, #8,
+#7, #9, #10, #12, #13, #14; `main` at `f718a5b`), and the cutover and cache checks passed on
+production. P5 is closed as no-go. P6a and P6b wait for Micah's go-ahead. See "Merge log" at the
+end; the sections above it are the record of how each phase was built and gated.
 
 ## Standing facts
 
@@ -14,7 +15,7 @@ Micah's kitchen look; P4b gates passed, #13 on #12; P4c gates passed, #14 on #13
 1. Dashboard: Sean owns the Cloudflare account; Micah has admin access and offered to sign in
    to the dashboard in a browser for readouts. Dashboard:
    `https://dash.cloudflare.com/1af14c0b141e374a8e01a11bba70b7d0/workers/services/view/shittycity/production`.
-   Production site URL: _not yet recorded_ (P0 dashboard readout).
+   Production site URL: `https://ashitty.city` (also `shittycity.smtheman1234.workers.dev`).
 2. A failing check blocks the deploy: **yes, from P3** (`cf:build` = `npm run check && npm run build`).
 3. TypeScript: **typed contracts and opt-in checking now (P4c); `.ts` renames later (P6a)** with
    their own go-ahead.
@@ -131,7 +132,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P0. Baseline and inventory
 
-- State: in review (baseline done; production headers and dashboard readout outstanding).
+- State: **merged** (#3, 2026-11-14). Dashboard readout: see "Merge log".
 - Branch / PR: `refactor/p0-docs`, https://github.com/seanmaye/ShittyCity/pull/3.
 - Main checkout fast-forwarded to `origin/main` at `9c38eae` on 2026-11-13.
 - **perf baseline** (`perf.py run --repeat 3`, medians, commit `9c38eae`; output folders kept in
@@ -163,7 +164,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P1a. Locked Python environment
 
-- State: in review. Branch `refactor/p1a-uv`, https://github.com/seanmaye/ShittyCity/pull/4.
+- State: **merged** (2026-11-14). Branch `refactor/p1a-uv`, https://github.com/seanmaye/ShittyCity/pull/4.
 - Gate (rebased on `9c38eae`): Jersey Shore rebuilt with the lock, `git diff --stat data/jsh`
   empty; `perf.py list` and `ux.py list` start under `uv run`.
 - Decision: **shapely pinned `>=2.0.7,<2.1`** (GEOS 3.11). Shapely 2.1+/GEOS 3.13+ changes
@@ -176,7 +177,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P1b. Retire the single-file bundle
 
-- State: in review. Branch `refactor/p1b-retire-bundle` (stacked on P1a),
+- State: **merged** (2026-11-14). Branch `refactor/p1b-retire-bundle` (stacked on P1a),
   https://github.com/seanmaye/ShittyCity/pull/8.
 - Gate: bundle grep empty; smoke all 5 cities ok (phl 0.0061%, pine 0.0108%: motion only);
   `ab --quick --shots` on phl: only `whole-city` rows `likely worse`, rerun with 8 rounds: no
@@ -190,7 +191,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P1c. Smoke check and pixel diff
 
-- State: in review. Branch `refactor/p1c-smoke`, https://github.com/seanmaye/ShittyCity/pull/7.
+- State: **merged** (2026-11-14). Branch `refactor/p1c-smoke`, https://github.com/seanmaye/ShittyCity/pull/7.
 - Adds `perf.py smoke` (every city in `CITIES`, kitchen included) and pixel diffs in
   `ab --shots`, `smoke --against`, `ux.py compare`.
 - **Found and fixed an A/B bias** (orchestrator's commit `e3ef143`): with the same commit on both
@@ -204,7 +205,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P2. The build
 
-- State: **in review, gates passed** (2026-11-14). https://github.com/seanmaye/ShittyCity/pull/9
+- State: **merged** (2026-11-14, `927dd0f`). https://github.com/seanmaye/ShittyCity/pull/9
   is ready for review, with every gate's output in its description.
 - Branch `refactor/p2-build` (pushed): P1a + P1b with P1c's two commits cherry-picked
   (`5ac3781`, `2ac1357`) on `7fe4426`. Rebase onto `main` once #4, #7 and #8 merge; the P1
@@ -281,7 +282,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P3. Checks in the build
 
-- State: **in review, gates passed** (2026-11-14). https://github.com/seanmaye/ShittyCity/pull/10,
+- State: **merged** (2026-11-14, `9eaca95`). https://github.com/seanmaye/ShittyCity/pull/10,
   base `refactor/p2-build` (retarget to `main` after #9 merges). Contributor message drafted in #10
   (Micah sends when it merges).
 - Branch `refactor/p3-checks` = two parallel implementers stacked: P3a (JS, `5d8d57a`) then P3b
@@ -314,7 +315,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P4a. three.js 0.187.0
 
-- State: **in review, gates passed; waiting on Micah's kitchen look** (2026-11-14).
+- State: **merged** (2026-11-14, `057cdc6`; Micah was shown the kitchen before/after and said to proceed).
   https://github.com/seanmaye/ShittyCity/pull/12, base `refactor/p3-checks`.
 - Branch `refactor/p4a-three-187`: `d8b308e` bump (three + @types/three 0.187.0, lockfile 4
   entries), `a3a24a9` kitchen `PCFShadowMap` (three already substituted it: no pixel change, the
@@ -338,7 +339,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P4b. Per-city code splitting, hashed data, long-lived caching
 
-- State: **in review, gates passed; live checks after merge** (2026-11-14).
+- State: **merged** (2026-11-14, `1a72a95`); live checks passed, see "Merge log".
   https://github.com/seanmaye/ShittyCity/pull/13, base `refactor/p4a-three-187`. Contributor
   message drafted in #13 (Micah sends when it merges).
 - Branch `refactor/p4b-split-cache`: `5f2d648` city code chunks (`js/scene/<city>/<city>.js`,
@@ -377,7 +378,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P4c. Typed contracts, opt-in checking
 
-- State: **in review, gates passed** (2026-11-14). https://github.com/seanmaye/ShittyCity/pull/14,
+- State: **merged** (2026-11-14, `f718a5b`). https://github.com/seanmaye/ShittyCity/pull/14,
   base `refactor/p4b-split-cache`.
 - Branch `refactor/p4c-types`: `943bd63` js/types/ (data.d.ts, city.d.ts, scene.d.ts; index.js one
   `@returns` line), `288a664` `// @ts-check` on data.js, cities.js, geometry.js, season.js and
@@ -463,3 +464,68 @@ contributor message), #14, each retargeted to main as the one below merges.
 
 **Not ours to settle:** the history rewrite, New York's data source, P6 (a: `.ts` renames per
 folder; b: smaller data formats).
+
+## Merge log (2026-11-14, merge session)
+
+Micah's instruction: get the refactor into `main`, following the closing report's merge order.
+
+**Merged**, as merge commits, `origin/main` unchanged at `7fe4426` beforehand: #3 (`9c9d9cf`), #4
+(`c7bb7fe`), #8 (`c9bca34`), #7 (`f6962c7`). `main`'s tree at `f6962c7` is `2ac1357` (the gates' A
+side) plus the docs from #3. Workers Builds deployed `f6962c7`: success. The contributor message
+for #8 had not been sent when it merged.
+
+**Rebased** onto `f6962c7` (the P1 commits dropped out; each new tip differs from its gated tip
+only by #3's 12 docs files), force-pushed with a lease on the old tip:
+
+| PR | branch | gated tip | rebased tip |
+| --- | --- | --- | --- |
+| #9 | `refactor/p2-build` | `c7193fd` | `86f9abe` |
+| #10 | `refactor/p3-checks` | `9877a18` | `2e0108d` |
+| #12 | `refactor/p4a-three-187` | `2823e17` | `ef27fde` |
+| #13 | `refactor/p4b-split-cache` | `8a40f33` | `9249aeb` |
+| #14 | `refactor/p4c-types` | `2327970` | `4a66b4e` |
+
+On `4a66b4e`: `npm ci`, `npm run cf:build`, Ruff, pytest (41) pass locally; `smoke --prod`: all 5
+cities pass. CI green on all five PRs. Local branches of the same names in the implementers'
+worktrees still point at the gated tips.
+
+**Dashboard.** Micah's Cloudflare member on Sean's account has the role "Individual Workers
+Admin". Every Workers Builds endpoint answers 403 for it, the worker's Settings page shows no
+Build section, and build logs say "Build not found … Forbidden". So this session could neither
+read nor change the Build command, and the cause of the failing branch builds is still unknown.
+**Sean set the Build command himself** (`if [ -f package.json ]; then npm run cf:build; fi`, as
+Micah reported); the build-cache setting was not confirmed. What the login can see: production
+deploys come from Workers Builds through Wrangler, custom domain `ashitty.city`, each branch has
+an empty preview ("No deployments yet").
+
+**Merged after that**, each retargeted to `main` first, merge commits:
+
+| PR | merge commit | Workers Builds on it |
+| --- | --- | --- |
+| #9 | `927dd0f` | success |
+| #10 | `9eaca95` | success (the first deploy that runs `npm run check`) |
+| #12 | `057cdc6` | success |
+| #13 | `1a72a95` | success |
+| #14 | `f718a5b` | success |
+
+**Cutover checks after #9** (production, `https://ashitty.city`): the page no longer references
+jsDelivr or Google Fonts; `/js/main.js` and `/tools/serve.py` are 404; `data/*.gz` is served as
+`application/gzip` with no `Content-Encoding`; `smoke --url`: all 5 cities pass.
+
+**Cache checks after #13:** `/` is `public, max-age=0, must-revalidate`; every `/assets/`
+response (chunks, fonts, data) is `public, max-age=31536000, immutable`, one Cache-Control each.
+Two loads in one Chromium profile: phl 41 responses and 17.3 MB the first time, the second time
+only the page (4.4 kB) and Cloudflare's own `/cdn-cgi/rum` beacon went over the network; nola the
+same (27 responses, 3.9 MB, then the page and the beacon).
+
+**After #14:** `smoke --url`: all 5 cities pass; no file or code of another city; the chunk names
+equal those of a local build of `f718a5b`.
+
+**Found:** `smoke --url` reads source maps with urllib's default User-Agent, which Cloudflare
+answers with 403, so on the live site every JS file counted as "without a source map" and the
+other-city-code check fell back to names. With a named User-Agent (tried locally, not committed)
+the maps load and the check passes. One-line fix in `chunk_sources`' `read`, not yet made.
+
+**Not done:** the three contributor messages (in #8, #9, #13) were not sent by this session:
+Micah sends them. Safari was not checked. The failing branch builds are not explained. Local
+branches of the same names in the implementers' worktrees still point at the gated tips.
