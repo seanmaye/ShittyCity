@@ -7,8 +7,8 @@
 // (same plugins, same chunking, production's CSS), with the harness's overrides: JS not minified, source maps whose sources are
 // root-relative (js/…, node_modules/…), fixed file names, symlinks kept (node_modules is a link to
 // perf.py's cache, so every side's bundle reads the same), and a plugin that applies perf.py's patches to
-// three's core file. The patch text comes from perf.py in <json>: { find, replace, append }, the same strings
-// its CDN route applies to the no-build sides, so both sides of an A/B are patched by the same code.
+// three's core file. The patch text comes from perf.py in <json>: { find, replace, append }, so both sides of
+// an A/B are patched by the same code.
 // Prints {"patched": n}, the number of files the patch applied to.
 import { createRequire } from 'node:module';
 import { dirname, join, relative, resolve, sep } from 'node:path';

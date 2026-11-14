@@ -10,8 +10,8 @@ that open in Chrome DevTools. See tools/perf/README.md.
   python -I tools/perf/perf.py smoke [--ref REF | --root DIR | --url ORIGIN] [--prod] [--cities phl,pine] [--against tools/perf/out/<smoke>]
 
 Needs Python Playwright and its Chromium (pip install playwright; python -m playwright install chromium).
-The pixel diffs (ab --shots, smoke --against) also need Pillow. A side with a package.json is built
-(prepare_side), which needs Node 24 and npm.
+The pixel diffs (ab --shots, smoke --against) also need Pillow. Each side is built (prepare_side), which needs
+Node 24 and npm: commits from before the Vite build cannot be measured.
 """
 import argparse
 import bisect
@@ -42,13 +42,11 @@ BUILD = os.path.join(HERE, 'build.mjs')
 CACHE = os.path.join(HERE, '.cache')
 OUT = os.path.join(HERE, 'out')
 BUILT = '.perf-build.json'   # marks a build the harness made (prepare_side); serve() serves such a folder strictly
-CDN = re.compile(r'^https://(cdn\.jsdelivr\.net|fonts\.googleapis\.com|fonts\.gstatic\.com)/')
 FIXED_DATE = '2026-10-15T12:00:00-04:00'   # the sun's path depends on the date: pin it
 MB = 1048576
 
-# The patches to three's core file (three.module.js up to r170, three.core.js since), applied to every side:
-# by cdn_handler to the CDN file for a side served as sources, by tools/perf/build.mjs (a Vite plugin) for a
-# built side. three draws four random numbers for every object's uuid: give those their own stream, so creating
+# The patches to three's core file (three.module.js up to r170, three.core.js since), applied to every side by
+# tools/perf/build.mjs (a Vite plugin). three draws four random numbers for every object's uuid: give those their own stream, so creating
 # one object more or fewer doesn't reshuffle the app's seeded Math.random (tree shapes and colours), and
 # screenshots stay comparable across code changes.
 UUID_FIND = 'function generateUUID() {'
@@ -77,7 +75,7 @@ TAG_PATCH = r"""
 
 class _Handler(http.server.SimpleHTTPRequestHandler):
     # HTTP/1.1 keep-alive: with the default HTTP/1.0 close-per-request, current Playwright's
-    # request interception (the CDN route in open_app) resets parallel module loads
+    # request interception (the routes in app_context) resets parallel module loads
     # (net::ERR_CONNECTION_RESET) and the scene never starts
     protocol_version = 'HTTP/1.1'
 
@@ -98,8 +96,8 @@ class _Server(http.server.ThreadingHTTPServer):
 
 
 class _SnapHandler(_Handler):
-    """Serves a folder of sources (a snapshot, a worktree); anything it does not hold (data/) comes from ROOT.
-    strict (a build): a missing file is a 404, as in production."""
+    """Serves a folder: a build, or built output (smoke --root), where anything it does not hold comes from ROOT.
+    strict (a build the harness made): a missing file is a 404, as in production."""
 
     def __init__(self, *args, strict=False, **kw):
         self.strict = strict
@@ -123,37 +121,6 @@ def serve(root=ROOT):
     base = f'http://127.0.0.1:{srv.server_address[1]}'
     _SERVED[base] = root
     return srv, base
-
-
-def cdn_handler(tag_three):
-    """Serve three.js and the font from tools/perf/.cache (filled on first use): no CDN latency
-    in the load numbers, and runs work offline once cached."""
-    os.makedirs(CACHE, exist_ok=True)
-
-    def handle(route):
-        url = route.request.url
-        h = hashlib.sha1(url.encode()).hexdigest()[:20]
-        bp, mp = os.path.join(CACHE, h + '.body'), os.path.join(CACHE, h + '.json')
-        if os.path.exists(bp) and os.path.exists(mp):
-            with open(bp, 'rb') as f:
-                body = f.read()
-            with open(mp, encoding='utf-8') as f:
-                meta = json.load(f)
-        else:
-            r = route.fetch()
-            body = r.body()
-            meta = {'url': url, 'status': r.status, 'type': r.headers.get('content-type', 'application/octet-stream')}
-            if r.ok:
-                with open(bp, 'wb') as f:
-                    f.write(body)
-                with open(mp, 'w', encoding='utf-8') as f:
-                    json.dump(meta, f)
-        if '/three@' in url and '/build/' in url and UUID_FIND.encode() in body:   # three's core file: the patches (UUID_PATCH)
-            body = body.replace(UUID_FIND.encode(), UUID_PATCH.encode(), 1)
-            if tag_three:
-                body += TAG_PATCH.encode()
-        route.fulfill(status=meta['status'], body=body, headers={'content-type': meta['type'], 'access-control-allow-origin': '*'})
-    return handle
 
 
 def gpu_args():
@@ -368,27 +335,36 @@ def build_side(src, ref, mode):
     return out
 
 
-def prepare_side(src=ROOT, ref=None, tag=False, prod=False, tmp=None):
+def built_output(src):
+    """A folder that is built output already (a dist/): an index.html, and neither the import map nor the js/
+    sources of a folder that still needs building."""
+    page = os.path.join(src, 'index.html')
+    if not os.path.isfile(page) or os.path.exists(os.path.join(src, 'js', 'main.js')):
+        return False
+    with open(page, encoding='utf-8') as f:
+        return 'type="importmap"' not in f.read()
+
+
+def no_build(src, ref):
+    if ref and not git('rev-parse', '--short', ref):
+        sys.exit(f'unknown git ref: {ref}')
+    sys.exit(f'{ref or src} has no package.json and the harness measures only builds: commits from before the Vite build '
+             '(P2 of the refactor) cannot be measured, so use a commit from P2 on.')
+
+
+def prepare_side(src=ROOT, ref=None, tag=False, prod=False):
     """One side of a run, as a folder to serve(): (folder, kind, cleanup). The side is a folder (src) or a commit
-    (ref). With a package.json it is built (build_side: the perf-mode build, with the census patch if `tag`, or
-    with `prod` the side's own `npm run build`) and its output is served strictly. Without one it is served as
-    sources, as before the build existed: three.js and the font from the CDN cache with the same patches
-    (cdn_handler), anything missing from ROOT; a commit is checked out into the worktree `tmp` for that.
-    The no-build path exists until P3 of docs/REFACTOR-PLAN.md removes it."""
+    (ref) with a package.json, and it is built (build_side: the perf-mode build, with the census patch if `tag`, or
+    with `prod` the side's own `npm run build`); its output is served strictly. Anything else is refused (no_build),
+    except a folder that is built output already (smoke --root dist), which is served as it is."""
     if side_has(src, ref, 'package.json'):
         mode = 'prod' if prod else 'perf-tag' if tag else 'perf'
         return build_side(src, ref, mode), ('production build' if prod else 'perf build'), lambda: None
+    if ref or not built_output(src):
+        no_build(src, ref)
     if prod:
-        sys.exit(f'--prod: {ref or src} has no package.json, so no production build')
-    if not ref:
-        return src, 'sources', lambda: None
-    tmp = tmp or os.path.join(OUT, f'.side-{os.getpid()}')
-    if os.path.exists(tmp):
-        subprocess.run(['git', 'worktree', 'remove', '--force', tmp], cwd=ROOT, capture_output=True)
-    r = subprocess.run(['git', 'worktree', 'add', '--detach', tmp, ref], cwd=ROOT, capture_output=True, text=True)
-    if r.returncode:
-        sys.exit('git worktree add failed: ' + r.stderr)
-    return tmp, 'sources', lambda: subprocess.run(['git', 'worktree', 'remove', '--force', tmp], cwd=ROOT, capture_output=True)
+        sys.exit(f'--prod: {src} has no package.json, so no production build')
+    return src, 'built output', lambda: None
 
 
 # ---------------------------------------------------------------- built code back to the sources
@@ -905,15 +881,12 @@ def launch(pw, a):
     return pw.chromium.launch(headless=not a.headed, channel=a.channel, args=gpu_args())
 
 
-def app_context(browser, a, tag=False, cdn=True):
-    """A new context with the fixed viewport, the probe (seeded Math.random, pinned date), and
-    three.js and the font served from the cache (with the uuid patch) for a side served as sources."""
+def app_context(browser, a):
+    """A new context with the fixed viewport and the probe (seeded Math.random, pinned date)."""
     w, h = (int(v) for v in a.size.lower().split('x'))
     ctx = browser.new_context(viewport={'width': w, 'height': h}, device_scale_factor=a.dpr)
     ctx.add_init_script(script='window.__PERF_CFG = ' + json.dumps({'seed': 1, 'date': FIXED_DATE}) + ';')
     ctx.add_init_script(path=PROBE)
-    if cdn:
-        ctx.route(CDN, cdn_handler(tag))
     ctx.route(re.compile(r'/__blank$'), lambda r: r.fulfill(body='<!doctype html><title>perf</title>', content_type='text/html'))
     return ctx
 
@@ -922,7 +895,7 @@ def open_app(browser, a, base, tag=False, profile_load=False):
     """A new context and page with the probe, loaded until the scene has drawn 10 frames.
     Returns (page, cdp, errors, load report); with profile_load, load['profile'] is the CPU
     profile of the whole load."""
-    ctx = app_context(browser, a, tag)
+    ctx = app_context(browser, a)
     page = ctx.new_page()
     errors = []
     page.on('pageerror', lambda e: errors.append(f'pageerror: {e}'))
@@ -1266,19 +1239,17 @@ def cmd_ab(a):
                     rounds['load' if key.startswith('load.') else 'frames'][key]['AB'.index(k)].append(v)
     try:   # the sides and servers too, so a side that fails to build still cleans up the other
         if a.a_snap:
-            root_a = snap_dir(a.a_snap)
-            kind_a = snap_kind(root_a)
+            root_a, kind_a = snap_dir(a.a_snap), 'perf build'
         else:
-            root_a, kind_a, d = prepare_side(ref=a.base, tmp=os.path.join(OUT, '.ab-base'))
+            root_a, kind_a, d = prepare_side(ref=a.base)
             done.append(d)
         if a.b_snap:
-            root_b = snap_dir(a.b_snap)
-            kind_b = snap_kind(root_b)
+            root_b, kind_b = snap_dir(a.b_snap), 'perf build'
         else:
             root_b, kind_b, d = prepare_side(ROOT)
             done.append(d)
         for k, name in (('A', a.a_snap), ('B', a.b_snap)):   # a build snapshot keeps the patches of the harness that made it
-            if name and snap_kind(snap_dir(name)) == 'perf build':
+            if name:
                 with open(os.path.join(snap_dir(name), BUILT), encoding='utf-8') as f:
                     h = json.load(f).get('harness')
                 if h != harness_version():
@@ -1379,7 +1350,7 @@ SMOKE_VIEW = 'async () => { const api = window.__city; if (!api) return;\n' + RE
 
 def smoke_city(browser, a, base, cid, out):
     from playwright.sync_api import TimeoutError as PwTimeout
-    ctx = app_context(browser, a, cdn=not (a.prod or a.url))   # the real production output: nothing intercepted
+    ctx = app_context(browser, a)
     page = ctx.new_page()
     errors, r, started = [], {'ok': False}, False
     page.on('pageerror', lambda e: errors.append(f'pageerror: {e}'))
@@ -1427,7 +1398,7 @@ def smoke_city(browser, a, base, cid, out):
 
 def cmd_smoke(a):
     """Load every city in js/cities.js from a served side the way the harness does (seeded, date
-    pinned; a built side in perf mode, a side of sources with CDN files from the cache), fail on any
+    pinned; a side built in perf mode), fail on any
     page error, console error or failed request, and save one screenshot per city in a fixed view.
     --prod serves the side's own production build instead, --url loads a deployed site. --against
     diffs the screenshots with an earlier smoke's."""
@@ -1438,7 +1409,7 @@ def cmd_smoke(a):
             sys.exit('--prod and --url: pick one')
         base, what, ids = a.url.rstrip('/'), a.url, city_ids()
     else:
-        if a.ref:   # a commit: built from git, or checked out into a temporary worktree (data/ included)
+        if a.ref:   # a commit: built from git
             sha = git('rev-parse', '--short', a.ref)
             if not sha:
                 sys.exit(f'unknown git ref: {a.ref}')
@@ -1450,7 +1421,7 @@ def cmd_smoke(a):
             src, what = ROOT, f'the working tree ({git("rev-parse", "--short", "HEAD")}{" + uncommitted changes" if dirty else ""})'
         # a folder without js/cities.js (a dist/) gets it from the working tree, as its other missing files
         ids = city_ids(src if a.ref or side_has(src, None, 'js/cities.js') else ROOT, a.ref)
-        root, kind, done = prepare_side(src, a.ref, prod=a.prod, tmp=os.path.join(OUT, f'.smoke-{os.getpid()}'))
+        root, kind, done = prepare_side(src, a.ref, prod=a.prod)
         what += f', {kind}'
         srv, base = serve(root)
     from playwright.sync_api import sync_playwright
@@ -1509,41 +1480,22 @@ def snap_dir(name):
     d = os.path.join(OUT, '.snap', name)
     if not os.path.isdir(d):
         sys.exit(f'no snapshot named {name}: make one with perf.py snap {name}')
+    if not os.path.exists(os.path.join(d, BUILT)):
+        sys.exit(f'snapshot {name} holds sources, not a build (an older harness made it): make it again with perf.py snap {name}')
     return d
-
-
-def snap_kind(d):
-    return 'perf build' if os.path.exists(os.path.join(d, BUILT)) else 'sources'
 
 
 def cmd_snap(a):
     """Freeze the app as it is now in out/.snap/<name>, to use as a side of `ab` later: stacked
-    changes can then be measured one at a time without committing. A side with a package.json is
-    built in perf mode and the snapshot is that build (served strictly); one without gets its sources
-    copied (index.html, css/, js/). --ref snapshots a commit instead of the working tree."""
+    changes can then be measured one at a time without committing. The snapshot is the side's perf
+    build (served strictly). --ref snapshots a commit instead of the working tree."""
+    if not side_has(ROOT, a.ref, 'package.json'):
+        no_build(ROOT, a.ref)
     d = os.path.join(OUT, '.snap', a.name)
     if os.path.exists(d):
         shutil.rmtree(d)
-    if side_has(ROOT, a.ref, 'package.json'):
-        shutil.copytree(build_side(ROOT, a.ref, 'perf'), d)
-        print(f'Wrote {os.path.relpath(d, ROOT)} (a perf build)')
-        return
-    os.makedirs(d)
-    src = ROOT
-    if a.ref:
-        src = os.path.join(OUT, '.snap-src')
-        subprocess.run(['git', 'worktree', 'remove', '--force', src], cwd=ROOT, capture_output=True)
-        r = subprocess.run(['git', 'worktree', 'add', '--detach', src, a.ref], cwd=ROOT, capture_output=True, text=True)
-        if r.returncode:
-            sys.exit('git worktree add failed: ' + r.stderr)
-    try:
-        shutil.copy2(os.path.join(src, 'index.html'), d)
-        for sub in ('css', 'js'):
-            shutil.copytree(os.path.join(src, sub), os.path.join(d, sub))
-    finally:
-        if a.ref:
-            subprocess.run(['git', 'worktree', 'remove', '--force', src], cwd=ROOT, capture_output=True)
-    print(f'Wrote {os.path.relpath(d, ROOT)}')
+    shutil.copytree(build_side(ROOT, a.ref, 'perf'), d)
+    print(f'Wrote {os.path.relpath(d, ROOT)} (a perf build)')
 
 
 # two-sided 99% and 95% critical values of Student's t, by degrees of freedom
@@ -1672,15 +1624,15 @@ def main():
     h.add_argument('--tree-pct', type=float, default=1.0, help='hide tree branches under this %% of the time')
     h.add_argument('--seconds', type=float, help='heap profiles: the window length, to report MB/s')
     h.set_defaults(fn=cmd_hot)
-    sn = sub.add_parser('snap', help='snapshot the app (its perf build, or its sources) for a later ab --a-snap / --b-snap')
+    sn = sub.add_parser('snap', help='snapshot the app (its perf build) for a later ab --a-snap / --b-snap')
     sn.add_argument('name')
     sn.add_argument('--ref', help='snapshot this commit instead of the working tree')
     sn.set_defaults(fn=cmd_snap)
     sub.add_parser('list', help='list scenarios').set_defaults(fn=cmd_list)
     sm = sub.add_parser('smoke', help='load every city: no page error, console error or failed request; one screenshot each')
     src = sm.add_mutually_exclusive_group()
-    src.add_argument('--ref', help='this commit instead of the working tree (built, or checked out into a temporary worktree)')
-    src.add_argument('--root', help='this folder instead of the working tree: built if it has a package.json, else served as it is (what it lacks comes from the working tree)')
+    src.add_argument('--ref', help='this commit instead of the working tree (built; from P2 of the refactor on)')
+    src.add_argument('--root', help='this folder instead of the working tree: built if it has a package.json, else served as it is if it is built output (a dist/)')
     src.add_argument('--url', help='load the deployed site at this origin instead of serving anything (city ids from the working tree)')
     sm.add_argument('--prod', action='store_true', help="serve the side's own production build (npm run build, unpatched) instead of the perf-mode build")
     sm.add_argument('--cities', help='comma-separated city ids (default: every city in js/cities.js)')
