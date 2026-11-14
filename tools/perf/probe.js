@@ -86,7 +86,7 @@
   P.attach = api => {
     if (P.api) return;
     P.api = api;
-    import('three').then(m => { P.THREE = m; }, () => {});   // for the diagnostic toggles
+    import('three').then(m => { P.THREE = m; }, () => { P.THREE = window.__perfTHREE; });   // for the diagnostic toggles (a build: from the census patch)
     const r = api.renderer, gl = r.getContext();
     const ext = gl.getExtension('EXT_disjoint_timer_query_webgl2');
     P.gpuTimer = !!ext;
@@ -138,14 +138,20 @@
   };
 
   // ---- attribution: which code added each object to the scene
-  // perf.py --census/--ablate appends a hook to three.module.js that records, for every
-  // Object3D.add(), the app's call site and the build*/create* function it ran under, in
-  // globalThis.__perfSrc (a WeakMap). Without that hook, objects are grouped by material.
+  // perf.py --census/--ablate patches three's core file with a hook that keeps, for every
+  // Object3D.add(), the call's stack (globalThis.__perfStacks; globalThis.__perfSrc maps each
+  // object to its stacks). perf.py resolves new stacks (stacks(), then setTags()) to the app's
+  // call site `s` and the build*/create* function `b` it ran under: a stack with no app frame
+  // gets s = null. Without that hook, objects are grouped by material.
+  const sited = x => { if (!Array.isArray(x)) return x && x.s ? x : null; for (const t of x) if (t.s) return t; return null; };
   P.tagOf = o => {
     const src = window.__perfSrc;
-    for (let x = o; x && src; x = x.parent) { const t = src.get(x); if (t) return t; }
+    for (let x = o; x && src; x = x.parent) { const t = sited(src.get(x)); if (t) return t; }
     return null;
   };
+  /** The stacks perf.py has not resolved yet: [[index, stack]]. */
+  P.stacks = () => (window.__perfStacks || []).flatMap((t, i) => (t.s === undefined ? [[i, t.stack]] : []));
+  P.setTags = rows => { const all = window.__perfStacks; for (const [i, b, s] of rows) Object.assign(all[i], { b, s }); };
   const groupOf = (o, material) => P.tagOf(o) || { b: 'untagged', s: `${material.type} #${material.color ? material.color.getHexString() : '-'}` };
 
   function startCensus(r) {
