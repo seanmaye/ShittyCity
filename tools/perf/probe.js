@@ -1,7 +1,7 @@
 // In-page instrumentation for tools/perf/perf.py (see tools/perf/README.md).
 //
 // perf.py injects this with add_init_script, so it runs before the page's own scripts. It
-// wraps requestAnimationFrame (per-frame JS time) and, once main.js publishes
+// wraps requestAnimationFrame (per-frame JS time) and, once main.ts publishes
 // window.__city, the renderer's render() (render CPU time, GPU time via
 // EXT_disjoint_timer_query_webgl2, draw calls, triangles). Everything is exposed on
 // window.__perf.
@@ -48,7 +48,7 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watchStatus); else watchStatus();
   try { new PerformanceObserver(l => l.getEntries().forEach(e => P.longTasks.push({ t: e.startTime, d: e.duration }))).observe({ type: 'longtask', buffered: true }); } catch (e) { /* unsupported */ }
 
-  // main.js sets window.__city (window.__schuylkill before the city picker) right after
+  // main.ts sets window.__city (window.__schuylkill before the city picker) right after
   // api.start(), before the first frame runs
   let appApi;
   for (const name of ['__city', '__schuylkill']) Object.defineProperty(window, name, {

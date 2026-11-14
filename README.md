@@ -43,7 +43,7 @@ This serves the working tree (`data/` as it is) and updates the page when you sa
 
 Then open <http://localhost:5173>. `npm run build` writes the site to `dist/`, which is what Cloudflare deploys, and `npm run preview` serves that build at <http://localhost:4173>.
 
-`npm run check` lints the JavaScript (Biome), runs `tsc` over it and runs the unit tests in `test/` (Vitest). Cloudflare runs it before every build (`npm run cf:build`), so a failing check stops the deploy: run it before you push.
+`npm run check` lints the code (Biome), type-checks the TypeScript in `js/` (`tsc`) and runs the unit tests in `test/` (Vitest). Cloudflare runs it before every build (`npm run cf:build`), so a failing check stops the deploy: run it before you push.
 
 To measure how fast it loads and renders (frame and GPU time per scenario, hot code paths,
 draw calls by source line, before/after comparisons), see [tools/perf/README.md](tools/perf/README.md):
@@ -61,36 +61,37 @@ Shared code sits at the top level. Each city has a folder of the same name in `d
 
 ```
 index.html            page shell, start menu, HUD markup; the entry Vite builds from
-vite.config.js        the build: dist/, each data/<city>/ file under a content-hashed name in dist/assets/ (js/main.ts URLS)
+vite.config.js        the build: dist/, each data/<city>/ file encoded smaller (js/formats.ts) under a content-hashed name in dist/assets/ (js/main.ts URLS)
 css/fonts.css         the Archivo font from npm, both axes, upright and italic
 css/style.css         HUD, menu and label styles
 js/three-setup.ts     three.js settings that keep the r128-tuned look (colours, light scale)
 js/main.ts            entry point: city menu -> load data -> build scene -> start UI
 js/cities.ts          every city's settings (projection, data files, home view, sun, page text)
 js/data.ts            data loader + lat/lon -> scene projection
+js/formats.ts         the smaller encodings the build ships the data in (JCOL, TER2, PHB2), and their readers
 js/ui.ts              buttons, hint text, floating labels, panel fold, skyline lights
 js/minimap.ts         the top-right map
 js/ridebar.ts         the line diagram shown while riding
 js/loading.ts         the loading screens: posed figures over frames of the city
 js/scene/
-  index.js            assembles the scene: each city's parts, time of day, rides, views
-  core.js             renderer, camera, orbit controls, lights
-  sky.js              the 24-hour clock: real sun position, sky colours, stars, night lights
-  buildings.js        the core's footprints, extruded and tiled
-  city.js             the rest of the city: tiled instanced buildings, streets, parks, water
-  ground.js           the core's ground, parks, streets, trails, rail, bridges
-  river.js            water polygons, bulkheads, dams, an optional river centreline
-  nature.js           trees (seasonal), rowing shells
-  season.js           time of year: snow, foliage, blossom, flower beds, grass
-  terrain.js          real ground heights (where a city has them): the ground mesh, and
+  index.ts            assembles the scene: each city's parts, time of day, rides, views
+  core.ts             renderer, camera, orbit controls, lights
+  sky.ts              the 24-hour clock: real sun position, sky colours, stars, night lights
+  buildings.ts        the core's footprints, extruded and tiled
+  city.ts             the rest of the city: tiled instanced buildings, streets, parks, water
+  ground.ts           the core's ground, parks, streets, trails, rail, bridges
+  river.ts            water polygons, bulkheads, dams, an optional river centreline
+  nature.ts           trees (seasonal), rowing shells
+  season.ts           time of year: snow, foliage, blossom, flower beds, grass
+  terrain.ts          real ground heights (where a city has them): the ground mesh, and
                       setting buildings, streets, transit and everything else on it
-  subway.js           every rail line: tracks, tunnels, Els, platforms, trains, rides,
+  subway.ts           every rail line: tracks, tunnels, Els, platforms, trains, rides,
                       cut-aways and the walkable cabins of every car
-  transitmap.js       "Show transit lines" highlight
-  materials.js        shared materials, lit-window textures, skyline lights
-  geometry.js         polygon / ribbon / footprint-extrusion builders
+  transitmap.ts       "Show transit lines" highlight
+  materials.ts        shared materials, lit-window textures, skyline lights
+  geometry.ts         polygon / ribbon / footprint-extrusion builders
   phl/                Philadelphia's hand-built parts: landmarks, citymarks (stadiums, halls,
-                      djour's restaurants (restaurants.js),
+                      djour's restaurants (restaurants.ts),
                       bridges), people and frisbee, the riverfront monorail, the river boats,
                       the sports parks,
                       the rail yard park, the Walnut St promenade with its pedestrians and their
@@ -98,8 +99,8 @@ js/scene/
   nyc/                New York's hand-built parts: landmarks (Manhattan towers), bridges (East
                       River), boroughmarks (Wonder Wheel, Unisphere, Citi Field), the monorail
   pine/               1938 Pine St Kitchen: the room, cabinets, appliances and opening drawers
-                      (kitchen.js) and the things stored in them (items.js)
-  jsh/                Jersey Shore's labels and views, its elevation grid (terrain.js, laying
+                      (kitchen.ts) and the things stored in them (items.ts)
+  jsh/                Jersey Shore's labels and views, its elevation grid (terrain.ts, laying
                       everything onto the hills), house types, farms, the detasseling crew,
                       the overlook and the late harvest
 data/

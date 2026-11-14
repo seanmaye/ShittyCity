@@ -16,7 +16,7 @@
         "noUndeclaredVariables": "error",       // not in the preset: a mistyped name (browser and Node globals are known)
         "noUnusedVariables": "off",             // 22 hits (10 of them catch (e) bindings)
         "noUnusedFunctionParameters": "off",    // 15 hits
-        "noUnusedImports": "off",               // 2 hits; js/main.ts's must stay: it runs three-setup.js first
+        "noUnusedImports": "off",               // 2 hits; js/main.ts's must stay: it runs three-setup.ts first
         "noConstantCondition": "warn",          // no hits; a warning, as working code trips it: if (false) { ... } to switch a block off
         "noSwitchDeclarations": "warn"          // no hits; a warning: a const in a case without braces works
       },

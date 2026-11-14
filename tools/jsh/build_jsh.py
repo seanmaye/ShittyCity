@@ -474,7 +474,7 @@ if corn:
         _, cx, cz = best
         seed = {'x': round(float(cx), 1), 'z': round(float(cz), 1), 'a': a, 'len': SEED_LEN, 'sets': SEED_SETS, 'row': ROW_W, 's': fields[fi]['s']}   # s: its field's planting group
         # the field keeps its outline: its canopy covers the block from afar, and near the camera
-        # js/scene/jsh/cornlod.ts leaves the block and its 8 m headlands to detassel.js
+        # js/scene/jsh/cornlod.ts leaves the block and its 8 m headlands to detassel.ts
         print(f'farms: seed-corn block at ({cx:.0f}, {cz:.0f}), {SEED_SETS} sets of 4 female rows')
 farm_ctx = prep(unary_union(farm_any).buffer(150)) if farm_any else None
 blocked = unary_union([blocked] + [Polygon([(f['p'][0][i] / 10, f['p'][0][i + 1] / 10) for i in range(0, len(f['p'][0]), 2)]) for f in fields])

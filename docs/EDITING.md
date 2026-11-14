@@ -33,11 +33,15 @@ Python helper below.
               NAME.json (JSON), NAME.json.gz and NAME.bin.gz (gzip: JSON or binary); this guide
               calls each one data-<city>-NAME. Which files a city
               has is listed in section 3 and in its `files` entry in js/cities.ts.
+              The build ships most of them smaller than they are committed (js/formats.ts:
+              JSON of 32 kB or more as JCOL, TER1 as TER2, PHB1 as PHB2, all gzipped; the page
+              reads both). Write and edit the files as this guide describes; the build does the
+              rest, and only ships an encoding that reads back to exactly the same values.
               Loading-screen backgrounds are data/<city>/poi-*.webp (frames captured from the
               3D city by tools/loading/capture.py). The city lists each screen in
               `loadingScreens`: file, caption, the view it was captured from, and the posed
               figure in front (js/loading.ts has the poses and outfits).
-  js/         the code, as ES modules (section 4); index.html imports js/main.ts, which starts everything
+  js/         the code, as TypeScript ES modules (section 4); index.html imports js/main.ts, which starts everything
 
 
 2. Coordinates and units (read this before touching any data)
@@ -103,9 +107,9 @@ data-<city>-buildings   the core's real footprints
   { "styles": [null, {"id","color","kind"}, ...],
     "b": [[height_dm, style_index, outer_ring_dm, hole_ring_dm, ...], ...] }
   - style 0 = generic: a rowhouse if under 16 m tall and under 320 m2, else a commercial
-    building. buildings.js facadeKind() picks the facade (row/row2 terraces; office, office2
+    building. buildings.ts facadeKind() picks the facade (row/row2 terraces; office, office2
     ribbon windows, glass or stone, glass more often over 55 m) and PALETTE the wall colour;
-    roofs take a roof colour (materials.js ROOFS). Buildings over 40 m get rooftop plant,
+    roofs take a roof colour (materials.ts ROOFS). Buildings over 40 m get rooftop plant,
     over 90 m a red aviation light (night only).
   - style > 0 = styles[i]. Its "kind" is "glass", "stone" or "row" (window glow and shine).
   - Footprints replaced by hand-modelled landmarks are already removed.
@@ -135,7 +139,7 @@ data-<city>-ground      the core's ground
 data-<city>-trees       flat [x_dm, z_dm, ...] street and park trees at ground level ([] if none)
 
 data-<city>-transit     rail transit (DEPTHS ARE ESTIMATES in both cities)
-  lines:     [{id, name, kind, color, group?}]   kind picks the car (subway.js SPEC, CAR_IN);
+  lines:     [{id, name, kind, color, group?}]   kind picks the car (subway.ts SPEC, CAR_IN);
              group = the network heading in "Ride a line" (default: the city's first group)
   tracks:    [{k: kind, p: flat [x_dm, z_dm, y_dm, ...]}] unique physical tracks, ~5 m spacing.
              NOTE the order x, z, y. y = rail height: negative underground, +0.9 m on the street.
@@ -222,7 +226,7 @@ data-phl-city_landmarks  hand-styled models fitted to real outlines (tools/phl/b
              deckH, towerH (m), towers: [s1, s2], anchors: [s1, s2] (m along the axis from a),
              color}]. Deck height along the axis: min(deckH, 1 + .045 * min(s, L - s)).
   fields:   [{name, outline: ring_dm, x, z, w, d, ry}] the Edgley ultimate/cricket fields
-             (frisbee.js plays a game on the best-fit rectangle; park trees are kept off)
+             (frisbee.ts plays a game on the best-fit rectangle; park trees are kept off)
   labels:   [{t, x, y, z}] m
   The city footprints whose centroid is inside a stadium/hall outline, and the street-layer
   decks of these bridges, are left out of data-phl-city / data-phl-city_buildings by
@@ -300,7 +304,7 @@ data-nyc-monorail       PROPOSAL: the East River Loop
 Jersey Shore only:
 
 data-jsh-terrain        (gzip binary "TER1", but NOT data-phl-terrain's layout) the elevation grid; the
-  page loads it as data.grid (cities.js), never as data.terrain, so js/scene/terrain.ts leaves it alone
+  page loads it as data.grid (cities.ts), never as data.terrain, so js/scene/terrain.ts leaves it alone
   "TER1", n u32, half f32, cell f32, base f32, then (little endian) heights i16[n*n] in dm above
   base, row-major from the north-west corner (row = z, column = x; vertex (i, j) is at
   x = -half + i*cell, z = -half + j*cell), then cover u8[n*n]: 0 open, 1 forest, 2 river bed,
@@ -310,7 +314,7 @@ data-jsh-terrain        (gzip binary "TER1", but NOT data-phl-terrain's layout) 
   interpolates on those triangles.
 data-jsh-places         labels [{t, x, z, y (m above the ground there), far?}] and views
                         [{id, name, pos: [x, y, z], target: [x, y, z]}] (y already includes the ground).
-                        The "Bald Eagle Vista w/ Mr. Kepner" view is NOT here: overlook.js computes it from the
+                        The "Bald Eagle Vista w/ Mr. Kepner" view is NOT here: overlook.ts computes it from the
                         "Bald Eagle Mountain" label (build_jsh.py keeps it that way)
 
 data-jsh-farms          (gzip JSON) {year, fields, barns, silos} (js/scene/jsh/farms.ts)
@@ -319,8 +323,8 @@ data-jsh-farms          (gzip JSON) {year, fields, barns, silos} (js/scene/jsh/f
   barns:  [{x, z, w (long side), d, ry, t: "gambrel" | "gable" | "pole", c: wall colour, r: roof colour}] METRES
   silos:  [{x, z, r, h, c}] METRES
   seed:   {x, z (centre, m), a (row direction, rad), len (m), sets, row (row spacing, m)} or null:
-          the seed-corn block (detassel.js; s = its field's planting group). The field isn't cut: its
-          canopy covers the block from afar, and cornlod.js leaves the block and 8 m headlands out
+          the seed-corn block (detassel.ts; s = its field's planting group). The field isn't cut: its
+          canopy covers the block from afar, and cornlod.ts leaves the block and 8 m headlands out
   The footprints these barns and silos came from are left out of data-jsh-buildings.
 
 data-jsh-monorail       PROPOSAL: the West Branch Loop, in the same format as data-nyc-monorail.
@@ -343,18 +347,18 @@ js/three-setup.ts  three.js settings that keep the look tuned under r128: colour
                  off, LIGHT (= PI, multiply every light intensity by it), makeRenderer()
                  (linear output), single-pass transparent materials (as in r128;
                  three.js would draw double-sided ones twice and re-check their shader
-                 every frame), restoreAnisotropy() for nearest-magnified textures. main.js imports it first, before any colour is made.
+                 every frame), restoreAnisotropy() for nearest-magnified textures. main.ts imports it first, before any colour is made.
 js/main.ts       the start menu, then setCity -> loadData -> buildScene -> createUI -> start.
                  Exposes window.__city.
 js/data.ts       projection (G(lat,lon), latOf, using CITY.frame) and the data loader
-                 (fetches CITY.files by the URLs the build gave them, CITY.urls, set by main.js from its
+                 (fetches CITY.files by the URLs the build gave them, CITY.urls, set by main.ts from its
                  URLS: .gz files gunzipped with DecompressionStream)
 js/scene/core.ts  renderer, camera, OrbitControls, sun, fog. HOME_POS and HOME_TGT
                  (from CITY.home) are the overview camera.
 js/scene/sky.ts  the 24-hour clock: sunAt(h) = the real sun position over the city (CITY.sun)
                  for today; KEYS = sky colours by sun elevation, LIGHT = ambient light and water
                  colour by elevation; stars; litMats glow by how dark it is. setDate(d) moves
-                 the sun's path to another day (the Season slider, index.js setDay).
+                 the sun's path to another day (the Season slider, index.ts setDay).
 js/scene/city.ts  the rest of the city: limits, parks, water, streams, streets (drawLines tiled),
                  instanced buildings in 1 km tiles (FULL = 5000 m: nearer tiles draw full boxes,
                  further ones only roofs), outline buildings, park trees (TREE_FAR); update()
@@ -366,7 +370,7 @@ js/scene/materials.ts  M(color) quick material; litMats = materials that glow at
                  draws a day map and a night map per style (row, row2, office, office2, glass,
                  stone), 32 bays x 64 floors per tile (WIN_W x WIN_H = 112 x 232 m), ground
                  floor = doors and shops. Night-map alpha = when that light goes off;
-                 setWindowHour(h) sets WIN_CUT (index.js calls it from the time slider).
+                 setWindowHour(h) sets WIN_CUT (index.ts calls it from the time slider).
                  winMat (0..1 UV boxes), worldWinMat (tile-unit UVs), instancedWinMat (unit
                  boxes, roof colours from ROOFS). UV x < -0.5 marks a roof face.
                  Display lights: addDisplay(apply) registers a coloured skyline light;
@@ -374,13 +378,13 @@ js/scene/materials.ts  M(color) quick material; litMats = materials that glow at
                  DISPLAY_PRESETS = every scheme (a city shows the ids in CITY.presets).
 js/scene/jsh/terrain.ts  Jersey Shore's elevation grid (data-jsh-terrain, as data.grid; with CITY.grid):
                  loadTerrain, groundAt(x, z) and groundBase(ring) (the lowest ground under a
-                 footprint, where buildings.js stands it; nature.js stands trees on groundAt),
+                 footprint, where buildings.ts stands it; nature.ts stands trees on groundAt),
                  buildTerrain (the surface in 2 km tiles, coloured by cover, plus flat country
                  beyond) and drape(objects): every flat mesh built before it (paving, parks, water,
                  streets, bridges) is cut along the grid's triangle edges and lifted, so it lies
                  exactly on the terrain; instanced meshes are lifted per instance. Objects with
-                 userData.draped or userData.grounded are left alone. With CITY.grid, ground.js
-                 and city.js draw no countryside of their own.
+                 userData.draped or userData.grounded are left alone. With CITY.grid, ground.ts
+                 and city.ts draw no countryside of their own.
 js/scene/geometry.ts   Builder (merged meshes); addPolygon, addRibbon, addPrism (extruded
                  footprint, separate roof colour), addLoft (tapering tower section)
 js/scene/river.ts      water, bulkheads, dams, river samples RS plus riverInfo(x,z) and
@@ -395,7 +399,7 @@ js/scene/nature.ts     trees (instanced) and rowing shells (on a river centrelin
                  in six. Returned meshes with userData.season === false stay hidden in city tiles.
 js/scene/season.ts     time of year: setSeason(day of year starting at 0) evaluates CURVES (snow, bare, fall, bloom,
                  flowers, fresh, dormant) and calls every onSeason(fn) listener. addSnow(mat,
-                 amount) whitens up-facing surfaces by the SNOW uniform (index.js applies it to
+                 amount) whitens up-facing surfaces by the SNOW uniform (index.ts applies it to
                  every mesh once built; userData.noSnow opts out, userData.snowAmt scales it:
                  roads .3). seasonalGrass(mat) browns grass over winter.
 js/scene/terrain.ts    the ground (data-<city>-terrain; without it terrain.on is false and every
@@ -403,8 +407,8 @@ js/scene/terrain.ts    the ground (data-<city>-terrain; without it terrain.on is
                  water(x,z), surface(x,z) = max of the two, isWet, normalAt, profile(points)
                  (surface smoothed along a line and level across water: tracks, guideways,
                  bridges). footprint(ring, h) -> {y0, top, mid}: walls from the lowest
-                 ground under the ring, roof h above the ground at its middle (city.js,
-                 buildings.js). buildTerrain draws the ground mesh (1 km tiles at 20 m near,
+                 ground under the ring, roof h above the ground at its middle (city.ts,
+                 buildings.ts). buildTerrain draws the ground mesh (1 km tiles at 20 m near,
                  80 m far, 4 km blocks in one mesh each once a whole block is far, and a skirt
                  to the horizon). seat(scene) runs once everything is
                  built and sets each object on the ground by its userData.terrain:
@@ -415,10 +419,10 @@ js/scene/terrain.ts    the ground (data-<city>-terrain; without it terrain.on is
                  Draping splits a flat piece only where the ground under it bends more than
                  its tolerance (default 10 cm either way; userData.drapeTol = [below, above]:
                  TOL_LAWN for parks, TOL_WATER for water), so flat ground costs no triangles.
-                 index.js also lifts the transit data first (liftTransit: track split to
+                 index.ts also lifts the transit data first (liftTransit: track split to
                  points 5 m apart; street-level track onto the ground right under it, Els
                  and tunnels by profile; each piece keeps its lift per point in `g`, and
-                 subway.js tells street, El and tunnel apart by height above the ground,
+                 subway.ts tells street, El and tunnel apart by height above the ground,
                  point.h, never by y; platforms by their track, El columns stretched to the
                  deck), the yard park deck (level, on the yard's median floor), labels and
                  "Go to" views.
@@ -427,7 +431,7 @@ js/scene/subway.ts     every rail line (data-<city>-transit, plus data-phl-metro
                  train spacing, speeds, per kind), and the cut-away sections:
                  one shared clipping plane, earth face (strata texture), opened "gallery" of
                  the tunnels behind it, see-through ghost tubes for tunnels outside the band.
-                 Materials with userData.noClip are never clipped; index.js clips the rest.
+                 Materials with userData.noClip are never clipped; index.ts clips the rest.
                  Riding: pick() finds the car under a click, board() puts a walkable interior on
                  it and draws a lit tunnel around underground track (buildRideTunnel); leave()
                  takes it away. CAR_IN has one entry per kind: metro (M-4), trolley (Kawasaki
@@ -452,7 +456,7 @@ js/scene/monorail.ts   builds New York's East River Loop and Jersey Shore's West
                  monorails use both (js/scene/pine/minirail.ts: three toy lines in a group scaled to
                  .35 in per unit, a chef in each car). Cars are aimed along the beam in their
                  parent's frame, so a network may sit in a scaled group. To board them, a scene
-                 registers slots with subway.js registerFleet(kind, sp, slots): sp.scale shrinks the
+                 registers slots with subway.ts registerFleet(kind, sp, slots): sp.scale shrinks the
                  cabin, sp.dress(person) clothes its passenger, sp.pickY is how far above a slot its
                  car is clicked (default 2.2), and a slot's run {L, at, stops, strip}
                  and s feed the next-stop sign and the line diagram (the kitchen does all three).
@@ -466,13 +470,13 @@ js/ui.ts         buttons, line picker, floating labels, keys (inside a car KEYMA
                  FLYMAP flies the camera; Space up, Shift down)
                  Creative mode: a right-click (only a right-click) on the view captures the
                  mouse (pointer lock), and the #modehint pill at the bottom says so; the mouse
-                 then turns the camera (setCreative/creativeLook in index.js, orbit controls off),
+                 then turns the camera (setCreative/creativeLook in index.ts, orbit controls off),
                  W A S D fly along the view, the wheel sets the speed, a click boards the train
                  under the #xhair crosshair, Esc lets go. Inside a car the mouse looks around.
                  The Speed slider (#speed) runs the clock: 0 = frozen, then MAX_RATE * v^3
                  hours per second (v = 0..1; MAX_RATE = 6, a day in 4 s), advanced in its own
                  requestAnimationFrame loop (tick), which moves the Time slider along. The
-                 Season slider (#day) calls api.setDay (index.js: season.js + sky.setDate).
+                 Season slider (#day) calls api.setDay (index.ts: season.ts + sky.setDate).
                  The #fold button folds the panel (#hud-body) to its title. "Skyline lights"
                  swatches come from the city's presets plus a colour picker; the choice and the
                  fold are remembered in localStorage (keys CITY.storage + '...').
@@ -482,7 +486,7 @@ js/ui.ts         buttons, line picker, floating labels, keys (inside a car KEYMA
                  the button reads "Step away" and clicks still pick the person there.
 js/cinema.ts     cinematic mode's screen (#cine, made here): letterbox bars, the fade through black
                  (state.fade), each shot's title for its first seconds; body.cinematic hides the
-                 rest of the chrome (css/style.css) and ui.js hides the labels. The Time, Season
+                 rest of the chrome (css/style.css) and ui.ts hides the labels. The Time, Season
                  and Speed sliders are left as they are and keep working underneath: the tour
                  is the live city. Any keydown, pointerdown or wheel ends it (caught first, in the capture
                  phase, so it does nothing else; the click that follows is swallowed). Starts by
@@ -505,7 +509,7 @@ js/scene/cinematic.ts  the camera work, for any city: createCinematic({ scene, c
                  15 shots (its trains in tunnels just now). A line underground for all its
                  modelled length (most of New York's) has nothing to film. city:
                  the home view, which also opens, wander: any spot 25 m+ tall, or in a small
-                 town a spot near its names and views, eat: index.js's spots, djour's
+                 town a spot near its names and views, eat: index.ts's spots, djour's
                  three-star picks with a modelled shop front (not indoor stalls): street level,
                  so eatShot() moves only between the place's own clear views, front and street,
                  seven moves each, each used once), the least-shot subject of it, then
@@ -517,7 +521,7 @@ js/scene/cinematic.ts  the camera work, for any city: createCinematic({ scene, c
                  sight to the subject is open. After 150 tries the last-4 rules relax (never
                  the never-twice one), so a shot always comes. done is every shot so far (also
                  api.cinematic.shots). A view out of season (its when.days) is left out.
-                 step(dt) runs the shot and the fades; index.js calls it instead of the orbit
+                 step(dt) runs the shot and the fades; index.ts calls it instead of the orbit
                  controls (startCinematic / stopCinematic; flyTo, boarding and riding stop it).
 js/minimap.ts    top-right map (#minimap): base map of limits, parks, water and rail drawn once
                  from api.mapData; LEVELS = metres across per zoom step; you as a view cone, or
@@ -543,16 +547,16 @@ js/arcade.ts     Lucky Arcade (a dialog over the city), opened by a click on the
                  door, 'C' pen, ' ' void except the row-9 tunnel, '_' eaten; four CATS with their
                  own chase targets on a scatter/chase SCHEDULE). Best scores in localStorage
                  (CITY.storage + 'arcade').
-js/ridebar.ts    line diagram (#ridebar) while riding, from api.rideStrip() (subway.js): stops
+js/ridebar.ts    line diagram (#ridebar) while riding, from api.rideStrip() (subway.ts): stops
                  evenly spaced, the train between them, passed stops greyed, the next in bold.
 
 Philadelphia (js/scene/phl/):
 
-landmarks.js     signature towers (setbacks, Liberty Place gables, lit crowns, the PSFS sign),
+landmarks.ts     signature towers (setbacks, Liberty Place gables, lit crowns, the PSFS sign),
                  City Hall, station, museum, Eastern State, boathouses
-people.js        makeFigure() jointed standing person, pose() running animation, geo() shared limbs
-frisbee.js       ultimate frisbee game on data-phl-city_landmarks fields; "Edgley frisbee" view
-citymarks.js     citywide landmark models from data-phl-city_landmarks: football() (bowl, field
+people.ts        makeFigure() jointed standing person, pose() running animation, geo() shared limbs
+frisbee.ts       ultimate frisbee game on data-phl-city_landmarks fields; "Edgley frisbee" view
+citymarks.ts     citywide landmark models from data-phl-city_landmarks: football() (bowl, field
                  texture, goalposts, sideline canopies, video boards), ballpark() (bowl with low
                  outfield bleachers, warning track, infield, foul poles, scoreboard), arena(),
                  independenceHall() (with Congress Hall and Old City Hall), memorialHall(),
@@ -560,7 +564,7 @@ citymarks.js     citywide landmark models from data-phl-city_landmarks: football
                  bowl() is the shared stand generator. Adds the Sports Complex, Independence
                  Hall and Ben Franklin Bridge views. lebron(): an unlabelled bronze statue on
                  the arena plaza (an easter egg). update(dt) runs the frisbee game.
-monorail.js      riverfront LOOP. Settings: H = 18 (height); EAST = 58 and WEST = 65
+monorail.ts      riverfront LOOP. Settings: H = 18 (height); EAST = 58 and WEST = 65
                  (setback from the water, m); SOUTH_LAT and NORTH_LAT (loop ends);
                  STATIONS = [[lat, side]] where side 1 = east bank, -1 = west bank.
                  ROUTED AT LOAD TIME: it moves toward the water wherever a building over
@@ -569,12 +573,12 @@ monorail.js      riverfront LOOP. Settings: H = 18 (height); EAST = 58 and WEST 
                  few hundred metres (setbacks/ease), the spline takes every third point, and
                  each end crosses the river on a rounded turn (turn(): a cubic Bezier along
                  each bank line's heading), so the beam has no kinks or hairpins.
-anglers.js       people fishing the Schuylkill (buildAnglers(scene, river, boats, water)): BANK_SPOTS
+anglers.ts       people fishing the Schuylkill (buildAnglers(scene, river, boats, water)): BANK_SPOTS
                  on the river centreline and PIER_SPOTS by the boat piers, each stood at the real
                  water's edge (walked out from the water to the bank); figure, rod, line, bobber,
                  bucket, cooler. pick() / info(i) (name, hello, spot, view); wired as api.pickAngler,
-                 anglerInfo, viewAngler; ui.js opens js/fishing.ts on a click.
-chinatown.js     Chinatown dressed in detail (buildChinatown(scene, { buildings })). Streets are OSM
+                 anglerInfo, viewAngler; ui.ts opens js/fishing.ts on a click.
+chinatown.ts     Chinatown dressed in detail (buildChinatown(scene, { buildings })). Streets are OSM
                  centrelines in metres (RACE, TENTH, NINTH, ELEVENTH, ARCH; CROSSINGS keep things
                  back from the corners). Facades 5-26 m tall that face a street get a lit board
                  (BOARDS), a blade sign (BLADES; both from one canvas atlas, signAtlas) and an
@@ -583,9 +587,9 @@ chinatown.js     Chinatown dressed in detail (buildChinatown(scene, { buildings 
                  Race (loopAt). OUR ADDITION: a night market on the open lot east of 10th between
                  Race and Cherry (LOT_S; lot frame u east, v south), with stalls, tables, string
                  lights, a pavilion and the Lucky Arcade stall: pickStall / stallView, wired as
-                 api.pickStall and api.viewStall; ui.js opens js/arcade.ts on a click. Static
+                 api.pickStall and api.viewStall; ui.ts opens js/arcade.ts on a click. Static
                  pieces are merged into one mesh per material (batch / mergeGeos).
-restaurants.js   djour's starred restaurants from data-phl-restaurants
+restaurants.ts   djour's starred restaurants from data-phl-restaurants
                  (buildRestaurants(scene, data.restaurants) -> { places, labels, credit, stars }).
                  A storefront on the wall at (x, z) facing ry, sized by w and h: frame, shop window
                  (glassMat, a warm room after dark), door, striped awning, a sign board from one
@@ -596,53 +600,53 @@ restaurants.js   djour's starred restaurants from data-phl-restaurants
                  the orbit controls let the camera come that close): straight in front of the shop
                  front at eye height (f), else from up the street (v). lookFront builds a researched
                  look instead of the generic storefront: the building's own wall and upper windows,
-                 its frame, windows, door, awning, signs, lights and seating. ui.js lists them under
+                 its frame, windows, door, awning, signs, lights and seating. ui.ts lists them under
                  "Restaurants" (#eats: #eat-lbl switches their labels, #eat-hood picks a
                  neighbourhood) and shows the card (#eatcard); a label's or button's click flies to
-                 the view and opens the card (goEat); minimap.js draws them as dots.
-boats.js         river boats from data-phl-boats: piers (deck, pilings, float, shelter), boat
+                 the view and opens the card (goEat); minimap.ts draws them as dots.
+boats.ts         river boats from data-phl-boats: piers (deck, pilings, float, shelter), boat
                  models, fleets easing into each stop. Registered with subway.registerFleet as
                  kind 'boat' (CAR_IN.boat is the walkable cabin; aboard, only the model's outer
                  cabin walls, userData.shell, hide); ride list group 'River boats', line ids
                  'boat:<id>'; the "River boats" view. run.strip gives the line diagram exactly.
-sports.js        courts (SURFACE = line markings, EQUIP = nets, hoops, goals, lights),
+sports.ts        courts (SURFACE = line markings, EQUIP = nets, hoops, goals, lights),
                  corridor strips, shuttle monorails (H2 = 26 m, teal livery, a station
                  about every 1.1 km, piers placed between courts at load time)
-yardpark.js      rail yard deck, park, and the Railyard Bowl (bandshell, seats,
-                 screens, light beams); returns the bowl's group as yard.bowl for concert.js
-concert.js       the show in the bowl, in the bowl's frame (+z toward the seats, y 0 the lawn,
+yardpark.ts      rail yard deck, park, and the Railyard Bowl (bandshell, seats,
+                 screens, light beams); returns the bowl's group as yard.bowl for concert.ts
+concert.ts       the show in the bowl, in the bowl's frame (+z toward the seats, y 0 the lawn,
                  STAGE 1.6): the Chipmunks (chipmunk(): joints like Kyle's figures, merged per
                  joint by bake(), scale 3), the kit, amps, screen faces and banner (canvas
                  textures); SONGS loop with GAP between, `chipettes: true` brings the Chipettes
                  on from the wing. The punks: spots in the pit (apronEdge() to 29.4 m) and the
                  rows, none within 4.5 m of opts.avoid (ground.json bridges: the rail viaduct
-                 over the seats); outfit() picks each look; drawn instanced like pedestrians.js:
+                 over the seats); outfit() picks each look; drawn instanced like pedestrians.ts:
                  partList() = one InstancedMesh per part (geometry, joint, offsets, colour,
                  dyn() for props and the head you look out of), posed on rig() skeletons each
                  frame within NEAR. habitPose() for what each does by themselves, ACTS /
                  startAct() / actPose() / endAct() for the four actions each has (keys 1-4,
                  the #actions bar); P.fx timers (high, khole, huff, roll, speed, drunk) drive
                  effects(): the canvas's CSS filter and the camera's sway, roll and fov, and in
-                 a K-hole frame() floats the camera out of the body. index.js treats it like
+                 a K-hole frame() floats the camera out of the body. index.ts treats it like
                  Walnut St's people: pick() -> boardCar({ punk }) -> inhabit(), kind 'person',
                  act(id) via actCar, leave(). Owns the view 'punks' (abs; placed in the bowl's
                  frame on the first update, after the deck is set on the ground).
-punkprofiles.js  made-up lives for the punks: punkProfile(i, look, habit)
-promenade.js     PROPOSAL: Walnut St, 22nd to Front, as a car-free shopping street.
+punkprofiles.ts  made-up lives for the punks: punkProfile(i, look, habit)
+promenade.ts     PROPOSAL: Walnut St, 22nd to Front, as a car-free shopping street.
                  WALNUT = the centreline (metres). drawLines() skips every road piece on it
-                 (onPromenade) and oldtrolley.js leaves out the 1953 track bed there (onWalnut),
+                 (onPromenade) and oldtrolley.ts leaves out the 1953 track bed there (onWalnut),
                  so the rails sit in the paving. Herringbone brick HALF = 9 m each side, granite
                  gutters either side of the streetcar track (CLEAR), and on the KERB lines
                  (4.4 m out) a 24 m rhythm of lamp, bench, planter tree, bench. Facades parallel
                  to the street and facing it get an awning and a shop window (lit at dusk) per
                  ~6.5 m bay, cafe tables in front of about half. Adds the "Walnut St promenade"
                  view. Every cafe chair and bench is a seat: click to sit (pickSeat/sit, wired
-                 into index.js pickCar/boardCar/leaveCar), drag to look, Space or Esc to stand.
+                 into index.ts pickCar/boardCar/leaveCar), drag to look, Space or Esc to stand.
                  To pedestrianise another street, give it its own polyline the same way.
-                 Each shop bay also gets a door (frame here; the leaf swings in pedestrians.js),
+                 Each shop bay also gets a door (frame here; the leaf swings in pedestrians.ts),
                  and nav = {at, project, seats, doors, obst, ...} is what the crowd walks by.
-pedestrians.js   PROPOSAL: about 200 people on Walnut St (buildPedestrians(scene, nav, count)).
-                 Kyle's figures (people.js geo() and pose()), drawn instanced: one InstancedMesh per
+pedestrians.ts   PROPOSAL: about 200 people on Walnut St (buildPedestrians(scene, nav, count)).
+                 Kyle's figures (people.ts geo() and pose()), drawn instanced: one InstancedMesh per
                  body part for everyone, posed on CPU skeletons. They stroll the lanes either side
                  of the streetcar track (LANE, by direction), go into shops through the doors
                  (which swing open) and come back out, and sit on benches (two a bench) and at
@@ -651,20 +655,20 @@ pedestrians.js   PROPOSAL: about 200 people on Walnut St (buildPedestrians(scene
                  every frame within 120 m, every 3rd within 350 m, else every 10th; still sitters
                  once. When the viewer sits, they take a free place or move someone on.
                  Click a person to inhabit them (pickPerson/inhabit/inhabitFrame, wired like a
-                 train ride in index.js): the camera is in their head and goes where they go; drag
+                 train ride in index.ts): the camera is in their head and goes where they go; drag
                  looks around; in a shop it stands just inside the held-open door. The #persona
-                 card (ui.js showPersona) shows their profile and what they're doing now, with a
+                 card (ui.ts showPersona) shows their profile and what they're doing now, with a
                  head-and-shoulders portrait (portrait(i): a small renderer of its own drawing the
                  same parts and colours, facing forward). crowdGeometry() adds the face (eyes,
                  brows, nose, mouth), lifts the hair cap off the forehead and gives some long hair.
-profiles.js      made-up lives for the Walnut St people: makeProfile(i) gives a name, sex,
+profiles.ts      made-up lives for the Walnut St people: makeProfile(i) gives a name, sex,
                  age, height, weight (BMI 19-32), coffee order, book and a short biography from
                  seeded word lists ({he} {is} {s}... fill in the grammar, including "they").
                  Height sets the figure's size, and most people over 62 have grey hair. SHOPS
                  names what each door's shop sells. All fictional.
-oldtrolley.js    1953 streetcars: track (bed + rails) on every 1953 street and PCC cars on loops,
+oldtrolley.ts    1953 streetcars: track (bed + rails) on every 1953 street and PCC cars on loops,
                  always shown. With "Show transit lines" (setTransitMap) an overlay adds fat lines
-                 like transitmap.js (LINE_W px, LIFT m up) coloured by abandonment year (ERAS),
+                 like transitmap.ts (LINE_W px, LIFT m up) coloured by abandonment year (ERAS),
                  wider outlines for track OSM still maps (CASING), and route-number labels
                  (layer 't53'). Loops: PAIRS (one-way couplets, out on one
                  street and back on the other) and TWO_WAY (double track). SPEED, HEADWAY.
@@ -673,36 +677,36 @@ oldtrolley.js    1953 streetcars: track (bed + rails) on every 1953 street and P
 
 New York (js/scene/nyc/):
 
-landmarks.js     the towers in data-nyc-landmarks: bespoke shapes by id (Empire State, Chrysler
+landmarks.ts     the towers in data-nyc-landmarks: bespoke shapes by id (Empire State, Chrysler
                  and their lit crowns, One WTC, Flatiron, Woolworth, St Patrick's, Rockefeller),
                  others by cap
-bridges.js       the Brooklyn, Manhattan, Williamsburg and Queensboro bridges, from `specs` in
+bridges.ts       the Brooklyn, Manhattan, Williamsburg and Queensboro bridges, from `specs` in
                  local metres (ends, towers, deck and tower heights, width, type); stone or steel
                  towers, cables and suspenders, the Williamsburg truss, the Queensboro cantilever.
                  Their OSM decks are left out of the streets, so nothing is drawn twice.
-boroughmarks.js  the Wonder Wheel, the Unisphere and Citi Field (positions in the code)
+boroughmarks.ts  the Wonder Wheel, the Unisphere and Citi Field (positions in the code)
 
 Jersey Shore (js/scene/jsh/):
 
-places.js        labels and "Go to" views from data-jsh-places, label heights above the ground
-farms.js         crop fields from data-jsh-farms through the farming year (stage(kind, day):
+places.ts        labels and "Go to" views from data-jsh-places, label heights above the ground
+farms.ts         crop fields from data-jsh-farms through the farming year (stage(kind, day):
                  ground colour, canopy height and colour, hay bales), in three planting groups a week
                  apart; the canopy is a slab raised by position.y; barns (gambrel, gable, pole) and
-                 silos standing on the terrain; exports stage() for detassel.js
-detassel.js      the seed-corn block: female and male plants and tassels (instanced; a slab from far
+                 silos standing on the terrain; exports stage() for detassel.ts
+detassel.ts      the seed-corn block: female and male plants and tassels (instanced; a slab from far
                  off), and the detasseling crew: four teenagers and the crew boss, Kyle's figures
                  (phl/people.js) with faces, caps, trash bags before DEW and the boss's holstered
                  pistol and scowl. They work SEASON (days) and HOURS, walking the sets in turn
                  (legs) and pulling tassels as they pass. Same interface as phl/pedestrians.js
-                 (pickPerson, inhabit, leave, getInhabited, inhabitFrame, portrait), so index.js uses it
-                 as `peds` for Jersey Shore and ui.js shows the same #persona card
-crewprofiles.js  made-up lives for the crew: detasselerProfile(i), bossProfile()
-cornlod.js       corn plants near the camera in every corn field: 16 m squares of plants made on
+                 (pickPerson, inhabit, leave, getInhabited, inhabitFrame, portrait), so index.ts uses it
+                 as `peds` for Jersey Shore and ui.ts shows the same #persona card
+crewprofiles.ts  made-up lives for the crew: detasselerProfile(i), bossProfile()
+cornlod.ts       corn plants near the camera in every corn field: 16 m squares of plants made on
                  the fields' rows when first needed (cache of CACHE), copied into two instanced meshes
                  (full plants within NEAR, cheap ones to FAR; FAR shrinks as the camera rises, 0 above
-                 ~95 m) when the camera has moved MOVE m or turned; farms.js CORN_HOLE cuts the canopy
+                 ~95 m) when the camera has moved MOVE m or turned; farms.ts CORN_HOLE cuts the canopy
                  slab (colour and shadow) to the same circle
-overlook.js      the hunter on Bald Eagle Mountain: folding chair, camo and blaze-orange figure
+overlook.ts      the hunter on Bald Eagle Mountain: folding chair, camo and blaze-orange figure
                  (phl/people.js geo(), posed by reach()), cigarette and smoke, beer can and
                  40-pack, stump with binoculars and rifle, pickup with a buck in the bed.
                  overlookSite(places) puts the site a few steps off the "Bald Eagle Mountain"
@@ -710,19 +714,19 @@ overlook.js      the hunter on Bald Eagle Mountain: folding chair, camo and blaz
                  not in data-jsh-places): the flight ends standing behind him (stand(), kind
                  'vista' in getState(), "Step away"). pick() -> boardCar -> inhabit() is first
                  person (kind 'person', Duane Kepner, fictional): act('drag' | 'drink' |
-                 'glass') on keys 1-3 and the #actions bar in ui.js; every fourth drink adds
+                 'glass') on keys 1-3 and the #actions bar in ui.ts; every fourth drink adds
                  an empty. The binoculars (setGlass/aim/zoom, the #binoc mask in index.html)
-                 pan and zoom to opts.spot() (harvest.js's combine, else the river bridge in
-                 town, TOWN); scroll zooms (wheelCar in index.js), dragging takes over.
+                 pan and zoom to opts.spot() (harvest.ts's combine, else the river bridge in
+                 town, TOWN); scroll zooms (wheelCar in index.ts), dragging takes over.
                  leave() steps back behind the chair, leave(true) hands the camera back.
                  He and the buck are there all year.
-harvest.js       the last corn standing: pickLateField(farms, eye, blockers) chooses the
+harvest.ts       the last corn standing: pickLateField(farms, eye, blockers) chooses the
                  nearest corn field of 3 ha or more wholly in sight of the overlook (called
-                 from index.js with buildings, barns, silos and trees as blockers; that field is
-                 skipped by farms.js buildFarms and drawn here). A combine with an eight-row
+                 from index.ts with buildings, barns, silos and trees as blockers; that field is
+                 skipped by farms.ts buildFarms and drawn here). A combine with an eight-row
                  head works it HARVEST (days of the year, Oct 14 to Dec 1), HOURS 7:00-21:30,
                  lights after dark, swath by swath (CUT shader hook on its ground and canopy;
-                 cornlod.js asks its cut(x, z) per plant). spot() is what the overlook's
+                 cornlod.ts asks its cut(x, z) per plant). spot() is what the overlook's
                  binoculars aim at while it is in the field, null outside the window
 
 Debug handle in the browser console: window.__city
@@ -890,7 +894,7 @@ New 3D object or landmark
     from the city's own module, js/scene/<city>/<city>.js:
         export { buildExtra } from './extra.js';
     then add buildExtra to the names buildScene() takes from `own` in js/scene/index.ts and call it
-    when that city's data is loaded. (main.js loads the city's module for that city alone; importing
+    when that city's data is loaded. (main.ts loads the city's module for that city alone; importing
     extra.js into js/scene/index.ts would put it in the code every city downloads.)
 
 Change buildings outside the core (data-<city>-city_buildings)
@@ -905,7 +909,7 @@ Make something glow at night
     mat.emissiveIntensity = 0; mat.userData.lit = 1.0; litMats.push(mat)
     (litMats comes from the materials chunk; the time slider scales them by how dark it is).
     Objects that should only exist at night go in the nightOnly list given to createSky in
-    the index.js chunk (Boathouse Row outlines, the Railyard Bowl light beams).
+    the index.ts chunk (Boathouse Row outlines, the Railyard Bowl light beams).
 
 Add or change a "Go to" camera view
     In the js/scene/index.ts chunk, edit the `views` array: {id, name, pos, target},
@@ -957,11 +961,13 @@ Change a city's opening camera: `home` in its js/cities.ts entry ([lat, lon, hei
   in view (far city tiles draw only roofs). Merge or instance new geometry; don't add
   thousands of separate meshes. Instanced meshes made while the scene is built are drawn
   unculled (frustumCulled = false) unless they carry their instances' sphere from
-  withBounds(mesh, centre, radius) (geometry chunk), as city.js's tiles and the trees do. One
+  withBounds(mesh, centre, radius) (geometry chunk), as city.ts's tiles and the trees do. One
   made later is culled by a sphere three.js works out on its first draw: if its instances move
   after that, call mesh.computeBoundingSphere() or set frustumCulled = false.
 - data/ is about 34 MB (Philadelphia about 20, 6 of it the terrain; New York about 9; New Orleans about 4; Jersey Shore about 2). The gzip files hold most
-  of the data; keep new bulky data in a gzip file rather than JSON.
+  of the data; keep new bulky data in a gzip file rather than JSON. What a city downloads is
+  smaller (Philadelphia about 10 MB of data): the build encodes the large files (js/formats.ts).
+  Coordinates as flat integer arrays (decimetres) are what makes JSON small there.
 - Keep each city's attribution line (CITY.credit). Philadelphia: map data (c) OpenStreetMap
   contributors, ODbL; building data (c) City of Philadelphia. New York: buildings NYC Open
   Data; shorelines NYC Open Data and NJDEP; map data (c) OpenStreetMap contributors, ODbL;
@@ -969,32 +975,33 @@ Change a city's opening camera: `home` in its js/cities.ts entry ([lat, lon, hei
   OpenStreetMap); map data (c) OpenStreetMap contributors, ODbL; terrain AWS Terrain Tiles;
   crops USDA NASS Cropland Data Layer.
 - After a change, serve the page (npm run dev), open it in a browser and check
-  the console. Without a browser, at least check the syntax: run `node --check` on each
-  module you changed.
-- Type checks: the modules with `// @ts-check` at the top are type-checked against the types
-  in js/types/ (data.d.ts: the blocks in section 3; city.d.ts: a city entry and CITY;
-  scene.d.ts: window.__city), through JSDoc comments. They are js/data.ts,
-  js/scene/geometry.ts, season.js, core.js, river.js and buildings.js. `npm run check`, which
-  every deploy runs, fails on a type error in them. js/cities.ts is not checked (city entries
-  change often), but its types are what the checked files see: a new field a checked file
-  reads goes in city.d.ts.
+  the console. Without a browser, at least run `npm run check`.
+- Types: the code is TypeScript (js/**/*.ts), type-checked whole by `npm run check`, which
+  every deploy runs: a type error stops the deploy. Vite strips the types, so the page runs
+  the code as written minus its annotations (tsconfig.json: erasableSyntaxOnly, so no enum,
+  namespace or parameter properties). Checking is not strict: a parameter may go without a
+  type. Shared shapes are in js/types/ (data.d.ts: the blocks in section 3; city.d.ts: a
+  city entry and CITY; scene.d.ts: window.__city); a module's own shapes are declared in it.
+  Imports name the file as it is (./data.ts), and an import of types only says
+  `import type`. A new field on a city entry in js/cities.ts passes the check without a
+  type; one that code reads goes in city.d.ts.
 - If you change how the page works, update this guide too.
 
 
 8. Cities
 ---------
 
-js/cities.ts lists the cities (CITIES.phl, CITIES.nyc, CITIES.jsh). main.js picks one and calls
+js/cities.ts lists the cities (CITIES.phl, CITIES.nyc, CITIES.jsh). main.ts picks one and calls
 setCity(id) before anything loads; every module then reads the active city from CITY inside
-its functions (never at module top level: imported modules run their top level before main.js
+its functions (never at module top level: imported modules run their top level before main.ts
 calls setCity()).
 A city entry holds:
   id, name, blurb              the start menu's card
   frame {LAT0, LON0, MX, MZ}   the projection (section 2)
   dir, files                   where its data lives (data/<city>/; `prefix` is no longer used);
-                               files = [[key, file], ...], the keys index.js reads
+                               files = [[key, file], ...], the keys index.ts reads
   home, sunTarget, sun         the Overview camera ([lat, lon, height]), the shadow centre, and
-                               where the sun is computed for (sky.js)
+                               where the sun is computed for (sky.ts)
   sea                          true: everything outside data-<city>-city `limits` is water;
                                false: it is countryside
   grid                         true (Jersey Shore): data-jsh-terrain is loaded as data.grid and
@@ -1006,12 +1013,12 @@ A city entry holds:
                                what the city is; js/ui.ts adds how to move, for mouse or touch)
   groups                       the "Ride a line" networks in order (a line without `group` is
                                in the first); stationLines(s, LINES) = a station tag's line text
-  presets                      skyline-light preset ids from materials.js (null = all; [] = no
+  presets                      skyline-light preset ids from materials.ts (null = all; [] = no
                                Skyline lights section, for a city with nothing lit)
 
-index.js builds whatever the city's blocks contain: each city's own parts (js/scene/<city>/)
+index.ts builds whatever the city's blocks contain: each city's own parts (js/scene/<city>/)
 only when their blocks are there.
 
 Adding a city: put its data in data/<id>/ in these schemas (its own tools in tools/<id>/), add
 an entry to CITIES, and any hand-built parts in js/scene/<id>/ (re-exported from js/scene/<id>/<id>.js,
-which goes in CODE in js/main.ts, and called from index.js through `own`).
+which goes in CODE in js/main.ts, and called from index.ts through `own`).

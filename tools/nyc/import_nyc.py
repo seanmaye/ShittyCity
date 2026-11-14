@@ -250,7 +250,7 @@ print(f"  city_buildings.bin.gz: {os.path.getsize(os.path.join(OUT, 'city_buildi
 
 # ---- ground: land outlines, parks, streets and paths, water, trees (all in city.json.gz)
 def green_kind(t):
-    """this engine's park colours (ground.js GREEN): park, grass, pitch, wood, cemetery"""
+    """this engine's park colours (ground.ts GREEN): park, grass, pitch, wood, cemetery"""
     if t.get("natural") in ("wood", "heath") or t.get("landuse") == "forest" or t.get("leisure") == "nature_reserve":
         return 3
     if t.get("landuse") == "cemetery":

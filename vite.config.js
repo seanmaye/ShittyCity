@@ -14,7 +14,7 @@ const DATA = normalizePath(resolve(import.meta.dirname, 'data')) + '/';
 const rawGz = () => {
   const serve = (dir, sub) => (req, res, next) => {
     const u = new URL(req.url, 'http://x'), file = join(dir, decodeURIComponent(u.pathname));
-    // (with a query it is not the file: ?import&url asks the dev server for the module that gives its URL, for URLS in main.js)
+    // (with a query it is not the file: ?import&url asks the dev server for the module that gives its URL, for URLS in main.ts)
     if (u.search || !file.endsWith('.gz') || !file.startsWith(join(dir, sub) + sep) || !existsSync(file)) return next();
     res.writeHead(200, { 'Content-Type': 'application/gzip', 'Content-Length': statSync(file).size, 'Cache-Control': 'no-cache' });
     createReadStream(file).pipe(res);
@@ -89,7 +89,7 @@ export default defineConfig({
       output: {
         ...names,
         // three.js in chunks of its own, apart from our code (three-core, three, three-addons: its two build files and the
-        // addons, each under 500 kB): an edit to js/cities.ts or materials.js, which shared chunks with it, no longer renames it
+        // addons, each under 500 kB): an edit to js/cities.ts or materials.ts, which shared chunks with it, no longer renames it
         codeSplitting: { groups: [
           { name: 'three-core', test: /[\\/]node_modules[\\/]three[\\/]build[\\/]three\.core\.js$/, priority: 3 },
           { name: 'three', test: /[\\/]node_modules[\\/]three[\\/]build[\\/]/, priority: 2 },

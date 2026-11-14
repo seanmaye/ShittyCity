@@ -215,7 +215,7 @@ def jumps(path):
     return getattr(path, "gaps", 0)
 
 
-# the Delaware bridges are modelled by citymarks.js (data/phl/city_landmarks.json): track on their decks
+# the Delaware bridges are modelled by citymarks.ts (data/phl/city_landmarks.json): track on their decks
 # follows the same deck profile, deckY(s) = min(deckH, 1 + .045 * min(s, L - s)), s along the axis
 DECKS = []
 if os.path.exists(os.path.join(OUT, "city_landmarks.json")):
