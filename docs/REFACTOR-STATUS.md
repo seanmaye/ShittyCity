@@ -1,0 +1,298 @@
+# Refactor status
+
+Kept by the orchestrator of [REFACTOR-PLAN.md](REFACTOR-PLAN.md). Only the orchestrator edits
+this file. It is how the work is picked up again after a context summary or in a new session.
+
+Last updated: 2026-11-14 (P1a, P1b, P1c in review; P2 gates passed, #9 ready for review).
+
+## Standing facts
+
+**Opening decisions (asked 2026-11-13, answered by Micah):**
+
+1. Dashboard: Sean owns the Cloudflare account; Micah has admin access and offered to sign in
+   to the dashboard in a browser for readouts. Dashboard:
+   `https://dash.cloudflare.com/1af14c0b141e374a8e01a11bba70b7d0/workers/services/view/shittycity/production`.
+   Production site URL: _not yet recorded_ (P0 dashboard readout).
+2. A failing check blocks the deploy: **yes, from P3** (`cf:build` = `npm run check && npm run build`).
+3. TypeScript: **typed contracts and opt-in checking now (P4c); `.ts` renames later (P6a)** with
+   their own go-ahead.
+4. Preview builds: **no**. Consequence: P4b's live caching checks, and P3's "deliberate type
+   error fails its build", run without a preview URL (P3: show the failing CI job instead; P4b:
+   `curl` against production after merge).
+5. GitHub Actions workflow on `seanmaye/ShittyCity`: **yes** (minimal in P2, full in P3).
+6. Messages to contributors: **orchestrator drafts, Micah sends.** Two are due: before P1b
+   merges and before P2 merges.
+
+**Reference machine:** this Mac (Apple M5 Pro), on AC power. Every timing gate runs here, both
+sides in one `perf.py ab` run. Report GPU line: `ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro,
+Unspecified Version) (WebGL2, GPU timer on)`; Chromium 158.0.8127.18 (Playwright), headless,
+1600x900 @ dpr 1.
+
+**Orchestrator's working copy:** the main checkout stays on `main`. The orchestrator commits its
+own docs branches from a separate worktree (`git worktree list` shows it), so it never switches
+the main checkout's branch.
+
+**Pixel-diff tolerances** (P1c calibration, 2026-11-13; tolerance = 2× the largest same-commit
+floor seen, with a minimum of 0.001%; a share above it means "screenshots differ"):
+
+| check | view | floor seen | tolerance |
+| --- | --- | ---: | ---: |
+| smoke | phl | 0.0061% | 0.0122% |
+| smoke | nyc | 0.0001% | 0.001% |
+| smoke | jsh | 0.0000% | 0.001% |
+| smoke | nola | 0.0007% | 0.0014% |
+| smoke | pine | 0.0124% | 0.0248% |
+| `ab --shots` (phl) | overview-dusk | 0.0114% | 0.0228% |
+| `ab --shots` (phl) | overview-noon | 0.0059% | 0.0118% |
+| `ab --shots` (phl) | overview-night | 0.0095% | 0.019% |
+| `ab --shots` (phl) | whole-city | 0.0016% | 0.0032% |
+| `ab --shots` (phl) | transit-map | 0.0002% | 0.001% |
+| `ab --shots` (phl) | market-cut | 0.1201% | 0.24% |
+| `ab --shots` (phl) | street-level | 0.0230% | 0.046% |
+| `ab --shots` (phl) | ride-L | 1.4931% | 2.99% |
+| `ab --shots` (phl) | ride-regional | 5.3001% | 10.6% |
+| `ab --shots` (phl) | ride-monorail | 4.3108% | 8.62% |
+| `ab --shots` (phl) | orbit, fly-market | 28–45% | not comparable by pixels (moving camera): look at it |
+| `ab --shots` (nyc) | overview-dusk/noon/night, transit-map | ≤ 0.0002% | 0.001% |
+| `ab --shots` (nyc) | whole-city | 0.0013% | 0.0026% |
+| `ab --shots` (nola) | overview-dusk | 0.0006% | 0.0012% |
+| `ab --shots` (nola) | overview-noon/night, whole-city, transit-map | ≤ 0.0003% | 0.001% |
+| `ab --shots` (jsh) | overview-dusk, overview-night, whole-city, transit-map | ≤ 0.0002% | 0.001% |
+| `ab --shots` (jsh) | overview-noon | 0.0006% | 0.0012% |
+| `ab --shots` (jsh) | overlook-stand | 0.0044% | 0.0088% |
+| `ab --shots` (jsh) | overlook-bino | 0.1644% | 0.33% |
+| `ab --shots` (nyc, nola, jsh) | orbit | 35–64% | moving camera: look at it |
+
+phl and pine smoke were raised after P1b's smoke (a third sample, diff images showing only moving
+trains and the kitchen's monorail), and again from P2's perf-build same-commit smoke (nola, pine). A
+deliberate change (the `--accent` colour) came out 0.11–0.20% in smoke, about 40× the floor.
+The `ab --shots` floors are from P2's same-build runs (2026-11-14, both sides the same perf
+build; `tools/perf/out/20261114-*-ab-p2-bvb*`), max over runs. **They hold only when both sides
+load in the same time:** a change that moves load time shifts time-driven motion (trains, the jsh
+hunter's smoke, the binoculars' sway) at the moment of the shot. P2's build loaded sooner and came
+out above the floor on four jsh views: overview-noon 0.0020%, overview-night 0.0015%,
+overlook-stand 0.0269%, overlook-bino 18.1%. The diff images showed only moving things. When a
+share is above tolerance, open the diff image before calling it a change.
+
+**How to read `ab` (decided 2026-11-13):** a `worse` row (99%) fails a gate. A lone
+`likely worse` (95%) row means rerun that scenario with `--rounds 8`; with ~40 metrics per run,
+one or two 95% verdicts appear by chance (the fixed harness, same commit on both sides, gave
+one: `overview-dusk.frameP95` +3.1%). `heapMB` rows swing ±30% with GC timing; ignore them
+unless a load or frame row moves with them.
+Seen in P2 (same build on both sides, byte-identical pages): one 99% load row (nola river phase,
+0.8 ms) and one 99% scenario (nola `transit-map`, fps −3.5%) each vanished on rerun with more
+rounds (8, then 16 rounds of that scenario alone). So a lone `worse` can be chance too. Before
+failing a gate on one, rerun that scenario alone with `--rounds 16`; report both runs. Some frame
+metrics are bimodal per browser launch: phl `whole-city` (about 10 or 14 ms), and nola/jsh
+`transit-map` main-thread time (about ±0.2 ms).
+
+**Harness commands until P1a merges:** `uv run --no-project --with playwright==1.65.1 --with
+pillow==13.0.0 python -I tools/perf/perf.py …` (zsh: wrap in a function or script; a command in a
+variable is not word-split).
+
+**Branch builds fail (pre-existing):** the "Workers Builds: shittycity" check fails on every
+non-`main` branch, including contributors' PRs (#1 `nola`, #5 `extra-stool`); `main` succeeds.
+Logs are only in the dashboard. So a branch's Cloudflare check gives no signal until someone
+reads a log; P2's GitHub Actions job is the pre-merge Linux build check.
+
+**Contributors:** `main` moves about 16 commits a day from several people and their agents.
+Re-list files before every phase.
+
+## Gate matrix
+
+`CITIES` in `js/cities.js` on 2026-11-13: `phl`, `nyc`, `jsh`, `nola`, `pine` (the kitchen).
+
+A scenario whose view or line a city lacks does **not** fail: `flyTo`/`boardLine` silently do
+nothing and the scenario measures whatever view the previous one left (confirmed by probe runs:
+`ride-monorail` and `overlook-*` on `nyc`/`nola` repeat `whole-city`'s numbers; on `jsh`,
+`ride-monorail` shows the ridge view). So the matrix lists only scenarios that put each city in
+the intended view.
+
+| city | `perf.py` scenarios that count | `ux.py` | smoke |
+| --- | --- | --- | --- |
+| `phl` | all phl scenarios: `overview-dusk`, `overview-noon`, `overview-night`, `orbit`, `whole-city`, `transit-map`, `market-cut`, `street-level`, `fly-market`, `ride-L`, `ride-regional`, `ride-monorail` (`--quick` = `overview-dusk,whole-city,fly-market,ride-L`) | `common.py` + `phl.py` states | yes |
+| `nyc` | `overview-dusk`, `overview-noon`, `overview-night`, `orbit`, `whole-city`, `transit-map` (`--city nyc`) | `common.py` + `nyc.py` | yes |
+| `jsh` | the `nyc` six + `overlook-stand`, `overlook-bino` (`--city jsh`) | `common.py` + `jsh.py` | yes |
+| `nola` | the `nyc` six (`--city nola`) | `common.py` only (`-c nola`: not in `ux.py`'s default `CITIES`) | yes |
+| `pine` | none (exposes `window.__kitchen`, not `window.__city`) | none: `ux.py run -c pine` times out waiting for the scene | yes (P1c must handle it); P4a adds Micah's eye check |
+
+`ux.py`'s default city list is hard-coded (`['phl', 'nyc', 'jsh']`), so every UX gate passes
+`-c phl,nyc,jsh,nola`.
+
+**Inventory (2026-11-13, `9c38eae`):** 63 JS modules, 17,180 lines, 1,196,883 B (395,097 B gzip -9).
+City-only code: `js/scene/phl` 351,673 B (17 files), `jsh` 215,777 B (10), `pine` 102,079 B (3),
+`nyc` 55,889 B (6); New Orleans has no folder of its own (shared modules plus `data.places`).
+Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh` 1.8 MB (16).
+`city-models.html` is 46,508,717 B; `.git` is 821 MB.
+
+## Phases
+
+### P0. Baseline and inventory
+
+- State: in review (baseline done; production headers and dashboard readout outstanding).
+- Branch / PR: `refactor/p0-docs`, https://github.com/seanmaye/ShittyCity/pull/3.
+- Main checkout fast-forwarded to `origin/main` at `9c38eae` on 2026-11-13.
+- **perf baseline** (`perf.py run --repeat 3`, medians, commit `9c38eae`; output folders kept in
+  the main checkout's `tools/perf/out/`): `20261113-170449-p0-base-phl`, `…171207-p0-base-nyc`,
+  `…171513-p0-base-nola`, `…171817-p0-base-jsh`.
+
+  | city | scene ready ms | first frame ms | data fetched ms | heap MB | geometry MB |
+  | --- | ---: | ---: | ---: | ---: | ---: |
+  | phl | 4441 (3846–4471) | 4798 | 275 | 307.3 | 505 |
+  | nyc | 1360 (1360–1432) | 1540 | 224 | 91.2 | 318.3 |
+  | jsh | 1174 (1141–1186) | 1335 | 219 | 52.0 | 90.9 |
+  | nola | 682 (661–693) | 833 | 94 | 45.2 | 169.2 |
+
+  Frame p50 ms (GPU ms): phl `overview-dusk` 7.5 (5.3), `whole-city` 14.9 (7.1), `ride-L` 12.5
+  (6.7), `street-level` 5.7 (4.8); nyc `overview-dusk` 2.4 (2.6), `whole-city` 7.1 (5.1); jsh
+  `overview-dusk` 2.5 (2.5), `overlook-stand` 2.6 (2.1); nola `overview-dusk` 2.9 (3.0),
+  `whole-city` 4.0 (3.3). Frames on this machine are short (2 to 15 ms), so the sensitivity
+  numbers in `tools/perf/README.md` (measured on an Intel iGPU) do not carry over; P1c's
+  same-commit run gives this machine's noise floor.
+- **ux baseline** (`ux.py run -c phl,nyc,jsh,nola,pine`, default devices): output
+  `tools/ux/out/20261113-172231-p0-base`. 531 screens over phl, nyc, jsh, nola: 16 errors (all
+  `missing`), 345 warnings (188 small-target, 96 coverage, 42 small-text, 14 desktop-copy, 5
+  truncated). `pine` crashed the run at its first device (timeout waiting for `__city`); the
+  report for the other four was complete.
+- **Production:** URL not yet known; `curl -sI` of `/`, a module, a `.json` and a `.bin.gz`
+  outstanding.
+- **Dashboard readout:** skipped for now; Micah could not sign in on 2026-11-13. Needed before
+  P2's cutover (build command change), not before P1.
+
+### P1a. Locked Python environment
+
+- State: in review. Branch `refactor/p1a-uv`, https://github.com/seanmaye/ShittyCity/pull/4.
+- Gate (rebased on `9c38eae`): Jersey Shore rebuilt with the lock, `git diff --stat data/jsh`
+  empty; `perf.py list` and `ux.py list` start under `uv run`.
+- Decision: **shapely pinned `>=2.0.7,<2.1`** (GEOS 3.11). Shapely 2.1+/GEOS 3.13+ changes
+  `simplify()` and `minimum_rotated_rectangle`: 570 jsh house angles (560 by half a turn), 21 of
+  222 barns, one farm field. Upgrading it is a separate change that regenerates `data/jsh`.
+- pyproj is in `data` too (`build_jsh.py` imports it at top level). uv 0.13.4, CPython 3.12.15.
+- Unverified: New Orleans rebuild (sources git-ignored). Script docstrings still say `pip install`.
+- Rebased onto `7fe4426` (now `41ed31a`); no overlap with #5, gate not rerun.
+- After merge, worktrees use `uv sync --group qa` (and `data`/`fetch` as needed).
+
+### P1b. Retire the single-file bundle
+
+- State: in review. Branch `refactor/p1b-retire-bundle` (stacked on P1a),
+  https://github.com/seanmaye/ShittyCity/pull/8.
+- Gate: bundle grep empty; smoke all 5 cities ok (phl 0.0061%, pine 0.0108%: motion only);
+  `ab --quick --shots` on phl: only `whole-city` rows `likely worse`, rerun with 8 rounds: no
+  significant difference.
+- Also changed `tools/phl/build_transit.py` (it edited the bundle in place): now reads/writes
+  `data/phl/`, output identical. `COLLABORATING.md`: minimal edits; full rewrite drafted in the PR
+  for Micah.
+- Rebased onto `7fe4426` (#5 touched `city-models.html` and the kitchen; conflict resolved by
+  deleting the file); smoke rerun: all ok, within tolerance (phl 0.0075%, pine 0.0069%).
+- **Blocks merge:** contributor message (in the PR) sent by Micah — not yet.
+
+### P1c. Smoke check and pixel diff
+
+- State: in review. Branch `refactor/p1c-smoke`, https://github.com/seanmaye/ShittyCity/pull/7.
+- Adds `perf.py smoke` (every city in `CITIES`, kitchen included) and pixel diffs in
+  `ab --shots`, `smoke --against`, `ux.py compare`.
+- **Found and fixed an A/B bias** (orchestrator's commit `e3ef143`): with the same commit on both
+  sides, the working-tree side (plain handler) raised buildings 4–6% slower in 10/10 rounds, and
+  the side that ran the discarded warm-up (always B) got `whole-city` frame time ~18% better
+  (bimodal ~10/~14 ms). Now both sides share a handler and both warm up. After the fix: no 99%
+  verdict; one 95% (`overview-dusk.frameP95` +3.1%).
+- Gate: smoke same-commit floors ≤ 0.0027%; deliberate colour change caught (0.11–0.20%).
+- Before-fix bias means **P0's baselines are fine** (single-side `run`s) but any `ab` run before
+  `e3ef143` should not be trusted for `whole-city` or the building load phase.
+
+### P2. The build
+
+- State: **in review, gates passed** (2026-11-14). https://github.com/seanmaye/ShittyCity/pull/9
+  is ready for review, with every gate's output in its description.
+- Branch `refactor/p2-build` (pushed): P1a + P1b with P1c's two commits cherry-picked
+  (`5ac3781`, `2ac1357`) on `7fe4426`. Rebase onto `main` once #4, #7 and #8 merge; the P1
+  commits then drop out.
+- Build done (`1161e44`, `aa7f9da`, `b272a50`; diff read by the orchestrator): vite 8.3.8
+  (rolldown 1.2.19), three 0.186.1, wrangler 4.162.0, @fontsource-variable/archivo 5.3.0,
+  npm 11.19.1, `.nvmrc` 24. Own `@font-face` "Archivo" (vietnamese, latin-ext, latin; upright
+  and italic; both axes): text widths identical to Google's in 7 style/weight/stretch cases.
+  `target: 'esnext'` keeps top-level await; `appType: 'mpa'` so a missing file is a 404; a
+  `raw-gz` middleware stops dev/preview sending `Content-Encoding: gzip` for data/*.gz. Linux
+  binaries in the lockfile (simulated `npm ci --os=linux`); CI job not run yet (nothing pushed).
+  Dev and preview: all 5 cities load, 0 errors, 0 failed requests, every request to localhost;
+  `#err` shows when the main chunk fails. Smoke on dist: all pass; pixel shares vs 2ac1357 3.1%
+  phl, 11.0% jsh (trees: three's UUID patch can't apply to the bundle), text identical.
+- Harness done (`3e009ea`, `5e08f8f`; diff read): `prepare_side()` for run/ab/snap/smoke/ux;
+  built sides staged from their exact inputs, cached by input hash
+  (`tools/perf/.cache/build/`), node_modules by lockfile (`.cache/npm-*`), served strictly
+  (marker `.perf-build.json`). `tools/perf/build.mjs` loads each side's vite.config.js and adds
+  the harness overrides (unminified, fixed names, source maps) and the patch plugin; patch text
+  only in perf.py. Census stacks and saved profiles resolved through source maps (own VLQ
+  decoder). `capture.py` → `npm run dev` (5173). Implementer's checks: perf-build smoke vs
+  2ac1357 within tolerance (phl 0.0033%, nola 0.0006%, pine 0.0122%, others 0); new same-commit
+  floor phl 0.0052%, nola 0.0007%, pine 0.0124%; census rows identical old-vs-build on phl and
+  jsh; `smoke --prod` and `--url` (local preview) pass. Found: `run --ablate` likely broken
+  before P2 (`WebGLMultisampleRenderTarget` gone in r186) — not fixed, out of scope.
+- Review (xhigh, fresh) of `2ac1357..refactor/p2-build`: **1 blocker** (confirmed by the
+  orchestrator): Vite 8's default CSS minifier (Lightning CSS) drops all 13 unprefixed
+  `backdrop-filter` (no panel blur in Chromium/Firefox), merges `.ls-poi b`'s
+  `font-stretch: 68%` into an invalid `font` shorthand (loading headline falls back to 16px
+  upright), and rewrites media queries to range syntax. Fix: `build.cssMinify: false`.
+  **Should fix:** perf builds didn't minify CSS, so no gate saw shipped CSS → build.mjs keeps
+  production's CSS minification. Minor fixes asked: missing-npm message, cache temp cleanup,
+  ab cleanup on failure, keep three's native `$1` names in profiles, tag before ablation hides,
+  harness hash in build snapshots. Left as known limits: `city_ids` tokenizer edge cases,
+  staging re-read race, `.env*` not staged (none exist). Found sound: lockfile (linux/win
+  binaries), wrangler dry-run, dist/data identical, `#err`, TLA, font, CI actions, VLQ decoder
+  (0 mismatches in 747k lookups), census parity, patch symmetry, serving symmetry.
+- Fixes done (`bdf7e82` `cssMinify: false`; `c7193fd` perf builds keep production's CSS
+  minification + the six minor fixes). Shipped CSS = sources concatenated, font url()s
+  rewritten (13 kB gzip). `run --ablate` confirmed broken before P2 on every side (MSAA toggle).
+- Pushed; draft PR https://github.com/seanmaye/ShittyCity/pull/9 (stacked on #4/#8/#7).
+  `origin/main` still `7fe4426`, so no rebase needed.
+- Gate 1 (Linux CI): **green** — Ubuntu 24.04.5, node v24.22.2, npm 11.19.1, `npm ci` 51
+  packages, build passed in 20 s.
+- Gates 2–6: **passed** (orchestrator, one at a time, on AC power, no subagents, 02:32–06:15).
+  A = `2ac1357` (sources), B = `c7193fd` (perf build). Outputs:
+  `tools/perf/out/20261114-*-p2-*` and `tools/ux/out/20261114-035623-p2-build` in the main
+  checkout; scripts and logs in `tools/perf/out/20261114-p2-gate-logs/`.
+  - Smoke vs 2ac1357: all 5 ok, within tolerance (phl 0.0035%, nola 0.0002%, pine 0.0118%,
+    nyc/jsh 0). `smoke --prod`: all 5 ok, no errors or failed requests.
+  - `ab --rounds 5 --shots` vs 2ac1357, phl/nyc/nola/jsh: **no `worse`**. Data fetch + decode
+    faster on every city (phl −7.0%, nyc −8.6%, jsh −13.2%, nola −26.7%, all 99%). One
+    `likely worse` heap row (nola `overview-night.heapMB` +21.3%), ignored by the rule. Shots: all
+    phl views within tolerance. nyc and nola: every view within. jsh: 4 views above the
+    same-build floor, motion only (see the tolerance note above).
+  - Same build on both sides (phl 8 rounds all scenarios; jsh, nyc, nola 5 rounds; nola 8; nola
+    and jsh `transit-map` alone at 16): no frame or load row significant in the final runs, so
+    the harness adds no bias. The 99% rows seen on the way vanished with more rounds (see "How to
+    read `ab`").
+  - Census parity vs no-build 2ac1357: totals (1,879 calls, 5,423,923 tris), 20 builder rows, 25
+    site rows and the load inventory all identical. `hot` names the same functions at the same
+    file:line on both.
+  - `ux.py compare` vs P0: 531 screens, 16 errors, 345 warnings on both; +0/+0. The `loading`
+    state fails to capture on every city/device in P0 too (`ux.py` bug, not P2). Large pixel
+    shares only in moving or random states. `load-error`: same text and font.
+- Contributor message drafted in #9 (Micah sends). Note for #8: its proposed `COLLABORATING.md`
+  rewrite says three.js and the font load from CDNs; after P2 that line should say Node 24 and
+  `npm ci`.
+- Local follow-up at merge: `.claude/launch.json` (untracked) still starts `tools/serve.py` and
+  has a `p2-preview` entry pointing at a scratchpad folder. Replace with one `npm run dev`
+  entry on port 5173.
+- **Blocks merge:** P1a/P1b/P1c merged, then rebase #9 on `main`; the dashboard readout and the
+  Build-command change (human step) before the cutover; the contributor message sent.
+
+### P3. Checks in the build
+
+- State: not started.
+
+### P4a. three.js 0.187.0
+
+- State: not started.
+
+### P4b. Per-city code splitting, hashed data, long-lived caching
+
+- State: not started.
+
+### P4c. Typed contracts, opt-in checking
+
+- State: not started.
+
+### P5. Data decoding in a worker (go or no-go)
+
+- State: not started.
