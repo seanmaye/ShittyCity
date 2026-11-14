@@ -1,11 +1,11 @@
 import { createReadStream, existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
-import { defineConfig } from 'vite';
+import { defineConfig, normalizePath } from 'vite';
 
 // data/ stays at the repository root, where the pipeline writes it. The page asks for each file by the URL that
 // js/main.js's import.meta.glob ?url (URLS) gives it: the dev server serves data/ as it is, and a build copies
-// each file into dist/assets/ under a content-hashed name.
-const DATA = resolve(import.meta.dirname, 'data') + sep;
+// each file into dist/assets/ under a content-hashed name. (Forward slashes, as Vite's ids have them on Windows too.)
+const DATA = normalizePath(resolve(import.meta.dirname, 'data')) + '/';
 
 // The dev and preview servers would send *.gz with Content-Encoding: gzip, and the browser would unzip them on the way
 // in. Send them as stored bytes (application/gzip), as tools/serve.py did and the perf harness does: the page unzips them.
@@ -39,7 +39,7 @@ for (const same of bySize.values()) for (const [c, f] of same.length > 1 ? same 
 }
 const names = {
   assetFileNames: a => {
-    const f = a.originalFileNames?.[0] || '', city = owners.get(f) || [/^data\/([^/]+)\//.exec(f)?.[1]].filter(Boolean);
+    const f = normalizePath(a.originalFileNames?.[0] || ''), city = owners.get(f) || [/^data\/([^/]+)\//.exec(f)?.[1]].filter(Boolean);
     return `assets/${city.length ? `data-${city.join('-')}-` : ''}[name]-[hash][extname]`;
   },
 };
@@ -55,7 +55,7 @@ export default defineConfig({
     // Lightning CSS (the default minifier) drops unprefixed backdrop-filter, the 100vh fallbacks and the loading headline's font; ~10 kB gzipped either way
     cssMinify: false,
     // a data file or loading screen is always a file of its own, never a data: URL in the code, however small
-    assetsInlineLimit: file => (file.startsWith(DATA) ? false : undefined),
+    assetsInlineLimit: file => (normalizePath(file).startsWith(DATA) ? false : undefined),
     rolldownOptions: {
       output: {
         ...names,
