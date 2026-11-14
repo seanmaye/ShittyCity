@@ -169,11 +169,17 @@ def side_read(src, ref, path):
         return f.read()
 
 
+def cities_file(src, ref):
+    """The side's city list: js/cities.ts, or js/cities.js on a side from before the .ts renames (P6a). None if neither."""
+    return next((p for p in ('js/cities.ts', 'js/cities.js') if side_has(src, ref, p)), None)
+
+
 def city_ids(src=ROOT, ref=None):
-    """The city ids in the side's js/cities.js (the keys of `export const CITIES = {…}`), read from the source:
-    a build has no js/cities.js to import."""
-    s = side_read(src, ref, 'js/cities.js').decode('utf-8')
-    i, depth, ids = s.index('export const CITIES = {') + len('export const CITIES = {'), 1, []
+    """The city ids in the side's js/cities (the keys of `export const CITIES = {…}`, typed or not), read from the
+    source: a build has no js/cities to import."""
+    path = cities_file(src, ref) or 'js/cities.ts'
+    s = side_read(src, ref, path).decode('utf-8')
+    i, depth, ids = re.search(r'export const CITIES\b[^=]*=\s*\{', s).end(), 1, []
     tok = re.compile(r"""'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`|//[^\n]*|/\*.*?\*/|[{}()\[\]]|([A-Za-z_$][\w$]*)\s*:""", re.S)
     for m in tok.finditer(s, i):
         t = m.group(0)
@@ -185,7 +191,7 @@ def city_ids(src=ROOT, ref=None):
                 return ids
         elif depth == 1 and m.group(1):
             ids.append(m.group(1))
-    raise ValueError('js/cities.js: no end to `export const CITIES = {`')
+    raise ValueError(f'{path}: no end to `export const CITIES = {{`')
 
 
 def side_inputs(src=None, ref=None):
@@ -341,7 +347,7 @@ def built_output(src):
     """A folder that is built output already (a dist/): an index.html, and neither the import map nor the js/
     sources of a folder that still needs building."""
     page = os.path.join(src, 'index.html')
-    if not os.path.isfile(page) or os.path.exists(os.path.join(src, 'js', 'main.js')):
+    if not os.path.isfile(page) or any(os.path.exists(os.path.join(src, 'js', f)) for f in ('main.ts', 'main.js')):
         return False
     with open(page, encoding='utf-8') as f:
         return 'type="importmap"' not in f.read()
@@ -1383,11 +1389,12 @@ def requests_of(urls, sizes, base, ids):
     return out
 
 
-# Modules in a city's folder that other cities load by design, so they sit in shared chunks: phl/people.js (the loading
-# screen's figures, in every city), jsh/terrain.js (the elevation grid that buildings.js and nature.js ask in every city) and
-# jsh/places.js (labels and views, which New Orleans uses too). Any other js/scene/<city>/ module in a chunk another city
-# loads is that city's code where it should not be (an import from js/scene/index.js puts it in the shared code).
-SHARED_CITY_FILES = {'js/scene/phl/people.js', 'js/scene/jsh/terrain.js', 'js/scene/jsh/places.js'}
+# Modules in a city's folder that other cities load by design, so they sit in shared chunks: phl/people (the loading
+# screen's figures, in every city), jsh/terrain (the elevation grid that buildings and nature ask in every city) and
+# jsh/places (labels and views, which New Orleans uses too). Any other js/scene/<city>/ module in a chunk another city
+# loads is that city's code where it should not be (an import from js/scene/index puts it in the shared code). Without
+# the extension: .ts since P6a, .js on an older side.
+SHARED_CITY_FILES = {'js/scene/phl/people', 'js/scene/jsh/terrain', 'js/scene/jsh/places'}
 _SOURCES = {}
 
 
@@ -1418,7 +1425,7 @@ def foreign_code(sources, cid, ids):
     out = []
     for src in sources or []:
         m = re.search(r'(?:^|/)(js/scene/([^/]+)/[^/]+)$', src)
-        if m and m.group(2) in ids and m.group(2) != cid and m.group(1) not in SHARED_CITY_FILES:
+        if m and m.group(2) in ids and m.group(2) != cid and re.sub(r'\.[jt]s$', '', m.group(1)) not in SHARED_CITY_FILES:
             out.append(m.group(1))
     return out
 
@@ -1492,7 +1499,7 @@ def smoke_city(browser, a, base, cid, out, ids):
 
 
 def cmd_smoke(a):
-    """Load every city in js/cities.js from a served side the way the harness does (seeded, date
+    """Load every city in js/cities from a served side the way the harness does (seeded, date
     pinned; a side built in perf mode), fail on any
     page error, console error, failed request, file named for another city (owners) or JS built from another city's code
     (chunk_sources, its source map), list what each city loaded, and
@@ -1516,8 +1523,8 @@ def cmd_smoke(a):
         else:
             dirty = bool(git('status', '--porcelain', '--', 'js', 'css', 'index.html', 'data'))
             src, what = ROOT, f'the working tree ({git("rev-parse", "--short", "HEAD")}{" + uncommitted changes" if dirty else ""})'
-        # a folder without js/cities.js (a dist/) gets it from the working tree, as its other missing files
-        ids = city_ids(src if a.ref or side_has(src, None, 'js/cities.js') else ROOT, a.ref)
+        # a folder without js/cities (a dist/) gets it from the working tree, as its other missing files
+        ids = city_ids(src if a.ref or cities_file(src, None) else ROOT, a.ref)
         root, kind, done = prepare_side(src, a.ref, prod=a.prod)
         what += f', {kind}'
         srv, base = serve(root)
@@ -1530,7 +1537,7 @@ def cmd_smoke(a):
                 want = [c.strip() for c in a.cities.split(',') if c.strip()] if a.cities else ids
                 bad = [c for c in want if c not in ids]
                 if bad:
-                    sys.exit(f'unknown city id(s): {", ".join(bad)}; js/cities.js has {", ".join(ids)}')
+                    sys.exit(f'unknown city id(s): {", ".join(bad)}; js/cities has {", ".join(ids)}')
                 for cid in want:
                     print(f'{cid}…', flush=True)
                     res[cid] = smoke_city(browser, a, base, cid, out, ids)
@@ -1702,7 +1709,7 @@ def main():
         p.add_argument('--out', help='output folder (default tools/perf/out/<time>[-label])')
         p.add_argument('--seconds', type=float, default=5, help='timing window per scenario')
         p.add_argument('--settle', type=int, default=3000, help='ms to wait after a scenario starts')
-        p.add_argument('--city', default='phl', help='city id from js/cities.js (the scenarios are written for phl)')
+        p.add_argument('--city', default='phl', help='city id from js/cities.ts (the scenarios are written for phl)')
         p.add_argument('--size', default='1600x900', help='viewport WxH')
         p.add_argument('--dpr', type=float, default=1, help='device pixel ratio (the app caps at 2)')
         p.add_argument('--headed', action='store_true', help='show the browser window')
@@ -1752,7 +1759,7 @@ def main():
     src.add_argument('--root', help='this folder instead of the working tree: built if it has a package.json, else served as it is if it is built output (a dist/)')
     src.add_argument('--url', help='load the deployed site at this origin instead of serving anything (city ids from the working tree)')
     sm.add_argument('--prod', action='store_true', help="serve the side's own production build (npm run build, unpatched) instead of the perf-mode build")
-    sm.add_argument('--cities', help='comma-separated city ids (default: every city in js/cities.js)')
+    sm.add_argument('--cities', help='comma-separated city ids (default: every city in js/cities.ts)')
     sm.add_argument('--against', help='an earlier smoke output folder: report the share of changed pixels per city')
     sm.add_argument('--label', default='', help='appended to the output folder name')
     sm.add_argument('--out', help='output folder (default tools/perf/out/<time>-smoke[-label])')
