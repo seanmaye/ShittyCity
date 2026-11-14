@@ -38,9 +38,10 @@ describe('JCOL', () => {
     expect(encodeJcol({ a: 'no integer arrays' })).toBe(null);
   });
 
-  test('gives arrays the shape JSON.parse gives them (plain, packed)', () => {
+  test('gives plain arrays, every slot filled', () => {
     const out = jcol({ a: [1, 2, 3] });
     expect(Array.isArray(out.a) && Object.getPrototypeOf(out.a) === Array.prototype).toBe(true);
+    expect(Object.keys(out.a)).toEqual(['0', '1', '2']);
   });
 });
 

@@ -92,13 +92,13 @@ export function decodeJcol(u8: Uint8Array): unknown {
   const root = JSON.parse(new TextDecoder().decode(u8.subarray(16, 16 + sl)));
   const first: number[][] = [[], [], [], []], vo = 16 + sl + ll;
   let lo = 16 + sl, vi = 0;
-  const fill = (): number[] => {   // the next length; [] for an array that was empty, else the array (pushed: packed, as JSON.parse makes it)
+  const fill = (): number[] => {   // the next length; [] for an array that was empty, else the array
     let x = 0, mul = 1, b: number;
     do { b = u8[lo++]; x += (b & 127) * mul; mul *= 128; } while (b & 128);
-    const a: number[] = [];
-    if (!x) return a;
-    const len = Math.floor(x / 4), s = x & 3, f = first[s];
-    for (let i = 0; i < len; i++, vi++) { const d = fromPlanes32(u8, vo, n, vi); a.push(i < s ? d + (f[i] || 0) : d + a[i - s]); }
+    if (!x) return [];
+    // exactly its length, as JSON.parse makes it: built with push, the arrays kept a third more memory (phl +25 MB heap)
+    const len = Math.floor(x / 4), s = x & 3, f = first[s], a: number[] = new Array(len);
+    for (let i = 0; i < len; i++, vi++) { const d = fromPlanes32(u8, vo, n, vi); a[i] = i < s ? d + (f[i] || 0) : d + a[i - s]; }
     for (let i = 0; i < s; i++) f[i] = a[i];
     return a;
   };
