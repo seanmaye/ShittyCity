@@ -3,13 +3,13 @@
 // Mobile Arena), Independence Hall, Memorial Hall, and the Benjamin Franklin and Walt Whitman
 // suspension bridges. Each is fitted to its real outline; the generic buildings inside those
 // outlines were left out of data/city_buildings. Also the frisbee game on the Edgley fields
-// (frisbee.js) and an unlabelled statue on the arena plaza.
+// (frisbee.ts) and an unlabelled statue on the arena plaza.
 import * as THREE from 'three';
 import { pairs } from '../../data.js';
 import { M, litMats, winMat, reps, addDisplay, DISPLAY_PRESETS } from '../materials.js';
 import { Builder, addPolygon } from '../geometry.js';
-import { makeFigure } from './people.js';
-import { buildFrisbee } from './frisbee.js';
+import { makeFigure } from './people.ts';
+import { buildFrisbee } from './frisbee.ts';
 import { terrain, profile, drape } from '../terrain.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);

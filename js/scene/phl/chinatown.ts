@@ -11,7 +11,7 @@
 // Street lines are OpenStreetMap centrelines in scene metres (tools/phl/osm/streets_cc.json).
 import * as THREE from 'three';
 import { litMats } from '../materials.js';
-import { makeFigure, pose } from './people.js';
+import { makeFigure, pose } from './people.ts';
 import { terrain, surface, drape } from '../terrain.js';
 
 // ---- streets (OSM centrelines, metres) and the crossings that keep furniture back

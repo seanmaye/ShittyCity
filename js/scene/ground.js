@@ -128,7 +128,7 @@ export function buildGround(scene, data, river, capRings = [], { sea = false, pa
  * Streets, trails, rail and bridge decks for a list of OSM lines ({k, w, b, l, x?, p}).
  * cap: rings where road bridges land on the rail-yard deck; wet(x, z): is this over water (piers);
  * tile: if set, split the meshes into tile x tile metre squares so off-screen ones are culled.
- * onPromenade: Philadelphia's Walnut St test (phl/promenade.js, from its own code: js/scene/phl/phl.js).
+ * onPromenade: Philadelphia's Walnut St test (phl/promenade.js, from its own code: js/scene/phl/phl.ts).
  */
 export function drawLines(scene, lines, { cap = [], wet = () => false, tile = 0, onPromenade } = {}) {
   // streets, trails and rail at grade (one set of builders per tile when tiled)
@@ -139,7 +139,7 @@ export function drawLines(scene, lines, { cap = [], wet = () => false, tile = 0,
   for (const l of lines) {
     const pts = pairs(l.p);
     if (l.b) { bridges.push({ ...l, pts }); continue; }
-    if (l.k === 0 && CITY.id === 'phl' && onPromenade(pts)) continue;   // Walnut St is paved as a promenade (promenade.js)
+    if (l.k === 0 && CITY.id === 'phl' && onPromenade(pts)) continue;   // Walnut St is paved as a promenade (promenade.ts)
     const { rb, pb, tb, xb } = T(keyOf(pts));
     if (l.x) {
       // proposal: expressway carriageways become park, ramps become greenway trails

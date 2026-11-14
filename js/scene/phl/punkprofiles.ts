@@ -1,4 +1,4 @@
-// Made-up lives for the punks at the Railyard Bowl's Alvin and the Chipmunks show (concert.js).
+// Made-up lives for the punks at the Railyard Bowl's Alvin and the Chipmunks show (concert.ts).
 // Built like the detasseling crew's profiles (jsh/crewprofiles.js): a seeded name, sex, age, height,
 // weight and a short biography with {he} {his} {is} ... filled in, plus a punk name, what they have
 // on tonight and what they're on tonight. Everyone here is fictional, and so are their bands.
@@ -18,7 +18,7 @@ const HABIT = { puff: '{has} been passing a joint around since the opener', ket:
 const PET = ['a pet rat named Sid Vicious that rides on {his} shoulder at home', 'three cats named after Philadelphia Flyers enforcers', 'a ferret that has bitten every one of {his} roommates', 'a snake named Gritty', 'no pets, because the landlord found the last one'];
 const QUIRK = ['{He} {has} been banned from two Wawas.', '{He} won a hot-dog eating contest on the boardwalk at Wildwood.', '{He} call{s} {his} mom every Sunday without fail.', '{He} still {has} a Phillies 2008 parade ticket stub in {his} wallet.', '{He} once got into an argument with the Rocky statue.', '{He} {is} saving up to go see the Chipettes on tour in Japan.', '{He} {has} never once paid the SEPTA fare.', '{He} brought a tray of {his} aunt’s pizzelles to share.', '{He} cr{ies} at the slow songs and dare{s} anyone to say something.', '{He} knit{s} all of {his} own band patches.'];
 
-// what they have on tonight: these are the outfits concert.js draws
+// what they have on tonight: these are the outfits concert.ts draws
 const HAIR = {
   mohawk: c => `a ${c} mohawk`, spikes: c => `${c} liberty spikes`, shaved: () => 'a shaved head', crop: c => `${c} hair cut short with kitchen scissors`,
   long: c => `long ${c} hair`, bunches: c => `${c} hair in two bunches`, beanie: () => 'a black beanie in July',
@@ -33,7 +33,7 @@ function rng(seed) {
 }
 
 /**
- * The punk number i, who has `look` on (concert.js: hair, hairName, top, pants, studs, collar, shades)
+ * The punk number i, who has `look` on (concert.ts: hair, hairName, top, pants, studs, collar, shades)
  * and whose thing tonight is `habit` (a key of HABIT). Returns the card's fields.
  */
 export function punkProfile(i, look, habit) {

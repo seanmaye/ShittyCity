@@ -14,7 +14,7 @@
 // people on Philadelphia's Walnut St promenade. This module offers the same interface as
 // phl/pedestrians.js, so js/scene/index.js and js/ui.js use it in that one's place.
 import * as THREE from 'three';
-import { geo, pose } from '../phl/people.js';
+import { geo, pose } from '../phl/people.ts';
 import { groundAt } from './terrain.js';
 import { onSeason } from '../season.js';
 import { stage, cutHole, CORN_HOLE } from './farms.js';

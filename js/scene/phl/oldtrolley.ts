@@ -10,7 +10,7 @@ import { pairs } from '../../data.js';
 import { M, litMats } from '../materials.js';
 import { Builder, addRibbon } from '../geometry.js';
 import { SPEC } from '../subway.js';
-import { onWalnut } from './promenade.js';
+import { onWalnut } from './promenade.ts';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';

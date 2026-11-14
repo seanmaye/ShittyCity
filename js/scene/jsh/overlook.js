@@ -19,7 +19,7 @@
 // js/scene/index.js treats this like a seat or a person you are inside (getState() is the
 // "car" you are aboard); js/ui.js draws the buttons and the binocular mask from that state.
 import * as THREE from 'three';
-import { geo } from '../phl/people.js';
+import { geo } from '../phl/people.ts';
 import { groundAt } from './terrain.js';
 import { buildTrees } from '../nature.js';
 import { LIGHT, makeRenderer } from '../../three-setup.js';

@@ -1,4 +1,4 @@
-// Lucky Arcade: the street stall in Chinatown's night market (js/scene/phl/chinatown.js). Click it
+// Lucky Arcade: the street stall in Chinatown's night market (js/scene/phl/chinatown.ts). Click it
 // and this dialog opens on a menu of three games, each drawn on one 480 x 480 canvas:
 //   Ping-Pong      a rally across a ping-pong table against the stall's CPU, first to 7 points
 //   Sky Swarm      a fixed shooter: bugs fly into formation, then peel off and dive at your launcher

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { makeFigure } from '../phl/people.js';
+import { makeFigure } from '../phl/people.ts';
 
 const lit = (color, emissive = color, emissiveIntensity = .24) =>
   new THREE.MeshStandardMaterial({ color, emissive, emissiveIntensity, roughness: .81 });

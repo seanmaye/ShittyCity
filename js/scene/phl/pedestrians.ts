@@ -1,9 +1,9 @@
-// PROPOSAL: people on the Walnut St promenade (promenade.js). About 200 of them stroll up and
+// PROPOSAL: people on the Walnut St promenade (promenade.ts). About 200 of them stroll up and
 // down the walking lanes either side of the streetcar track, go into the shops (through the
 // doors, and back out again later), and sit on the benches and at the cafe tables, drinking
 // coffee or reading a book.
 //
-// The bodies are Kyle's jointed figures (people.js: the same limb geometry, joint layout and
+// The bodies are Kyle's jointed figures (people.ts: the same limb geometry, joint layout and
 // running pose), drawn instanced: one InstancedMesh per body part for the whole crowd, so 200
 // people cost about 15 draw calls. Each person has a light skeleton of Object3D joints that is
 // posed on the CPU, and every part's world matrix is copied into its instance.
@@ -12,9 +12,9 @@
 // once at load against everything on the paving (lamps, benches, planters, trees, cafe tables):
 // a seat or a door whose walk-up path isn't clear is never used.
 import * as THREE from 'three';
-import { geo, pose } from './people.js';
-import { makeProfile, SHOPS } from './profiles.js';
-import { pullBack } from './promenade.js';
+import { geo, pose } from './people.ts';
+import { makeProfile, SHOPS } from './profiles.ts';
+import { pullBack } from './promenade.ts';
 import { LIGHT, makeRenderer } from '../../three-setup.js';
 
 const LANE = [2.4, 3.5];          // walking lanes (|o|): clear of the streetcar and of the kerb furniture
@@ -30,7 +30,7 @@ const BOOK = ['#8c2f2f', '#2f4a6b', '#3d6b4a', '#d9b44a', '#e8e4da', '#5a4a6b'];
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const rnd = (a, b) => a + Math.random() * (b - a);
 
-/** a skeleton with Kyle's joint layout (people.js makeFigure), without meshes */
+/** a skeleton with Kyle's joint layout (people.ts makeFigure), without meshes */
 function rig() {
   const n = (parent, x, y, z) => { const o = new THREE.Object3D(); o.position.set(x, y, z); if (parent) parent.add(o); return o; };
   const root = n(null, 0, 0, 0), F = { root };
@@ -42,7 +42,7 @@ function rig() {
   }
   return F;
 }
-// body parts: [geometry in people.js geo(), joints it hangs from, colour]
+// body parts: [geometry in people.ts geo(), joints it hangs from, colour]
 const PARTS = [
   ['torso', ['pelvis'], 'shirt'], ['shorts', ['pelvis'], 'pants'], ['neck', ['neck'], 'skin'], ['head', ['head'], 'skin'],
   ['hairF', ['hair'], 'hair'], ['upper', ['shL', 'shR'], 'shirt'], ['fore', ['elL', 'elR'], 'arm'], ['hand', ['handL', 'handR'], 'skin'],
@@ -158,7 +158,7 @@ export function buildPedestrians(scene, nav, count = 200) {
   const people = [];
   for (let i = 0; i < count; i++) {
     const long = Math.random() < .7, sleeves = Math.random() < .4;
-    const prof = makeProfile(i);   // a made-up life: name, age, sex, height, weight, biography (profiles.js)
+    const prof = makeProfile(i);   // a made-up life: name, age, sex, height, weight, biography (profiles.ts)
     const c = { shirt: pick(SHIRT), pants: pick(PANTS), skin: pick(SKIN), hair: prof.grey ? pick(['#9a9a96', '#c8c8c4', '#e2e0da']) : pick(HAIR), shoe: pick(SHOE) };
     c.leg = long ? c.pants : c.skin; c.arm = sleeves ? c.shirt : c.skin; c.eye = '#1b1512'; c.lip = '#7a3b34';
     parts.forEach(p => p.joints.forEach((j, k) => p.im.setColorAt(i * p.joints.length + k, col.set(c[p.col]))));
@@ -215,7 +215,7 @@ export function buildPedestrians(scene, nav, count = 200) {
   }
   /** leave the seat: stand up, then walk back out to the lane */
   function standUp(P) { P.state = 'standing'; P.t = 0; }
-  // the viewer sits down (promenade.js seating): take a free place if there is one, else move someone on.
+  // the viewer sits down (promenade.ts seating): take a free place if there is one, else move someone on.
   // Whoever has to go (or was on the way to that place) leaves from the lane, out of the viewer's face.
   seats.onUserSit = i => {
     const st = seats[i]; let j = st.occ.findIndex(o => !o);

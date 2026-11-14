@@ -143,7 +143,7 @@ export function buildYardPark(scene, data, guideways) {
   }
   buildTrees(scene, trees, data.h, false);   // on the deck, which index.js lifts as a whole
   return {
-    duskOnly: b.duskOnly, update: b.update, bowl: b.group,   // (the show in it: concert.js)
+    duskOnly: b.duskOnly, update: b.update, bowl: b.group,   // (the show in it: concert.ts)
     labels: [
       { text: 'Rail Yard Park', pos: new THREE.Vector3(lx, data.h + 16, lz) },
       { text: 'Railyard Bowl', pos: b.stage.setY(data.h + 44) },

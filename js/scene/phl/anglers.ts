@@ -5,7 +5,7 @@
 // a bobber riding the current, a bucket and a cooler beside them. Clicking one (pick) opens an
 // invitation to fish with them (js/fishing.js).
 import * as THREE from 'three';
-import { makeFigure } from './people.js';
+import { makeFigure } from './people.ts';
 import { terrain, surface, water } from '../terrain.js';
 
 // [label, lat, side (1 east bank, -1 west bank)] on the river centreline; and boat-pier banks

@@ -182,7 +182,7 @@ Philadelphia only:
 data-phl-landmarks      hand-styled landmarks, all in METRES
   towers:     [{x,z,w,d,ry,id,h,color,cap,kind}]. cap is one of liberty | taper | ctc |
               pyramid | stepped | psfs; anything else gives a plain box with windows.
-              js/scene/phl/landmarks.js LOOK overrides colour (and kind) per id with the real cladding.
+              js/scene/phl/landmarks.ts LOOK overrides colour (and kind) per id with the real cladding.
   cityhall:   {x,z,w,d,ry}  (the tower is drawn on the north side)
   station:    {x,z,w,d,ry}  (30th Street Station, long side on local z)
   museum:     {x,z}         (Art Museum; it faces City Hall automatically)
@@ -243,7 +243,7 @@ data-phl-boats          river boat lines (tools/phl/build_boats.py; all but Rive
          from; s = distance along p. p runs mid-channel through the real water; dams are
          barriers. Boats run out and back (phl/boats.js), one per 6 km, dwelling DWELL s a stop.
 
-data-phl-restaurants    djour's starred food spots (tools/phl/build_restaurants.py; js/scene/phl/restaurants.js)
+data-phl-restaurants    djour's starred food spots (tools/phl/build_restaurants.py; js/scene/phl/restaurants.ts)
   { source, credit, stars: {"2": meaning, "3": meaning},
     places: [{n, x, z, ry, w, h, sd, v, f, k, s, hood, c, p?, d?, soon?, club?, look?}] }
   n name; x, z the middle of its shop front on the building wall (m); ry the wall's outward
@@ -870,7 +870,7 @@ Restyle a landmark tower
     New York: edit data-nyc-landmarks features[i] the same way.
 
 Move or add monorail stations
-    Philadelphia's riverfront loop: in the js/scene/phl/monorail.js chunk, edit
+    Philadelphia's riverfront loop: in the js/scene/phl/monorail.ts chunk, edit
     STATIONS = [[lat, side], ...] (side 1 = east bank, -1 = west bank).
     New York's East River Loop: edit data-nyc-monorail routes[0].stations (name, position
     [x, z] m, length), or its `path` to move the guideway.

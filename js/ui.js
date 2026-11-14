@@ -20,7 +20,7 @@ export function touchify(t) {
 const controlsHint = trains => TOUCH.matches
   ? 'Drag to turn the view, pinch to zoom, and drag with two fingers to move.' + (trains ? ' Tap any train to ride inside it.' : '')
   : 'Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom.' + (trains ? ' Click any train to ride inside it.' : '');
-// createFishing, createArcade: Philadelphia's minigames (js/fishing.js, js/arcade.js), from its own code (js/scene/phl/phl.js)
+// createFishing, createArcade: Philadelphia's minigames (js/fishing.js, js/arcade.js), from its own code (js/scene/phl/phl.ts)
 export function createUI(api, { createFishing, createArcade } = {}) {
   const toastEl = document.getElementById('toast'); let toastTimer = 0;
   const toast = (msg, ms) => { toastEl.textContent = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => { toastEl.textContent = ''; }, ms); };
@@ -260,7 +260,7 @@ export function createUI(api, { createFishing, createArcade } = {}) {
   markView('home');
   api.controls.addEventListener('start', () => markView(null)); // free look: no preset is current
 
-  // "Restaurants": djour's starred picks (js/scene/phl/restaurants.js): their labels' own switch, a
+  // "Restaurants": djour's starred picks (js/scene/phl/restaurants.ts): their labels' own switch, a
   // neighbourhood picker and a button per place; a place's button or label flies there and opens its card
   const EATS = (api.restaurants && api.restaurants.places) || [], eatsEl = document.getElementById('eats');
   const eatCard = document.getElementById('eatcard'), eatBtn = document.getElementById('eat-lbl');

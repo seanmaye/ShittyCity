@@ -12,7 +12,7 @@
 // Each city lists its screens in js/cities.js (loadingScreens).
 import * as THREE from 'three';
 import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
-import { makeFigure, pose as runPose } from './scene/phl/people.js';
+import { makeFigure, pose as runPose } from './scene/phl/people.ts';
 import { makeRenderer, LIGHT } from './three-setup.js';
 
 const HOLD = 4000;   // ms a screen stays before the next one comes in
@@ -50,7 +50,7 @@ const OUTFITS = {
   punk:    { shirt: '#17171a', shorts: '#a3161f', skin: '#f0c9a6', shoe: '#121212', hair: '#1d1410', shades: true, mohawk: '#5dff3a', collar: true, legs: '#a3161f' },
 };
 
-// poses: joint angles on a makeFigure (people.js: rotate .x to swing forward, .z out to the side)
+// poses: joint angles on a makeFigure (people.ts: rotate .x to swing forward, .z out to the side)
 const POSES = {
   // power stance, fists on hips, chin up
   akimbo(F) {

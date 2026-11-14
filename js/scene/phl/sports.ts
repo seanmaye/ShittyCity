@@ -6,7 +6,7 @@ import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js'
 import { pairs } from '../../data.js';
 import { M, litMats } from '../materials.js';
 import { Builder } from '../geometry.js';
-import { beam, piers, station, train, liftCurve } from './monorail.js';
+import { beam, piers, station, train, liftCurve } from './monorail.ts';
 import { seasonalGrass } from '../season.js';
 export const H2 = 26; // above the riverfront loop (18 m) so the lines can cross
 

@@ -104,7 +104,7 @@ The rail yard north of 30th Street Station is covered by a deck at 10.5 m, just 
   - a stage with an apron and a backstage building;
   - video screens, speaker towers and delay towers;
   - a ring of light poles, and moving light beams at dusk.
-- **The show: Alvin and the Chipmunks, live, to a crowd of punks** ("Go to" Punk show at the Railyard Bowl; an evening show, so the flight moves the clock to 8:30 PM if it's earlier than 5). In `js/scene/phl/concert.js`.
+- **The show: Alvin and the Chipmunks, live, to a crowd of punks** ("Go to" Punk show at the Railyard Bowl; an evening show, so the flight moves the clock to 8:30 PM if it's earlier than 5). In `js/scene/phl/concert.ts`.
   - On stage, giant chipmunks: Alvin out front with a mic (red sweater with the big "A", red cap), Simon on guitar (blue, glasses) and Theodore on the drums (green). The set loops through seven songs, and the video screens say what's playing. For two of them the Chipettes come out of the wings (Brittany in pink, Jeanette in purple with glasses, Eleanor in green with pigtails), sing and dance, and walk off again.
   - In the pit and up the first rows, about 80 punks: mohawks and liberty spikes in neon colours, shaved heads, studded leather, denim and army jackets with patches on the back, band tees, red plaid bondage pants, combat boots, spiked collars, wallet chains. Each one pogos, headbangs, holds a fist up, moshes in the pit, smokes, drinks, or sits slumped in a K-hole on the steps, and now and then does one of their own things by themselves. Nobody stands under the rail viaduct that crosses the seats.
   - Click a punk to see through their eyes, with a card about them (a made-up name, punk name, neighbourhood, job, band, why they're at a Chipmunks show, what they have on and what they're on tonight: `punkprofiles.js`). Each has four things to do (keys 1 to 4), two drugs and two other things, from: Take a puff, Shoot ketamine, Huff glue, Drop a pill, Do a bump of speed, Shotgun a beer, Light a cigarette, Pogo, Start a mosh pit, Crowd surf, Spit at the stage and Yell “ALVIN!” (Alvin turns and points at you). They play out on the body and on what you see: being stoned sways and softens the view; glue blurs and brightens it; a pill, once it kicks in, cycles the colours; speed jitters it; beers add a drunken roll; and ketamine leaves the body: the view floats up out of you and looks down on you slumped on the steps for 40 seconds. Everyone here is fictional.
@@ -121,11 +121,11 @@ Walnut Street from 22nd to Front becomes a car-free shopping street.
   - Each shop bay has a door, and about half the shops have café tables outside.
 - **The people.** About 200 people stroll both sides, go into shops through doors that swing open, and sit on benches or at café tables with a coffee or a book.
   - Their figures are Kyle's jointed people, drawn instanced.
-  - Each has a made-up name, age, height, weight and biography (`js/scene/phl/profiles.js`). All of them are fictional.
+  - Each has a made-up name, age, height, weight and biography (`js/scene/phl/profiles.ts`). All of them are fictional.
 - **Sit or inhabit.** Every café chair and bench is a seat you can click to sit on. Click a person to see the street through their eyes.
 - **The view.** "Go to" has a "Walnut St promenade" view.
 
-The whole proposal is code: `js/scene/phl/promenade.js` (the street and shops) and `js/scene/phl/pedestrians.js` (the people). It needs no data files of its own.
+The whole proposal is code: `js/scene/phl/promenade.ts` (the street and shops) and `js/scene/phl/pedestrians.ts` (the people). It needs no data files of its own.
 
 ## Rebuilding the data
 

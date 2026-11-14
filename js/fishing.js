@@ -1,4 +1,4 @@
-// Fishing on the Schuylkill: click someone fishing on the bank (js/scene/phl/anglers.js) and they
+// Fishing on the Schuylkill: click someone fishing on the bank (js/scene/phl/anglers.ts) and they
 // ask you to join them. The minigame, in a dialog over the city:
 //   1. Cast   a power meter swings; press to cast. Farther out is deeper water: rarer catches.
 //   2. Wait   watch the bobber. Nibbles are only nibbles: strike too soon and the bait's gone.

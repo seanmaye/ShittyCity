@@ -3,7 +3,7 @@
 // shirts against dark: the offence works the disc up the field, cutters break for open space,
 // defenders mark them; a catch in the end zone scores, a dropped pass turns it over.
 import * as THREE from 'three';
-import { makeFigure, pose } from './people.js';
+import { makeFigure, pose } from './people.ts';
 import { pairs } from '../../data.js';
 import { Builder, addPolygon } from '../geometry.js';
 import { seasonalGrass } from '../season.js';

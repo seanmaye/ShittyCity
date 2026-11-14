@@ -113,7 +113,7 @@ export interface MonorailRoute {
 
 // ---- Philadelphia (EDITING.md "Philadelphia only")
 
-/** data-phl-landmarks, m (js/scene/phl/landmarks.js) */
+/** data-phl-landmarks, m (js/scene/phl/landmarks.ts) */
 export interface PhlLandmarks {
   towers: { x: number; z: number; w: number; d: number; ry: number; id: string; h: number; color: string; cap: string; kind: string }[];
   cityhall: { x: number; z: number; w: number; d: number; ry: number };
@@ -125,7 +125,7 @@ export interface PhlLandmarks {
   labels: { t: string; x?: number; z?: number; y: number; river?: number }[];
 }
 
-/** data-phl-sports, PROPOSAL: I-76 and I-676 as sports parks (js/scene/phl/sports.js) */
+/** data-phl-sports, PROPOSAL: I-76 and I-676 as sports parks (js/scene/phl/sports.ts) */
 export interface PhlSports {
   /** name: soccer | futsal | tennis | basketball | volleyball; w along the corridor, d across, m */
   types: { name: string; w: number; d: number }[];
@@ -135,7 +135,7 @@ export interface PhlSports {
   routes: { label: string; p: Flat; a: number[] }[];
 }
 
-/** data-phl-yardpark, PROPOSAL: the deck over the 30th Street rail yard (js/scene/phl/yardpark.js) */
+/** data-phl-yardpark, PROPOSAL: the deck over the 30th Street rail yard (js/scene/phl/yardpark.ts) */
 export interface PhlYardPark {
   /** deck height m */
   h: number;
@@ -150,7 +150,7 @@ export interface PhlYardPark {
   area_ha: number;
 }
 
-/** data-phl-trolley1953: Center City streetcar track in January 1953 (js/scene/phl/oldtrolley.js) */
+/** data-phl-trolley1953: Center City streetcar track in January 1953 (js/scene/phl/oldtrolley.ts) */
 export interface PhlTrolley1953 {
   note?: string;
   routes: { n: number; name: string; gone: number | null; now?: string }[];
@@ -174,7 +174,7 @@ export interface PhlMetro {
   columns: number[];
 }
 
-/** data-phl-city_landmarks: models fitted to real outlines (js/scene/phl/citymarks.js, frisbee.js) */
+/** data-phl-city_landmarks: models fitted to real outlines (js/scene/phl/citymarks.ts, frisbee.ts) */
 export interface PhlCityMarks {
   stadiums: {
     name: string; type: 'football' | 'baseball' | 'arena'; outline: Ring; field: Ring | null; h: number;
@@ -186,12 +186,12 @@ export interface PhlCityMarks {
   labels: { t: string; x: number; y: number; z: number }[];
 }
 
-/** data-phl-boats: river boat lines (js/scene/phl/boats.js). Stops m: x, z where the boat ties up, sx, sz the bank, s along p */
+/** data-phl-boats: river boat lines (js/scene/phl/boats.ts). Stops m: x, z where the boat ties up, sx, sz the bank, s along p */
 export interface PhlBoats {
   lines: { id: string; name: string; color: string; proposed: boolean; stops: { t: string; x: number; z: number; sx: number; sz: number; s: number }[]; p: Flat }[];
 }
 
-/** data-phl-restaurants: djour's starred food spots (js/scene/phl/restaurants.js; fields: EDITING.md) */
+/** data-phl-restaurants: djour's starred food spots (js/scene/phl/restaurants.ts; fields: EDITING.md) */
 export interface PhlRestaurants {
   source: string;
   credit: string;

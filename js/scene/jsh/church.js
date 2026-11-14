@@ -23,7 +23,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { pairs } from '../../data.js';
 import { groundAt } from './terrain.js';
-import { makeFigure } from '../phl/people.js';
+import { makeFigure } from '../phl/people.ts';
 
 const TAU = Math.PI * 2;
 const hash = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };

@@ -1,4 +1,4 @@
-// The Railyard Bowl's show (yardpark.js builds the bowl): Alvin and the Chipmunks, live, to a crowd of
+// The Railyard Bowl's show (yardpark.ts builds the bowl): Alvin and the Chipmunks, live, to a crowd of
 // punks. Go to: "Punk show at the Railyard Bowl".
 //
 // On stage: Alvin out front singing (red sweater, the big "A" and a cap), Simon on guitar (blue,
@@ -10,10 +10,10 @@
 // In the pit between the stage and the seats, and up the first rows, are the punks: mohawks,
 // liberty spikes, studded leather, plaid bondage pants, combat boots. Each does their own thing
 // with the beat (pogo, headbang, fist in the air, mosh, smoke, drink, or sit slumped in a K-hole).
-// They are drawn instanced, like the people on Walnut St (pedestrians.js): one InstancedMesh per
+// They are drawn instanced, like the people on Walnut St (pedestrians.ts): one InstancedMesh per
 // body part or piece of kit for the whole crowd, posed on a light skeleton of Object3D joints.
 //
-// Click one to see through their eyes, with a card about them (punkprofiles.js), like the people on
+// Click one to see through their eyes, with a card about them (punkprofiles.ts), like the people on
 // Walnut St and Mr. Kepner at the Bald Eagle Vista, and four things to do (ACTS: two drugs and two
 // other things, different for each punk). Each plays out on their body and, while you are them, on
 // what you see: the view sways, blurs, shakes, shifts colour (the canvas's CSS filter), or in a
@@ -23,12 +23,12 @@
 // aboard); js/ui.js draws the card and the action buttons from that state.
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
-import { geo, pose } from './people.js';
-import { punkProfile } from './punkprofiles.js';
+import { geo, pose } from './people.ts';
+import { punkProfile } from './punkprofiles.ts';
 import { litMats } from '../materials.js';
 import { LIGHT, makeRenderer } from '../../three-setup.js';
 
-const BPM = 172, STAGE = 1.6;     // the band's tempo; the stage deck's height in the bowl (yardpark.js)
+const BPM = 172, STAGE = 1.6;     // the band's tempo; the stage deck's height in the bowl (yardpark.ts)
 const GAP = 7;                    // seconds between songs
 const KIT = -5.5;                 // the drum riser's x: between Simon and Alvin, behind them
 const SONGS = [
@@ -232,7 +232,7 @@ function reach(sh, el, eff, target) {
 }
 const setArm = (F, s, a, b = a, k = 0) => { F['sh' + s].rotation.set(a[0] + (b[0] - a[0]) * k, 0, a[1] + (b[1] - a[1]) * k); F['el' + s].rotation.x = a[2] + (b[2] - a[2]) * k; };
 
-/** what each punk has on: hair, top, trousers, boots and the extras (also read by punkprofiles.js) */
+/** what each punk has on: hair, top, trousers, boots and the extras (also read by punkprofiles.ts) */
 function outfit(r) {
   const pick = a => a[Math.floor(r() * a.length)];
   const hair = pick(['mohawk', 'mohawk', 'mohawk', 'spikes', 'spikes', 'shaved', 'crop', 'long', 'bunches', 'beanie']);
@@ -298,7 +298,7 @@ function partList() {
 }
 
 /**
- * Build the show in the bowl `bowl` (yardpark.js's group: +z toward the audience, y = 0 the lawn).
+ * Build the show in the bowl `bowl` (yardpark.ts's group: +z toward the audience, y = 0 the lawn).
  * opts: canvas (the city's, for the effects), night(): 0 day .. 1 night, avoid: lines ({ p: [x, z]*10 }
  * as ground.json) that pass over the bowl, such as the rail viaduct across its seats: nobody stands under them.
  */
@@ -350,7 +350,7 @@ export function buildConcert(bowl, { canvas = null, night = () => 0, avoid = [] 
     g.fillStyle = 'rgba(255,255,255,.12)'; for (let y = 0; y < H; y += 4) g.fillRect(0, y, W, 1);   // scan lines
   });
   const scrM = new THREE.MeshBasicMaterial({ map: scr, toneMapped: false });
-  for (const s of [-1, 1]) {   // in front of yardpark.js's screens (36 m out, 15 up, turned in by .35)
+  for (const s of [-1, 1]) {   // in front of yardpark.ts's screens (36 m out, 15 up, turned in by .35)
     const a = -s * .35, p = new THREE.Mesh(new THREE.PlaneGeometry(13.4, 7.5), scrM); p.position.set(s * 36 + Math.sin(a) * .27, 15, 4 + Math.cos(a) * .27); p.rotation.y = a; group.add(p);
   }
   const bannerT = canvasTex(1024, 128, (g, W, H) => {
@@ -376,7 +376,7 @@ export function buildConcert(bowl, { canvas = null, night = () => 0, avoid = [] 
   // the pit: the lawn between the stage's apron (a half circle of 16 m round z = 11) and the first row
   const apronEdge = a => 11 * Math.cos(a) + Math.sqrt(121 * Math.cos(a) ** 2 + 135);
   for (let k = 0; k < 22; k++) { const a = (r() - .5) * 1.3, r0 = apronEdge(a) + 1.2, rr = r0 + r() * (29.4 - r0); spots.push({ x: Math.sin(a) * rr, z: Math.cos(a) * rr, y: 0, pit: true }); }
-  // the rows (yardpark.js: a row every 1.1 m from 30 m out, its floor .045 m higher per metre; stand in the aisle part)
+  // the rows (yardpark.ts: a row every 1.1 m from 30 m out, its floor .045 m higher per metre; stand in the aisle part)
   for (let row = 0; row < 9; row++) {
     const rr = 30 + row * 1.1 + .85, y = .15 + row * 1.1 * .045;
     for (let a = -.62; a <= .62; a += .95 / rr) if (r() < .62 - row * .05 - Math.abs(a) * .25 && clear(Math.sin(a) * rr, Math.cos(a) * rr)) spots.push({ x: Math.sin(a + (r() - .5) * .01) * rr, z: Math.cos(a) * rr, y, row, ra: rr });

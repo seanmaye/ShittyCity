@@ -451,11 +451,11 @@ export function buildSubway(scene, data, river) {
       doorZ: [-3.2, 2.2], doorW: 1.3, sides: [1, -1], seats: [.92, .92],
       col: { wall: '#eef0f2', ceil: '#f7f8f9', floor: '#3f4447', seat: '#c8432f', steel: '#c9ced2', door: '#d0d4d8', cab: '#e3e6e9', dark: '#26292c' } },
   };
-  CAR_IN.pcc53 = { ...CAR_IN.pcc, model: 'PCC car' };   // the 1953 streetcars (oldtrolley.js)
-  // the river boats (boats.js): a wide cabin of 2 + 2 rows, the helm forward, gates aft
+  CAR_IN.pcc53 = { ...CAR_IN.pcc, model: 'PCC car' };   // the 1953 streetcars (oldtrolley.ts)
+  // the river boats (boats.ts): a wide cabin of 2 + 2 rows, the helm forward, gates aft
   CAR_IN.boat = { model: 'river boat', layout: 'heavy', F: 1.05, sill: .95, wt: 2.05, c: 2.4, hw: 2.6, z0: -7.4, z1: 5.4, cab: 3.6,
     doorZ: [-6.3], doorW: 1.4, sides: [1, -1], seats: [1.4, 1.4], spawnZ: -2.8,
-    deck: { z0: -10.6, hw: 2.8 },   // the open stern deck behind the cabin (boats.js), walkable
+    deck: { z0: -10.6, hw: 2.8 },   // the open stern deck behind the cabin (boats.ts), walkable
     col: { wall: '#eef0ec', ceil: '#f6f5f0', floor: '#6b5a48', seat: '#2f6a8a', steel: '#c3c8cd', door: '#d2d6d9', cab: '#e2e4df', dark: '#2a2c2f' } };
   CAR_IN.nycsub = { ...CAR_IN.metro, model: 'NYC subway car' };   // New York: the same longitudinal-bench layout
   for (const [k, v] of Object.entries(CAR_IN)) v.layout = v.layout || k;   // metro | trolley | heavy

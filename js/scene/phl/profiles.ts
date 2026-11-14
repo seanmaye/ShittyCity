@@ -1,4 +1,4 @@
-// Made-up lives for the people on the Walnut St promenade (pedestrians.js): a name, sex, age,
+// Made-up lives for the people on the Walnut St promenade (pedestrians.ts): a name, sex, age,
 // height, weight and a short biography, generated from a seed so each person keeps theirs.
 // Everyone here is fictional.
 

@@ -1,5 +1,5 @@
 {
- "about": "Exterior looks of djour's three-star picks, researched from photos (Nov 2026) for js/scene/phl/restaurants.js; build_restaurants.py merges them into data/phl/restaurants.json by name (and hood for Human Robot). address: the street address found in research (looked up on OSM by fetch_eats.py); indoor: no street front of its own.",
+ "about": "Exterior looks of djour's three-star picks, researched from photos (Nov 2026) for js/scene/phl/restaurants.ts; build_restaurants.py merges them into data/phl/restaurants.json by name (and hood for Human Robot). address: the street address found in research (looked up on OSM by fetch_eats.py); indoor: no street front of its own.",
  "places": [
   {
    "name": "a.kitchen",

@@ -213,7 +213,7 @@ export function buildPromenade(scene, { buildings, cityB, roads, trees }) {
       const dOff = placed.length === 1 ? (bw > 3.4 ? .3 * bw : 0) : 0;
       if (placed.length !== 1 || dOff) {
         const dx = x + ux * dOff, dz = z + uz * dOff;
-        put('door', dx + nx * .09, PAVE_Y, dz + nz * .09, ry);   // the frame; the door itself swings open (pedestrians.js)
+        put('door', dx + nx * .09, PAVE_Y, dz + nz * .09, ry);   // the frame; the door itself swings open (pedestrians.ts)
         doors.push({ x: dx, z: dz, nx, nz, ry });
       }
     }
@@ -279,7 +279,7 @@ export function buildPromenade(scene, { buildings, cityB, roads, trees }) {
   // a view east down the shops from above the street at the corner of Rittenhouse Square
   const a = at(600, 0), b = at(860, 0);
   const view = { id: 'walnut', name: 'Walnut St promenade', pos: new THREE.Vector3(a.x, 26, a.z), target: new THREE.Vector3(b.x, 1, b.z) };
-  // what the people on the street (pedestrians.js) need to find their way
+  // what the people on the street (pedestrians.ts) need to find their way
   const nav = { at, project, length: WALNUT_LENGTH, seats, doors, obst, pave: PAVE_Y, ground: surface, clear: CLEAR, kerb: KERB, shopMat };
   return { group, view, nav, count: Object.fromEntries([...kinds].map(([n, k]) => [n, k.m.length])), ...seating(seats) };
 }
@@ -313,7 +313,7 @@ function seating(seats) {
   const sit = i => {
     if (!seats[i]) return null; const y0 = seats[i].yaw0 || 0;
     if (seat) seats[seat.i].user = false;
-    // pedestrians.js finds a free place on the seat (moving someone on if it has to): offset along the seat
+    // pedestrians.ts finds a free place on the seat (moving someone on if it has to): offset along the seat
     seats[i].user = true; const off = seats.onUserSit ? seats.onUserSit(i) || 0 : 0;
     seat = { i, off, yaw: Math.atan2(Math.sin(y0), Math.cos(y0)), pitch: -.12 }; return getSeat();
   };
