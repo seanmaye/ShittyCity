@@ -1,0 +1,35 @@
+name: CI
+# The JavaScript and Python checks. No browser harness (perf, ux, smoke): a hosted runner has no GPU, so its numbers mean nothing.
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  web:
+    # The lockfile is written on macOS: a Linux `npm ci && npm run cf:build` must pass before Cloudflare builds it.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7   # caches ~/.npm by lockfile, since packageManager names npm
+        with:
+          node-version-file: .nvmrc
+      - name: Use the npm that package.json pins
+        run: |
+          want=$(node -p "require('./package.json').packageManager.split('@')[1]")
+          [ "$(npm -v)" = "$want" ] || npm install -g "npm@$want"
+      - run: node -v && npm -v
+      - run: npm ci
+      - run: npm run cf:build
+  python:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: "0.13.4"   # the uv that made uv.lock (README, "Run it")
+      - run: uv python install   # the Python in .python-version
+      - run: uv sync --locked --group dev   # Ruff and pytest: the tests import nothing from the other groups
+      - run: uv run ruff check
+      - run: uv run pytest
