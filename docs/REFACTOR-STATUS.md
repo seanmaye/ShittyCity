@@ -3,7 +3,9 @@
 Kept by the orchestrator of [REFACTOR-PLAN.md](REFACTOR-PLAN.md). Only the orchestrator edits
 this file. It is how the work is picked up again after a context summary or in a new session.
 
-Last updated: 2026-11-14 (P1a, P1b, P1c in review; P2 gates passed, #9 ready for review).
+Last updated: 2026-11-14 (P1a, P1b, P1c in review; P2 gates passed, #9 ready for review; P3 #10
+gates passed, #10 ready for review, stacked on #9). Orchestrator from P3 on: a new session (the
+P0–P2 one handed over).
 
 ## Standing facts
 
@@ -279,7 +281,36 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P3. Checks in the build
 
-- State: not started.
+- State: **in review, gates passed** (2026-11-14). https://github.com/seanmaye/ShittyCity/pull/10,
+  base `refactor/p2-build` (retarget to `main` after #9 merges). Contributor message drafted in #10
+  (Micah sends when it merges).
+- Branch `refactor/p3-checks` = two parallel implementers stacked: P3a (JS, `5d8d57a`) then P3b
+  (Python/CI/harness, cherry-picked: `118da21`, `7632c98`, `9877a18`). One conflict, expected:
+  P3a's one-line edit to `build.yml`, which P3b replaces with `ci.yml`. Both diffs read.
+- JS: Biome 2.6.7 (`biome.jsonc`, lint only; rules firing on today's code off with hit counts),
+  TypeScript 7.0.2 (`tsc` binary works as 5.x did; `checkJs: false`, `skipLibCheck` for Vite's
+  types), Vitest 5.1.0 (25 tests). `npm run check` 1.9 s wall; `cf:build` = check && build.
+  App code: `export` on `septaLines`, `rectInRing`, `decode`; bundle byte-identical.
+- Python: Ruff 0.17.5 `select = E4,E7,E9,F`, dense-style rules off, per-file ignores for
+  leftovers; pytest 41 tests. `tools/phl/formats.py` holds `pack_phb1`/`pack_ter1`; re-encoding
+  the committed phl buildings (9,427,736 B) and terrain (34,283,928 B) gives identical bytes.
+  `data/jsh/terrain.bin.gz` is a different TER1 layout (jsh's own reader): not covered.
+- CI: `ci.yml`, jobs `web` (`npm run cf:build`) and `python` (uv 0.13.4, `--group dev`). Check
+  names change from "Build / build" to "CI / web", "CI / python".
+- Harness: no-build path gone (CDN route and cache, `sources` kind, temp worktrees). A side
+  without a package.json exits with one sentence; `smoke --root dist` still serves built output.
+  `harness_version()` changed (build.mjs comment): perf builds rebuild once, old snaps warn.
+- Gates: **passed.** check, cf:build, Ruff, pytest pass locally; CI `web` and `python` green on
+  Linux (run 43591164282). Type error: #11 (`js/ts-check-demo.js`, `// @ts-check`, string to
+  number) failed CI `web` on `npm run cf:build` with TS2322 (run 43591190611), `python` passed;
+  #11 closed and its branch deleted. Smoke all 5 ok, pixels vs P2's smoke phl 0.0035%, nyc 0,
+  jsh 0, nola 0.0001%, pine 0.0052% (`tools/perf/out/20261114-063931-smoke-p3-vs-p2` in the P3
+  worktree); `smoke --ref 2ac1357` refused with the sentence.
+- **Blocks merge:** #9 merged first (with the dashboard's Build command running `cf:build`), then
+  retarget #10 to `main`. The "CI / web" and "CI / python" names replace "Build / build" in any
+  branch rule.
+- Implementer worktrees: `.claude/worktrees/agent-a84c73ea64461a06e` (P3a),
+  `agent-af7c81b2f5d7f758d` (P3b); P3 worktree `scratchpad/p3` of the orchestrator session.
 
 ### P4a. three.js 0.187.0
 
