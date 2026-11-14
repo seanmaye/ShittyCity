@@ -1,6 +1,6 @@
 # Jersey Shore, PA
 
-Jersey Shore borough in Lycoming County and the country around it: the town on the West Branch of the Susquehanna, the island across from Allegheny Street, Pine Creek coming in from the west, Avis, Antes Fort, and the hills that close in the valley, with Bald Eagle Mountain to the south. It was the first city here with real terrain: the streets, parks, river and buildings all lie on the hills. Its farm fields grow and are harvested through the year.
+Jersey Shore borough in Lycoming County and the country around it: the town on the West Branch of the Susquehanna, the island across from Allegheny Street, Pine Creek coming in from the west, Avis and South Avis, Antes Fort, Larrys Creek up to Salladasburg, and the hills that close in the valley, with Bald Eagle Mountain to the south and, through the Antes Creek gap beyond it, Nippenose Valley out to Oriole and Rauchtown. It was the first city here with real terrain: the streets, parks, river and buildings all lie on the hills. Its farm fields grow and are harvested through the year.
 
 - City id: `jsh`. Open it with `?city=jsh`.
 - Data: `data/jsh/`.
@@ -9,7 +9,7 @@ Jersey Shore borough in Lycoming County and the country around it: the town on t
 
 ## What's in it
 
-- **About 5,100 buildings**: every footprint in the mapped area, about 7.5 by 5 km from Avis to east of Antes Fort, plus about 1,000 filled in where the borough's streets had empty frontage. Each is built as the kind of building it is (`js/scene/jsh/town.js`), not extruded flat:
+- **About 10,000 buildings**: every footprint in the mapped area, about 12.7 by 18.9 km: west past Avis to Level Corner east of Antes Fort, and north up Larrys Creek to Salladasburg and south over Bald Eagle Mountain to Oriole and Rauchtown, plus about 1,000 filled in where the borough's streets had empty frontage. Each is built as the kind of building it is (`js/scene/jsh/town.js`), not extruded flat:
   - **Borough houses**: two-storey frame houses in clapboard colours, front-gabled on the narrow deep lots, side-gabled, or hip-roofed foursquares with a dormer. Most have a front porch with posts and a rail, many a chimney, some shutters and tin roofs.
   - **Brick houses**: Federal side gables with a chimney at each end, or low-hipped Italianates with a deep cornice. Some are three storeys near downtown, and some have slate roofs.
   - **Allegheny St and Main St business blocks**: brick storefronts on their real footprints, with shop windows, a sign band, tall upper windows with stone heads, and a cornice.
@@ -20,9 +20,10 @@ Jersey Shore borough in Lycoming County and the country around it: the town on t
 - **The borough** is paved inside its boundary, which is drawn on the ground. Outside it is countryside.
 - **Streets and rail.** Every street, footpath and trail is shown, along with the Lycoming Valley Railroad and Norfolk Southern's Buffalo Line. The US 220 expressway and the PA 44 bridge over the river are included.
 - **Proposed West Branch Loop.** The elevated monorail links Allegheny Street, the river island and Antes Fort. Pick it under **Ride a line** or click a car to board. The guideway climbs gradually onto the foothills near Antes Fort and descends toward the river on the way back. Its route is in `data/jsh/monorail.json`, with guideway elevations in metres above the model datum. Piers and station stairs extend to the local ground height.
-- **Water**: the West Branch around the island, Pine Creek, the old West Branch Canal at Lock 32, ponds and streams.
-- **About 19,000 trees.** There are street trees along the residential streets, yard trees in town, and trees in every mapped wood.
-- **Farms**: about 140 crop fields, around 9 km² in all, laid where the USDA Cropland Data Layer has crops. It shows 55 fields of corn, 32 of soybeans, 46 of hay and 3 of winter wheat. They follow the farming year:
+- **Water**: the West Branch around the island, Pine Creek, the old West Branch Canal at Lock 32, Larrys Creek, Antes Creek, ponds and streams.
+- **Labels**: every village and hamlet in the mapped area (Jersey Shore, Avis, South Avis, Antes Fort, Larrys Creek, Larryville, Level Corner, Salladasburg, Torbert, Tombs Run, Ramsey, Pine, Oriole and Rauchtown), Nippenose Valley, Bald Eagle Mountain, the rivers, and the churches, schools and parks. South Avis has no place of its own in OpenStreetMap, so its name goes over its park.
+- **About 92,000 trees.** There are street trees along the residential streets, yard trees in town, and trees in every mapped wood: as thick as ever in the borough's stretch of the valley (`TOWN` in `tools/jsh/extent.py`), and about half as thick on the hills further out, which are mostly seen from afar. None stand in the overlook's clearing on Bald Eagle Mountain or in its view down into the valley (`in_view()` in `build_jsh.py`).
+- **Farms**: about 880 crop fields, around 34 km² in all, laid where the USDA Cropland Data Layer has crops, most of them in the river bottoms by town and in Nippenose Valley. It shows 282 fields of corn, 112 of soybeans, 451 of hay, 35 of winter wheat and 3 of vegetables. They follow the farming year:
   - Corn and soybeans are planted into tilled soil in May and come up in rows. Corn grows into a 2.7 m canopy and dries to tan in September, and soybeans yellow. Both are harvested in October, leaving stubble.
   - Winter wheat is green from autumn to spring, then turns gold and is cut in July.
   - Hay is cut three times a summer, and round bales lie in the field after each cut.
@@ -32,7 +33,7 @@ Jersey Shore borough in Lycoming County and the country around it: the town on t
   - The higher you fly, the smaller that area gets, and above about 95 m there are no plants at all, so the overview costs nothing extra.
   - Plants are made 16 m square at a time as you get near, and the last 500 squares are kept.
   - Low over a field this adds about 300k triangles and well under 5 ms of CPU on frames where the camera has moved.
-- **Seed corn and a detasseling crew**: in the biggest corn field, on the island, there is a seed-corn block 120 m long. It has four sets of four female rows, each set between two male rows. The female parent lines are short (about 2 m at tasseling), and the male rows stand half a metre taller and keep their tassels.
+- **Seed corn and a detasseling crew**: in the biggest corn field by town, on the island, there is a seed-corn block 120 m long. It has four sets of four female rows, each set between two male rows. The female parent lines are short (about 2 m at tasseling), and the male rows stand half a metre taller and keep their tassels.
   - From July 5 to August 6, 6:00 to 15:00, a crew of four teenagers walks the female rows, one to a row, pulling every tassel. They go up one set and back down the next, and the tassels disappear as they pass. When the block is done they start a second pull, and the tassels come back.
   - Until the dew burns off at 10:30 they wear black trash bags over their torsos and legs.
   - The crew boss walks a few steps behind them, scowling, with a pistol holstered on the belt.
@@ -44,9 +45,9 @@ Jersey Shore borough in Lycoming County and the country around it: the town on t
   - Click him to see through his eyes. His card is like the Walnut St and detasseling-crew cards (portrait, age, sex, height, weight, what he is doing now, a short life story; Duane Kepner is fictional, like the crew). Three buttons, also on keys 1, 2 and 3: **Take a drag** (his hand comes up and he breathes smoke out), **Drink beer** (the can comes up and the view tips back; each one finishes a can, adds an empty to the ground and moves the beer count on his card up by one; left to himself he only sips, four to a can), and **Check out the view** (his binoculars come up, pan and zoom to whatever is worth watching; scroll zooms, dragging takes over from the pan). From the summit the town is some 7 km away, so the valley is a fairly thin band on the horizon. Esc or Space steps back behind the chair, and again hands the camera back.
   - The site is a few steps off the "Bald Eagle Mountain" label in `places.json` toward town (`overlookSite()`). The old "Bald Eagle Vista w/ Mr. Kepner" view is no longer in `data/jsh/places.json` or `tools/jsh/build_jsh.py`: the overlook module owns it, and the flight there ends with you standing (`stand()`), not orbiting.
 - **The last corn standing, and a combine** (`js/scene/jsh/harvest.js`): one corn field is left standing late and taken off slowly by a red combine with an eight-row corn head, so there is something to watch through the binoculars. It is the nearest corn field of 3 ha or more whose whole outline is in sight of the overlook with little standing in front of it (`pickLateField()`; today a 33 ha field whose centre is about 5.8 km from the summit). The combine works it from October 14 to December 1 (`HARVEST`), 7:00 to 21:30 (`HOURS`), lights on after dark, up one swath and back down the next. How far it has got follows the date, and from there it carries on in real time. Behind it the field is stubble, and up close the real corn plants (`cornlod.js`) disappear as it passes. Outside the harvest window the binoculars go to the river bridge in town instead. This field is drawn by `harvest.js`, not `farms.js`, and its group's usual October harvest day does not apply to it.
-- **Barns and silos**: about 220 farm buildings get barn shapes: gambrel and gable barns in red, white or weathered grey, and long low pole barns. Each has a big door in each end. About 30 silos stand beside them.
-- **Terrain**: a 20 by 20 km elevation grid in 40 m cells. On it the woods are dark green, the fields light green, and the river bed is carved just below the water. Past the mapped area the hills carry on to the horizon, coloured as forest or cropland from the Cropland Data Layer.
-- **Views**: Allegheny St, the river bridge, Bald Eagle Vista w/ Mr. Kepner (the overlook above: the flight ends with you standing behind the hunter), the biggest corn field, the detasseling crew, and the mouth of Pine Creek, plus the Overview and Whole city views.
+- **Barns and silos**: about 1,200 farm buildings get barn shapes: gambrel and gable barns in red, white or weathered grey, and long low pole barns. Each has a big door in each end. About 140 silos stand beside them.
+- **Terrain**: a 24 by 24 km elevation grid in 40 m cells. On it the woods are dark green (the grid's own colour, so they keep its shading: no flat woods layer is laid over it, though the minimap still draws them), the fields light green, and the river bed is carved just below the water. Past the mapped area the hills carry on to the horizon, coloured as forest or cropland from the Cropland Data Layer.
+- **Views**: Allegheny St, the river bridge, Bald Eagle Vista w/ Mr. Kepner (the overlook above: the flight ends with you standing behind the hunter), the seed corn's field, the detasseling crew, the mouth of Pine Creek, Avis, Antes Fort, Salladasburg, and Nippenose Valley over Oriole, plus the Overview and Whole city views.
 
 ## How terrain works
 
@@ -54,7 +55,7 @@ Each city's data is still built flat, in the shared formats. Jersey Shore has `g
 
 - **Buildings** stand at the lowest ground under their footprint, so no wall floats on a slope. Their roofs stay level.
 - **Trees** stand on the ground at their own spot.
-- **Flat layers** (paving, parks, water, streets, rail, bridge decks) are cut along the grid's own triangle edges and lifted. Every piece lies exactly in the plane of the terrain under it, so nothing pokes through, however steep the slope.
+- **Flat layers** (paving, parks, water, streets, rail, bridge decks) are cut along the grid's own triangle edges and lifted. Every piece lies exactly in the plane of the terrain under it, so nothing pokes through, however steep the slope. Their faces take the terrain's own normal there, so a wood or a field on a hillside is shaded like the ground under it rather than lit as if it were flat.
 - **The ground itself** is drawn from the grid in 2 km tiles. Flat country continues past it to the horizon, and the grid eases down to that level over its last 1.5 km.
 
 Heights in the scene are metres above the river by town (about 157 m above sea level, `base` in the file), so the valley floor sits near y = 0. Labels and views (`places.json`) already include the ground height.
@@ -66,6 +67,8 @@ uv sync --group data --group fetch
 uv run python -I tools/jsh/fetch_jsh.py      # downloads the sources into tools/jsh/src/
 uv run python -I tools/jsh/build_jsh.py      # writes data/jsh/
 ```
+
+`TOWN` in `tools/jsh/extent.py` is the borough's own stretch of the valley, the first mapped area. The seed corn goes in the biggest corn field inside it, and the Pine Creek label and view go on the creek's mouth inside it, so a wider `MODEL`, with bigger fields in Nippenose Valley and more of Pine Creek up the valley, doesn't move them.
 
 `fetch_jsh.py` only needs re-running to refresh the sources, and only it needs the `fetch` group (`duckdb` for its buildings step, `rasterio` for its crop step); `build_jsh.py` needs only `data`. The sources are committed in `tools/jsh/src/`. `tools/jsh/extent.py` holds the frame and the extents: the origin is Allegheny & Main, `MODEL` is the mapped area and `TERRAIN` is the elevation grid. If you change the frame there, change `CITIES.jsh.frame` in `js/cities.js` to match.
 

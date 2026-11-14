@@ -124,7 +124,29 @@ function cut(tri) {
   }
   return polys;
 }
-/** a flat mesh's geometry, cut along the grid and lifted onto it (world x, z = local x, z) */
+/** the grid's unit normal at point (i, j), as buildTerrain gives its vertices */
+function gridNormal(i, j, o) {
+  const { n, cell, h } = T;
+  const x = (h[j * n + Math.max(0, i - 1)] - h[j * n + Math.min(n - 1, i + 1)]) / (2 * cell), z = (h[Math.max(0, j - 1) * n + i] - h[Math.min(n - 1, j + 1) * n + i]) / (2 * cell), L = Math.hypot(x, 1, z);
+  o[0] = x / L; o[1] = 1 / L; o[2] = z / L;
+  return o;
+}
+const NA = [0, 0, 0], NB = [0, 0, 0], ND = [0, 0, 0];
+/** the terrain's normal at (x, z), blended across the grid triangle under it as the terrain surface
+ *  draws it, into o: so a draped layer shades like the ground beneath it, not like a flat plane */
+function normalAt(x, z, o) {
+  const { n, half, cell } = T, u = (x + half) / cell, v = (z + half) / cell;
+  if (u < 0 || v < 0 || u > n - 1 || v > n - 1) { o[0] = 0; o[1] = 1; o[2] = 0; return o; }
+  const i = Math.min(n - 2, Math.floor(u)), j = Math.min(n - 2, Math.floor(v)), fu = u - i, fv = v - j;
+  gridNormal(i, j, NA); gridNormal(i + 1, j + 1, ND);
+  // the weights groundAt gives the triangle's three corners
+  const [wa, wb, wd] = fu >= fv ? (gridNormal(i + 1, j, NB), [1 - fu, fu - fv, fv]) : (gridNormal(i, j + 1, NB), [1 - fv, fv - fu, fu]);
+  for (let c = 0; c < 3; c++) o[c] = NA[c] * wa + NB[c] * wb + ND[c] * wd;
+  const L = Math.hypot(o[0], o[1], o[2]); o[0] /= L; o[1] /= L; o[2] /= L;
+  return o;
+}
+/** a flat mesh's geometry, cut along the grid and lifted onto it (world x, z = local x, z); faces
+ *  that pointed straight up take the terrain's normal */
 function drapeGeometry(g) {
   const names = Object.keys(g.attributes).filter(k => ['position', 'normal', 'uv', 'color'].includes(k));
   const attrs = names.map(k => g.attributes[k]), sizes = attrs.map(a => a.itemSize), W = sizes.reduce((a, b) => a + b, 0);
@@ -144,6 +166,8 @@ function drapeGeometry(g) {
     ng.setAttribute(name, new THREE.BufferAttribute(arr, s));
     off += s;
   });
+  const pos = ng.attributes.position?.array, nor = ng.attributes.normal?.array, tn = [0, 0, 0];
+  if (pos && nor) for (let i = 0; i < nor.length; i += 3) if (nor[i + 1] > .99) nor.set(normalAt(pos[i], pos[i + 2], tn), i);
   ng.computeBoundingSphere(); ng.computeBoundingBox();
   return ng;
 }

@@ -120,7 +120,9 @@ export async function buildCity(scene, data, { waterMat, status = () => {}, clea
   if (!sea) scene.add(edge);   // the city limits (a waterfront city's land outlines are its shoreline)
 
   const gb = GREEN.map(() => new Builder());
-  for (const [k, ...rings] of city.green) addPolygon(gb[k], rings.map(pairs), 0);
+  // (on Jersey Shore's grid the terrain is itself coloured as woods and shaded by its slopes, so its
+  // woods, 3, get no flat layer over it: they stay in the data for the minimap)
+  for (const [k, ...rings] of city.green) if (!(CITY.grid && k === 3)) addPolygon(gb[k], rings.map(pairs), 0);
   gb.forEach((b, k) => { if (!b.count) return; const m = new THREE.Mesh(b.geometry(), seasonalGrass(M(GREEN[k], { side: THREE.FrontSide }))); m.position.y = .3 + k * .02; m.receiveShadow = true; m.userData.drapeTol = TOL_LAWN; scene.add(m); });
   const wb = new Builder(), water = city.water.map(p => p.map(pairs));
   water.forEach(p => addPolygon(wb, p, 0));
