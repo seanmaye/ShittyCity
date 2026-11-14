@@ -3,8 +3,6 @@ import * as THREE from 'three';
 import { formatHour } from './scene/sky.js';
 import { createMinimap } from './minimap.js';
 import { createRidebar } from './ridebar.js';
-import { createFishing } from './fishing.js';
-import { createArcade } from './arcade.js';
 import { createCinema } from './cinema.js';
 import { CITY } from './cities.js';
 // remembered per viewer and city (browser storage may be unavailable: then nothing is remembered)
@@ -22,7 +20,8 @@ export function touchify(t) {
 const controlsHint = trains => TOUCH.matches
   ? 'Drag to turn the view, pinch to zoom, and drag with two fingers to move.' + (trains ? ' Tap any train to ride inside it.' : '')
   : 'Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom.' + (trains ? ' Click any train to ride inside it.' : '');
-export function createUI(api) {
+// createFishing, createArcade: Philadelphia's minigames (js/fishing.js, js/arcade.js), from its own code (js/scene/phl/phl.js)
+export function createUI(api, { createFishing, createArcade } = {}) {
   const toastEl = document.getElementById('toast'); let toastTimer = 0;
   const toast = (msg, ms) => { toastEl.textContent = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => { toastEl.textContent = ''; }, ms); };
   const tagsEl = document.getElementById('tags');
@@ -450,7 +449,7 @@ export function createUI(api) {
     api.boardCar(hit); syncCar(); syncCut(); autoFold();
   };
   // fishing (Philadelphia): the anglers on the Schuylkill banks, and the minigame
-  const fishing = api.pickAngler ? createFishing(api) : { open() {}, active: () => false };
+  const fishing = createFishing ? createFishing(api) : { open() {}, active: () => false };
   const anglerAt = (x, y) => (api.pickAngler ? api.pickAngler(x, y) : null);
   // the arcade stall in Chinatown's night market (Philadelphia): its games (js/arcade.js)
   const arcade = api.pickStall ? createArcade(api) : { open() {}, active: () => false };

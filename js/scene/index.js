@@ -8,43 +8,18 @@ import { litMats, setWindowHour, DISPLAY_PRESETS, setDisplayColors } from './mat
 import { buildRiver } from './river.js';
 import { buildGround } from './ground.js';
 import { buildBuildings } from './buildings.js';
-import { buildLandmarks } from './phl/landmarks.js';
-import { buildMonorail } from './phl/monorail.js';
 import { buildMonorail as buildProposedMonorail } from './monorail.js';
 import { buildTrees, buildShells } from './nature.js';
-import { buildSports, courtTest } from './phl/sports.js';
-import { buildYardPark } from './phl/yardpark.js';
-import { buildConcert } from './phl/concert.js';
 import { buildSubway, SPEC } from './subway.js';
 import { createSky } from './sky.js';
 import { createCinematic } from './cinematic.js';
 import { setSeason, addSnow, dayOfYear, dateOfDay, formatDay, getSeason } from './season.js';
 import { buildCity } from './city.js';
-import { buildCityMarks } from './phl/citymarks.js';
 import { buildTransitMap } from './transitmap.js';
-import { buildOldTrolleys } from './phl/oldtrolley.js';
-// New York (ported from the NYC City Model): towers, East River bridges, outer-borough landmarks
-import { buildLandmarks as buildNycLandmarks } from './nyc/landmarks.js';
-import { buildBridges as buildNycBridges } from './nyc/bridges.js';
-import { buildBoroughMarks } from './nyc/boroughmarks.js';
-import { buildShowdown } from './nyc/showdown.js';
-import { buildPromenade } from './phl/promenade.js';
-import { buildPedestrians } from './phl/pedestrians.js';
-import { buildBoats } from './phl/boats.js';
-import { buildAnglers } from './phl/anglers.js';
-import { buildChinatown } from './phl/chinatown.js';
-import { buildRestaurants } from './phl/restaurants.js';
 import { setTerrain, terrain, seat, surface, profile } from './terrain.js';
 // Jersey Shore: its own elevation grid (not Philadelphia's lidar format), and everything laid onto it
 import { loadTerrain as loadGrid, buildTerrain as buildGrid, drape as drapeGrid, groundAt as gridAt } from './jsh/terrain.js';
 import { buildPlaces } from './jsh/places.js';
-import { buildTown } from './jsh/town.js';
-import { buildFarms } from './jsh/farms.js';
-import { buildDetassel } from './jsh/detassel.js';
-import { buildCornLOD } from './jsh/cornlod.js';
-import { pickLateField, buildHarvest } from './jsh/harvest.js';
-import { overlookSite, buildOverlook } from './jsh/overlook.js';
-import { churchSite, buildChurch } from './jsh/church.js';
 // let the status line paint between build steps (a timer, so it also works in background tabs)
 const nextFrame = () => new Promise(r => setTimeout(r, 16));
 // what a feature contributes when the city doesn't have it (another city's landmarks, say)
@@ -99,7 +74,10 @@ function liftTransit(T) {
   if (T.columns) { const C = T.columns.slice(); for (let i = 0; i < C.length; i += 3) { const x = C[i] / 10, z = C[i + 1] / 10; C[i + 2] = Math.max(10, Math.round(C[i + 2] + (near(x, z) - surface(x, z)) * 10)); } T.columns = C; }
 }
 
-export async function buildScene(canvas, data, status = () => {}) {
+export async function buildScene(canvas, data, status = () => {}, own = {}) {
+  // the city's own code (js/scene/<city>/<city>.js, which main.js loads for this city alone): another city's names are undefined, never called
+  const { buildLandmarks, buildMonorail, buildSports, courtTest, buildYardPark, buildConcert, buildCityMarks, buildOldTrolleys, buildPromenade, onPromenade, buildPedestrians, buildBoats, buildAnglers, buildChinatown, buildRestaurants,
+    buildNycLandmarks, buildNycBridges, buildBoroughMarks, buildShowdown, buildTown, buildFarms, buildDetassel, buildCornLOD, pickLateField, buildHarvest, overlookSite, buildOverlook, churchSite, buildChurch } = own;
   // the real ground under everything, where the city has it (data/<city>/terrain.bin.gz)
   setTerrain(data.terrain || null);
   const core = createCore(canvas);
@@ -111,7 +89,7 @@ export async function buildScene(canvas, data, status = () => {}) {
   status('Shaping the river…', 50); await nextFrame();
   const river = buildRiver(scene, data.river);
   status('Laying out parks and streets…', 55); await nextFrame();
-  const ground = buildGround(scene, data.ground, river, data.yardpark ? data.yardpark.rings : [], { sea: CITY.sea, paved: data.city.limits });
+  const ground = buildGround(scene, data.ground, river, data.yardpark ? data.yardpark.rings : [], { sea: CITY.sea, paved: data.city.limits, onPromenade });
   status(`Raising ${data.buildings.b.length.toLocaleString()} buildings…`, 60); await nextFrame();
   // Jersey Shore's footprints are typed (houses, storefronts, churches...) and built to their kind
   // (Crossroads Church is modelled on its own, inside and out: jsh/church.js)
@@ -127,6 +105,7 @@ export async function buildScene(canvas, data, status = () => {}) {
     clear,
     sea: CITY.sea,
     core: CITY.sea ? null : data.ground.bbox.map(v => v / 10),
+    onPromenade,
   });
   camera.far = 200000; camera.updateProjectionMatrix(); controls.maxDistance = 45000;
   status('Placing landmarks and the monorail…', 79); await nextFrame();
