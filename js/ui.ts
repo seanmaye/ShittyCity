@@ -443,12 +443,19 @@ export function createUI(api, { createFishing, createArcade }: Games = {}) {
     if (!click) return;
     if (d.button === 2) { lockMouse(); return; }   // right-click (not a right-drag pan): creative mode
     const ai = anglerAt(...rel(e));   // someone fishing on the Schuylkill: they ask you to join them
-    if (ai != null) { if (riding) { riding = false; api.setRiding(false, true); rideBtn.textContent = 'Ride a line'; openPicker(false); } fishing.open(ai); return; }
-    if (stallAt(...rel(e))) { if (riding) { riding = false; api.setRiding(false, true); rideBtn.textContent = 'Ride a line'; openPicker(false); } arcade.open(); return; }   // Chinatown's Lucky Arcade
+    if (ai != null) { if (riding) { riding = false; api.setRiding(false, true); rideBtn.textContent = 'Ride a line'; openPicker(false); } eatClick(); fishing.open(ai); return; }
+    if (stallAt(...rel(e))) { if (riding) { riding = false; api.setRiding(false, true); rideBtn.textContent = 'Ride a line'; openPicker(false); } eatClick(); arcade.open(); return; }   // Chinatown's Lucky Arcade
     const hit = api.pickCar(...rel(e)); if (!hit) return;   // only a right-click enters creative mode
     if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; openPicker(false); }
-    api.boardCar(hit); syncCar(); syncCut(); autoFold();
+    eatClick(); api.boardCar(hit); syncCar(); syncCut(); autoFold();
   };
+  // A tap on the view that puts a dialog or a card on the screen: the browser's own click for that tap comes next, and on a
+  // touch screen it goes to whatever is now under the finger (a game in the arcade's menu, a button on a card). Swallow it.
+  function eatClick() {
+    const eat = (ev: Event) => { ev.stopPropagation(); ev.preventDefault(); };
+    window.addEventListener('click', eat, { capture: true, once: true });
+    setTimeout(() => window.removeEventListener('click', eat, { capture: true }), 400);   // (no click came: don't eat a later one)
+  }
   // fishing (Philadelphia): the anglers on the Schuylkill banks, and the minigame
   const fishing = createFishing ? createFishing(api) : { open() {}, active: () => false };
   const anglerAt = (x, y) => (api.pickAngler ? api.pickAngler(x, y) : null);
