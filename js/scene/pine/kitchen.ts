@@ -14,8 +14,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { LIGHT, makeRenderer } from '../../three-setup.js';
-import * as I from './items.js';
-import { buildMiniRail } from './minirail.js';
+import * as I from './items.ts';
+import { buildMiniRail } from './minirail.ts';
 import { buildSubway } from '../subway.js';
 import { createRidebar } from '../../ridebar.js';
 

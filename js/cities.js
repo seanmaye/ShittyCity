@@ -151,7 +151,7 @@ export const CITIES = {
     presets: [],   // no lit skyline: the panel leaves out Skyline lights
   },
   pine: {
-    // not a map: one kitchen, built by hand in js/scene/pine/kitchen.js (main.js skips the map
+    // not a map: one kitchen, built by hand in js/scene/pine/kitchen.ts (main.js skips the map
     // data, the city scene and its panel controls for a city with kitchen: true)
     id: 'pine', name: '1938 Pine St Kitchen', kitchen: true,
     blurb: 'One kitchen, drawer by drawer: open any drawer or cabinet to see what goes in it under the organization plan.',

@@ -449,7 +449,7 @@ js/scene/monorail.js   builds New York's East River Loop and Jersey Shore's West
                  shuttle (an open line run to the end and back; cars report userData.along and
                  .back), flatbed (the index of a car built as an open deck, loaded by cargo(car));
                  trainSpacing 1e9 gives one train. The kitchen's mini
-                 monorails use both (js/scene/pine/minirail.js: three toy lines in a group scaled to
+                 monorails use both (js/scene/pine/minirail.ts: three toy lines in a group scaled to
                  .35 in per unit, a chef in each car). Cars are aimed along the beam in their
                  parent's frame, so a network may sit in a scaled group. To board them, a scene
                  registers slots with subway.js registerFleet(kind, sp, slots): sp.scale shrinks the

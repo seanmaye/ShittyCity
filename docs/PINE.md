@@ -1,7 +1,7 @@
 # 1938 Pine St Kitchen (`pine`)
 
-One kitchen rather than a city, at `?city=pine`. It has no map data: `js/scene/pine/kitchen.js`
-builds the room by hand and `js/scene/pine/items.js` builds the things stored in it. `main.js`
+One kitchen rather than a city, at `?city=pine`. It has no map data: `js/scene/pine/kitchen.ts`
+builds the room by hand and `js/scene/pine/items.ts` builds the things stored in it. `main.js`
 skips the map loader, the city scene and the city panel controls for a city with `kitchen: true`.
 
 ## What's in it
@@ -34,7 +34,7 @@ skips the map loader, the city scene and the city panel controls for a city with
   the lit next-stop sign; drag to look
   around, W A S D to walk, Esc or *Get off* to leave, and the line diagram at the bottom shows
   the stops. *Show lines* highlights each line in its colour. They're built with the shared
-  monorail (`js/scene/monorail.js`) in `js/scene/pine/minirail.js`, where `LINES` holds each
+  monorail (`js/scene/monorail.js`) in `js/scene/pine/minirail.ts`, where `LINES` holds each
   line's corners (inches), height and stations; the rides use the shared ride system
   (`js/scene/subway.js`, created empty but for these cars).
 
