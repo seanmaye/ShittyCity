@@ -198,8 +198,20 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
   floor phl 0.0052%, nola 0.0007%, pine 0.0124%; census rows identical old-vs-build on phl and
   jsh; `smoke --prod` and `--url` (local preview) pass. Found: `run --ablate` likely broken
   before P2 (`WebGLMultisampleRenderTarget` gone in r186) — not fixed, out of scope.
-- Reviewer (xhigh) started on `2ac1357..refactor/p2-build` (review before the timing gates,
-  so fixes don't force reruns). Then: rebase, push, PR, CI, gates.
+- Review (xhigh, fresh) of `2ac1357..refactor/p2-build`: **1 blocker** (confirmed by the
+  orchestrator): Vite 8's default CSS minifier (Lightning CSS) drops all 13 unprefixed
+  `backdrop-filter` (no panel blur in Chromium/Firefox), merges `.ls-poi b`'s
+  `font-stretch: 68%` into an invalid `font` shorthand (loading headline falls back to 16px
+  upright), and rewrites media queries to range syntax. Fix: `build.cssMinify: false`.
+  **Should fix:** perf builds didn't minify CSS, so no gate saw shipped CSS → build.mjs keeps
+  production's CSS minification. Minor fixes asked: missing-npm message, cache temp cleanup,
+  ab cleanup on failure, keep three's native `$1` names in profiles, tag before ablation hides,
+  harness hash in build snapshots. Left as known limits: `city_ids` tokenizer edge cases,
+  staging re-read race, `.env*` not staged (none exist). Found sound: lockfile (linux/win
+  binaries), wrangler dry-run, dist/data identical, `#err`, TLA, font, CI actions, VLQ decoder
+  (0 mismatches in 747k lookups), census parity, patch symmetry, serving symmetry.
+- Fixes sent back to the harness implementer. Then: rebase, push, PR, CI, gates.
+- Local follow-up at merge: `.claude/launch.json` (untracked) still starts `tools/serve.py`.
 - **Blocks merge:** P1a/P1b/P1c merged; the dashboard readout and the Build-command change
   (human step) before the cutover; the contributor message about `npm ci` / `npm run dev`.
 
