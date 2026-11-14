@@ -3,7 +3,7 @@ import { join, resolve, sep } from 'node:path';
 import { defineConfig } from 'vite';
 
 // data/ stays at the repository root, where the pipeline writes it. The page asks for each file by the URL that
-// js/urls/<city>.js gives it (import.meta.glob ?url): the dev server serves data/ as it is, and a build copies
+// js/main.js's import.meta.glob ?url (URLS) gives it: the dev server serves data/ as it is, and a build copies
 // each file into dist/assets/ under a content-hashed name.
 const DATA = resolve(import.meta.dirname, 'data') + sep;
 
@@ -12,7 +12,7 @@ const DATA = resolve(import.meta.dirname, 'data') + sep;
 const rawGz = () => {
   const serve = (dir, sub) => (req, res, next) => {
     const u = new URL(req.url, 'http://x'), file = join(dir, decodeURIComponent(u.pathname));
-    // (with a query it is not the file: ?import&url asks the dev server for js/urls/<city>.js's module that gives its URL)
+    // (with a query it is not the file: ?import&url asks the dev server for the module that gives its URL, for URLS in main.js)
     if (u.search || !file.endsWith('.gz') || !file.startsWith(join(dir, sub) + sep) || !existsSync(file)) return next();
     res.writeHead(200, { 'Content-Type': 'application/gzip', 'Content-Length': statSync(file).size, 'Cache-Control': 'no-cache' });
     createReadStream(file).pipe(res);
@@ -25,9 +25,8 @@ const rawGz = () => {
 };
 
 // Built file names say which city a file belongs to (tools/perf's smoke checks that a city loads nothing of another's): a city's
-// data files and loading screens are data-<city>-<file>, the map of their URLs (js/urls/<city>.js) urls-<city>, its code
-// (js/scene/<city>/<city>.js) <city>; then the content hash, which lets /assets/ be cached for a year (public/_headers).
-// tools/perf/build.mjs builds the same names without the hash.
+// data files and loading screens are data-<city>-<file>, its code (js/scene/<city>/<city>.js) <city>; then the content hash,
+// which lets /assets/ be cached for a year (public/_headers). tools/perf/build.mjs builds the same names without the hash.
 // A file that several cities have byte for byte (an empty river.json) is built once, as one file for all of them, so it is
 // named for all of them: data-jsh-nola-nyc-river.json. owners: data/<city>/<file> -> those cities, for such files.
 const owners = new Map(), bySize = new Map();
@@ -39,7 +38,6 @@ for (const same of bySize.values()) for (const [c, f] of same.length > 1 ? same 
   if (all.length > 1) owners.set(`data/${c}/${f}`, [...new Set(all)].sort());
 }
 const names = {
-  chunkFileNames: c => `assets/${/[\\/]js[\\/]urls[\\/][^\\/]+$/.test(c.facadeModuleId || '') ? 'urls-' : ''}[name]-[hash].js`,
   assetFileNames: a => {
     const f = a.originalFileNames?.[0] || '', city = owners.get(f) || [/^data\/([^/]+)\//.exec(f)?.[1]].filter(Boolean);
     return `assets/${city.length ? `data-${city.join('-')}-` : ''}[name]-[hash][extname]`;
