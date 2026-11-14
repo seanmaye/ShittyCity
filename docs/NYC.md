@@ -67,13 +67,7 @@ To refresh:
    python -I tools/nyc/import_nyc.py //192.168.168.72/tsptemp/sean/nyc-city-model
    ```
 
-3. Rebuild the single file:
-
-   ```bash
-   python -I tools/bundle.py
-   ```
-
-4. Serve the folder and open `http://localhost:8765/?city=nyc`. Check it, then commit `data/nyc/` with the rebuilt HTML. Name the NYC commit you imported in the commit message.
+3. Serve the folder and open `http://localhost:8765/?city=nyc`. Check it, then commit `data/nyc/`. Name the NYC commit you imported in the commit message.
 
 ## Sources
 

@@ -6,14 +6,13 @@ the Center City subway and the 1953 streetcars.
 
 ## The subway (L and T1–T5)
 
-These files regenerate the underground transit data (the `data-phl-transit` block inside
-`city-models.html`, from `data/phl/transit.json`).
+These files regenerate the underground transit data (`data/phl/transit.json`).
 Use them to add a line (the B, Regional Rail), refresh from OpenStreetMap, or change the depth
 and platform rules.
 
 | File | What it is |
 |---|---|
-| `build_transit.py` | Builds the `data-phl-transit` block from the OSM files and writes it into the page |
+| `build_transit.py` | Builds `data/phl/transit.json` from the OSM files |
 | `osm/transit.json` | OSM download: tracks, stations, stops and subway entrances in the model area |
 | `osm/routes.json` | OSM download: the route relations (L and T1–T5, both directions) |
 | `fetch_osm.sh` | Re-downloads the OSM files (Overpass API) |
@@ -28,15 +27,13 @@ Data © OpenStreetMap contributors, ODbL. The page credits it.
 You need Python 3 (no extra packages). From the repository folder:
 
 ```
-python tools/phl/build_transit.py tools/phl/osm/transit.json tools/phl/osm/routes.json city-models.html
+python tools/phl/build_transit.py tools/phl/osm/transit.json tools/phl/osm/routes.json data/phl
 ```
 
 That is a dry run. It prints what it would build: tracks, platforms, stations, entrances and the
-Market St section plane. Add `--write` at the end to replace the `data-phl-transit` block in the page.
-Then open the page and check the subway (the "Cut away Market St" button) before you commit.
-
-The repository also keeps the page as source files (see the main README). After `--write`, run
-`python -I tools/unbundle.py` so `data/phl/transit.json` and the sources match the page.
+Market St section plane. Add `--write` at the end to replace `data/phl/transit.json` (it reads
+`ground.json` and `river.json` from the same folder). Then serve the page and check the subway (the
+"Cut away Market St" button) before you commit.
 
 ### What it does
 
@@ -58,9 +55,9 @@ The repository also keeps the page as source files (see the main README). After 
    `KIND` in `build_transit.py` treats everything except the L as a trolley, so give the new line
    its own kind.
 2. Run `fetch_osm.sh` (Git Bash) to download fresh data, then run the build.
-3. In the page, give the new kind car sizes and speed in `SPEC` (subway.js chunk), and, for a
-   north–south line, add a section (see "Add another underground line" in the EDITING GUIDE at the
-   top of the HTML file).
+3. Give the new kind car sizes and speed in `SPEC` (`js/scene/subway.js`), and, for a
+   north–south line, add a section (see "Add another rail line" in
+   [docs/EDITING.md](../../docs/EDITING.md)).
 
 ## The 1953 streetcar layer
 
@@ -74,11 +71,11 @@ The map image is not in the repository. Download it from
 http://www.phillytrolley.org/ptc-map.html (`IMAGES/PTC_MAP3.GIF`), then, from the repository folder:
 
 ```
-pip install pillow
-python tools/phl/build_trolley1953.py PTC_MAP3.GIF tools/phl/osm/streets_cc.json tools/phl/osm/oldtram.json data/phl/trolley1953.json --overlay check.png
+uv sync --group data
+uv run python tools/phl/build_trolley1953.py PTC_MAP3.GIF tools/phl/osm/streets_cc.json tools/phl/osm/oldtram.json data/phl/trolley1953.json --overlay check.png
 ```
 
 Look at `check.png` (the traced streets drawn in magenta over the map), then add `--write`
-to write `data/phl/trolley1953.json`, and run `python -I tools/bundle.py` to refresh the page.
+to write `data/phl/trolley1953.json`.
 The map only covers Vine to South Street, Schuylkill to the Delaware. Bus lines (red) and
 Route 61 on Ridge Ave (an electric trolleybus in 1953) are left out.
