@@ -1469,8 +1469,8 @@ def smoke_city(browser, a, base, cid, out, ids):
         # what the city loaded: nothing named for another city (its code or data), no JS built from another city's
         # js/scene/<city>/ (by its source map: city code inside a shared chunk has no city in its name), and in
         # production no file under /assets/ (cached for a year: public/_headers) without a content hash
-        try:
-            sizes = dict(page.evaluate("() => performance.getEntriesByType('resource').map(e => [e.name, e.encodedBodySize])"))
+        try:   # (probe.js resources(): the page's Resource Timing and the data worker's)
+            sizes = dict(page.evaluate("() => (window.__perf ? __perf.resources() : performance.getEntriesByType('resource')).map(e => [e.name, e.encodedBodySize])"))
         except Exception:   # noqa: BLE001  (a page that crashed: no sizes)
             sizes = {}
         r['requests'] = requests_of(urls, sizes, base, ids)
@@ -1556,7 +1556,7 @@ def cmd_smoke(a):
     # what each city loaded, by kind, and each request: a file named for another city fails the city (smoke_city)
     lines += ['\n## What each city loaded\n',
               'Every request to the served origin, first time each, in order. Bytes are response bodies as served (Resource Timing '
-              '`encodedBodySize`; the page itself has none). A file named for a city (vite.config.js: `<city>.js`, '
+              '`encodedBodySize`, the data worker\'s fetches\' too; the page itself has none). A file named for a city (vite.config.js: `<city>.js`, '
               '`data-<city>-…`; `urls-<city>.js` and `data/<city>/…` in older builds) must be the loading city\'s, and no JS file may be built from another city\'s '
               '`js/scene/<city>/` (its source map; `SHARED_CITY_FILES` in perf.py are shared by design)' + (', and every file under `/assets/` must carry a content hash' if a.prod or a.url else '') + '.\n',
               '| city | JS files | JS bytes | data files | data bytes | other files | other bytes | another city\'s files | JS with another city\'s code | JS without a source map |',

@@ -43,13 +43,22 @@ const names = {
   chunkFileNames: unhash(own.chunkFileNames ?? 'assets/[name]-[hash].js'),
   assetFileNames: unhash(own.assetFileNames ?? 'assets/[name]-[hash][extname]'),
 };
+// a worker (new Worker(new URL(...))) is a build of its own: the same, from the side's worker options, else Vite's defaults for a worker
+const ownWorker = loaded?.config.worker?.rolldownOptions?.output || {};
+const workerNames = {
+  entryFileNames: unhash(ownWorker.entryFileNames ?? 'assets/[name]-[hash].js'),
+  chunkFileNames: unhash(ownWorker.chunkFileNames ?? 'assets/[name]-[hash].js'),
+  assetFileNames: unhash(ownWorker.assetFileNames ?? 'assets/[name]-[hash].[ext]'),
+};
+const sourcemapPathTransform = (rel, map) => relative(root, resolve(dirname(map), rel)).split(sep).join('/');
 await vite.build(vite.mergeConfig(loaded ? loaded.config : {}, {
   configFile: false, root, mode: 'production', logLevel: 'warn',
   resolve: { preserveSymlinks: true },
   plugins: [patch],
   build: {
     outDir: resolve(outDir), emptyOutDir: true, minify: false, cssMinify, sourcemap: true, chunkSizeWarningLimit: 1e9,
-    rolldownOptions: { output: { ...names, sourcemapPathTransform: (rel, map) => relative(root, resolve(dirname(map), rel)).split(sep).join('/') } },
+    rolldownOptions: { output: { ...names, sourcemapPathTransform } },
   },
+  worker: { rolldownOptions: { output: { ...workerNames, sourcemapPathTransform } } },
 }));
 console.log(JSON.stringify({ patched }));

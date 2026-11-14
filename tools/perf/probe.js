@@ -262,10 +262,19 @@
   P.applyToggle = name => { P._restore = TOGGLES[name](P.api); return true; };
   P.restore = () => { if (P._restore) { P._restore(); P._restore = null; } };
 
+  /** The page's Resource Timing entries, and those of the data worker's fetches, which are in the worker's own timeline:
+   *  js/data.js puts each on the page's as a measure named for its URL, from its fetch start to its responseEnd in the
+   *  page's time, with detail.encodedBodySize (a build without the worker has none). */
+  P.resources = () => [
+    ...performance.getEntriesByType('resource'),
+    ...performance.getEntriesByType('measure').filter(e => e.detail && e.detail.encodedBodySize != null)
+      .map(e => ({ name: e.name, startTime: e.startTime, responseEnd: e.startTime + e.duration, encodedBodySize: e.detail.encodedBodySize })),
+  ];
+
   /** Load timings, relative to navigation start (ms). */
   P.loadReport = () => {
     const nav = performance.getEntriesByType('navigation')[0] || {};
-    const res = performance.getEntriesByType('resource');
+    const res = P.resources();
     // the data files: assets/data-<city>-<file> (content-hashed in production: vite.config.js), or data/<city>/<file> in older builds
     const DATA = /\/(?:data\/|assets\/(?=data-))([^?#]+)/;
     const files = res.filter(e => DATA.test(e.name)).map(e => ({ file: DATA.exec(e.name)[1], start: e.startTime, end: e.responseEnd, kb: Math.round(e.encodedBodySize / 1024) }));
