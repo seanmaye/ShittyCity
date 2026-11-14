@@ -3,7 +3,7 @@
 Kept by the orchestrator of [REFACTOR-PLAN.md](REFACTOR-PLAN.md). Only the orchestrator edits
 this file. It is how the work is picked up again after a context summary or in a new session.
 
-Last updated: 2026-11-13 (P0 baseline recorded; P1a and P1c implementers started).
+Last updated: 2026-11-13 (P1a, P1b, P1c in review; P2 waits on merges and an effort switch).
 
 ## Standing facts
 
@@ -37,17 +37,18 @@ floor seen, with a minimum of 0.001%; a share above it means "screenshots differ
 
 | check | view | floor seen | tolerance |
 | --- | --- | ---: | ---: |
-| smoke | phl | 0.0027% | 0.0054% |
+| smoke | phl | 0.0061% | 0.0122% |
 | smoke | nyc | 0.0001% | 0.001% |
 | smoke | jsh | 0.0000% | 0.001% |
 | smoke | nola | 0.0006% | 0.0012% |
-| smoke | pine | 0.0038% | 0.0075% |
+| smoke | pine | 0.0108% | 0.0216% |
 | `ab --shots` (phl) | overview-dusk | 0.0102% | 0.02% |
 | `ab --shots` (phl) | whole-city | 0.0009% | 0.002% |
 | `ab --shots` (phl) | ride-L | 0.8766% | 1.75% |
 | `ab --shots` (phl) | fly-market | 28.0% | not comparable by pixels (moving camera): look at it |
 
-Scenarios not listed get their floor from the first same-commit run that includes them. A
+phl and pine were raised after P1b's smoke (a third sample, diff images showing only moving
+trains and the kitchen's monorail). Scenarios not listed get their floor from the first same-commit run that includes them. A
 deliberate change (the `--accent` colour) came out 0.11–0.20% in smoke, about 40× the floor.
 
 **How to read `ab` (decided 2026-11-13):** a `worse` row (99%) fails a gate. A lone
@@ -138,9 +139,15 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P1b. Retire the single-file bundle
 
-- State: in progress (implementer started 2026-11-13). Branch `refactor/p1b-retire-bundle`,
-  stacked on `refactor/p1a-uv` (same docs). Its smoke gate needs P1c's `perf.py smoke`.
-- Contributor message drafted for Micah (sent: not yet). Needs the live URL.
+- State: in review. Branch `refactor/p1b-retire-bundle` (stacked on P1a),
+  https://github.com/seanmaye/ShittyCity/pull/8.
+- Gate: bundle grep empty; smoke all 5 cities ok (phl 0.0061%, pine 0.0108%: motion only);
+  `ab --quick --shots` on phl: only `whole-city` rows `likely worse`, rerun with 8 rounds: no
+  significant difference.
+- Also changed `tools/phl/build_transit.py` (it edited the bundle in place): now reads/writes
+  `data/phl/`, output identical. `COLLABORATING.md`: minimal edits; full rewrite drafted in the PR
+  for Micah.
+- **Blocks merge:** contributor message (in the PR) sent by Micah — not yet.
 
 ### P1c. Smoke check and pixel diff
 
@@ -158,7 +165,8 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P2. The build
 
-- State: not started.
+- State: not started. Waiting on: P1b and P1c merged (P2 builds on both); Micah switching the
+  orchestrator to xhigh (it cannot change its own effort); the dashboard readout before cutover.
 
 ### P3. Checks in the build
 
