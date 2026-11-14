@@ -94,7 +94,7 @@ function paintingTex() {   // the still life of onions by the window
 export function buildKitchen(canvas) {
   const renderer = makeRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#2b2530');
   const pmrem = new THREE.PMREMGenerator(renderer);
