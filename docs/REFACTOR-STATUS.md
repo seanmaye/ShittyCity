@@ -3,9 +3,10 @@
 Kept by the orchestrator of [REFACTOR-PLAN.md](REFACTOR-PLAN.md). Only the orchestrator edits
 this file. It is how the work is picked up again after a context summary or in a new session.
 
-Last updated: 2026-11-14 (P1a, P1b, P1c in review; P2 gates passed, #9 ready for review; P3 #10
-gates passed, #10 ready for review, stacked on #9; P4a gates passed, #12 on #10, waiting on
-Micah's kitchen look; P4b gates passed, #13 on #12; P4c gates passed, #14 on #13; P5 no-go, #15 closed with its numbers; closing report below). Orchestrator from P3 on: a new session (the P0–P2 one handed over).
+Last updated: 2026-11-14, by the merge session (P0, P1a, P1b, P1c **merged**: #3, #4, #8, #7;
+#9, #10, #12, #13, #14 rebased onto `main` at `f6962c7`, CI green, **not merged**: #9 waits on the
+Cloudflare Build command, which Micah's dashboard login cannot see or change. See "Merge log" at
+the end). Before that: P5 no-go, #15 closed with its numbers; closing report below.
 
 ## Standing facts
 
@@ -14,7 +15,7 @@ Micah's kitchen look; P4b gates passed, #13 on #12; P4c gates passed, #14 on #13
 1. Dashboard: Sean owns the Cloudflare account; Micah has admin access and offered to sign in
    to the dashboard in a browser for readouts. Dashboard:
    `https://dash.cloudflare.com/1af14c0b141e374a8e01a11bba70b7d0/workers/services/view/shittycity/production`.
-   Production site URL: _not yet recorded_ (P0 dashboard readout).
+   Production site URL: `https://ashitty.city` (also `shittycity.smtheman1234.workers.dev`).
 2. A failing check blocks the deploy: **yes, from P3** (`cf:build` = `npm run check && npm run build`).
 3. TypeScript: **typed contracts and opt-in checking now (P4c); `.ts` renames later (P6a)** with
    their own go-ahead.
@@ -131,7 +132,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P0. Baseline and inventory
 
-- State: in review (baseline done; production headers and dashboard readout outstanding).
+- State: **merged** (#3, 2026-11-14). Dashboard readout: see "Merge log".
 - Branch / PR: `refactor/p0-docs`, https://github.com/seanmaye/ShittyCity/pull/3.
 - Main checkout fast-forwarded to `origin/main` at `9c38eae` on 2026-11-13.
 - **perf baseline** (`perf.py run --repeat 3`, medians, commit `9c38eae`; output folders kept in
@@ -163,7 +164,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P1a. Locked Python environment
 
-- State: in review. Branch `refactor/p1a-uv`, https://github.com/seanmaye/ShittyCity/pull/4.
+- State: **merged** (2026-11-14). Branch `refactor/p1a-uv`, https://github.com/seanmaye/ShittyCity/pull/4.
 - Gate (rebased on `9c38eae`): Jersey Shore rebuilt with the lock, `git diff --stat data/jsh`
   empty; `perf.py list` and `ux.py list` start under `uv run`.
 - Decision: **shapely pinned `>=2.0.7,<2.1`** (GEOS 3.11). Shapely 2.1+/GEOS 3.13+ changes
@@ -176,7 +177,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P1b. Retire the single-file bundle
 
-- State: in review. Branch `refactor/p1b-retire-bundle` (stacked on P1a),
+- State: **merged** (2026-11-14). Branch `refactor/p1b-retire-bundle` (stacked on P1a),
   https://github.com/seanmaye/ShittyCity/pull/8.
 - Gate: bundle grep empty; smoke all 5 cities ok (phl 0.0061%, pine 0.0108%: motion only);
   `ab --quick --shots` on phl: only `whole-city` rows `likely worse`, rerun with 8 rounds: no
@@ -190,7 +191,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P1c. Smoke check and pixel diff
 
-- State: in review. Branch `refactor/p1c-smoke`, https://github.com/seanmaye/ShittyCity/pull/7.
+- State: **merged** (2026-11-14). Branch `refactor/p1c-smoke`, https://github.com/seanmaye/ShittyCity/pull/7.
 - Adds `perf.py smoke` (every city in `CITIES`, kitchen included) and pixel diffs in
   `ab --shots`, `smoke --against`, `ux.py compare`.
 - **Found and fixed an A/B bias** (orchestrator's commit `e3ef143`): with the same commit on both
@@ -463,3 +464,50 @@ contributor message), #14, each retargeted to main as the one below merges.
 
 **Not ours to settle:** the history rewrite, New York's data source, P6 (a: `.ts` renames per
 folder; b: smaller data formats).
+
+## Merge log (2026-11-14, merge session)
+
+Micah's instruction: get the refactor into `main`, following the closing report's merge order.
+
+**Merged**, as merge commits, `origin/main` unchanged at `7fe4426` beforehand: #3 (`9c9d9cf`), #4
+(`c7bb7fe`), #8 (`c9bca34`), #7 (`f6962c7`). `main`'s tree at `f6962c7` is `2ac1357` (the gates' A
+side) plus the docs from #3. Workers Builds deployed `f6962c7`: success. The contributor message
+for #8 had not been sent when it merged.
+
+**Rebased** onto `f6962c7` (the P1 commits dropped out; each new tip differs from its gated tip
+only by #3's 12 docs files), force-pushed with a lease on the old tip:
+
+| PR | branch | gated tip | rebased tip |
+| --- | --- | --- | --- |
+| #9 | `refactor/p2-build` | `c7193fd` | `86f9abe` |
+| #10 | `refactor/p3-checks` | `9877a18` | `2e0108d` |
+| #12 | `refactor/p4a-three-187` | `2823e17` | `ef27fde` |
+| #13 | `refactor/p4b-split-cache` | `8a40f33` | `9249aeb` |
+| #14 | `refactor/p4c-types` | `2327970` | `4a66b4e` |
+
+On `4a66b4e`: `npm ci`, `npm run cf:build`, Ruff, pytest (41) pass locally; `smoke --prod`: all 5
+cities pass. CI green on all five PRs. Local branches of the same names in the implementers'
+worktrees still point at the gated tips.
+
+**Dashboard readout: blocked.** Micah's Cloudflare member on Sean's account has the role
+"Individual Workers Admin". Every Workers Builds endpoint answers 403 for it, the worker's
+Settings page shows no Build section, and build logs say "Build not found … Forbidden". So the
+Build command could be neither read nor changed, and the cause of the failing branch builds is
+still unknown. What the login can see: production deploys come from Workers Builds through
+Wrangler, custom domain `ashitty.city`, each branch has an empty preview ("No deployments yet").
+
+**#9 is not merged for that reason:** with `assets.directory` `./dist` and no build step,
+`wrangler deploy` stops with "The directory specified by the "assets.directory" field … does not
+exist", so production would stay on `f6962c7` and every later merge would fail to deploy. Two
+ways forward, Micah's choice:
+
+1. Sean (or a login with Workers Builds access) sets Build command to
+   `if [ -f package.json ]; then npm run cf:build; fi`, build cache on, as planned.
+2. Put the build in the repo: `"build": { "command": "npm run cf:build" }` in `wrangler.jsonc`.
+   Tried locally on `4a66b4e` with wrangler 4.162.0 and no `dist/`: `wrangler deploy --dry-run`
+   ran the build first and read 99 files from `dist/`. Not tried on Cloudflare: it relies on
+   Workers Builds installing the npm dependencies before the deploy command, and a failure's log
+   could not be read with this login.
+
+Then, as before: #9, cutover checks, #10, #12 (Micah has not yet looked at the kitchen), #13 with
+its live cache checks, #14, each retargeted to `main` as the one below merges.
