@@ -22,6 +22,7 @@ import http.server
 import io
 import json
 import os
+import posixpath
 import re
 import shutil
 import statistics
@@ -30,6 +31,7 @@ import sys
 import tarfile
 import threading
 import time
+import urllib.request
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -1351,9 +1353,9 @@ HASHED = re.compile(r'-[\w-]{8}\.\w+$')
 
 
 def owners(path, ids):
-    """The cities a served file belongs to, by the names vite.config.js gives a build: a city's code <city>.js, the map of
-    its data URLs urls-<city>.js, its data files data-<city>[-<city>…]-<file> (one file for several cities that have the
-    same bytes), each with -<hash> in production; data/<city>/<file> in older builds. [] for a shared file."""
+    """The cities a served file belongs to, by the names vite.config.js gives a build: a city's code <city>.js, its data
+    files data-<city>[-<city>…]-<file> (one file for several cities that have the same bytes), each with -<hash> in
+    production; urls-<city>.js and data/<city>/<file> in older builds. [] for a shared file."""
     m = re.match(r'/data/([^/]+)/', path)
     if m:
         return [m.group(1)]
@@ -1378,6 +1380,45 @@ def requests_of(urls, sizes, base, ids):
         kind = 'data' if re.match(r'/(?:data/|assets/data-)', path) else 'js' if path.endswith('.js') else 'other'
         out.append({'url': u[len(base):], 'kind': kind, 'bytes': sizes.get(u), 'owners': owners(path, ids), 'hashed': bool(HASHED.search(path)),
                     'assets': path.startswith('/assets/')})
+    return out
+
+
+# Modules in a city's folder that other cities load by design, so they sit in shared chunks: phl/people.js (the loading
+# screen's figures, in every city), jsh/terrain.js (the elevation grid that buildings.js and nature.js ask in every city) and
+# jsh/places.js (labels and views, which New Orleans uses too). Any other js/scene/<city>/ module in a chunk another city
+# loads is that city's code where it should not be (an import from js/scene/index.js puts it in the shared code).
+SHARED_CITY_FILES = {'js/scene/phl/people.js', 'js/scene/jsh/terrain.js', 'js/scene/jsh/places.js'}
+_SOURCES = {}
+
+
+def chunk_sources(base, url):
+    """The source files a JS file the page loaded was built from: its own path for a source the dev server serves
+    (/js/...), else the `sources` of its source map (the file its sourceMappingURL names), read from the served folder or,
+    for --url, fetched from the site. None if there is no map to read: then only the file's name was checked."""
+    path = re.sub(r'[?#].*', '', url)
+    if path.startswith('/js/'):
+        return [path[1:]]
+    if (base, path) not in _SOURCES:
+        root, got = _SERVED.get(base), None
+        read = (lambda p: open(os.path.join(root, p.lstrip('/')), 'rb').read()) if root else (lambda p: urllib.request.urlopen(base + p, timeout=60).read())
+        try:
+            m = re.search(r'//# sourceMappingURL=(\S+)\s*$', read(path).decode('utf-8', 'replace'))
+            if m and not m.group(1).startswith('data:'):
+                got = json.loads(read(posixpath.join(posixpath.dirname(path), m.group(1))))['sources']
+        except (OSError, ValueError, KeyError):   # no map (or none served): names only
+            pass
+        _SOURCES[(base, path)] = got
+    return _SOURCES[(base, path)]
+
+
+def foreign_code(sources, cid, ids):
+    """The js/scene/<another city>/ files among a chunk's sources, less SHARED_CITY_FILES (paths as maps give them:
+    root-relative in a perf build, ../../js/… in production)."""
+    out = []
+    for src in sources or []:
+        m = re.search(r'(?:^|/)(js/scene/([^/]+)/[^/]+)$', src)
+        if m and m.group(2) in ids and m.group(2) != cid and m.group(1) not in SHARED_CITY_FILES:
+            out.append(m.group(1))
     return out
 
 
@@ -1425,8 +1466,9 @@ def smoke_city(browser, a, base, cid, out, ids):
     except Exception as e:   # noqa: BLE001  (one city failing must not stop the others)
         errors.append(f'{type(e).__name__}: {e}'.strip())
     finally:
-        # what the city loaded: nothing named for another city (its code, data or URL map), and in production no file
-        # under /assets/ (cached for a year: public/_headers) without a content hash
+        # what the city loaded: nothing named for another city (its code or data), no JS built from another city's
+        # js/scene/<city>/ (by its source map: city code inside a shared chunk has no city in its name), and in
+        # production no file under /assets/ (cached for a year: public/_headers) without a content hash
         try:
             sizes = dict(page.evaluate("() => performance.getEntriesByType('resource').map(e => [e.name, e.encodedBodySize])"))
         except Exception:   # noqa: BLE001  (a page that crashed: no sizes)
@@ -1437,6 +1479,11 @@ def smoke_city(browser, a, base, cid, out, ids):
                 errors.append(f"loads another city's file ({', '.join(q['owners'])}'s): {q['url']}")
             if (a.prod or a.url) and q['assets'] and not q['hashed']:
                 errors.append(f'a file under /assets/ without a content hash (it would be cached for a year): {q["url"]}')
+            if q['kind'] == 'js':
+                src = chunk_sources(base, q['url'])
+                q['checked'], q['foreign'] = src is not None, foreign_code(src, cid, ids)
+                if q['foreign']:
+                    errors.append(f"loads another city's code in {q['url']}: {', '.join(q['foreign'])}")
         r['errors'] = list(errors)
         r['ok'] = not r['errors']
         ctx.close()
@@ -1446,7 +1493,8 @@ def smoke_city(browser, a, base, cid, out, ids):
 def cmd_smoke(a):
     """Load every city in js/cities.js from a served side the way the harness does (seeded, date
     pinned; a side built in perf mode), fail on any
-    page error, console error, failed request or file named for another city (owners), list what each city loaded, and
+    page error, console error, failed request, file named for another city (owners) or JS built from another city's code
+    (chunk_sources, its source map), list what each city loaded, and
     save one screenshot per city in a fixed view.
     --prod serves the side's own production build instead, --url loads a deployed site. --against
     diffs the screenshots with an earlier smoke's."""
@@ -1508,15 +1556,18 @@ def cmd_smoke(a):
     # what each city loaded, by kind, and each request: a file named for another city fails the city (smoke_city)
     lines += ['\n## What each city loaded\n',
               'Every request to the served origin, first time each, in order. Bytes are response bodies as served (Resource Timing '
-              '`encodedBodySize`; the page itself has none). A file named for a city (vite.config.js: `<city>.js`, `urls-<city>.js`, '
-              '`data-<city>-…`; `data/<city>/…` in older builds) must be the loading city\'s' + (', and every file under `/assets/` must carry a content hash' if a.prod or a.url else '') + '.\n',
-              '| city | JS files | JS bytes | data files | data bytes | other files | other bytes | another city\'s files |', '|---|---:|---:|---:|---:|---:|---:|---:|']
+              '`encodedBodySize`; the page itself has none). A file named for a city (vite.config.js: `<city>.js`, '
+              '`data-<city>-…`; `urls-<city>.js` and `data/<city>/…` in older builds) must be the loading city\'s, and no JS file may be built from another city\'s '
+              '`js/scene/<city>/` (its source map; `SHARED_CITY_FILES` in perf.py are shared by design)' + (', and every file under `/assets/` must carry a content hash' if a.prod or a.url else '') + '.\n',
+              '| city | JS files | JS bytes | data files | data bytes | other files | other bytes | another city\'s files | JS with another city\'s code | JS without a source map |',
+              '|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|']
     for c, r in res.items():
         q, row = r.get('requests', []), []
         for k in ('js', 'data', 'other'):
             xs = [x for x in q if x['kind'] == k]
             row += [str(len(xs)), f"{sum(x['bytes'] or 0 for x in xs):,}"]
-        lines.append(f"| {c} | {' | '.join(row)} | {sum(1 for x in q if x['owners'] and c not in x['owners'])} |")
+        js = [x for x in q if x['kind'] == 'js']
+        lines.append(f"| {c} | {' | '.join(row)} | {sum(1 for x in q if x['owners'] and c not in x['owners'])} | {sum(1 for x in js if x.get('foreign'))} | {sum(1 for x in js if not x.get('checked'))} |")
     changed = {}
     if a.against:
         t, changed = diff_table([(c, os.path.join(a.against, c + '.png'), os.path.join(out, c + '.png'), os.path.join(out, c + '.diff.png')) for c in res], 'city')
