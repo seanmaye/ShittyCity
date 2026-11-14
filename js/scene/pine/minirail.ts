@@ -80,7 +80,7 @@ function chef() {
     up.rotation.x = -.5; fore.rotation.x = -1;
     if (sx < 0) g.userData.arm = { up, fore };
   }
-  g.traverse(o => { if (o.isMesh) o.castShadow = false; });
+  g.traverse((o: THREE.Mesh) => { if (o.isMesh) o.castShadow = false; });
   return { root: g, head, arm: g.userData.arm, w: 0, t: 0 };
 }
 /** wave when the camera looks at his head from close by (the rule the cities' passengers follow) */
@@ -135,7 +135,7 @@ function cargo(kind) {
     const s = add(new THREE.TorusGeometry(1, .07, 6, 20, Math.PI), CARGO.strap, 0, -.9, z); s.scale.set(1.45, h + .05, 1.6);
     add(new THREE.BoxGeometry(.3, .26, .3), CARGO.buckle, 1.2, -.3, z);
   }
-  g.traverse(o => { if (o.isMesh) o.castShadow = false; });
+  g.traverse((o: THREE.Mesh) => { if (o.isMesh) o.castShadow = false; });
   return g;
 }
 

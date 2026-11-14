@@ -33,8 +33,17 @@ const ISLAND_TOP = 24 + 1 + 12;                     // counter depth, east edge 
 const GAP = (SINK_EDGE - ISLAND_TOP) / 2;
 const ISLAND = { west: GAP, east: GAP + ISLAND_TOP, front: GAP + ISLAND_TOP - 1, north: 72, cabN: 90 };
 
+// ---- the builders' options (carcass, door, drawer and addDrawer in buildKitchen)
+/** zf: the front plane's z; top: false for none; shelves at y (depth d); liner: lined bottom; rails: face-frame rails at
+ * these heights; mid: a centre stile */
+interface CarcassOpts { zf?: number; top?: boolean; shelves?: { y: number; d?: number; liner?: boolean }[]; liner?: boolean; rails?: number[]; mid?: boolean }
+/** m: the front's material; upper: knob near the bottom; knob: false for none; km: the knob's material */
+interface DoorOpts { m?: THREE.MeshStandardMaterial; zf?: number; upper?: boolean; knob?: boolean; km?: THREE.MeshStandardMaterial }
+/** as a door's, and plain: no raised panel; handle: in place of the knob; liner: false for none; id: the box's depth */
+interface DrawerOpts { m?: THREE.MeshStandardMaterial; zf?: number; plain?: boolean; handle?: THREE.Object3D; km?: THREE.MeshStandardMaterial; liner?: boolean; id?: number }
+
 // ---- textures
-function canvasTex(w, h, draw, repeat) {
+function canvasTex(w, h, draw, repeat?: THREE.Vector2Tuple) {
   const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping;
   if (repeat) t.repeat.set(...repeat);
@@ -147,7 +156,7 @@ export function buildKitchen(canvas) {
   const EAST_WIN = [50, 106, 42, 96], BACK_DOOR = [ROOM.w - 102, ROOM.w - 72, 0, 81], SOUTH_WIN = [ROOM.w - 30, ROOM.w - 4, 46, 96];
   wall(NW, ROOM.w); wall(EW, ROOM.d, [EAST_WIN]); wall(SW, ROOM.w, [BACK_DOOR, SOUTH_WIN]); wall(WW, ROOM.d, [[80, 140, 0, 84]]);
 
-  function windowIn(g, [u0, u1, v0, v1], panes = 2) {
+  function windowIn(g, [u0, u1, v0, v1]: number[], panes = 2) {
     const w = u1 - u0, h = v1 - v0, cx = (u0 + u1) / 2, sky = new THREE.MeshBasicMaterial({ color: '#dde8f0' });
     const glass = new THREE.Mesh(new THREE.PlaneGeometry(w, h), sky); glass.position.set(cx, v0 + h / 2, -4); g.add(glass);
     for (const [x, y, ww, hh, dd, zz] of [[cx, v0 - .5, w + 7, 1.2, 5.5, -1.5], [cx, v1, w + 6, 3, 1, .5], [u0 - 1.5, v0, 3, h, 1, .5], [u1 + 1.5, v0, 3, h, 1, .5], [cx, v0 - 3.5, w + 4, 3, 1, .5]])
@@ -193,7 +202,7 @@ export function buildKitchen(canvas) {
   function knob(x, y, z, m = NICKEL) { const g = new THREE.Group(); g.position.set(x, y, z); const k = mesh(new THREE.SphereGeometry(.62, 16, 10), m, 0, 0, .9); k.scale.z = .75; g.add(k); g.add(C(.22, .22, .9, m, 0, -.45, .45).rotateX(PI / 2)); return g; }
 
   /** cabinet box: sides, bottom, top, back, shelves {y, d} and a face frame with rails */
-  function carcass(g, x0, w, y0, h, d, o = {}) {
+  function carcass(g, x0, w, y0, h, d, o: CarcassOpts = {}) {
     const t = .75, zf = o.zf || 0, zb = zf - d, m = PLY;
     g.add(B(t, h, d, m, x0 + t / 2, y0, zf - d / 2), B(t, h, d, m, x0 + w - t / 2, y0, zf - d / 2), B(w, t, d, m, x0 + w / 2, y0, zf - d / 2), B(w, h, t, m, x0 + w / 2, y0, zb + t / 2));
     if (o.top !== false) g.add(B(w, t, d, m, x0 + w / 2, y0 + h - t, zf - d / 2));
@@ -209,7 +218,7 @@ export function buildKitchen(canvas) {
     if (o.mid) g.add(B(f, h, t, F, x0 + w / 2, y0, fz));
   }
   /** a raised-panel door, hinged at its left (sign 1) or right (sign -1) edge */
-  function door(g, xh, y0, w, h, sign, o = {}) {
+  function door(g, xh, y0, w, h, sign, o: DoorOpts = {}) {
     const pivot = new THREE.Group(), m = o.m || frontMat(), zf = o.zf || 0;
     pivot.position.set(xh, y0, zf); g.add(pivot);
     const d = new THREE.Group(); d.position.x = sign > 0 ? 0 : -w; pivot.add(d);
@@ -222,7 +231,7 @@ export function buildKitchen(canvas) {
     return { pivot, sign, m };
   }
   /** a drawer: a front with a box behind it; .inside is the box's floor, centred */
-  function drawer(g, x0, w, y0, h, iw, id, ih, o = {}) {
+  function drawer(g, x0, w, y0, h, iw, id, ih, o: DrawerOpts = {}) {
     const part = new THREE.Group(), m = o.m || frontMat(), zf = o.zf || 0;
     part.position.set(x0 + w / 2, y0, zf); g.add(part);
     const fw = w - .3, fh = h - .25;
@@ -239,14 +248,14 @@ export function buildKitchen(canvas) {
   function interior(g, x, y, z) { const i = new THREE.Group(); i.position.set(x, y, z); g.add(i); return i; }
   const toe = (g, x0, w, depth = BASE_D) => g.add(B(w, 4, .5, TOE, x0 + w / 2, 0, -3.25), B(w, .5, depth - 3, TOE, x0 + w / 2, 0, -depth / 2 - 1.5));
 
-  function addDrawer(spec, g, x0, w, y0, h, iw, ih, fill, o = {}) {
+  function addDrawer(spec, g, x0, w, y0, h, iw, ih, fill, o: DrawerOpts = {}) {
     const dr = drawer(g, x0, w, y0, h, iw, o.id || 18, ih, o);
     fill(dr.inside, iw, o.id || 18, ih);
     return register({ ...spec, kind: 'drawer', part: dr.part, fronts: [dr.m], run: g,
       set(t) { dr.part.position.z = dr.z0 + t * dr.travel; },
       look: { local: new THREE.Vector3(x0 + w / 2, y0 + h / 2, (o.zf || 0) - (o.id || 18) / 2 + dr.travel), dist: 15, lift: 30 } });
   }
-  function addCabinet(spec, g, doors, look, extra = {}) {
+  function addCabinet(spec, g, doors, look, extra: { swing?: number } = {}) {
     return register({ ...spec, kind: 'door', part: doors[0].pivot, extra: doors.slice(1).map(d => d.pivot), fronts: doors.map(d => d.m), run: g,
       set(t) { for (const d of doors) d.pivot.rotation.y = -d.sign * t * 1.85 * (extra.swing || 1); }, look });
   }
@@ -258,14 +267,14 @@ export function buildKitchen(canvas) {
     scene.add(B(33, 66.5, 29, F, 17.5, 1.5, 14.5), B(31, 1.5, 27, TOE, 17.5, 0, 14.5));
     scene.add(B(33, 15.6, 1.6, F, 17.5, 52.4, fz), B(33, 50.6, 1.6, F, 17.5, 1.5, fz));
     scene.add(B(1, 9, 1.4, F, 32.5, 55, fz + 1.4), B(1, 18, 1.4, F, 32.5, 30, fz + 1.4));
-    const notes = [['#f2c230', 6, 46], ['#3a6fc0', 12, 40], ['#ffffff', 22, 44], ['#d97b6a', 8, 26], ['#e8e2d0', 18, 20], ['#2f8a47', 26, 57]];
+    const notes: [string, number, number][] = [['#f2c230', 6, 46], ['#3a6fc0', 12, 40], ['#ffffff', 22, 44], ['#d97b6a', 8, 26], ['#e8e2d0', 18, 20], ['#2f8a47', 26, 57]];
     for (const [c, x, y] of notes) scene.add(B(4.5 + (x % 3), 5.5, .1, mat(c, { r: .8 }), x + 1, y, fz + .85));
     const rack = mat('#5aa7d6', { r: .5 });
     for (const y of [46, 58]) {
       scene.add(B(3.2, .5, 15, rack, -.6, y, 14), B(3.2, 2, .4, rack, -.6, y, 6.7), B(3.2, 2, .4, rack, -.6, y, 21.3), B(.4, 1.6, 15, rack, -2, y, 14));
       const row = I.spiceRow(7); row.rotation.y = PI / 2; row.position.set(-.6, y + .5, 14); scene.add(row);
     }
-    for (const [z, c] of [[8, '#2f4f9a'], [12, '#2f4f9a'], [18, '#56606a']]) { const mt = I.mitt(c); mt.rotation.y = PI / 2; mt.position.set(-.7, 44, z); scene.add(mt); }
+    for (const [z, c] of [[8, '#2f4f9a'], [12, '#2f4f9a'], [18, '#56606a']] as [number, string][]) { const mt = I.mitt(c); mt.rotation.y = PI / 2; mt.position.set(-.7, 44, z); scene.add(mt); }
   }
   // B1 + D1 (x 34–49)
   carcass(N, 34, 15, base, top - base, BASE_D, { shelves: [{ y: 23.6, d: 22.5 }, { y: 12, d: 11 }], rails: [24.2] }); toe(N, 34, 15);
@@ -301,7 +310,7 @@ export function buildKitchen(canvas) {
     const pot = I.pot(4.8, 5.2); pot.position.set(71.5, 37.1, -17.5); N.add(pot);
     const k = I.kettle(); k.position.set(56.5, 37.1, -5); k.rotation.y = .6; N.add(k);
     // dish towels over the oven handle
-    for (const [x, base0, line] of [[56, '#e9e4d6', '#8a8f9a'], [63.5, '#d9d4c4', '#3a3f4a'], [70, '#efe9d9', '#7a5a4a']]) {
+    for (const [x, base0, line] of [[56, '#e9e4d6', '#8a8f9a'], [63.5, '#d9d4c4', '#3a3f4a'], [70, '#efe9d9', '#7a5a4a']] as [number, string, string][]) {
       const cloth = I.clothMat(base0, line);
       N.add(B(6.5, 13, .25, cloth, x, 19, 3.85), B(6.5, 1.4, 1.4, cloth, x, 31, 3.2), B(6.5, 7, .25, cloth, x, 25, 2.5));
     }
@@ -471,7 +480,7 @@ IS.add(B(ICAB / 2 - 2, .75, 11, PLY, ICAB / 4, 17.25, -BASE_D + .75 + 5.5));   /
     g.add(B(.75, 16.5, UPPER_D - 1, PLY, 0, 0, -.3));
   }
   { const g = UPPER('U2', 'Glasses and mugs', 'Left of the microwave', '15 × 12 × 36 in', ['Everyday tumblers and pint glasses', 'Mugs'], 'No change: right at the entry and over the fridge-side counter.', N, 34, 15, 54, 36, [12, 24], 1);
-    [[-4, '#5b8fd6'], [-1.2, '#5b8fd6'], [1.6, '#7fc7a8'], [4.3, '#e4f1f3']].forEach(([x, c]) => g.add(at(I.glass(1.3, 5.5, c), x, 0, x % 2 ? 1.5 : -1.5)));
+    [[-4, '#5b8fd6'], [-1.2, '#5b8fd6'], [1.6, '#7fc7a8'], [4.3, '#e4f1f3']].forEach(([x, c]: [number, string]) => g.add(at(I.glass(1.3, 5.5, c), x, 0, x % 2 ? 1.5 : -1.5)));
     [-3.8, 0, 3.8].forEach(x => g.add(at(I.glass(1.7, 6, '#e4f1f3', .8), x, 12.75, 0)));
     [[-3.6, '#c8312b'], [0, '#f2f0ea'], [3.6, '#2f6cc8']].forEach(([x, c]) => g.add(at(I.mug(1.6, 3.8, c), x, 24.75, 0, PI / 2)));
   }
@@ -569,7 +578,7 @@ IS.add(B(ICAB / 2 - 2, .75, 11, PLY, ICAB / 4, 17.25, -BASE_D + .75 + 5.5));   /
     const hit = raycaster.intersectObjects(pickables, false)[0];
     return hit ? hit.object.userData.op : null;
   }
-  function setHover(o, e) {
+  function setHover(o, e?) {
     if (hovered && hovered !== o) for (const m of hovered.fronts) m.emissive.set('#000000');
     hovered = o;
     if (o) for (const m of o.fronts) m.emissive.set('#3a2a12');
@@ -608,7 +617,7 @@ IS.add(B(ICAB / 2 - 2, .75, 11, PLY, ICAB / 4, 17.25, -BASE_D + .75 + 5.5));   /
   transit.registerFleet('monorail', mini.fleet, mini.slots);
   const linesLit = mini.highlight(renderer), ridebar = createRidebar({ rideStrip: transit.rideStrip });
   let aboard = false;
-  const keys = {};
+  const keys: Record<string, boolean> = {};
   function board(go) {
     if (!go()) return;
     transit.look(-Math.PI / .0045, 0);   // turn round to face the cabin's passenger, who waves
@@ -626,7 +635,7 @@ IS.add(B(ICAB / 2 - 2, .75, 11, PLY, ICAB / 4, 17.25, -BASE_D + .75 + 5.5));   /
   }
   const move = () => transit.move((keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0), (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0));
   window.addEventListener('keydown', e => {
-    if (!aboard || (e.target.closest && e.target.closest('input, select, textarea'))) return;
+    if (!aboard || ((e.target as Element).closest && (e.target as Element).closest('input, select, textarea'))) return;
     if (e.key === 'Escape') { getOff(); return; }
     if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) { keys[e.code] = true; move(); e.preventDefault(); }
   });
@@ -641,7 +650,7 @@ IS.add(B(ICAB / 2 - 2, .75, 11, PLY, ICAB / 4, 17.25, -BASE_D + .75 + 5.5));   /
   function toggle(o, open) { o.goal = open ? 1 : 0; syncList(); }
 
   // ---- the panel: views, open/close everything, every storage spot, and the details card
-  const VIEWS = [
+  const VIEWS: [string, THREE.Vector3Tuple, THREE.Vector3Tuple][] = [
     ['Whole kitchen', [-34, 215, 222], [66, 18, 62]],
     ['From the doorway', [-26, 64, 34], [92, 36, 82]],
     ['Stove wall', [64, 66, 118], [64, 46, 6]],
@@ -664,7 +673,7 @@ IS.add(B(ICAB / 2 - 2, .75, 11, PLY, ICAB / 4, 17.25, -BASE_D + .75 + 5.5));   /
   closeAll.addEventListener('click', () => { for (const o of openables) o.goal = 0; show(null); syncList(); });
   allRow.append(openAll, closeAll);
   const list = document.createElement('div'); list.className = 'views klist';
-  const GROUPS = [['Drawers', ['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'I1', 'I2', 'I3', 'I4', 'R']], ['Base cabinets', ['B1', 'B2', 'S', 'IA', 'IB']], ['Upper cabinets', ['U1', 'U2', 'U3', 'U4', 'U5', 'U6', 'U7']]];
+  const GROUPS: [string, string[]][] = [['Drawers', ['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'I1', 'I2', 'I3', 'I4', 'R']], ['Base cabinets', ['B1', 'B2', 'S', 'IA', 'IB']], ['Upper cabinets', ['U1', 'U2', 'U3', 'U4', 'U5', 'U6', 'U7']]];
   const listBtns = new Map();
   for (const [h, codes] of GROUPS) {
     const head = document.createElement('span'); head.className = 'views-h'; head.textContent = h;
@@ -770,7 +779,7 @@ IS.add(B(ICAB / 2 - 2, .75, 11, PLY, ICAB / 4, 17.25, -BASE_D + .75 + 5.5));   /
     scene, camera, controls, openables, byCode, mini, transit,
     open(code, on = true) { const o = byCode[code]; toggle(o, on); show(on ? o : null); if (on) lookAt(o); },
     start() {
-      return new Promise(resolve => {
+      return new Promise<void>(resolve => {
         let first = true;
         renderer.setAnimationLoop(now => { frame(now); if (first) { first = false; resolve(); } });
       });

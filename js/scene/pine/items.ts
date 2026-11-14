@@ -3,9 +3,11 @@
 // the bottom centre of the item, so it can be stood on a shelf or laid in a drawer.
 import * as THREE from 'three';
 
-const mats = new Map();
+/** mat()'s options: r roughness, m metalness, op opacity (makes it transparent), map texture, side, e emissive */
+interface MatOpts { r?: number; m?: number; op?: number; map?: THREE.Texture; side?: THREE.Side; e?: THREE.ColorRepresentation }
+const mats = new Map<string, THREE.MeshStandardMaterial>();
 /** a shared MeshStandardMaterial: o.r roughness, o.m metalness, o.op opacity, o.map texture */
-export function mat(color, o = {}) {
+export function mat(color, o: MatOpts = {}) {
   const key = [color, o.r, o.m, o.op, o.map && o.map.uuid, o.side, o.e].join('|');
   let m = mats.get(key);
   if (!m) {
@@ -46,7 +48,7 @@ export const lay = (o, x, y, z, ry = 0) => { const g = G(o); o.rotation.x = -Mat
 function lathe(profile, m, seg = 28) {
   return mesh(new THREE.LatheGeometry(profile.map(([r, y]) => new THREE.Vector2(r, y)), seg), m);
 }
-export function bowl(r, h, color, o = {}) {
+export function bowl(r, h, color, o: { m?: THREE.Material } = {}) {
   const m = o.m || mat(color, { r: .35, side: THREE.DoubleSide });
   return G(lathe([[0, 0], [r * .45, 0], [r * .5, .15], [r * .85, h * .45], [r, h], [r * .97, h]], m));
 }
@@ -90,7 +92,7 @@ export function bakingDish(w, d, h) {
 export function ramekin(r, color = '#f4f1ea') { return G(C(r, r * .92, r * .9, mat(color, { r: .35 }), 0, 0, 0, 18, true), C(r * .92, r * .92, .2, mat(color))); }
 
 // ---- cookware
-export function pot(r, h, o = {}) {
+export function pot(r, h, o: { m?: THREE.Material; long?: number; lid?: boolean; glassLid?: boolean } = {}) {
   const s = o.m || M.steel(), g = G(C(r, r, h, s, 0, 0, 0, 24, true), C(r, r, .2, s));
   for (const sx of [-1, 1]) g.add(B(1.2, .4, 1, s, sx * (r + .5), h - 1.2));
   if (o.long) g.add(B(o.long, .5, 1, s, r + o.long / 2, h - .8));
@@ -108,7 +110,7 @@ export function pan(r, color = '#2a2b2e', handle = 8) {
 export function lid(r, glassy = true) {
   return G(lathe([[0, .8], [r * .3, .75], [r, 0]], glassy ? M.glass() : M.steel()), C(.5, .4, .6, M.black(), 0, .7));
 }
-export function mixingBowl(r, h, color) { return bowl(r, h, color, { m: color ? undefined : mat('#cfd3d6', { m: .85, r: .25, side: THREE.DoubleSide }) }); }
+export function mixingBowl(r, h, color?) { return bowl(r, h, color, { m: color ? undefined : mat('#cfd3d6', { m: .85, r: .25, side: THREE.DoubleSide }) }); }
 export function slowCooker() {
   const g = G(C(6.5, 6, 8, M.steel()), C(6.6, 6.6, 1, M.black(), 0, 0));
   g.scale.set(1.3, 1, 1);
@@ -188,7 +190,7 @@ export function wrapBox(len, color, band) {   // foil / parchment / plastic wrap
 }
 export function roll(r, len, color = '#fbfbf8') { return lay(G(C(r, r, len, mat(color, { r: .85 }), 0, -len / 2)), 0, r, 0); }
 export function paperTowels() { return G(C(2.8, 2.8, 11, mat('#fbfbf8', { r: .9 })), C(.8, .8, 11.1, mat('#b49a74'))); }
-export function bottle(r, h, color, o = {}) {
+export function bottle(r, h, color, o: { glassy?: boolean; cap?: string } = {}) {
   const m = o.glassy ? mat(color, { r: .1, op: .7 }) : mat(color, { r: .35 });
   return G(C(r, r, h * .7, m), C(r * .35, r, h * .18, m, 0, h * .7), C(r * .32, r * .32, h * .12, mat(o.cap || '#1d1e21'), 0, h * .88));
 }
@@ -330,7 +332,7 @@ export function podTub() { return G(C(3, 3, 6, mat('#f2f0ea', { r: .5 })), C(3.1
 export function britaBox() { return carton(5, 7, 3, '#2c7fc0', '#ffffff'); }
 export function saltBox() { return carton(5, 8, 3, '#c22a22', '#ffffff'); }
 export function oilBottle(color = '#7b8a2a') { return bottle(1.5, 11, color, { glassy: true }); }
-export function fruitBowl() { const g = bowl(5, 2.5, '#2a2b2e'); for (const [x, z, c] of [[-1.5, 0, '#f2c230'], [1.5, .5, '#c8312b'], [0, -1.6, '#e8842a']]) g.add(mesh(new THREE.SphereGeometry(1.4, 12, 8), mat(c, { r: .5 }), x, 2, z)); return g; }
+export function fruitBowl() { const g = bowl(5, 2.5, '#2a2b2e'); for (const [x, z, c] of [[-1.5, 0, '#f2c230'], [1.5, .5, '#c8312b'], [0, -1.6, '#e8842a']] as [number, number, string][]) g.add(mesh(new THREE.SphereGeometry(1.4, 12, 8), mat(c, { r: .5 }), x, 2, z)); return g; }
 export function cuttingBoard(w = 11, d = 15) { return G(B(w, .75, d, mat('#c79c66', { r: .75 }))); }
 export function toaster() { return G(B(11, 7.5, 6.5, M.black()), B(4, .2, 1.4, mat('#000000'), -2.2, 7.5, 0), B(4, .2, 1.4, mat('#000000'), 2.2, 7.5, 0), B(1, .8, .4, M.steel(), 4.5, 5, 3.3)); }
 export function toasterOven() {
@@ -362,7 +364,7 @@ export function mitt(color = '#2f4f9a') {
 export function wireBasketTiers() {
   const m = mat('#1d1e21', { m: .5, r: .45 }), g = G(C(.25, .25, 16, m), C(3, 3, .3, m));
   for (const [y, r] of [[3, 5], [12, 4]]) g.add(mesh(new THREE.TorusGeometry(r, .12, 4, 24), m, 0, y, 0).rotateX(Math.PI / 2), C(r * .8, r * .6, 2.5, m, 0, y - 2.5, 0, 12, true));
-  for (const [x, z, c] of [[-1.5, 0, '#f2c230'], [1.6, .6, '#f2c230'], [0, -1.4, '#9b6b2f']]) g.add(mesh(new THREE.SphereGeometry(1.3, 10, 8), mat(c, { r: .5 }), x, 4, z));
+  for (const [x, z, c] of [[-1.5, 0, '#f2c230'], [1.6, .6, '#f2c230'], [0, -1.4, '#9b6b2f']] as [number, number, string][]) g.add(mesh(new THREE.SphereGeometry(1.3, 10, 8), mat(c, { r: .5 }), x, 4, z));
   return g;
 }
 export function dishRack() {
