@@ -5,8 +5,8 @@ description: Measure, find and prove runtime performance gains in the three.js c
 
 # Performance work on the Schuylkill model
 
-The harness is `tools/perf/perf.py` (setup: `uv sync --group qa`). Read `tools/perf/README.md` before your first run; it
-explains every metric and pitfall. The loop:
+The harness is `tools/perf/perf.py` (setup: `uv sync --group qa`, plus Node 24 and npm: it builds each side, cached; see
+"Sides" in the README). Read `tools/perf/README.md` before your first run; it explains every metric and pitfall. The loop:
 
 1. **Baseline.** Run this and read the printed summary (also saved as `summary.md` in the
    output folder):

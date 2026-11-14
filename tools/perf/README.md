@@ -20,7 +20,7 @@ against a commit in interleaved runs, so you can tell a real improvement from no
 ## Setup
 
 Python 3.12 and Playwright, from the `qa` group of the repo's uv environment (see "Run it" in
-[README.md](../../README.md); the app itself has no build step):
+[README.md](../../README.md)), and Node 24 with npm, which build each side (see "Sides"):
 
 ```bash
 uv sync --group qa
@@ -32,9 +32,39 @@ uv run python -m playwright install chromium
 
 The pixel diffs (`ab --shots`, `smoke --against`) also need Pillow (`pip install pillow`).
 
-three.js and the font are fetched from their CDNs on the first run and cached in
-`tools/perf/.cache/`, so later runs need no network and CDN latency stays out of the
-load numbers. Output goes to `tools/perf/out/` (git-ignored).
+Output goes to `tools/perf/out/` (git-ignored).
+
+## Sides
+
+Every command serves one or two **sides**: the working tree, a commit (`ab --base`, `smoke --ref`),
+a folder (`smoke --root`) or a snapshot (`ab --a-snap`). One function, `prepare_side()` in `perf.py`,
+prepares each, the same way for both sides of an `ab` (and for `ux.py`):
+
+- **A side with a `package.json` is built**, in perf mode: `tools/perf/build.mjs` loads the side's own
+  `vite.config.js` with its own installed Vite and builds as production does (same plugins, same
+  chunking), but not minified, with source maps, fixed file names (`assets/main.js`), and a plugin that
+  applies the harness's patches to three's core file: the uuid stream (always; see "Deterministic
+  scenes") and, for `--census` / `--ablate` only, the `add()` tagging. The patch text lives in
+  `perf.py` (`UUID_PATCH`, `TAG_PATCH`), so both sides are patched by the same code, whatever each
+  commit's own config says. The output is served **strictly**: a file missing from the build is a
+  404, as in production.
+- **Builds are cached.** `npm ci` runs once per lockfile into `tools/perf/.cache/npm-<sha>/`; a build
+  reads a staged copy of the side's files with that `node_modules` linked in (your own
+  `node_modules` is never used or touched). Builds go to `tools/perf/.cache/build/<mode>-<key>/`,
+  keyed by the side's files, so the same tree gives the same folder: `ab` with the same code on both
+  sides serves one build twice. The 8 most recent builds and 2 most recent installs are kept.
+- **A side without a `package.json`** (a commit from before the build) is served as its sources:
+  three.js and the font come from their CDNs, cached in `tools/perf/.cache/` on first use and
+  patched the same way, and files it lacks come from the working tree. This path exists until P3
+  of the refactor removes it.
+
+**Attribution in a build.** Stacks and profiles point into `assets/main.js`; `perf.py` resolves
+them through the chunk's source map, so the census, the load builder table and `hot` still name
+`js/<file>:<line>` and the original functions. The bundler renames clashing top-level functions
+(`buildMonorail$1`: two modules define `buildMonorail`); the `$1` is dropped and the file tells
+them apart. Saved `.cpuprofile` and `.heapprofile` files are rewritten to source positions when
+they are written, so `hot` and DevTools read them after the build is gone; three's files show as
+`three/three.core.js` and `three/three.module.js`, as from the CDN.
 
 ## Commands
 
@@ -77,8 +107,8 @@ python -I tools/perf/perf.py smoke --against tools/perf/out/<time>-smoke-base
 | `run --ablate` | adds the cost of each part: shadow pass, half resolution, labels, and each big builder hidden | + ~50 s per scenario |
 | `ab` | A/B: `--base` commit (default HEAD) vs your working tree, alternating fresh browsers, paired t-test per metric; timings only | (~8 s + 8 s per scenario) × (2 × rounds + 1); `-s overview-dusk` at 5 rounds ≈ 3 min |
 | `ab --shots` | also saves a screenshot of every scenario for both sides (`A-<name>.png`, `B-<name>.png`) in the last round, and reports the share of changed pixels per scenario (`diff-<name>.png` marks them) | + a moment |
-| `smoke` | loads every city in `js/cities.js` (the working tree, `--ref REF` or `--root DIR`), fails on any page error, `console.error` or failed request, and saves `<city>.png` in a fixed view; `--against <earlier smoke folder>` reports the changed pixels per city. Exits non-zero if a city failed | ~10 s per city |
-| `snap NAME` | copies the sources as they are now (`index.html`, `css/`, `js/`) to `out/.snap/NAME`; `--ref REF` copies a commit instead. `ab --a-snap X --b-snap Y` then compares two snapshots, so stacked changes can be measured one at a time without committing, while you keep editing | instant |
+| `smoke` | loads every city in `js/cities.js` (the working tree, `--ref REF` or `--root DIR`), fails on any page error, `console.error` or failed request, and saves `<city>.png` in a fixed view; `--against <earlier smoke folder>` reports the changed pixels per city. `--prod` serves the side's own `npm run build` (unpatched) instead of the perf build; `--url ORIGIN` loads a deployed site. Exits non-zero if a city failed | ~10 s per city |
+| `snap NAME` | freezes the app as it is now in `out/.snap/NAME`: its perf build (or, for a side without a `package.json`, its `index.html`, `css/`, `js/`); `--ref REF` snapshots a commit instead. `ab --a-snap X --b-snap Y` then compares two snapshots, so stacked changes can be measured one at a time without committing, while you keep editing | a second |
 | `hot` | re-analyses a saved `.cpuprofile` / `.heapprofile`; `--focus fn` limits it to one function's subtree, `--total` ranks by inclusive time | instant |
 | `compare` | diffs two `report.json` files from separate `run`s (ideally `--repeat 3` each); weaker than `ab` because of drift between runs | instant |
 
@@ -102,14 +132,20 @@ ranges), `--no-profile` (timings only), `--seconds`, `--settle`, `--size 1920x10
 ## Smoke and pixel diffs
 
 `smoke` is the "does every city still load" check. Each city gets a fresh page with the
-same setup as `run` (seeded `Math.random`, pinned date, three.js and the font from the
-cache with the uuid patch, 1600×900) and must draw frames and close its loading screen
+same setup as `run` (seeded `Math.random`, pinned date, the uuid patch, 1600×900) and must
+draw frames and close its loading screen
 within `--timeout` (180 s); a timeout is a failure, since a frame loop that dies shows up as
 one. Any `pageerror`, `console.error`, failed request or HTTP 4xx/5xx fails the city, and the
 report names the line or URL. Then a city flies to its home view at 12:30 (the kitchen keeps
 its opening view; it sets `window.__kitchen`, not `window.__city`), waits `--settle`,
 centres the shadow box like `ab --shots`, and saves `<city>.png`. Output: `smoke.md`,
 `smoke.json` and the screenshots in `tools/perf/out/<time>-smoke[-label]/`.
+
+`smoke --prod` (the side's production build, served strictly) and `smoke --url <origin>` (a
+deployed site; nothing served or intercepted) check the real production output. Production code
+has no uuid patch, so the trees grow from a shifted random stream: pixel shares against a patched
+smoke are informational there (phl about 3%, jsh about 11%). What counts is no error and no failed
+request.
 
 The pixel diffs (`ab --shots`, `smoke --against`, `ux.py compare`) count a pixel as changed
 when any channel differs by more than 8 of 255 (`DIFF_THRESHOLD`), report the share of
@@ -181,8 +217,8 @@ every buffer then. In the top self-time list, `WebGLProgram` is shader compile a
    then its census rows (`file:line`). For CPU-bound scenarios, use the hot path and
    `perf.py hot <profile> --focus <fn>`.
 3. Change the code. Keep the look: compare the scenario screenshots before and after.
-4. Prove it: `ab -s <scenarios>`. It checks out `--base` (default HEAD, so leave your change
-   uncommitted) into a temporary git worktree and serves it next to your working tree. Each
+4. Prove it: `ab -s <scenarios>`. It prepares `--base` (default HEAD, so leave your change
+   uncommitted) as a side (see "Sides") and serves it next to your working tree. Each
    round loads A and B in fresh browsers, in alternating order, after one discarded warm-up
    load, and runs every scenario. Verdicts: `better` / `worse` = paired t-test at 99% and at
    least `--threshold` (3%); `likely` = 95%; `not significant` = it moved, but no more than
@@ -224,7 +260,11 @@ Gains of about 1 ms are detectable; for smaller ones, raise `--rounds`.
   `frame()` stops the `requestAnimationFrame` chain, and `perf.py` then waits for frames that
   never come. If a run hangs after a code change, load the page by hand and read the console.
 - **`--census` / `--ablate` patch three.js** (a hook on `Object3D.add` that captures a
-  stack per call), which slows the load. Don't use load times from those runs.
+  stack per call; a build gets its own tagged variant), which slows the load. Don't use load
+  times from those runs.
+- **A census frame has the shadow pass one time in four**: the app redraws the shadow map every
+  4th frame, and the census counts whichever frame comes next. Compare shadow rows only between
+  censuses that both have them.
 - **Moving scenarios** (`fly-market`, the rides) restart before each ablation measurement
   so every measurement sees the same stretch.
 - The probe wraps `requestAnimationFrame` and `renderer.render`; its frames show as
@@ -234,7 +274,7 @@ Gains of about 1 ms are detectable; for smaller ones, raise `--rounds`.
 
 - **Chrome DevTools**: open the saved `.cpuprofile` in the Performance panel for a flame
   chart, or `.heapprofile` in the Memory panel. For a live look, run
-  `python -m http.server 8765`, open http://localhost:8765, then use the Performance
+  `npm run dev`, open http://localhost:5173, then use the Performance
   panel's record button. Turn on "Enable advanced rendering instrumentation" for GPU detail.
 - **The probe on any page**: paste `tools/perf/probe.js` into the console of a running
   page (the browser pane, Chrome DevTools MCP's `evaluate_script`, …), then
