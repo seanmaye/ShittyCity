@@ -46,8 +46,11 @@ To measure how fast it loads and renders (frame and GPU time per scenario, hot c
 draw calls by source line, before/after comparisons), see [tools/perf/README.md](tools/perf/README.md):
 
 ```bash
-python -I tools/perf/perf.py run --quick
+uv sync --group qa
+uv run python -I tools/perf/perf.py run --quick
 ```
+
+The Python tools that need libraries run in one environment locked with [uv](https://docs.astral.sh/uv/) (`pyproject.toml` and `uv.lock`, made with uv 0.13.4, Python 3.12 from `.python-version`). `uv sync --group <name>` puts it in `.venv/` at the repo root with that group: `data` (the city builders), `fetch` (their downloaders), `qa` (perf, ux and the loading-screen capture) and `dev` (Ruff, pytest). `uv sync` removes the groups you don't name, so name them all in one command (`uv sync --group data --group fetch`) or use `--all-groups`. `serve.py` needs only Python itself.
 
 ## Sharing as one file
 
@@ -147,5 +150,5 @@ All cities share one set of data formats, which [docs/EDITING.md](docs/EDITING.m
 1. Make its data in `data/<id>/` in the shared formats, with the tools that make it in `tools/<id>/`.
 2. Add its entry to `CITIES` in `js/cities.js`. The menu shows it automatically.
 3. Put anything hand-built in `js/scene/<id>/`, and call it from `js/scene/index.js` when that city's data is loaded.
-4. List a few points of interest in its `loadingScreens` and capture them with `python -I tools/loading/capture.py <id>`.
+4. List a few points of interest in its `loadingScreens` and capture them with `uv run python -I tools/loading/capture.py <id>`.
 5. Write `docs/<ID>.md`, and run `python -I tools/bundle.py`.

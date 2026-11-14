@@ -74,8 +74,8 @@ The map image is not in the repository. Download it from
 http://www.phillytrolley.org/ptc-map.html (`IMAGES/PTC_MAP3.GIF`), then, from the repository folder:
 
 ```
-pip install pillow
-python tools/phl/build_trolley1953.py PTC_MAP3.GIF tools/phl/osm/streets_cc.json tools/phl/osm/oldtram.json data/phl/trolley1953.json --overlay check.png
+uv sync --group data
+uv run python tools/phl/build_trolley1953.py PTC_MAP3.GIF tools/phl/osm/streets_cc.json tools/phl/osm/oldtram.json data/phl/trolley1953.json --overlay check.png
 ```
 
 Look at `check.png` (the traced streets drawn in magenta over the map), then add `--write`

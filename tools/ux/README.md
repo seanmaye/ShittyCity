@@ -15,32 +15,33 @@ same deterministic seed and date, so two runs of the same code give the same pic
 
 ## Setup
 
-Python 3.10+ with Playwright and its Chromium. The venv in `tools/.venv` is git-ignored:
+Python 3.12 with Playwright and its Chromium, from the `qa` group of the repo's uv environment
+(see "Run it" in [README.md](../../README.md)):
 
 ```bash
-uv venv tools/.venv --python 3.12 && VIRTUAL_ENV=tools/.venv uv pip install playwright
+uv sync --group qa
 ```
 
 ```bash
-tools/.venv/bin/python -m playwright install chromium
+uv run python -m playwright install chromium
 ```
 
 ## Commands
 
 ```bash
-tools/.venv/bin/python -I tools/ux/ux.py list
+uv run python -I tools/ux/ux.py list
 ```
 
 ```bash
-tools/.venv/bin/python -I tools/ux/ux.py run -c phl -d phone,phone-land --label before
+uv run python -I tools/ux/ux.py run -c phl -d phone,phone-land --label before
 ```
 
 ```bash
-tools/.venv/bin/python -I tools/ux/ux.py run -c jsh -d phone -s hunter,binoculars
+uv run python -I tools/ux/ux.py run -c jsh -d phone -s hunter,binoculars
 ```
 
 ```bash
-tools/.venv/bin/python -I tools/ux/ux.py compare tools/ux/out/<before> tools/ux/out/<after> --detail
+uv run python -I tools/ux/ux.py compare tools/ux/out/<before> tools/ux/out/<after> --detail
 ```
 
 | option | |
