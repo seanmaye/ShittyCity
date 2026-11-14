@@ -12,11 +12,11 @@
 // The people are Kyle's jointed figures (phl/people.js geo() and pose()), each with a face; click
 // one to see through their eyes, with a card about them (crewprofiles.ts), the same way as the
 // people on Philadelphia's Walnut St promenade. This module offers the same interface as
-// phl/pedestrians.js, so js/scene/index.js and js/ui.js use it in that one's place.
+// phl/pedestrians.js, so js/scene/index.ts and js/ui.js use it in that one's place.
 import * as THREE from 'three';
 import { geo, pose } from '../phl/people.ts';
 import { groundAt } from './terrain.ts';
-import { onSeason } from '../season.js';
+import { onSeason } from '../season.ts';
 import { stage, cutHole, CORN_HOLE } from './farms.ts';
 import { detasselerProfile, bossProfile } from './crewprofiles.ts';
 import { LIGHT, makeRenderer } from '../../three-setup.js';
@@ -279,7 +279,7 @@ export function buildDetassel(scene, seed: JshFarms['seed'], { hour = () => 9 } 
     aim(w.out);
   }
   /** the view: behind the boss and to one side, looking over the second detasseler (out: where()'s).
-   *  The orbit controls keep the camera 40 m or more from what it looks at (core.js minDistance),
+   *  The orbit controls keep the camera 40 m or more from what it looks at (core.ts minDistance),
    *  so it looks at the field beyond them: aimed at the crew it would be pushed back to where
    *  they are too small to tap. */
   function aim(out) {

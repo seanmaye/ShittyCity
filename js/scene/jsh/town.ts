@@ -16,14 +16,14 @@
 //  school, store, mill, big  flat-roofed schools and stores, steel-sided mills (gabled when the
 //          footprint is a plain rectangle), and big hip-roofed houses and apartment buildings
 //
-// Walls use the small-town facade textures in materials.js; roofs, porches, chimneys, cornices
+// Walls use the small-town facade textures in materials.ts; roofs, porches, chimneys, cornices
 // and steeples are plain vertex-coloured geometry. Both are merged in 700 m tiles.
 import * as THREE from 'three';
 import { pairs } from '../../data.js';
-import { worldWinMat, WIN_W, WIN_H, M } from '../materials.js';
-import { Builder, addPolygon, colorOf } from '../geometry.js';
+import { worldWinMat, WIN_W, WIN_H, M } from '../materials.ts';
+import { Builder, addPolygon, colorOf } from '../geometry.ts';
 import { groundBase } from './terrain.ts';
-import { hash } from '../buildings.js';
+import { hash } from '../buildings.ts';
 import type { Buildings } from '../../types/data.ts';
 
 const TILE = 700;

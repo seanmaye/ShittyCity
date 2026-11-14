@@ -1,22 +1,22 @@
 // Assembles the whole scene from the loaded data and exposes what the UI needs.
 import * as THREE from 'three';
-import { createCore } from './core.js';
+import { createCore } from './core.ts';
 import { restoreAnisotropy } from '../three-setup.js';
 import { pairs } from '../data.js';
 import { CITY } from '../cities.js';
-import { litMats, setWindowHour, DISPLAY_PRESETS, setDisplayColors } from './materials.js';
-import { buildRiver } from './river.js';
-import { buildGround } from './ground.js';
-import { buildBuildings } from './buildings.js';
-import { buildMonorail as buildProposedMonorail } from './monorail.js';
-import { buildTrees, buildShells } from './nature.js';
-import { buildSubway, SPEC } from './subway.js';
-import { createSky } from './sky.js';
-import { createCinematic } from './cinematic.js';
-import { setSeason, addSnow, dayOfYear, dateOfDay, formatDay, getSeason } from './season.js';
-import { buildCity } from './city.js';
-import { buildTransitMap } from './transitmap.js';
-import { setTerrain, terrain, seat, surface, profile } from './terrain.js';
+import { litMats, setWindowHour, DISPLAY_PRESETS, setDisplayColors } from './materials.ts';
+import { buildRiver } from './river.ts';
+import { buildGround } from './ground.ts';
+import { buildBuildings } from './buildings.ts';
+import { buildMonorail as buildProposedMonorail } from './monorail.ts';
+import { buildTrees, buildShells } from './nature.ts';
+import { buildSubway, SPEC } from './subway.ts';
+import { createSky } from './sky.ts';
+import { createCinematic } from './cinematic.ts';
+import { setSeason, addSnow, dayOfYear, dateOfDay, formatDay, getSeason } from './season.ts';
+import { buildCity } from './city.ts';
+import { buildTransitMap } from './transitmap.ts';
+import { setTerrain, terrain, seat, surface, profile } from './terrain.ts';
 // Jersey Shore: its own elevation grid (not Philadelphia's lidar format), and everything laid onto it
 import { loadTerrain as loadGrid, buildTerrain as buildGrid, drape as drapeGrid, groundAt as gridAt } from './jsh/terrain.ts';
 import { buildPlaces } from './jsh/places.ts';
@@ -38,8 +38,8 @@ function yardFloor(yp) {
  * first split to points at most STEP m apart, then lifted: track at street level by the ground
  * right under it (so it lies in the street, which is draped the same way), Els and tunnels by the
  * ground smoothed over 60 m either side (so a viaduct or tunnel doesn't follow every kerb), blending
- * between the two on the ramps; across water both run straight from bank to bank (terrain.js
- * profile). Each piece keeps its lift per point in `g` (dm), so subway.js can still tell street,
+ * between the two on the ramps; across water both run straight from bank to bank (terrain.ts
+ * profile). Each piece keeps its lift per point in `g` (dm), so subway.ts can still tell street,
  * El and tunnel apart by height above the ground. Platforms follow the track beside them, and El
  * columns stretch from the ground to the deck.
  */
@@ -200,7 +200,7 @@ export async function buildScene(canvas, data, status = () => {}, own = {}) {
   river.waterMat.userData.noSnow = true;
   // the monorails' cars can be boarded like any transit car (positioned by their own modules)
   const monoSlots = [];
-  // where a monorail is along its guideway, for the line diagram and the next-stop sign (subway.js
+  // where a monorail is along its guideway, for the line diagram and the next-stop sign (subway.ts
   // rideStrip): a run with the named stations as stops, and each car's s, found from where its own
   // module put it (the nearest of points every 5 m). A loop goes round; a shuttle (open guideway)
   // goes out and back, so its run is twice the guideway, folded at the far end.
@@ -236,10 +236,10 @@ export async function buildScene(canvas, data, status = () => {}, own = {}) {
   if (boats.slots.length) subway.registerFleet('boat', boats.spec, boats.slots);
   // people fishing along the Schuylkill: click one to be asked to fish with them (js/fishing.js)
   const anglers = isPhl ? buildAnglers(scene, river, data.boats, [...data.river.water, ...data.city.water]) : { update() {}, pick: () => null, info: () => null, views: [] };
-  // everything else onto the ground: drape the flat ground pieces, set the rest down on it (terrain.js)
+  // everything else onto the ground: drape the flat ground pieces, set the rest down on it (terrain.ts)
   if (terrain.on) { status('Setting the city on its hills…', 92); await nextFrame(); seat(scene); }
   // cut-aways: clip every material by the section plane, except what the subway marks noClip
-  // winter snow on whatever faces the sky (roofs, ground, parks, decks, conifers): season.js
+  // winter snow on whatever faces the sky (roofs, ground, parks, decks, conifers): season.ts
   scene.traverse(o => { if (o.isMesh) [].concat(o.material).forEach(m => addSnow(m, m.userData.snowAmt ?? 1)); });
   renderer.localClippingEnabled = true;
   scene.traverse(o => {
@@ -257,7 +257,7 @@ export async function buildScene(canvas, data, status = () => {}, own = {}) {
   // tags float the same height above the ground as they did above the flat model
   if (terrain.on) for (const l of labels) if (!l.abs && l.pos) l.pos.y += surface(l.pos.x, l.pos.z);
   // instanced meshes hold instances far from their own origin: never let three cull them as a whole,
-  // except those that carry the bounds of their instances (geometry.js withBounds)
+  // except those that carry the bounds of their instances (geometry.ts withBounds)
   scene.traverse(o => { if (o.isInstancedMesh && !o.userData.bounded) o.frustumCulled = false; });
 
   // "Show transit lines": every rail line plus the proposed monorails
@@ -504,7 +504,7 @@ export async function buildScene(canvas, data, status = () => {}, own = {}) {
     controls.target.y = Math.max(surface(controls.target.x, controls.target.z), controls.target.y + mv.y);
   }
   // Cinematic mode: hands-free fly-arounds planned from this city's views, landmarks, skyline and
-  // lines (cinematic.js; nothing city-specific here, so every city has it)
+  // lines (cinematic.ts; nothing city-specific here, so every city has it)
   const lineName = id => { const sh = /^shuttle(\d+)$/.exec(id), l = lineById.get(id) || lines.find(o => o.id === id || o.id === 'm:' + id || o.id === 'm:mono:' + id || (sh && o.id === +sh[1])); return l ? l.name : ''; };   // (a sports shuttle's route is 'shuttle' + its index)
   const cine = createCinematic({
     scene, camera, views, home: { pos: core.HOME_POS, target: core.HOME_TGT }, name: CITY.name,

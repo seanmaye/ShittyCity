@@ -19,13 +19,13 @@
 // what you see: the view sways, blurs, shakes, shifts colour (the canvas's CSS filter), or in a
 // K-hole leaves the body and floats above it.
 //
-// js/scene/index.js treats a punk like a person you are inside (getInhabited() is the "car" you are
+// js/scene/index.ts treats a punk like a person you are inside (getInhabited() is the "car" you are
 // aboard); js/ui.js draws the card and the action buttons from that state.
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { geo, pose, type Joints } from './people.ts';
 import { punkProfile } from './punkprofiles.ts';
-import { litMats } from '../materials.js';
+import { litMats } from '../materials.ts';
 import { LIGHT, makeRenderer } from '../../three-setup.js';
 
 const BPM = 172, STAGE = 1.6;     // the band's tempo; the stage deck's height in the bowl (yardpark.ts)
@@ -651,7 +651,7 @@ export function buildConcert(bowl, { canvas = null, night = () => 0, avoid = [] 
   let placed = false;
   function update(dt, camera) {
     cam = camera; clock += dt;
-    if (!placed) { placed = true; placeView(); stage.stageKey.value.copy(KEY).transformDirection(group.matrixWorld); crowd.stageKey.value.copy(CROWD_KEY).transformDirection(group.matrixWorld); }   // (once the deck has been set on the ground: index.js)
+    if (!placed) { placed = true; placeView(); stage.stageKey.value.copy(KEY).transformDirection(group.matrixWorld); crowd.stageKey.value.copy(CROWD_KEY).transformDirection(group.matrixWorld); }   // (once the deck has been set on the ground: index.ts)
     const isNear = !!inside || near(); group.visible = isNear;
     if (!isNear) return;
     const now = song(), b = clock * BPM / 60 * Math.PI * 2;

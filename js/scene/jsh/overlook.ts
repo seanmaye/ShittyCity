@@ -16,12 +16,12 @@
 // or the bridge in town), zoomed right in. Leaving him puts you back behind the chair; leaving
 // again hands the camera back.
 //
-// js/scene/index.js treats this like a seat or a person you are inside (getState() is the
+// js/scene/index.ts treats this like a seat or a person you are inside (getState() is the
 // "car" you are aboard); js/ui.js draws the buttons and the binocular mask from that state.
 import * as THREE from 'three';
 import { geo } from '../phl/people.ts';
 import { groundAt } from './terrain.ts';
-import { buildTrees } from '../nature.js';
+import { buildTrees } from '../nature.ts';
 import { LIGHT, makeRenderer } from '../../three-setup.js';
 import type { Places } from '../../types/data.ts';
 
@@ -541,7 +541,7 @@ export function buildOverlook(scene, site, { night = () => 0, spot = () => null 
   const ACTS = [{ id: 'drag', label: 'Take a drag', key: '1' }, { id: 'drink', label: 'Drink beer', key: '2' }, { id: 'glass', label: 'Check out the view', key: '3', on: false }];
   // standing behind him, a button as well as tapping him: on a phone the hint saying so is folded away
   const EYES = [{ id: 'eyes', label: 'See through his eyes' }];
-  /** what index.js and ui.js need to know while you are here (null when you aren't); hintTouch
+  /** what index.ts and ui.js need to know while you are here (null when you aren't); hintTouch
    *  leads with what to tap, as a phone shows the first three lines */
   function getState() {
     if (!mode) return null;

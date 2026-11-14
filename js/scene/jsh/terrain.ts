@@ -1,6 +1,6 @@
 // Jersey Shore's terrain: an elevation grid with land cover (data/jsh/terrain.bin.gz, written by
 // tools/jsh/build_jsh.py; loaded as data.grid, see cities.js `grid`). Philadelphia's lidar terrain
-// is a different format and engine (js/scene/terrain.js); this one is Jersey Shore's own. Without
+// is a different format and engine (js/scene/terrain.ts); this one is Jersey Shore's own. Without
 // a grid loaded, everything here returns 0 and the scene stays on the flat plane y = 0.
 //
 // The grid is drawn as its own surface, coloured by land cover. Everything else is built flat as
@@ -10,9 +10,9 @@
 // each piece lies exactly in the plane of the terrain triangle under it, keeping its small
 // height above the ground.
 import * as THREE from 'three';
-import { M } from '../materials.js';
-import { Builder } from '../geometry.js';
-import { seasonalGrass } from '../season.js';
+import { M } from '../materials.ts';
+import { Builder } from '../geometry.ts';
+import { seasonalGrass } from '../season.ts';
 
 /** the decoded grid: n x n points, cell m apart, from -half to half m on x and z; h heights m, cover land cover (below) */
 export interface Grid { n: number; half: number; cell: number; base: number; h: Float32Array; cover: Uint8Array }
@@ -46,7 +46,7 @@ export function groundBase(ring: number[][]): number {
   return lo;
 }
 
-const COUNTRY = '#69775a';   // ground.js COUNTRY (not imported: ground.js imports this module)
+const COUNTRY = '#69775a';   // ground.ts COUNTRY (not imported: ground.ts imports this module)
 const OPEN = new THREE.Color(COUNTRY), FOREST = new THREE.Color('#4a5d3e'), BED = new THREE.Color('#5b6650'), CROP = new THREE.Color('#8f8c62');
 /** The terrain surface (in 2 km tiles, so the camera and the sun's shadow box can skip tiles) and,
  *  beyond it, flat country out to the horizon. */

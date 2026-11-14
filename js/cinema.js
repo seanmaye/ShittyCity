@@ -1,4 +1,4 @@
-// Cinematic mode's screen (the camera work is js/scene/cinematic.js): letterbox bars, the fade
+// Cinematic mode's screen (the camera work is js/scene/cinematic.ts): letterbox bars, the fade
 // through black between shots, and a title for each shot. Everything else on screen (the panel, the
 // map, the labels) steps aside. Any key, click, tap or scroll ends it. When the view has been left
 // alone for a while it starts by itself, like a screensaver; ?cinematic (or #cinematic) in the

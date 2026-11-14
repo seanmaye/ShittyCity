@@ -17,7 +17,7 @@ Writes, in the shared formats (docs/EDITING.md section 3):
                          streams and park trees
   terrain.bin.gz          the elevation grid the scene drapes everything over (js/scene/jsh/terrain.ts)
   places.json             labels and "Go to" views (js/scene/jsh/places.ts)
-  monorail.json           the proposed Mississippi riverfront loop (js/scene/monorail.js)
+  monorail.json           the proposed Mississippi riverfront loop (js/scene/monorail.ts)
 """
 import gzip, json, math, os, random, struct, sys, csv
 import numpy as np
@@ -586,7 +586,7 @@ for i in range(1, nB):          # delta-encode against the previous ORIGINAL val
     bz[i] = cur_z - prev_z
     prev_x, prev_z = cur_x, cur_z
 # polygon vertices are delta-encoded per ring (first absolute, then differences), like the
-# boxes above and like tools/nyc/import_nyc.py: the engine (js/scene/city.js) decodes them the
+# boxes above and like tools/nyc/import_nyc.py: the engine (js/scene/city.ts) decodes them the
 # same way, so writing them absolute makes every ring accumulate into a giant starburst.
 vx, vz = [], []
 for ring, h, k in polys:

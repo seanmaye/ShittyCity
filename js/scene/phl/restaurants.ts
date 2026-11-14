@@ -10,8 +10,8 @@
 //  - a label for each and a camera view (ui.js lists them under "Restaurants" and shows djour's note).
 // Every part is merged into one mesh per material: the whole set costs a handful of draw calls.
 import * as THREE from 'three';
-import { litMats } from '../materials.js';
-import { terrain, surface } from '../terrain.js';
+import { litMats } from '../materials.ts';
+import { terrain, surface } from '../terrain.ts';
 
 const LAT = 'Archivo,"Segoe UI",Arial,sans-serif';
 // per kind: storefront width cap (m), sign colours [board, ink], awning colours

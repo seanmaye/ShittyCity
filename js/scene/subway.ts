@@ -8,10 +8,10 @@
 // on the plane, and the tunnels in a band just behind it are opened up as one "gallery" so the
 // tracks, platforms and trains inside are visible. Tunnels outside the band are drawn see-through.
 import * as THREE from 'three';
-import { litMats } from './materials.js';
-import { Builder } from './geometry.js';
+import { litMats } from './materials.ts';
+import { Builder } from './geometry.ts';
 import { CITY } from '../cities.js';
-import { terrain, surface, water } from './terrain.js';
+import { terrain, surface, water } from './terrain.ts';
 export const SPEC = {
   // hw/h: tunnel half-width and height above the rail; car: length, width, height; cars per train;
   // km: route length per train; speed m/s
@@ -35,7 +35,7 @@ const noClip = m => { m.userData.noClip = true; return m; };
 const mat = (color, o = {}) => noClip(new THREE.MeshStandardMaterial(Object.assign({ color, roughness: .9, side: THREE.DoubleSide }, o)));
 
 /** flat [x, z, y] decimetres -> [Vector3] metres. Each point also gets h, its height above the
- *  ground: g is how far index.js lifted each point onto the terrain (dm; none on flat ground).
+ *  ground: g is how far index.ts lifted each point onto the terrain (dm; none on flat ground).
  *  Street, El and tunnel are told apart by h, never by y. */
 function pts3(f, g) {
   const o = [];
@@ -158,7 +158,7 @@ export function buildSubway(scene, data, river) {
       const g = new THREE.BoxGeometry(.9, 1, .9); g.translate(0, .5, 0);
       const im = new THREE.InstancedMesh(g, steel, C.length / 3), o = new THREE.Object3D();
       for (let i = 0; i < C.length; i += 3) { o.position.set(C[i] / 10, 0, C[i + 1] / 10); o.scale.set(1, C[i + 2] / 10, 1); o.updateMatrix(); im.setMatrixAt(i / 3, o.matrix); }
-      im.castShadow = true; im.frustumCulled = false; im.userData.terrain = 'instances'; scene.add(im);   // stood on the ground in index.js's seat()
+      im.castShadow = true; im.frustumCulled = false; im.userData.terrain = 'instances'; scene.add(im);   // stood on the ground in index.ts's seat()
     }
   }
 
@@ -1004,7 +1004,7 @@ export function buildSubway(scene, data, river) {
    *  optionally run {L, at(s, out), stops: [{s, t}], strip} and s (distance along it) for the next-stop sign and line diagram.
    *  sp: {car (length, world units), scale? (the cabin's, for cars smaller than life), dress?(person) (passenger's clothes)} */
   function registerFleet(kind, sp, slots) { fleets[kind] = { sp, slots, parts: [], external: true }; }
-  /** the lead car of each train on a line, for cinematic.js to follow: pos and dir live, and for
+  /** the lead car of each train on a line, for cinematic.ts to follow: pos and dir live, and for
    *  our own trains at(t, out), where it will be t seconds from now (out.h below -1: underground).
    *  Cars positioned by another module (monorails, boats) have no at: only where they are now. */
   function cars(line) {

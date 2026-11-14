@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { setCity } from '../js/cities.js';
-import { sunAt, sunsetHour } from '../js/scene/sky.js';
+import { sunAt, sunsetHour } from '../js/scene/sky.ts';
 
 // the sun over Philadelphia (CITY.sun: 39.952 N, 75.164 W) on the solstices of 2025, in local clock time
 // (EDT in June, EST in December). Noon elevation is 90 - latitude ± 23.44.

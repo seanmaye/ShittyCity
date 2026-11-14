@@ -4,7 +4,7 @@
 import { LIGHT } from './three-setup.js';
 import { CITIES, setCity } from './cities.js';
 import { loadData } from './data.js';
-import { buildScene } from './scene/index.js';
+import { buildScene } from './scene/index.ts';
 import { createUI } from './ui.js';
 import { startLoadingScreens } from './loading.js';
 // Each city's own code (js/scene/<city>/<city>.js), as a chunk of its own that no other city downloads. (Here rather than in

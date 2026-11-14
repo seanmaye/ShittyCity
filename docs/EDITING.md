@@ -49,7 +49,7 @@ Python helper below.
   y       metres UP. New York is flat (ground at y = 0). Philadelphia has real terrain
           (data-phl-terrain, NAVD88 metres): heights in the data are ABOVE THE GROUND
           (building, El and label heights; tunnel depths below it), and the page sets
-          everything on the ground as it loads (js/scene/terrain.js, section 4).
+          everything on the ground as it loads (js/scene/terrain.ts, section 4).
           Jersey Shore has terrain of its own kind (data-jsh-terrain, js/scene/jsh/terrain.ts).
 
   City           LAT0      LON0       MX         origin
@@ -300,7 +300,7 @@ data-nyc-monorail       PROPOSAL: the East River Loop
 Jersey Shore only:
 
 data-jsh-terrain        (gzip binary "TER1", but NOT data-phl-terrain's layout) the elevation grid; the
-  page loads it as data.grid (cities.js), never as data.terrain, so js/scene/terrain.js leaves it alone
+  page loads it as data.grid (cities.js), never as data.terrain, so js/scene/terrain.ts leaves it alone
   "TER1", n u32, half f32, cell f32, base f32, then (little endian) heights i16[n*n] in dm above
   base, row-major from the north-west corner (row = z, column = x; vertex (i, j) is at
   x = -half + i*cell, z = -half + j*cell), then cover u8[n*n]: 0 open, 1 forest, 2 river bed,
@@ -349,19 +349,19 @@ js/main.js       the start menu, then setCity -> loadData -> buildScene -> creat
 js/data.js       projection (G(lat,lon), latOf, using CITY.frame) and the data loader
                  (fetches CITY.files by the URLs the build gave them, CITY.urls, set by main.js from its
                  URLS: .gz files gunzipped with DecompressionStream)
-js/scene/core.js  renderer, camera, OrbitControls, sun, fog. HOME_POS and HOME_TGT
+js/scene/core.ts  renderer, camera, OrbitControls, sun, fog. HOME_POS and HOME_TGT
                  (from CITY.home) are the overview camera.
-js/scene/sky.js  the 24-hour clock: sunAt(h) = the real sun position over the city (CITY.sun)
+js/scene/sky.ts  the 24-hour clock: sunAt(h) = the real sun position over the city (CITY.sun)
                  for today; KEYS = sky colours by sun elevation, LIGHT = ambient light and water
                  colour by elevation; stars; litMats glow by how dark it is. setDate(d) moves
                  the sun's path to another day (the Season slider, index.js setDay).
-js/scene/city.js  the rest of the city: limits, parks, water, streams, streets (drawLines tiled),
+js/scene/city.ts  the rest of the city: limits, parks, water, streams, streets (drawLines tiled),
                  instanced buildings in 1 km tiles (FULL = 5000 m: nearer tiles draw full boxes,
                  further ones only roofs), outline buildings, park trees (TREE_FAR); update()
                  culls tiles each frame. Its "Whole city" view. With CITY.sea the land beyond
                  `limits` is water.
-js/scene/transitmap.js  "Show transit lines": Line2 fat lines per route, drawn on top
-js/scene/materials.js  M(color) quick material; litMats = materials that glow at dusk
+js/scene/transitmap.ts  "Show transit lines": Line2 fat lines per route, drawn on top
+js/scene/materials.ts  M(color) quick material; litMats = materials that glow at dusk
                  (each has userData.lit = its glow intensity). Facade textures: facade(style)
                  draws a day map and a night map per style (row, row2, office, office2, glass,
                  stone), 32 bays x 64 floors per tile (WIN_W x WIN_H = 112 x 232 m), ground
@@ -381,24 +381,24 @@ js/scene/jsh/terrain.ts  Jersey Shore's elevation grid (data-jsh-terrain, as dat
                  exactly on the terrain; instanced meshes are lifted per instance. Objects with
                  userData.draped or userData.grounded are left alone. With CITY.grid, ground.js
                  and city.js draw no countryside of their own.
-js/scene/geometry.js   Builder (merged meshes); addPolygon, addRibbon, addPrism (extruded
+js/scene/geometry.ts   Builder (merged meshes); addPolygon, addRibbon, addPrism (extruded
                  footprint, separate roof colour), addLoft (tapering tower section)
-js/scene/river.js      water, bulkheads, dams, river samples RS plus riverInfo(x,z) and
+js/scene/river.ts      water, bulkheads, dams, river samples RS plus riverInfo(x,z) and
                  atLat(lat) (both safe without a centreline)
-js/scene/ground.js     the core's plate, green, streets, trails, rail, bridges (GREEN, GROUND,
+js/scene/ground.ts     the core's plate, green, streets, trails, rail, bridges (GREEN, GROUND,
                  COUNTRY, ROAD, TRAIL, RAIL colours; groundMat = mottled lot-scale texture)
-js/scene/buildings.js  extrudes data-<city>-buildings in 700 m tiles (PALETTE, facadeKind,
+js/scene/buildings.ts  extrudes data-<city>-buildings in 700 m tiles (PALETTE, facadeKind,
                  addRooftop, aviationLights)
-js/scene/nature.js     trees (instanced) and rowing shells (on a river centreline). buildTrees follows
+js/scene/nature.ts     trees (instanced) and rowing shells (on a river centreline). buildTrees follows
                  the season: crown colours (SUMMER, FRESH, AUTUMN, BLOSSOM), leaf drop (crowns
                  scaled to zero, bare-branch planes shown), and flower beds (FLOWERS) near one tree
                  in six. Returned meshes with userData.season === false stay hidden in city tiles.
-js/scene/season.js     time of year: setSeason(day of year starting at 0) evaluates CURVES (snow, bare, fall, bloom,
+js/scene/season.ts     time of year: setSeason(day of year starting at 0) evaluates CURVES (snow, bare, fall, bloom,
                  flowers, fresh, dormant) and calls every onSeason(fn) listener. addSnow(mat,
                  amount) whitens up-facing surfaces by the SNOW uniform (index.js applies it to
                  every mesh once built; userData.noSnow opts out, userData.snowAmt scales it:
                  roads .3). seasonalGrass(mat) browns grass over winter.
-js/scene/terrain.js    the ground (data-<city>-terrain; without it terrain.on is false and every
+js/scene/terrain.ts    the ground (data-<city>-terrain; without it terrain.on is false and every
                  lookup returns 0, so a flat city needs nothing). Lookups: ground(x,z),
                  water(x,z), surface(x,z) = max of the two, isWet, normalAt, profile(points)
                  (surface smoothed along a line and level across water: tracks, guideways,
@@ -422,7 +422,7 @@ js/scene/terrain.js    the ground (data-<city>-terrain; without it terrain.on is
                  point.h, never by y; platforms by their track, El columns stretched to the
                  deck), the yard park deck (level, on the yard's median floor), labels and
                  "Go to" views.
-js/scene/subway.js     every rail line (data-<city>-transit, plus data-phl-metro): rails, platforms,
+js/scene/subway.ts     every rail line (data-<city>-transit, plus data-phl-metro): rails, platforms,
                  El decks and columns, looping instanced trains (SPEC: car sizes, cars per train,
                  train spacing, speeds, per kind), and the cut-away sections:
                  one shared clipping plane, earth face (strata texture), opened "gallery" of
@@ -441,7 +441,7 @@ js/scene/subway.js     every rail line (data-<city>-transit, plus data-phl-metro
                  picker). registerFleet(kind, spec, slots): cars moved by another module (the
                  monorails) become clickable/boardable; each slot has pos, dir, q, sync(),
                  onBoard(on). routes = every line's loop.
-js/scene/monorail.js   builds New York's East River Loop and Jersey Shore's West Branch Loop
+js/scene/monorail.ts   builds New York's East River Loop and Jersey Shore's West Branch Loop
                  from their proposal data, with guideways, supports, stations and boardable trains.
                  Per-route options: seeThrough (an open glass window band between a lower shell and
                  a roof), rider(car, index) (adds whoever rides in each car), suspended (cars hang
@@ -456,7 +456,7 @@ js/scene/monorail.js   builds New York's East River Loop and Jersey Shore's West
                  cabin, sp.dress(person) clothes its passenger, sp.pickY is how far above a slot its
                  car is clicked (default 2.2), and a slot's run {L, at, stops, strip}
                  and s feed the next-stop sign and the line diagram (the kitchen does all three).
-js/scene/index.js      builds everything in order, each city's parts only when its blocks are
+js/scene/index.ts      builds everything in order, each city's parts only when its blocks are
                  there; merges transit + metro; the ride list (proposed monorails, then real lines
                  grouped by network); setTime / setMood (setMood = shortcut to two times);
                  boardLine; setFly (W A S D / Space / Shift free flight, speed scales with
@@ -488,7 +488,7 @@ js/cinema.js     cinematic mode's screen (#cine, made here): letterbox bars, the
                  phase, so it does nothing else; the click that follows is swallowed). Starts by
                  itself after IDLE (150 s) without input when canStart() (not aboard, riding,
                  flying or in a dialog), and at once with ?cinematic or #cinematic in the address.
-js/scene/cinematic.js  the camera work, for any city: createCinematic({ scene, camera, views, home,
+js/scene/cinematic.ts  the camera work, for any city: createCinematic({ scene, camera, views, home,
                  labels, routes, ground, getDay, name }). It never sets the clock or the season. On the first start it builds a skyline
                  grid (CELL = 50 m: how far the highest thing in each cell stands above the
                  ground, from every mesh's instances, small boxes or vertices; ground() is the
@@ -889,9 +889,9 @@ New 3D object or landmark
     js/scene/<city>/extra.js that exports buildExtra (and imports THREE from 'three'), re-export it
     from the city's own module, js/scene/<city>/<city>.js:
         export { buildExtra } from './extra.js';
-    then add buildExtra to the names buildScene() takes from `own` in js/scene/index.js and call it
+    then add buildExtra to the names buildScene() takes from `own` in js/scene/index.ts and call it
     when that city's data is loaded. (main.js loads the city's module for that city alone; importing
-    extra.js into js/scene/index.js would put it in the code every city downloads.)
+    extra.js into js/scene/index.ts would put it in the code every city downloads.)
 
 Change buildings outside the core (data-<city>-city_buildings)
     boxes, polys = decode_city()
@@ -908,7 +908,7 @@ Make something glow at night
     the index.js chunk (Boathouse Row outlines, the Railyard Bowl light beams).
 
 Add or change a "Go to" camera view
-    In the js/scene/index.js chunk, edit the `views` array: {id, name, pos, target},
+    In the js/scene/index.ts chunk, edit the `views` array: {id, name, pos, target},
     where pos is the camera position and target is the point it looks at (THREE.Vector3,
     metres). The HUD makes one button per entry, and flyTo(id) animates the camera there.
     New York's views come from data-nyc-landmarks `views`; Philadelphia's court views are
@@ -926,9 +926,9 @@ Add another rail line
        A "Go to" view named "Under Broad St" appears automatically; setCut('broad') opens it.
     3. Every new material that must stay visible inside a cut needs userData.noClip = true.
 
-Change the sky and light by time of day: KEYS and LIGHT in the js/scene/sky.js chunk
+Change the sky and light by time of day: KEYS and LIGHT in the js/scene/sky.ts chunk
 (keyed by sun elevation in degrees). The time and season open at the browser's
-current local date and time, set in js/scene/index.js.
+current local date and time, set in js/scene/index.ts.
 Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, height]).
 
 
@@ -974,7 +974,7 @@ Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, hei
 - Type checks: the modules with `// @ts-check` at the top are type-checked against the types
   in js/types/ (data.d.ts: the blocks in section 3; city.d.ts: a city entry and CITY;
   scene.d.ts: window.__city), through JSDoc comments. They are js/data.js,
-  js/scene/geometry.js, season.js, core.js, river.js and buildings.js. `npm run check`, which
+  js/scene/geometry.ts, season.js, core.js, river.js and buildings.js. `npm run check`, which
   every deploy runs, fails on a type error in them. js/cities.js is not checked (city entries
   change often), but its types are what the checked files see: a new field a checked file
   reads goes in city.d.ts.
@@ -1000,7 +1000,7 @@ A city entry holds:
   grid                         true (Jersey Shore): data-jsh-terrain is loaded as data.grid and
                                everything is laid onto it (jsh/terrain.js); its countryside is
                                the grid's surface. (Philadelphia's terrain needs no flag: a
-                               `terrain` file is enough, js/scene/terrain.js.)
+                               `terrain` file is enough, js/scene/terrain.ts.)
   storage                      localStorage prefix (folded panel, skyline lights)
   title, heading, hint, canvasLabel, cutButton, cutHint, credit, building   page text (hint says
                                what the city is; js/ui.js adds how to move, for mouse or touch)

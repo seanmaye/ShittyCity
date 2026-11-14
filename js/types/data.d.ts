@@ -19,7 +19,7 @@ export type Vec3 = [number, number, number];
 
 // ---- shared formats (EDITING.md "Shared formats"); the engine needs these seven
 
-/** data-<city>-buildings, the core's footprints (js/scene/buildings.js; Jersey Shore: jsh/town.js) */
+/** data-<city>-buildings, the core's footprints (js/scene/buildings.ts; Jersey Shore: jsh/town.js) */
 export interface Buildings {
   styles: (BuildingStyle | null)[];
   /** [height dm, style index (0 generic), outer ring dm, hole ring dm, ...] */
@@ -30,7 +30,7 @@ export interface Buildings {
 }
 export interface BuildingStyle { id: string; color: string; kind: 'glass' | 'stone' | 'row' }
 
-/** data-<city>-river (js/scene/river.js) */
+/** data-<city>-river (js/scene/river.ts) */
 export interface River {
   water: Polygon[];
   /** indexes into water of the river polygons (they get bulkhead edges) */
@@ -45,10 +45,10 @@ export type Green = [number, ...Ring[]];
 /** k 0 road, 1 path or trail, 2 rail; w width m; b 1 bridge; l OSM layer; x 1 former expressway; p polyline dm */
 export interface StreetLine { k: number; w: number; b: number; l: number; x?: number; p: Flat }
 
-/** data-<city>-ground, the core's ground (js/scene/ground.js) */
+/** data-<city>-ground, the core's ground (js/scene/ground.ts) */
 export interface Ground { bbox: Box; green: Green[]; lines: StreetLine[] }
 
-/** data-<city>-transit (js/scene/subway.js; index.js merges Philadelphia's data-phl-metro into it). Depths are estimates. */
+/** data-<city>-transit (js/scene/subway.ts; index.ts merges Philadelphia's data-phl-metro into it). Depths are estimates. */
 export interface Transit {
   note?: string;
   lines: TransitLine[];
@@ -59,7 +59,7 @@ export interface Transit {
   entrances?: Entrance[];
   sections: Section[];
 }
-/** kind picks the car (subway.js SPEC, CAR_IN); group: the "Ride a line" heading (default: the city's first group) */
+/** kind picks the car (subway.ts SPEC, CAR_IN); group: the "Ride a line" heading (default: the city's first group) */
 export interface TransitLine { id: string; name: string; kind: string; color: string; group?: string }
 /** m; y = the platform's top */
 export interface Platform { x: number; z: number; y: number; ry: number; l: number; w: number; k: string }
@@ -70,7 +70,7 @@ export interface Entrance { x: number; z: number; k: string }
 /** a cut-away plane: p m, d unit vector; keeps the side n = (d.z, -d.x); band m behind it opened up; depth m */
 export interface Section { id: string; name: string; p: Pair; d: Pair; band: number; depth: number }
 
-/** data-<city>-city (gzip JSON), the rest of the city outside the core's buildings (js/scene/city.js) */
+/** data-<city>-city (gzip JSON), the rest of the city outside the core's buildings (js/scene/city.ts) */
 export interface CityRest {
   core: Box;
   bbox: Box;
@@ -84,7 +84,7 @@ export interface CityRest {
   trees: Flat;
 }
 
-/** data-<city>-city_buildings: gzip binary "PHB1", as bytes (layout: EDITING.md; decoded by js/scene/city.js decode) */
+/** data-<city>-city_buildings: gzip binary "PHB1", as bytes (layout: EDITING.md; decoded by js/scene/city.ts decode) */
 export type CityBuildings = ArrayBuffer;
 
 /** data-<city>-places, Jersey Shore and New Orleans (js/scene/jsh/places.ts): y m above the ground there */
@@ -94,7 +94,7 @@ export interface Places {
   views: { id: string; name: string; pos: Vec3; target: Vec3 }[];
 }
 
-/** data-<city>-monorail: a proposed monorail (js/scene/monorail.js), New York, Jersey Shore and New Orleans */
+/** data-<city>-monorail: a proposed monorail (js/scene/monorail.ts), New York, Jersey Shore and New Orleans */
 export interface Monorail {
   name: string;
   description?: string;
@@ -159,7 +159,7 @@ export interface PhlTrolley1953 {
   rails: { st: number; p: Flat }[];
 }
 
-/** data-phl-metro (gzip JSON): every rail line in the city, merged into data-phl-transit at load (index.js) */
+/** data-phl-metro (gzip JSON): every rail line in the city, merged into data-phl-transit at load (index.ts) */
 export interface PhlMetro {
   note?: string;
   lines: TransitLine[];
@@ -209,7 +209,7 @@ export interface Restaurant {
   look?: Record<string, unknown>;
 }
 
-/** data-phl-terrain: gzip binary "TER1" in Philadelphia's layout (EDITING.md; read by js/scene/terrain.js setTerrain) */
+/** data-phl-terrain: gzip binary "TER1" in Philadelphia's layout (EDITING.md; read by js/scene/terrain.ts setTerrain) */
 export type PhlTerrain = ArrayBuffer;
 
 // ---- New York (EDITING.md "New York only")
@@ -252,5 +252,5 @@ export interface NycData extends SharedData { nycLandmarks: NycLandmarks; monora
 export interface JshData extends SharedData { grid: JshGrid; places: Places; farms: JshFarms; monorailRoutes: Monorail }
 export interface NolaData extends SharedData { places: Places; monorailRoutes: Monorail }
 
-/** the active city's data: the shared blocks, and each other block only if this city has it (index.js tests: data.landmarks ? ...) */
+/** the active city's data: the shared blocks, and each other block only if this city has it (index.ts tests: data.landmarks ? ...) */
 export type CityData = SharedData & Partial<Omit<PhlData & NycData & JshData & NolaData, keyof SharedData>>;

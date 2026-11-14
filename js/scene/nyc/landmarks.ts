@@ -1,9 +1,9 @@
 // New York's landmarks: hand-shaped silhouettes (Empire State, Chrysler, One WTC, Flatiron,
 // Woolworth, St Patrick's, Rockefeller Center, plus generic caps) on the shared facade materials.
 // Ported from the NYC City Model (js/scene/landmarks.js). Data: data/nyc/landmarks.json.
-// The Empire State and Chrysler crowns take the skyline-light colour scheme (materials.js).
+// The Empire State and Chrysler crowns take the skyline-light colour scheme (materials.ts).
 import * as THREE from 'three';
-import { winMat, bx, reps, litMats, addDisplay } from '../materials.js';
+import { winMat, bx, reps, litMats, addDisplay } from '../materials.ts';
 
 /** a crown material that glows after dark in the skyline colour scheme */
 function crownMat(color, o = {}) {

@@ -16,7 +16,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { LIGHT, makeRenderer } from '../../three-setup.js';
 import * as I from './items.ts';
 import { buildMiniRail } from './minirail.ts';
-import { buildSubway } from '../subway.js';
+import { buildSubway } from '../subway.ts';
 import { createRidebar } from '../../ridebar.js';
 
 const { B, C, mat, mesh } = I;
@@ -610,7 +610,7 @@ IS.add(B(ICAB / 2 - 2, .75, 11, PLY, ICAB / 4, 17.25, -BASE_D + .75 + 5.5));   /
 
   // camera flights
   let flight = null;
-  // the mini monorails, boarded like the cities' trains: the shared ride system (subway.js), empty
+  // the mini monorails, boarded like the cities' trains: the shared ride system (subway.ts), empty
   // but for these cars, gives the walkable monorail cabin, its next-stop sign and the line diagram
   const mini = buildMiniRail(scene);
   const transit = buildSubway(scene, { lines: [], tracks: [], runs: [], platforms: [], stations: [], entrances: [], sections: [] }, null);

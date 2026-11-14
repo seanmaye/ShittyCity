@@ -351,7 +351,7 @@ export function worldWinMat(kind) {
   m = hook(facadeMat(kind, '#ffffff', true)); cache.set(key, m); return m;
 }
 
-/** Facade material for instanced unit boxes (city.js): window UVs are worked out on the GPU
+/** Facade material for instanced unit boxes (city.ts): window UVs are worked out on the GPU
  *  from each instance's size; roofs take a roof colour. Instance colours give the walls. */
 export function instancedWinMat(kind) {
   const key = 'inst|' + kind;

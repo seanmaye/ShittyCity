@@ -56,7 +56,7 @@ export interface MapCityEntry extends CityBase {
   home: { pos: LatLonH; target: LatLonH };
   /** the shadow centre, [lat, lon] */
   sunTarget: [number, number];
-  /** where the sun is computed for (js/scene/sky.js) */
+  /** where the sun is computed for (js/scene/sky.ts) */
   sun: { lat: number; lon: number };
   /** true: everything outside data-<city>-city `limits` is water; false: countryside */
   sea: boolean;
@@ -69,9 +69,9 @@ export interface MapCityEntry extends CityBase {
   building: string;
   /** the "Ride a line" networks in order; a line without a group is in the first */
   groups: string[];
-  /** a station tag's line text (js/scene/subway.js); LINES: the city's lines by id */
+  /** a station tag's line text (js/scene/subway.ts); LINES: the city's lines by id */
   stationLines: (s: Station, LINES: Record<string, TransitLine>) => string;
-  /** skyline-light preset ids from js/scene/materials.js DISPLAY_PRESETS: null all, [] no Skyline lights section */
+  /** skyline-light preset ids from js/scene/materials.ts DISPLAY_PRESETS: null all, [] no Skyline lights section */
   presets: string[] | null;
 }
 

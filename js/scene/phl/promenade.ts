@@ -5,8 +5,8 @@
 // storefront bay on the facades that face the street. The 1953 streetcar track still runs down
 // the middle, so the centre stays clear.
 import * as THREE from 'three';
-import { litMats } from '../materials.js';
-import { terrain, surface, drape } from '../terrain.js';
+import { litMats } from '../materials.ts';
+import { terrain, surface, drape } from '../terrain.ts';
 
 /** Walnut Street centreline, 22nd St -> Front St (metres; the OSM road vertices). */
 export const WALNUT = [[-112.4, 556.4], [-44.7, 567], [21.6, 578.5], [179, 603.7], [201.6, 607.8], [277.8, 619.7], [320.6, 626.8],
@@ -227,7 +227,7 @@ export function buildPromenade(scene, { buildings, cityB, roads, trees }) {
     const cx = pts.reduce((a, p) => a + p[0], 0) / pts.length, cz = pts.reduce((a, p) => a + p[1], 0) / pts.length;
     for (let j = 0; j < pts.length; j++) { const a = pts[j], b = pts[(j + 1) % pts.length]; facade(a[0], a[1], b[0], b[1], cx, cz, rec[0] / 10); }
   }
-  // the rest of the city: oriented boxes (see city.js for the instance matrix)
+  // the rest of the city: oriented boxes (see city.ts for the instance matrix)
   if (cityB) for (let i = 0; i < cityB.nB; i++) {
     const cx = cityB.bx[i] / 10, cz = cityB.bz[i] / 10; if (!inBox(cx, cz)) continue;
     const a = cityB.br[i] / 65535 * Math.PI, c = Math.cos(a), s = Math.sin(a), w = cityB.bw[i] / 20, d = cityB.bd[i] / 20;

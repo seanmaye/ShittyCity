@@ -3,10 +3,10 @@
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { pairs } from '../../data.js';
-import { M, litMats } from '../materials.js';
-import { Builder, addPolygon, addRibbon } from '../geometry.js';
-import { buildTrees } from '../nature.js';
-import { seasonalGrass } from '../season.js';
+import { M, litMats } from '../materials.ts';
+import { Builder, addPolygon, addRibbon } from '../geometry.ts';
+import { buildTrees } from '../nature.ts';
+import { seasonalGrass } from '../season.ts';
 const merge = geos => BufferGeometryUtils.mergeGeometries(geos.map(g => (g.index ? g.toNonIndexed() : g)));
 
 function deck(scene, data) {
@@ -141,7 +141,7 @@ export function buildYardPark(scene, data, guideways) {
     const x = data.trees[i] / 10, z = data.trees[i + 1] / 10;
     if (!local.some(s => segDist2(x, z, s[0], s[1], s[2], s[3]) < 12 * 12)) trees.push(data.trees[i], data.trees[i + 1]);
   }
-  buildTrees(scene, trees, data.h, false);   // on the deck, which index.js lifts as a whole
+  buildTrees(scene, trees, data.h, false);   // on the deck, which index.ts lifts as a whole
   return {
     duskOnly: b.duskOnly, update: b.update, bowl: b.group,   // (the show in it: concert.ts)
     labels: [

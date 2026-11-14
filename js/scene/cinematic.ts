@@ -2,7 +2,7 @@
 // shows the same shot twice. Nothing in here knows one city from another: the shots are made from
 // what every city's scene already has, so a new city gets its own cinematic without any work.
 //
-//   - the city's "Go to" views (index.js `views`): the places its author chose to show off;
+//   - the city's "Go to" views (index.ts `views`): the places its author chose to show off;
 //   - its landmark labels (the named towers, stadiums and bridges), where they stand tall, and its
 //     other named places;
 //   - the tallest clusters of its skyline, and any built-up spot at all ("wander");
@@ -18,7 +18,7 @@
 // clear above it all along the move, and the line of sight to the subject must stay open; a shot
 // that fails, or that is too like one already shown, is thrown away and another made.
 //
-// index.js drives it: step(dt) each frame while it is on (the orbit controls are off meanwhile),
+// index.ts drives it: step(dt) each frame while it is on (the orbit controls are off meanwhile),
 // and ui.js draws the letterbox, the fade and the caption from state.
 import * as THREE from 'three';
 

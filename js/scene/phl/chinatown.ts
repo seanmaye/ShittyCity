@@ -10,9 +10,9 @@
 //    arcade games you can play: click it (pickStall) and ui.js opens js/arcade.js.
 // Street lines are OpenStreetMap centrelines in scene metres (tools/phl/osm/streets_cc.json).
 import * as THREE from 'three';
-import { litMats } from '../materials.js';
+import { litMats } from '../materials.ts';
 import { makeFigure, pose } from './people.ts';
-import { terrain, surface, drape } from '../terrain.js';
+import { terrain, surface, drape } from '../terrain.ts';
 
 // ---- streets (OSM centrelines, metres) and the crossings that keep furniture back
 const RACE = [[1581.7, 44.7], [1851.9, 87.1]];           // 11th -> 9th
@@ -578,7 +578,7 @@ export function buildChinatown(scene, { buildings }) {
     const p = new THREE.Mesh(poleGeo, MAT.dark); dragon.add(p); poles.push(p);
   }
   const posAt = (q, i, t) => { const p = loopAt(q), n = loopAt(q + .5), tx = n.x - p.x, tz = n.z - p.z, l = Math.hypot(tx, tz) || 1, w = .45 * Math.sin(t * 1.7 - i * .55);
-    const x = p.x - tz / l * w, z = p.z + tx / l * w, g = surface(x, z);   // g: the street's real height (terrain.js)
+    const x = p.x - tz / l * w, z = p.z + tx / l * w, g = surface(x, z);   // g: the street's real height (terrain.ts)
     return { x, z, g, y: g + .8 + 2.25 + .42 * Math.sin(t * 2.5 - i * .7), tx: tx / l, tz: tz / l }; };
   let dq = 0, dt0 = 0, walk = 0;
   const DCENTER = V(1718, 0, 66), tmp = V(0, 0, 0);

@@ -178,7 +178,7 @@ look:
   Use the ablation table to see which part of the scene costs the GPU time, and the census
   to see where that part's draws and triangles come from (`file:line`).
 - **CPU**: main-thread work per frame is at least 75% of the frame interval and the GPU
-  isn't. Look at the hot path and the self-time table: JS in `frame()` (`js/scene/index.js`)
+  isn't. Look at the hot path and the self-time table: JS in `frame()` (`js/scene/index.ts`)
   and the per-module `update()` functions, three.js scene traversal (`projectObject`,
   `updateMatrixWorld`), or style and layout from the floating labels (`js/ui.js` placeTags;
   see the style/layout ms per second).
@@ -214,7 +214,7 @@ filter in the main pass; `off-screen, MSAA x4` against `off-screen, no MSAA` is 
 multisampling costs; `no log depth` swaps the logarithmic depth buffer for a plain one. They
 recompile shaders, so a builder row measured right after one can be off: rerun if it matters.
 
-**Load.** Steps come from the `#status` messages (`js/scene/index.js`), so a step can cover
+**Load.** Steps come from the `#status` messages (`js/scene/index.ts`), so a step can cover
 several builders; the load CPU profile's builder table gives each one's inclusive CPU time.
 "First frame" is the first `render()`: three.js compiles every shader program and uploads
 every buffer then. In the top self-time list, `WebGLProgram` is shader compile and link.
@@ -295,7 +295,7 @@ Gains of about 1 ms are detectable; for smaller ones, raise `--rounds`.
   `performance_analyze_insight` for a full trace with Chrome's own insights, and
   `take_heapsnapshot` for retained memory. Its browser runs with vsync and default flags,
   so use it for exploring, and `perf.py` for numbers.
-- **`window.__city`** (the object `buildScene` returns in `js/scene/index.js`) drives
+- **`window.__city`** (the object `buildScene` returns in `js/scene/index.ts`) drives
   the app: `flyTo(id)`, `boardLine(id)`, `setTime(h)`, `setTransitMap(on)`, `setCut(id)`,
   `setFly(f, s, u)`, plus `renderer`, `scene`, `camera`, `controls`.
 

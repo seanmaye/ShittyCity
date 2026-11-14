@@ -17,9 +17,9 @@
 // field (cornlod.ts), which asks cut(x, z) for each plant of this field.
 import * as THREE from 'three';
 import { pairs } from '../../data.js';
-import { M } from '../materials.js';
-import { Builder, addPolygon } from '../geometry.js';
-import { onSeason } from '../season.js';
+import { M } from '../materials.ts';
+import { Builder, addPolygon } from '../geometry.ts';
+import { onSeason } from '../season.ts';
 import { groundAt } from './terrain.ts';
 import { stage, rows, cutHole, CORN_HOLE } from './farms.ts';
 import type { JshFarms } from '../../types/data.ts';

@@ -55,7 +55,7 @@ export const CITIES = {
     building: 'Building out the rest of Philadelphia…',
     groups: ['SEPTA Metro', 'Regional Rail', 'PATCO', 'NJ Transit'],
     stationLines: septaLines,
-    presets: null,   // every skyline-light preset in materials.js
+    presets: null,   // every skyline-light preset in materials.ts
   },
   nyc: {
     id: 'nyc', name: 'New York',

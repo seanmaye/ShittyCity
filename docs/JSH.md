@@ -4,7 +4,7 @@ Jersey Shore borough in Lycoming County and the country around it: the town on t
 
 - City id: `jsh`. Open it with `?city=jsh`.
 - Data: `data/jsh/`.
-- Hand-built scene parts: `js/scene/jsh/` (labels and views; farms; the seed corn and its detasseling crew; the overlook on Bald Eagle Mountain and the late harvest below it); its terrain is its own module, `js/scene/jsh/terrain.ts` (an elevation grid with land cover, a different format from Philadelphia's lidar terrain in `js/scene/terrain.js`).
+- Hand-built scene parts: `js/scene/jsh/` (labels and views; farms; the seed corn and its detasseling crew; the overlook on Bald Eagle Mountain and the late harvest below it); its terrain is its own module, `js/scene/jsh/terrain.ts` (an elevation grid with land cover, a different format from Philadelphia's lidar terrain in `js/scene/terrain.ts`).
 - Data tools: `tools/jsh/`.
 
 ## What's in it

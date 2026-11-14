@@ -5,9 +5,9 @@
 import * as THREE from 'three';
 import { makeFigure, pose } from './people.ts';
 import { pairs } from '../../data.js';
-import { Builder, addPolygon } from '../geometry.js';
-import { seasonalGrass } from '../season.js';
-import { terrain, surface, drape } from '../terrain.js';
+import { Builder, addPolygon } from '../geometry.ts';
+import { seasonalGrass } from '../season.ts';
+import { terrain, surface, drape } from '../terrain.ts';
 
 const LEN = 100, WID = 37, EZ = 18;   // regulation field: 64 m playing field plus two 18 m end zones
 

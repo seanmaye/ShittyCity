@@ -1,18 +1,18 @@
 // Jersey Shore's farms (data/jsh/farms.json.gz, written by tools/jsh/build_jsh.py): crop fields
 // from the USDA Cropland Data Layer, and the barns and silos found among the footprints.
 //
-// Fields follow the farming year (season.js day): corn and soybeans are planted into tilled
+// Fields follow the farming year (season.ts day): corn and soybeans are planted into tilled
 // soil in May, come up in rows, grow into a canopy (corn to about 2.7 m) that dries to tan in
 // September, and are harvested from early October to stubble; winter wheat is green from autumn
 // to spring, turns gold and is cut in July; hay is cut three times a summer and left in round
 // bales. Each crop's fields are split into three groups a week or so apart, so the valley
 // isn't all planted or harvested on one day. The ground and canopy are built flat and draped
-// onto the terrain with everything else (terrain.js); barns and silos stand on it themselves.
+// onto the terrain with everything else (terrain.ts); barns and silos stand on it themselves.
 import * as THREE from 'three';
 import { pairs } from '../../data.js';
-import { M } from '../materials.js';
-import { Builder, addPolygon } from '../geometry.js';
-import { onSeason } from '../season.js';
+import { M } from '../materials.ts';
+import { Builder, addPolygon } from '../geometry.ts';
+import { onSeason } from '../season.ts';
 import { groundAt, groundBase } from './terrain.ts';
 import type { JshFarms } from '../../types/data.ts';
 

@@ -7,7 +7,7 @@
 //   profile(P)     heights for a line that crosses water on bridges (tracks, guideways): the
 //                  surface smoothed along the line, and straight across water from bank to bank
 //   drape / seat   fit flat-built ground geometry onto the terrain, or set objects down on it
-//   buildTerrain   the ground mesh itself (index.js; city.js colours it)
+//   buildTerrain   the ground mesh itself (index.ts; city.ts colours it)
 import * as THREE from 'three';
 
 export const terrain = { on: false, x0: 0, z0: 0, cell: 1, W: 0, H: 0, G: null, D: null, S: null };
@@ -219,7 +219,7 @@ export function seat(scene, from = 0) {
  * further off, and for the far distance whole blocks of BLOCK x BLOCK tiles in one mesh each (far
  * fewer draw calls when the whole city is in view). A block's vertices are exactly its tiles' far
  * vertices, so a block meets the far tiles beside it without a crack. Coloured per vertex by
- * colorAt(x, z) (city.js: paved inside the city limits, country outside), plus a skirt that
+ * colorAt(x, z) (city.ts: paved inside the city limits, country outside), plus a skirt that
  * carries the edge heights far out to the horizon. Returns the tiles and blocks for culling.
  */
 export function buildTerrain(scene, material, colorAt, { TILE = 1000, STEP = 20, BLOCK = 4 } = {}) {

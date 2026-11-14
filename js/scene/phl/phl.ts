@@ -1,4 +1,4 @@
-// Philadelphia's own code, as js/scene/index.js and js/ui.js use it. main.js loads this with import() (CODE),
+// Philadelphia's own code, as js/scene/index.ts and js/ui.js use it. main.js loads this with import() (CODE),
 // so it and everything only it imports is a chunk of its own that no other city downloads.
 export { buildLandmarks } from './landmarks.ts';
 export { buildMonorail } from './monorail.ts';

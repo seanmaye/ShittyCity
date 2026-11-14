@@ -55,7 +55,7 @@ Market St section plane. Add `--write` at the end to replace `data/phl/transit.j
    `KIND` in `build_transit.py` treats everything except the L as a trolley, so give the new line
    its own kind.
 2. Run `fetch_osm.sh` (Git Bash) to download fresh data, then run the build.
-3. Give the new kind car sizes and speed in `SPEC` (`js/scene/subway.js`), and, for a
+3. Give the new kind car sizes and speed in `SPEC` (`js/scene/subway.ts`), and, for a
    north–south line, add a section (see "Add another rail line" in
    [docs/EDITING.md](../../docs/EDITING.md)).
 

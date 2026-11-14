@@ -1,6 +1,6 @@
 // HUD buttons, hint text and the floating landmark labels.
 import * as THREE from 'three';
-import { formatHour } from './scene/sky.js';
+import { formatHour } from './scene/sky.ts';
 import { createMinimap } from './minimap.js';
 import { createRidebar } from './ridebar.js';
 import { createCinema } from './cinema.js';
@@ -572,7 +572,7 @@ export function createUI(api, { createFishing, createArcade } = {}) {
   else setScheme(pre ? pre.id : 'white', (pre || api.displayPresets[0]).colors, (pre || api.displayPresets[0]).name, true);
 
   const minimap = createMinimap(api, { eats: () => (showEats && EATS.length ? EATS : null) }), ridebar = createRidebar(api);
-  // Cinematic mode (js/cinema.js, js/scene/cinematic.js): hands-free fly-arounds; also starts by itself
+  // Cinematic mode (js/cinema.js, js/scene/cinematic.ts): hands-free fly-arounds; also starts by itself
   // after a while with nobody at the controls
   const cineBtn = document.getElementById('cine-btn');
   const cinema = createCinema(api, {

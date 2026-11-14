@@ -3,9 +3,9 @@
 // width) that Philadelphia's monorail, boathouses and rowing shells follow (the Schuylkill).
 import * as THREE from 'three';
 import { latOf, pairs } from '../data.js';
-import { M } from './materials.js';
-import { Builder, addPolygon, addRibbon } from './geometry.js';
-import { terrain } from './terrain.js';
+import { M } from './materials.ts';
+import { Builder, addPolygon, addRibbon } from './geometry.ts';
+import { terrain } from './terrain.ts';
 /** @param {THREE.Scene} scene @param {import('../types/data').River} data */
 export function buildRiver(scene, data) {
   const c = data.center, NS = c.length / 3, RS = [];

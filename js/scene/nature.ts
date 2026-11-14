@@ -1,11 +1,11 @@
 // Trees (placed offline inside real parks and along streets) and rowing shells on the river.
-// Trees follow the time of year (season.js): deciduous crowns go from the light green of new
+// Trees follow the time of year (season.ts): deciduous crowns go from the light green of new
 // leaves through summer green to red, orange and yellow, then drop, leaving bare branches; in
 // April some blossom pink and white and flower beds bloom beneath them. Conifers stay green.
 import * as THREE from 'three';
-import { onSeason } from './season.js';
-import { terrain, water, surface } from './terrain.js';
-import { withBounds } from './geometry.js';
+import { onSeason } from './season.ts';
+import { terrain, water, surface } from './terrain.ts';
+import { withBounds } from './geometry.ts';
 // Jersey Shore's grid (0 elsewhere)
 import { groundAt } from './jsh/terrain.ts';
 

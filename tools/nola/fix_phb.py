@@ -1,6 +1,6 @@
 """One-off repair for data/nola/city_buildings.bin.gz: the NOLA build (before the fix in
 build_nola.py) wrote the polygon vertices as absolute values, but the engine
-(js/scene/city.js) decodes them delta-encoded per ring (first absolute, then differences),
+(js/scene/city.ts) decodes them delta-encoded per ring (first absolute, then differences),
 so every ring accumulated into a giant starburst (the radial streaks in the 'Whole city' view).
 
 This re-encodes only the vx and vz sections in place, leaving every other byte untouched:
@@ -28,7 +28,7 @@ def main():
     assert raw[:4] == b'PHB1', 'bad header'
     nB, nP, nV = struct.unpack_from('<III', raw, 4)
 
-    # section offsets (see js/scene/city.js decode and tools/nyc/import_nyc.py)
+    # section offsets (see js/scene/city.ts decode and tools/nyc/import_nyc.py)
     o = 16
     off = {}
     for name, n, sz in [('bx', nB, 4), ('bz', nB, 4), ('vx', nV, 4), ('vz', nV, 4),

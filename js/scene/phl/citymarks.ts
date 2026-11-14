@@ -6,11 +6,11 @@
 // (frisbee.ts) and an unlabelled statue on the arena plaza.
 import * as THREE from 'three';
 import { pairs } from '../../data.js';
-import { M, litMats, winMat, reps, addDisplay, DISPLAY_PRESETS } from '../materials.js';
-import { Builder, addPolygon } from '../geometry.js';
+import { M, litMats, winMat, reps, addDisplay, DISPLAY_PRESETS } from '../materials.ts';
+import { Builder, addPolygon } from '../geometry.ts';
 import { makeFigure } from './people.ts';
 import { buildFrisbee } from './frisbee.ts';
-import { terrain, profile, drape } from '../terrain.js';
+import { terrain, profile, drape } from '../terrain.ts';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const cen = r => { let x = 0, z = 0; for (const p of r) { x += p[0]; z += p[1]; } return [x / r.length, z / r.length]; };

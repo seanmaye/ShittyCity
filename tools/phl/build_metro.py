@@ -4,7 +4,7 @@ Regional Rail lines, PATCO and NJ Transit's Atlantic City Line, inside the city 
   python -I tools/phl/build_metro.py [raw_dir] [out_dir]
 
 raw_dir defaults to tools/phl/raw/city (extract_osm.py output), out_dir to data/phl/.
-Writes data/phl/metro.json.gz, which js/scene/index.js merges into data/phl/transit.json:
+Writes data/phl/metro.json.gz, which js/scene/index.ts merges into data/phl/transit.json:
   lines      [{id, name, kind, color, group}]
   tracks     [{k, p: flat [x, z, y] dm}]       new physical track (the L and trolleys only outside the
                                               original extent, which keeps its own; surface Regional

@@ -1,7 +1,7 @@
 // The proposed monorail: a loop up the east bank and back down the west bank,
 // offset from the real shoreline, with stations and a four-car train.
 import * as THREE from 'three';
-import { terrain, surface, profile } from '../terrain.js';
+import { terrain, surface, profile } from '../terrain.ts';
 export const H = 18;               // guideway height (m)
 const EAST = 58, WEST = 65;        // set-back from the water's edge (m)
 const SOUTH_LAT = 39.9452, NORTH_LAT = 39.9752;
@@ -176,7 +176,7 @@ export function buildMonorail(scene, river, bridgeSegs, buildings, lm, onCourt: 
 
 /** Platforms, canopy and stair tower at parameter u along a guideway curve of height h. */
 /** raise a guideway's control points to height h above the ground under them (smoothed along the
- *  line, straight across water: terrain.js profile) */
+ *  line, straight across water: terrain.ts profile) */
 export function liftCurve(curve, h, smooth = 150) {
   if (!terrain.on) return curve;
   const off = profile(curve.points, smooth);

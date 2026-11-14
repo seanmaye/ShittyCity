@@ -7,14 +7,14 @@
 // The cars can be boarded like any other train (kind 'pcc53', registered with the subway).
 import * as THREE from 'three';
 import { pairs } from '../../data.js';
-import { M, litMats } from '../materials.js';
-import { Builder, addRibbon } from '../geometry.js';
-import { SPEC } from '../subway.js';
+import { M, litMats } from '../materials.ts';
+import { Builder, addRibbon } from '../geometry.ts';
+import { SPEC } from '../subway.ts';
 import { onWalnut } from './promenade.ts';
 import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
-import { terrain, surface, drape } from '../terrain.js';
+import { terrain, surface, drape } from '../terrain.ts';
 
 // shades picked to stand apart from the live lines' colours (PATCO and monorail reds, Broad St
 // and Girard oranges, the L's blue, the Atlantic City Line's purple, the shuttles' teal) when "Show transit lines" is on
@@ -28,7 +28,7 @@ const ERAS = [
 const CASING = [{ name: 'Rails still in the street (OSM)', color: '#f4f1e8' }, { name: 'Route 23 track until 1992 (OSM)', color: '#f2c84b' }];
 const GAUGE = 1.588;      // Philadelphia trolley gauge, 5 ft 2 1/4 in
 const RAIL_Y = 1.0;       // top of the track bed; the cars ride on it
-const LINE_W = 3.5, LIFT = 5;   // overlay line: px wide, m above the street (as in transitmap.js)
+const LINE_W = 3.5, LIFT = 5;   // overlay line: px wide, m above the street (as in transitmap.ts)
 const TRACKS = 1.9;       // half the spacing of the two tracks on two-way streets
 const SP = SPEC.pcc, SPEED = 7, HEADWAY = 420;   // m/s; one car about every 420 m of loop
 // one-way pairs (out on one street, back on the other) and two-way streets

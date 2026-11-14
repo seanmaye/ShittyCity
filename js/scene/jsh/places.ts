@@ -1,5 +1,5 @@
 // Jersey Shore's labels and "Go to" views (data/jsh/places.json, written by tools/jsh/build_jsh.py).
-// Label heights are above the ground under them (terrain.js); view positions already include it.
+// Label heights are above the ground under them (terrain.ts); view positions already include it.
 import * as THREE from 'three';
 import { groundAt } from './terrain.ts';
 import type { Places } from '../../types/data.ts';

@@ -1,21 +1,21 @@
-// The scene API: the object js/scene/index.js buildScene() returns, which js/main.js exposes as window.__city. The UI
+// The scene API: the object js/scene/index.ts buildScene() returns, which js/main.js exposes as window.__city. The UI
 // (js/ui.js) drives it, and so do the harnesses: tools/perf (scenarios.py, perf.py, probe.js), tools/ux (ux.py, audit.js,
-// states/) and tools/loading/capture.py. Members typed from index.js and the module each comes from; what the harnesses
+// states/) and tools/loading/capture.py. Members typed from index.ts and the module each comes from; what the harnesses
 // do not use and is not simple to type is `unknown` (a module's own object) or loose. Debug list: docs/EDITING.md section 4.
 import type { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three';
 import type { Box, Polygon, Ring } from './data';
 
-/** a floating name tag (index.js labels): far = the distance it shows within; abs: pos.y already includes the ground */
+/** a floating name tag (index.ts labels): far = the distance it shows within; abs: pos.y already includes the ground */
 export interface Label { text: string; pos: Vector3; far?: number; abs?: boolean }
 
-/** a "Go to" camera preset (index.js views, and each module's views) */
+/** a "Go to" camera preset (index.ts views, and each module's views) */
 export interface View {
   id: string;
   name: string;
   pos: Vector3;
   target: Vector3;
-  /** a cut-away to open (subway.js sections) */
+  /** a cut-away to open (subway.ts sections) */
   cut?: string | false;
   /** the hour to set */
   hour?: number;
@@ -31,13 +31,13 @@ export interface View {
   abs?: boolean;
 }
 
-/** an entry of "Ride a line" (index.js lines): id 'loop', a sports shuttle's index, 'm:mono:<route>', 'm:<line id>', ... */
+/** an entry of "Ride a line" (index.ts lines): id 'loop', a sports shuttle's index, 'm:mono:<route>', 'm:<line id>', ... */
 export interface RideLine { id: string | number; name: string; group: string; color: string; hint?: string }
 
-/** what pickCar() found under a screen point (subway.js pick, or the person, punk, seat or hunter modules' pick) */
+/** what pickCar() found under a screen point (subway.ts pick, or the person, punk, seat or hunter modules' pick) */
 export interface Hit { kind?: string; i?: number; person?: number; punk?: number; seat?: number; hunter?: boolean }
 
-/** where the ride is along its line, for the line diagram (subway.js rideStrip) */
+/** where the ride is along its line, for the line diagram (subway.ts rideStrip) */
 export interface RideStrip {
   name: string; color: string; x: number; z: number; dx: number; dz: number;
   stops: { t: string; f: number }[] | null;
@@ -80,25 +80,25 @@ export interface SceneApi {
   legend: { name: string; color: string }[];
   /** the 1953 streetcars' legend (phl/oldtrolley.js); [] elsewhere */
   oldTrolleyLegend: unknown[];
-  /** buildings outside the core (city.js) */
+  /** buildings outside the core (city.ts) */
   cityBuildings: number;
   /** hours 0-24; returns the hour set */
   setTime(hour: number): number;
   getTime(): number;
-  /** today's sunset, hours (sky.js) */
+  /** today's sunset, hours (sky.ts) */
   readonly sunset: number;
   /** day of the year (0 = 1 January); returns the day set */
   setDay(day: number): number;
   getDay(): number;
   lastDay: number;
-  /** "Nov 11 · fall" (season.js formatDay) */
+  /** "Nov 11 · fall" (season.ts formatDay) */
   formatDay(day: number): string;
   /** the old two-way switch */
   setMood(mood: 'day' | 'dusk'): string;
   getMood(): 'day' | 'dusk';
   /** a line id from lines, or false for the overview; stay: keep the camera where it is */
   setRiding(line: string | number | false, stay?: boolean): void;
-  /** a section id (subway.js), or false to close it; returns the open section's id or false */
+  /** a section id (subway.ts), or false to close it; returns the open section's id or false */
   setCut(id: string | false): string | false;
   getCut(): string | false;
   pickCar(x: number, y: number): Hit | null;
@@ -119,7 +119,7 @@ export interface SceneApi {
   /** for the minimap: flat dm outlines (data.d.ts) and every rail route */
   mapData: { bbox: Box; limits: Ring[]; water: Polygon[]; green: Polygon[]; routes: Route[] };
   flyToPoint(x: number, z: number): void;
-  /** the skyline-light schemes this city shows (materials.js DISPLAY_PRESETS, filtered by CITY.presets) */
+  /** the skyline-light schemes this city shows (materials.ts DISPLAY_PRESETS, filtered by CITY.presets) */
   displayPresets: { id: string; name: string; colors: string[] }[];
   setDisplayLights(colors: string[]): void;
   lookCar(dx: number, dy: number): unknown;

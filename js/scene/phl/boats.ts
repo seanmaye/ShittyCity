@@ -2,11 +2,11 @@
 // the whole of the Philadelphia riverfront on both rivers, plus the real RiverLink Ferry across
 // the Delaware to Camden. Each stop gets a pier from the real bank out to where the boat ties
 // up, with a shelter; boats run out and back, easing in and dwelling at every stop. They can be
-// boarded like any train (subway.js registerFleet, kind 'boat'): the cabin is walkable.
+// boarded like any train (subway.ts registerFleet, kind 'boat'): the cabin is walkable.
 import * as THREE from 'three';
 import { pairs } from '../../data.js';
-import { litMats } from '../materials.js';
-import { terrain, water } from '../terrain.js';
+import { litMats } from '../materials.ts';
+import { terrain, water } from '../terrain.ts';
 
 const WATER_Y = .6, LEN = 22, BEAM = 6.2, VMAX = 9, DWELL = 18;
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -23,7 +23,7 @@ function loopRun(P) {
   } };
 }
 
-/** a loopRun(), with the stops and the line diagram (subway.js rideStrip) that buildBoats adds */
+/** a loopRun(), with the stops and the line diagram (subway.ts rideStrip) that buildBoats adds */
 type Run = ReturnType<typeof loopRun> & {
   stops?: { s: number; t: string }[];
   strip?: { back: boolean; out: number; u: (s: number) => number; fold: (s: number) => number; stops: { t: string; f: number }[] };
@@ -91,7 +91,7 @@ export function buildBoats(scene, data) {
     const P = pairs(ln.p).map(([x, z]) => V(x, terrain.on ? water(x, z) + .6 : WATER_Y, z)), run: Run = loopRun(P), id = 'boat:' + ln.id;
     // stops on the way out and the way back, in loop order (the next-stop sign and line diagram)
     run.stops = [...ln.stops.map(s => ({ s: Math.min(s.s, run.half - .01), t: s.t })), ...ln.stops.slice(0, -1).reverse().map(s => ({ s: run.L - s.s, t: s.t }))].sort((a, b) => a.s - b.s);
-    // the line diagram (subway.js rideStrip): out to the last stop and back, known exactly
+    // the line diagram (subway.ts rideStrip): out to the last stop and back, known exactly
     const fold = s => (s <= run.half ? s / run.half : (run.L - s) / (run.L - run.half));
     run.strip = { back: true, out: run.half, u: s => ((s % run.L) + run.L) % run.L, fold, stops: ln.stops.map(st => ({ t: st.t, f: Math.min(1, st.s / run.half) })) };
     const name = ln.name + (ln.proposed ? ' (proposed)' : '');
@@ -106,7 +106,7 @@ export function buildBoats(scene, data) {
     const n = Math.max(1, Math.round(run.half / 6000));
     for (let k = 0; k < n; k++) {
       const model = boatModel(ln.color, winMat); model.userData.terrain = 'done'; scene.add(model);
-      // h: height above the ground, 0 (afloat). Without it subway.js goes by pos.y, and where the
+      // h: height above the ground, 0 (afloat). Without it subway.ts goes by pos.y, and where the
       // Delaware's surface lies more than a metre below datum it took a boat for underground: it
       // couldn't be tapped, and riding it counted as riding in a tunnel
       const sl = { line: id, lineName: name, led: ln.name, color: ln.color, k, c: 0, run, s: run.L * k / n, dwell: 0, pos: V(0, 0, 0), dir: V(0, 0, 1), q: new THREE.Quaternion(), hidden: false, h: 0,

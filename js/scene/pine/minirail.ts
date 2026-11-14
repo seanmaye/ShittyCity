@@ -1,5 +1,5 @@
 // The 1938 Pine St Kitchen's mini monorails: three toy-sized lines built with the shared
-// monorail (js/scene/monorail.js) inside a group scaled down to SCALE, so its city-sized beam,
+// monorail (js/scene/monorail.ts) inside a group scaled down to SCALE, so its city-sized beam,
 // cars and stations come out a few inches big. Kitchen units are inches (x east, z south, y up).
 // All three hang out of the way, the cars slung under the beam:
 //  - Countertop Express: back and forth just off the counter edge, from the drawer stack beside
@@ -9,14 +9,14 @@
 // One train per line: two cars with see-through windows and a chef inside (white jacket, red
 // neckerchief, toque), who waves when you look at him, and between them a flatbed carrying the
 // line's load strapped down (a whisk, a baguette, a cheese and a rolling pin). The cars can be boarded like the cities'
-// monorails: slots and fleet go to the shared ride system (subway.js registerFleet), whose
+// monorails: slots and fleet go to the shared ride system (subway.ts registerFleet), whose
 // monorail cabin is shrunk to fit and whose passenger is a chef too. highlight(renderer) draws
 // the lines in their colours.
 import * as THREE from 'three';
 import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
-import { buildMonorail } from '../monorail.js';
+import { buildMonorail } from '../monorail.ts';
 
 const SCALE = .35;                    // inches per monorail unit
 const UNDER_COUNTER = 34.6, CEILING = 108;

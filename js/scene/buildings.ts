@@ -3,9 +3,9 @@
 // extruded and merged into tiled meshes with lit-window facades.
 import * as THREE from 'three';
 import { pairs } from '../data.js';
-import { worldWinMat, WIN_W, WIN_H, roofColor, M, addDisplay } from './materials.js';
-import { Builder, addPrism, addLoft, colorOf } from './geometry.js';
-import { terrain, footprint } from './terrain.js';
+import { worldWinMat, WIN_W, WIN_H, roofColor, M, addDisplay } from './materials.ts';
+import { Builder, addPrism, addLoft, colorOf } from './geometry.ts';
+import { terrain, footprint } from './terrain.ts';
 import { groundBase } from './jsh/terrain.ts';
 
 // Facade colours by style, weighted toward what Philadelphia (where they were tuned) is made of: red brick

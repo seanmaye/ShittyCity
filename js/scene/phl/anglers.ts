@@ -6,7 +6,7 @@
 // invitation to fish with them (js/fishing.js).
 import * as THREE from 'three';
 import { makeFigure } from './people.ts';
-import { terrain, surface, water } from '../terrain.js';
+import { terrain, surface, water } from '../terrain.ts';
 
 // [label, lat, side (1 east bank, -1 west bank)] on the river centreline; and boat-pier banks
 const BANK_SPOTS: [string, number, number][] = [

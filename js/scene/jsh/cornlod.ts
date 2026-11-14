@@ -15,7 +15,7 @@
 import * as THREE from 'three';
 import { pairs } from '../../data.js';
 import { groundAt } from './terrain.ts';
-import { onSeason } from '../season.js';
+import { onSeason } from '../season.ts';
 import { stage, CORN_HOLE } from './farms.ts';
 import { plantGeometry, tasselGeometry } from './detassel.ts';
 

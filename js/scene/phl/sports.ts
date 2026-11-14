@@ -4,10 +4,10 @@
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { pairs } from '../../data.js';
-import { M, litMats } from '../materials.js';
-import { Builder } from '../geometry.js';
+import { M, litMats } from '../materials.ts';
+import { Builder } from '../geometry.ts';
 import { beam, piers, station, train, liftCurve } from './monorail.ts';
-import { seasonalGrass } from '../season.js';
+import { seasonalGrass } from '../season.ts';
 export const H2 = 26; // above the riverfront loop (18 m) so the lines can cross
 
 const PX = 12; // texture pixels per metre

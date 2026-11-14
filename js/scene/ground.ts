@@ -1,10 +1,10 @@
 // Ground, parks and green space, streets, trails, rail lines and bridges (OpenStreetMap).
 import * as THREE from 'three';
 import { pairs } from '../data.js';
-import { M } from './materials.js';
-import { Builder, addPolygon, addRibbon } from './geometry.js';
-import { seasonalGrass } from './season.js';
-import { terrain, surface, TOL_LAWN } from './terrain.js';
+import { M } from './materials.ts';
+import { Builder, addPolygon, addRibbon } from './geometry.ts';
+import { seasonalGrass } from './season.ts';
+import { terrain, surface, TOL_LAWN } from './terrain.ts';
 import { CITY } from '../cities.js';
 // Colours sampled to match summer aerial imagery: mown grass, darker park woodland, asphalt,
 // gravel and dirt trails, rail ballast, the mixed concrete, asphalt and yards between buildings,
@@ -93,13 +93,13 @@ function countryside(cover, size = 30000, cell = 250) {
 
 /**
  * capRings: outline of the rail-yard deck; road bridges over it land on the deck instead.
- * sea: a waterfront city (New York): the land is only what city.js paves from the land outlines,
+ * sea: a waterfront city (New York): the land is only what city.ts paves from the land outlines,
  * so neither the countryside nor a paved rectangle is drawn here.
  * paved: outline of the paved city plate that buildCity lays over the countryside plane.
  */
 export function buildGround(scene, data, river, capRings = [], { sea = false, paved = [], onPromenade } = {}) {
   const cap = capRings.map(pairs);
-  if (!sea && !terrain.on && !CITY.grid) {   // with terrain, city.js lays the ground mesh (paved and country); Jersey Shore's grid has its own country (jsh/terrain.js)
+  if (!sea && !terrain.on && !CITY.grid) {   // with terrain, city.ts lays the ground mesh (paved and country); Jersey Shore's grid has its own country (jsh/terrain.js)
     const outer = new THREE.Mesh(countryside(paved.map(pairs)), seasonalGrass(M(COUNTRY, { roughness: 1, side: THREE.FrontSide })));
     outer.receiveShadow = true; scene.add(outer);
   }
@@ -204,7 +204,7 @@ export function drawLines(scene, lines, { cap = [], wet = () => false, tile = 0,
   const meshes = [], flat = [];   // flat: the ribbons lying on the ground (not bridges or piers)
   const add = m => { scene.add(m); meshes.push(m); return m; };
   const xMat = seasonalGrass(M('#78a85c', { side: THREE.FrontSide })), lineMat = { [ROAD]: M(ROAD, { side: THREE.FrontSide }), [RAIL]: M(RAIL, { side: THREE.FrontSide }), [TRAIL]: M(TRAIL, { side: THREE.FrontSide }) };
-  // in winter the streets are ploughed and the rail beds partly clear (see season.js addSnow)
+  // in winter the streets are ploughed and the rail beds partly clear (see season.ts addSnow)
   lineMat[ROAD].userData.snowAmt = .3; lineMat[RAIL].userData.snowAmt = .5; dark.userData.snowAmt = conc.userData.snowAmt = .35;
   for (const t of tiles.values()) {
     if (t.xb.count) { const m = add(new THREE.Mesh(t.xb.geometry(), xMat)); m.position.y = .33; m.receiveShadow = true; flat.push(m); }

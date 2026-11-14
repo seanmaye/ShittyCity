@@ -7,13 +7,13 @@
 // far tiles draw only their roofs; tiles outside the view or past the fog are hidden.
 import * as THREE from 'three';
 import { pairs } from '../data.js';
-import { M, worldWinMat, instancedWinMat, roofColor, WIN_W, WIN_H } from './materials.js';
-import { Builder, addPolygon, addRibbon, addPrism, withBounds, colorOf } from './geometry.js';
-import { drawLines, GREEN, GROUND, COUNTRY, groundMat } from './ground.js';
-import { buildTrees } from './nature.js';
-import { seasonalGrass } from './season.js';
-import { terrain, surface, footprint, buildTerrain, TOL_LAWN } from './terrain.js';
-import { facadeKind, facadeColor, hash, addRooftop, aviationLights } from './buildings.js';
+import { M, worldWinMat, instancedWinMat, roofColor, WIN_W, WIN_H } from './materials.ts';
+import { Builder, addPolygon, addRibbon, addPrism, withBounds, colorOf } from './geometry.ts';
+import { drawLines, GREEN, GROUND, COUNTRY, groundMat } from './ground.ts';
+import { buildTrees } from './nature.ts';
+import { seasonalGrass } from './season.ts';
+import { terrain, surface, footprint, buildTerrain, TOL_LAWN } from './terrain.ts';
+import { facadeKind, facadeColor, hash, addRooftop, aviationLights } from './buildings.ts';
 import { CITY } from '../cities.js';
 
 const TILE = 1000, FULL = 5000, TREE_FAR = 7000;
@@ -173,7 +173,7 @@ export async function buildCity(scene, data, { waterMat, status = () => {}, clea
     mat4[o + 12] = B.bx[i] / 10; mat4[o + 13] = y0; mat4[o + 14] = B.bz[i] / 10; mat4[o + 15] = 1;
   };
   // bounds: [centre, radius] of the instances, so the mesh can be frustum-culled (and, by the
-  // sun's shadow box, skipped in the shadow pass) like any mesh; see geometry.js withBounds
+  // sun's shadow box, skipped in the shadow pass) like any mesh; see geometry.ts withBounds
   const instanced = (geo, mat, mat4, cols, bounds = null) => {
     const m = new THREE.InstancedMesh(geo, mat, mat4.length / 16); if (bounds) withBounds(m, ...bounds);
     m.instanceMatrix = new THREE.InstancedBufferAttribute(mat4, 16); m.instanceColor = new THREE.InstancedBufferAttribute(cols, 3);

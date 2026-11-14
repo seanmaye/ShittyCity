@@ -4,8 +4,8 @@
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { describe, expect, test } from 'vitest';
-import { decode } from '../js/scene/city.js';
-import { setTerrain } from '../js/scene/terrain.js';
+import { decode } from '../js/scene/city.ts';
+import { setTerrain } from '../js/scene/terrain.ts';
 
 const arrayBuffer = b => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
 const read = path => arrayBuffer(readFileSync(new URL(path, import.meta.url)));

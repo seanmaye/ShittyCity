@@ -55,7 +55,7 @@ Rules of thumb for this codebase:
 - The renderer uses a 4096² PCF soft shadow map that re-renders every frame, a logarithmic
   depth buffer, MSAA, and clipping planes on every material (the Market St cut-away).
   Weigh changes to those against how the scene looks.
-- `js/scene/city.js` already tiles and LODs the outer city (1 km tiles; full boxes within
+- `js/scene/city.ts` already tiles and LODs the outer city (1 km tiles; full boxes within
   5 km, roofs farther out, hidden past the fog). Measure before reworking it.
 - A change that only helps the load (data format, builders, shader count) shows up in the
   `load.*` rows and the first frame, not in frame time.
