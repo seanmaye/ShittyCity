@@ -515,7 +515,8 @@ export async function buildScene(canvas, data, status: (message: string, percent
     // djour's three-star picks, at their modelled shop fronts (not the stalls inside a market hall)
     spots: eats.places.filter(p => p.s >= 3 && p.look && !p.look.indoor && !p.soon).map(p => ({ title: p.n, sub: '★★★  ·  ' + CITY.name, target: p.view.target, front: p.view.pos, street: p.street.pos })),
     labels, routes: mapData.routes.map(r => ({ ...r, name: lineName(r.id) })),
-    vehicles: id => [...subway.cars(id), ...subway.cars('mono:' + id)],   // (a line's trains; a monorail's cars are 'mono:' + its route id) ground: (x, z) => (terrain.on ? surface(x, z) : data.grid ? gridAt(x, z) : 0),   // (Jersey Shore: its own ground grid)
+    vehicles: id => [...subway.cars(id), ...subway.cars('mono:' + id)],   // (a line's trains; a monorail's cars are 'mono:' + its route id)
+    ground: (x, z) => (terrain.on ? surface(x, z) : data.grid ? gridAt(x, z) : 0),   // (Jersey Shore: its own ground grid)
     getDay: () => getSeason().day,   // (the clock and season are left alone: the tour shows the live city)
   });
   function startCinematic() {
