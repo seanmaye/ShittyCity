@@ -26,6 +26,7 @@ export async function loadData(onProgress = () => {}) {
   const FILES = CITY.files;
   let done = 0;
   const parts = await Promise.all(FILES.map(async ([key, file]) => {
+    if (!CITY.urls[file]) throw new Error(`${CITY.dir}/${file}: not in the build's URL map (js/main.js URLS)`);
     const r = await fetch(CITY.urls[file]);   // its URL in the build (CITY.urls, set by main.js)
     if (!r.ok) throw new Error(`${CITY.dir}/${file}: HTTP ${r.status}`);
     const bytes = new Uint8Array(await r.arrayBuffer());

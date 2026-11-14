@@ -254,7 +254,7 @@ function buildScreen(city, s) {
  * With no loadingScreens for the city it does nothing.
  */
 export function startLoadingScreens(city, host) {
-  const list = city.loadingScreens || [];
+  const list = (city.loadingScreens || []).filter(s => city.urls[s.file]);   // (one not in the build's URL map is left out)
   const stage = host.querySelector('.ls-stage'), flash = host.querySelector('.ls-flash'), tip = host.querySelector('.ls-tip');
   if (!list.length || !stage) return { settle() {}, stop() {} };
   host.classList.add('ls-on');
