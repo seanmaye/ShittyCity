@@ -971,6 +971,11 @@ Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, hei
 - After a change, serve the page (npm run dev), open it in a browser and check
   the console. Without a browser, at least check the syntax: run `node --check` on each
   module you changed.
+- Type checks: the modules with `// @ts-check` at the top are type-checked against the types
+  in js/types/ (data.d.ts: the blocks in section 3; city.d.ts: a city entry and CITY;
+  scene.d.ts: window.__city), through JSDoc comments. They are js/data.js, js/cities.js,
+  js/scene/geometry.js and season.js. `npm run check`, which every deploy runs, fails on a
+  type error in them: a new field in a city entry goes in city.d.ts too.
 - If you change how the page works, update this guide too.
 
 

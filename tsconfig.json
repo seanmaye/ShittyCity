@@ -1,6 +1,6 @@
 {
-  // npm run typecheck (tsc --noEmit; part of npm run check). The code stays plain JS: checkJs is off, so today tsc only
-  // parses it. A file opts in to type checking with // @ts-check at its top.
+  // npm run typecheck (tsc --noEmit; part of npm run check). The code stays plain JS: checkJs is off, so tsc only parses
+  // a file unless it opts in to type checking with // @ts-check at its top (shared types: js/types/*.d.ts).
   "compilerOptions": {
     "target": "esnext",
     "lib": ["esnext", "dom"],
@@ -8,6 +8,7 @@
     "moduleResolution": "bundler",
     "allowJs": true,
     "checkJs": false,
+    "strict": false,   // on by default in TypeScript 7; off, so an opted-in file needs no type on every parameter
     "noEmit": true,
     "skipLibCheck": true,
     "types": []
