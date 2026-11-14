@@ -3,7 +3,7 @@
 // are off or warnings. Counts are hits on the code of 2026-11-14 (none of them a bug); tighten a rule by fixing its hits.
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "files": { "includes": ["js/**/*.js", "test/**/*.js", "vite.config.js", "tools/perf/build.mjs"] },
+  "files": { "includes": ["js/**/*.ts", "js/**/*.js", "test/**/*.js", "vite.config.js", "tools/perf/build.mjs"] },
   "formatter": { "enabled": false },
   "assist": { "enabled": false },   // no import sorting either
   "linter": {
@@ -16,7 +16,7 @@
         "noUndeclaredVariables": "error",       // not in the preset: a mistyped name (browser and Node globals are known)
         "noUnusedVariables": "off",             // 22 hits (10 of them catch (e) bindings)
         "noUnusedFunctionParameters": "off",    // 15 hits
-        "noUnusedImports": "off",               // 2 hits; js/main.js's must stay: it runs three-setup.js first
+        "noUnusedImports": "off",               // 2 hits; js/main.ts's must stay: it runs three-setup.ts first
         "noConstantCondition": "warn",          // no hits; a warning, as working code trips it: if (false) { ... } to switch a block off
         "noSwitchDeclarations": "warn"          // no hits; a warning: a const in a case without braces works
       },

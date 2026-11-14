@@ -337,7 +337,7 @@ for el in ways.values():
     else:
         continue
     if t.get("bridge") and (t.get("name") in MARK_BRIDGES or t.get("bridge:name") in MARK_BRIDGES):
-        continue                     # modelled by citymarks.js
+        continue                     # modelled by citymarks.ts
     br = 1 if t.get("bridge") in BRIDGE else 0
     try:
         layer = int(t.get("layer", "1" if br else "0"))

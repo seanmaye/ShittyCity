@@ -1,9 +1,11 @@
 import { createReadStream, existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, resolve, sep } from 'node:path';
+import { basename, join, relative, resolve, sep } from 'node:path';
+import { gunzipSync, gzipSync } from 'node:zlib';
 import { defineConfig, normalizePath } from 'vite';
+import { encodeData } from './js/formats.ts';
 
 // data/ stays at the repository root, where the pipeline writes it. The page asks for each file by the URL that
-// js/main.js's import.meta.glob ?url (URLS) gives it: the dev server serves data/ as it is, and a build copies
+// js/main.ts's import.meta.glob ?url (URLS) gives it: the dev server serves data/ as it is, and a build copies
 // each file into dist/assets/ under a content-hashed name. (Forward slashes, as Vite's ids have them on Windows too.)
 const DATA = normalizePath(resolve(import.meta.dirname, 'data')) + '/';
 
@@ -12,7 +14,7 @@ const DATA = normalizePath(resolve(import.meta.dirname, 'data')) + '/';
 const rawGz = () => {
   const serve = (dir, sub) => (req, res, next) => {
     const u = new URL(req.url, 'http://x'), file = join(dir, decodeURIComponent(u.pathname));
-    // (with a query it is not the file: ?import&url asks the dev server for the module that gives its URL, for URLS in main.js)
+    // (with a query it is not the file: ?import&url asks the dev server for the module that gives its URL, for URLS in main.ts)
     if (u.search || !file.endsWith('.gz') || !file.startsWith(join(dir, sub) + sep) || !existsSync(file)) return next();
     res.writeHead(200, { 'Content-Type': 'application/gzip', 'Content-Length': statSync(file).size, 'Cache-Control': 'no-cache' });
     createReadStream(file).pipe(res);
@@ -21,6 +23,33 @@ const rawGz = () => {
     name: 'raw-gz',
     configureServer(s) { s.middlewares.use(serve(s.config.root, 'data')); },   // data/<city>/ as it is
     configurePreviewServer(s) { s.middlewares.use(serve(resolve(s.config.root, s.config.build.outDir), s.config.build.assetsDir)); },   // the build's copies
+  };
+};
+
+// The build ships most data files in a smaller encoding than the committed one (js/formats.ts: JSON of 32 kB or more as JCOL,
+// TER1 terrain as TER2, PHB1 buildings as PHB2), gzipped at level 9. data/ itself stays as the pipeline writes it, and the dev
+// server serves it as it is: the page reads both. encodeData keeps an encoding only if the page's readers decode it to exactly
+// what they read from the committed file, and this keeps it only if it is smaller; else the file ships as committed. Each data
+// file's ?url import (main.ts URLS) is loaded here instead of by Vite's asset plugin, which would copy the file as it is.
+const dataCodec = () => {
+  let root = '', building = false;
+  return {
+    name: 'data-codec',
+    enforce: 'pre',
+    configResolved(c) { root = c.root; building = c.command === 'build'; },
+    load(id) {
+      const [file, query] = id.split('?');
+      if (!building || query !== 'url' || !normalizePath(file).startsWith(DATA)) return null;
+      const committed = readFileSync(file), gz = committed[0] === 0x1f && committed[1] === 0x8b;
+      const out = encodeData(basename(file), gz ? gunzipSync(committed) : committed);
+      if (!out) return null;
+      const rel = normalizePath(relative(root, file));
+      if ('skip' in out) { this.warn(`${rel} ships as committed: ${out.skip}`); return null; }
+      const source = gzipSync(out.bytes, { level: 9, memLevel: 9 }), was = gz ? committed.length : gzipSync(committed, { level: 9, memLevel: 9 }).length;
+      if (source.length >= was) return null;
+      const ref = this.emitFile({ type: 'asset', name: out.name, originalFileName: rel, source });
+      return `export default import.meta.ROLLDOWN_FILE_URL_${ref}`;
+    },
   };
 };
 
@@ -45,12 +74,12 @@ const names = {
 };
 
 export default defineConfig({
-  plugins: [rawGz()],
+  plugins: [rawGz(), dataCodec()],
   appType: 'mpa',   // a missing file is a 404, as in production, not index.html
   build: {
     outDir: 'dist',
     sourcemap: true,
-    // no syntax lowering: js/main.js awaits at module top level, and the page runs today's syntax as is
+    // no syntax lowering: js/main.ts awaits at module top level, and the page runs today's syntax as is
     target: 'esnext',
     // Lightning CSS (the default minifier) drops unprefixed backdrop-filter, the 100vh fallbacks and the loading headline's font; ~10 kB gzipped either way
     cssMinify: false,
@@ -60,7 +89,7 @@ export default defineConfig({
       output: {
         ...names,
         // three.js in chunks of its own, apart from our code (three-core, three, three-addons: its two build files and the
-        // addons, each under 500 kB): an edit to js/cities.js or materials.js, which shared chunks with it, no longer renames it
+        // addons, each under 500 kB): an edit to js/cities.ts or materials.ts, which shared chunks with it, no longer renames it
         codeSplitting: { groups: [
           { name: 'three-core', test: /[\\/]node_modules[\\/]three[\\/]build[\\/]three\.core\.js$/, priority: 3 },
           { name: 'three', test: /[\\/]node_modules[\\/]three[\\/]build[\\/]/, priority: 2 },

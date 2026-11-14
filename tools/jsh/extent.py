@@ -1,4 +1,4 @@
-"""Jersey Shore's frame and extents, shared by fetch_jsh.py and build_jsh.py (and js/cities.js CITIES.jsh.frame)."""
+"""Jersey Shore's frame and extents, shared by fetch_jsh.py and build_jsh.py (and js/cities.ts CITIES.jsh.frame)."""
 import math
 
 # projection: x metres east, z metres south of Allegheny & Main

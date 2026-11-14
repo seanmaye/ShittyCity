@@ -4,7 +4,7 @@ Regional Rail lines, PATCO and NJ Transit's Atlantic City Line, inside the city 
   python -I tools/phl/build_metro.py [raw_dir] [out_dir]
 
 raw_dir defaults to tools/phl/raw/city (extract_osm.py output), out_dir to data/phl/.
-Writes data/phl/metro.json.gz, which js/scene/index.js merges into data/phl/transit.json:
+Writes data/phl/metro.json.gz, which js/scene/index.ts merges into data/phl/transit.json:
   lines      [{id, name, kind, color, group}]
   tracks     [{k, p: flat [x, z, y] dm}]       new physical track (the L and trolleys only outside the
                                               original extent, which keeps its own; surface Regional
@@ -215,7 +215,7 @@ def jumps(path):
     return getattr(path, "gaps", 0)
 
 
-# the Delaware bridges are modelled by citymarks.js (data/phl/city_landmarks.json): track on their decks
+# the Delaware bridges are modelled by citymarks.ts (data/phl/city_landmarks.json): track on their decks
 # follows the same deck profile, deckY(s) = min(deckH, 1 + .045 * min(s, L - s)), s along the axis
 DECKS = []
 if os.path.exists(os.path.join(OUT, "city_landmarks.json")):

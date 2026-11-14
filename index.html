@@ -70,7 +70,7 @@
 <div class="cities" id="cities"></div></div></div>
 <div class="err" id="err">The 3D scene couldn’t load. Check your connection and reload the page.</div>
 <script type="module">
-import('./js/main.js').catch(e => { console.error(e); document.getElementById('err').style.display = 'flex'; });
+import('./js/main.ts').catch(e => { console.error(e); document.getElementById('err').style.display = 'flex'; });
 </script>
 </body>
 </html>

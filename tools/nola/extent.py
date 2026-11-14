@@ -1,4 +1,4 @@
-"""New Orleans's frame and extents, shared by fetch_nola.py and build_nola.py (and js/cities.js CITIES.nola.frame)."""
+"""New Orleans's frame and extents, shared by fetch_nola.py and build_nola.py (and js/cities.ts CITIES.nola.frame)."""
 import math
 
 # projection: x metres east, z metres south of Canal & Royal (the French Quarter)

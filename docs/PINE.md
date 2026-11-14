@@ -1,7 +1,7 @@
 # 1938 Pine St Kitchen (`pine`)
 
-One kitchen rather than a city, at `?city=pine`. It has no map data: `js/scene/pine/kitchen.js`
-builds the room by hand and `js/scene/pine/items.js` builds the things stored in it. `main.js`
+One kitchen rather than a city, at `?city=pine`. It has no map data: `js/scene/pine/kitchen.ts`
+builds the room by hand and `js/scene/pine/items.ts` builds the things stored in it. `main.ts`
 skips the map loader, the city scene and the city panel controls for a city with `kitchen: true`.
 
 ## What's in it
@@ -34,9 +34,9 @@ skips the map loader, the city scene and the city panel controls for a city with
   the lit next-stop sign; drag to look
   around, W A S D to walk, Esc or *Get off* to leave, and the line diagram at the bottom shows
   the stops. *Show lines* highlights each line in its colour. They're built with the shared
-  monorail (`js/scene/monorail.js`) in `js/scene/pine/minirail.js`, where `LINES` holds each
+  monorail (`js/scene/monorail.ts`) in `js/scene/pine/minirail.ts`, where `LINES` holds each
   line's corners (inches), height and stations; the rides use the shared ride system
-  (`js/scene/subway.js`, created empty but for these cars).
+  (`js/scene/subway.ts`, created empty but for these cars).
 
 ## Layout (inches; x east, z south, origin at the north-west corner)
 
@@ -50,7 +50,7 @@ skips the map loader, the city scene and the city panel controls for a city with
 **Island spacing.** The island is placed so the aisle between its east counter edge and the sink
 run's counter edge equals the gap between its west (seating) edge and the west wall:
 `GAP = (SINK_EDGE - ISLAND_TOP) / 2`, about 32.75in each side. Change `ISLAND_TOP` or the room
-width in `kitchen.js` and both gaps stay equal.
+width in `kitchen.ts` and both gaps stay equal.
 
 ## Contents
 
@@ -58,5 +58,5 @@ The contents follow the organization plan as it last stood, including the later 
 big 22.8 × 18 × 26in island cabinets: small appliances under I1 + I2, food storage, mixing bowls
 and glass baking dishes under I3 + I4; the lazy susan keeps pots, the slow cooker and the
 stockpot; the corner upper keeps Pyrex cups and prep bowls; and the tops of the uppers are clear.
-Each spot's list is in its `items` in `kitchen.js`; the 3D things are placed in the fill code
+Each spot's list is in its `items` in `kitchen.ts`; the 3D things are placed in the fill code
 right after it.

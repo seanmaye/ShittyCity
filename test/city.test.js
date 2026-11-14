@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { rectInRing } from '../js/scene/city.js';
+import { rectInRing } from '../js/scene/city.ts';
 
 const square = [[0, 0], [10, 0], [10, 10], [0, 10]];
 // the square with a notch cut in from its top edge, down to a point at (5, 4)

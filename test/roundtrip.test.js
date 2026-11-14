@@ -4,8 +4,8 @@
 import { readFileSync } from 'node:fs';
 import { gunzipSync } from 'node:zlib';
 import { describe, expect, test } from 'vitest';
-import { decode } from '../js/scene/city.js';
-import { setTerrain } from '../js/scene/terrain.js';
+import { decode } from '../js/scene/city.ts';
+import { setTerrain } from '../js/scene/terrain.ts';
 
 const arrayBuffer = b => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
 const read = path => arrayBuffer(readFileSync(new URL(path, import.meta.url)));
@@ -64,7 +64,7 @@ describe('committed data', () => {
     if (city === 'jsh') expect([B.nB, B.nP, B.vx.length]).toEqual([0, 0, 0]);
   });
 
-  // data/jsh/terrain.bin.gz starts "TER1" too, but is another layout (js/scene/jsh/terrain.js reads it)
+  // data/jsh/terrain.bin.gz starts "TER1" too, but is another layout (js/scene/jsh/terrain.ts reads it)
   test('phl terrain.bin.gz decodes whole', () => {
     const buf = gunzip('../data/phl/terrain.bin.gz'), T = terrainOf(buf);
     expect(24 + T.W * T.H * 2 * 2).toBe(buf.byteLength);

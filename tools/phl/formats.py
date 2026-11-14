@@ -1,8 +1,8 @@
 """The binary files the scene reads, packed as the builders write them (not gzipped). No side effects at import,
 so tools/tests can check them against the JavaScript readers.
 
-  pack_phb1   city_buildings.bin (layout in build_city.py), read by decode() in js/scene/city.js
-  pack_ter1   terrain.bin (layout in build_terrain.py), read by setTerrain() in js/scene/terrain.js
+  pack_phb1   city_buildings.bin (layout in build_city.py), read by decode() in js/scene/city.ts
+  pack_ter1   terrain.bin (layout in build_terrain.py), read by setTerrain() in js/scene/terrain.ts
 """
 import array, math, struct, sys
 

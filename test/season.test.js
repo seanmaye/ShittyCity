@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dateOfDay, dayOfYear, formatDay } from '../js/scene/season.js';
+import { dateOfDay, dayOfYear, formatDay } from '../js/scene/season.ts';
 
 // local dates throughout, as the app uses them: the results do not depend on the machine's time zone
 

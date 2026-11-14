@@ -13,9 +13,9 @@ Writes, in the shared formats (docs/EDITING.md section 3):
                        West Branch of the Susquehanna, Pine Creek and smaller streams, trees
   city_buildings.bin.gz  empty (every footprint is in buildings.json)
 and, for this city only:
-  terrain.bin.gz       elevation grid the scene drapes everything over (js/scene/jsh/terrain.js)
-  places.json          labels and "Go to" views (js/scene/jsh/places.js)
-  farms.json.gz        crop fields (USDA Cropland Data Layer), barns and silos (js/scene/jsh/farms.js)
+  terrain.bin.gz       elevation grid the scene drapes everything over (js/scene/jsh/terrain.ts)
+  places.json          labels and "Go to" views (js/scene/jsh/places.ts)
+  farms.json.gz        crop fields (USDA Cropland Data Layer), barns and silos (js/scene/jsh/farms.ts)
 """
 import gzip, json, math, os, random, struct, sys, csv
 import numpy as np
@@ -268,7 +268,7 @@ cover = np.where(wet, 2, forest.astype(int)).astype(np.uint8)   # 2 = water bed
 
 
 def h_at(x, z_):
-    """terrain height (m above BASE) as the scene computes it (js/scene/jsh/terrain.js): the grid's triangles"""
+    """terrain height (m above BASE) as the scene computes it (js/scene/jsh/terrain.ts): the grid's triangles"""
     u, v = (x + HALF) / CELL, (z_ + HALF) / CELL
     i, j = min(N - 2, max(0, int(u))), min(N - 2, max(0, int(v)))
     fu, fv = u - i, v - j
@@ -445,7 +445,7 @@ for gi, name in enumerate(list(CROPS) + ['pasture'], 1):
             e1, e2 = (rr[1][0] - rr[0][0], rr[1][1] - rr[0][1]), (rr[2][0] - rr[1][0], rr[2][1] - rr[1][1])
             ex, ez = e1 if math.hypot(*e1) >= math.hypot(*e2) else e2
             fields.append({'k': name, 'a': round(math.atan2(ez, ex), 3), 's': round(random.random(), 3), 'p': poly_rings(q)})
-# a seed-corn block in the biggest corn field (js/scene/jsh/detassel.js): sets of four female rows,
+# a seed-corn block in the biggest corn field (js/scene/jsh/detassel.ts): sets of four female rows,
 # each between two taller male rows, down which a detasseling crew walks in July
 SEED_SETS, SEED_LEN, ROW_W = 4, 120.0, .76
 seed = None
@@ -474,7 +474,7 @@ if corn:
         _, cx, cz = best
         seed = {'x': round(float(cx), 1), 'z': round(float(cz), 1), 'a': a, 'len': SEED_LEN, 'sets': SEED_SETS, 'row': ROW_W, 's': fields[fi]['s']}   # s: its field's planting group
         # the field keeps its outline: its canopy covers the block from afar, and near the camera
-        # js/scene/jsh/cornlod.js leaves the block and its 8 m headlands to detassel.js
+        # js/scene/jsh/cornlod.ts leaves the block and its 8 m headlands to detassel.ts
         print(f'farms: seed-corn block at ({cx:.0f}, {cz:.0f}), {SEED_SETS} sets of 4 female rows')
 farm_ctx = prep(unary_union(farm_any).buffer(150)) if farm_any else None
 blocked = unary_union([blocked] + [Polygon([(f['p'][0][i] / 10, f['p'][0][i + 1] / 10) for i in range(0, len(f['p'][0]), 2)]) for f in fields])
@@ -483,7 +483,7 @@ print(f'farms: {len(fields)} fields (' + ', '.join(f"{k} {sum(1 for f in fields 
       f'), {sum(Polygon([(f["p"][0][i] / 10, f["p"][0][i + 1] / 10) for i in range(0, len(f["p"][0]), 2)]).area for f in fields) / 1e6:.2f} km2')
 
 # barns: big farm buildings outside the borough, near fields and pasture, away from house clusters;
-# silos: small round footprints beside them. Both are modelled in js/scene/jsh/farms.js instead.
+# silos: small round footprints beside them. Both are modelled in js/scene/jsh/farms.ts instead.
 SILO_ROUND = .62
 BARN_WALL = ['#8e2f25', '#8e2f25', '#9b3a2c', '#7e2a22', '#e6e2d8', '#d9d3c4', '#8a8173', '#a33d2e']
 BARN_ROOF = ['#4d5256', '#3d4245', '#5a5e60', '#3f5a45', '#6b3a2e', '#7a7f82']
@@ -524,7 +524,7 @@ for i, p in enumerate(foot):
     drop.add(i)
 print(f'farms: {len(barns)} barns, {len(silos)} silos')
 
-# what each remaining building is, for js/scene/jsh/town.js, which gives it a shape of its own:
+# what each remaining building is, for js/scene/jsh/town.ts, which gives it a shape of its own:
 # pitched roofs, porches and chimneys on houses, storefronts and cornices downtown, steeples on
 # churches, metal sheds at the mills. Per building: [type, x, z, w, d, angle] (dm, dm, dm, dm,
 # mrad): the footprint's best-fit rectangle with its front (+d) turned to the nearest street.
@@ -615,7 +615,7 @@ cover = np.where(cover == 2, 2, np.where(inside_model, cover, np.where(cdl_fores
 ridge = (GZ > 2500) & (GZ < 6500) & (np.abs(GX) < 5000)
 j, i = np.unravel_index(np.where(ridge, Hrel, -1e9).argmax(), Hrel.shape)
 summit = (float(gx[i]), float(gx[j]))
-# the overlook (js/scene/jsh/overlook.js overlookSite(): 24 m off the summit toward town, the eye 1.2 m
+# the overlook (js/scene/jsh/overlook.ts overlookSite(): 24 m off the summit toward town, the eye 1.2 m
 # up) keeps a clearing and its view: no tree within 40 m, nor one in the half he faces whose top would
 # stand in a sight line dropping 9 degrees from his eye, which is as steeply as he looks down into the valley
 _d = math.hypot(*summit)
@@ -721,9 +721,9 @@ bx, bz = LineString([(bridge['p'][i] / 10, bridge['p'][i + 1] / 10) for i in ran
 views = [
     {'id': 'downtown', 'name': 'Allegheny St', **V(-330, 260, 110, -60, -30, 5)},
     {'id': 'bridge', 'name': 'River bridge', **V(bx + 380, bz + 330, 90, bx - 60, bz - 20, 5)},
-    # (the view from Bald Eagle Mountain is the overlook's: js/scene/jsh/overlook.js, at the mountain's label)
+    # (the view from Bald Eagle Mountain is the overlook's: js/scene/jsh/overlook.ts, at the mountain's label)
     *([{'id': 'farms', 'name': 'Corn fields', **V(cf.x + 800, cf.y + 1250, 600, cf.x + 60, cf.y + 250, 0)}] if (cf := seed_field and seed_field.centroid) else []),   # the seed corn's field
-    # (the detasseling crew's view follows the crew: js/scene/jsh/detassel.js)
+    # (the detasseling crew's view follows the crew: js/scene/jsh/detassel.ts)
     {'id': 'pinecreek', 'name': 'Pine Creek', **V(pp.x + 900, pp.y + 1100, 380, pp.x, pp.y, 0)},
 ]
 
