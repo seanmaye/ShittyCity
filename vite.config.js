@@ -56,7 +56,18 @@ export default defineConfig({
     cssMinify: false,
     // a data file or loading screen is always a file of its own, never a data: URL in the code, however small
     assetsInlineLimit: file => (file.startsWith(DATA) ? false : undefined),
-    rolldownOptions: { output: names },
+    rolldownOptions: {
+      output: {
+        ...names,
+        // three.js in chunks of its own, apart from our code (three-core, three, three-addons: its two build files and the
+        // addons, each under 500 kB): an edit to js/cities.js or materials.js, which shared chunks with it, no longer renames it
+        codeSplitting: { groups: [
+          { name: 'three-core', test: /[\\/]node_modules[\\/]three[\\/]build[\\/]three\.core\.js$/, priority: 3 },
+          { name: 'three', test: /[\\/]node_modules[\\/]three[\\/]build[\\/]/, priority: 2 },
+          { name: 'three-addons', test: /[\\/]node_modules[\\/]three[\\/]examples[\\/]/, priority: 1 },
+        ] },
+      },
+    },
   },
   // Vitest (npm test): the unit tests in test/ run in Node, without a browser
   test: { include: ['test/**/*.test.js'], environment: 'node' },
