@@ -1,8 +1,8 @@
 // The cities this model can show, and the active one. Everything that differs between cities
 // and isn't data (projection, camera, sun, HUD text, which data files to load) lives here.
 // js/main.js calls setCity() once, before any data is loaded or scene module runs, so modules
-// may read CITY inside their functions (never at module top level: the bundle evaluates every
-// module before main runs).
+// may read CITY inside their functions (never at module top level: imported modules run their
+// top level before main.js calls setCity()).
 
 // Philadelphia's SEPTA station tags: Metro ids, trolley ranges, then the networks
 function septaLines(s, LINES) {
@@ -31,7 +31,7 @@ export const CITIES = {
     blurb: 'All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill.',
     // projection: x metres east, z metres south of (LAT0, LON0); MX is metres per degree of longitude here
     frame: { LAT0: 39.9560, LON0: -75.1760, MX: 85390, MZ: 111000 },
-    dir: 'data/phl', prefix: 'phl-',   // data files, and their <script id="data-phl-…"> blocks in the bundle
+    dir: 'data/phl', prefix: 'phl-',   // data files (prefix is no longer used)
     // [key in the loaded object, file in dir]; .gz files are gzip (JSON or binary)
     files: [
       ['buildings', 'buildings.json'], ['river', 'river.json'], ['ground', 'ground.json'], ['trees', 'trees.json'],

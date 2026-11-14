@@ -229,18 +229,12 @@ const TIPS = [
 const el = (tag, cls, parent) => { const e = document.createElement(tag); if (cls) e.className = cls; if (parent) parent.append(e); return e; };
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
-/** where a screen's background comes from: the bundle's embedded copy, or the data folder */
-function artSrc(city, file) {
-  const embedded = document.getElementById(`art-${city.prefix}${file.replace(/\.webp$/, '')}`);
-  return embedded ? `data:image/webp;base64,${embedded.textContent.trim()}` : `${city.dir}/${file}`;
-}
-
 function buildScreen(city, s) {
   const side = s.side === 'left' ? 'left' : 'right';
   const root = el('div', 'ls-screen'); root.dataset.side = side;
   const inner = el('div', 'ls-inner', root);
   const pan = el('div', 'ls-pan', inner), bg = el('img', 'ls-bg', pan);
-  bg.alt = ''; bg.decoding = 'async'; bg.src = artSrc(city, s.file);
+  bg.alt = ''; bg.decoding = 'async'; bg.src = `${city.dir}/${s.file}`;
   el('div', 'ls-grade', inner);
   const glow = el('div', 'ls-glow', inner), dim = el('div', 'ls-dim', inner);
   const drift = el('div', 'ls-drift', inner), hero = el('img', 'ls-hero', drift);

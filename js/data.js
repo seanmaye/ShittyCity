@@ -15,8 +15,6 @@ export function pairs(flat) {
   return out;
 }
 
-const stem = f => f.replace(/\.(json|bin)(\.gz)?$/, '');
-
 async function gunzip(bytes) {
   if (bytes[0] !== 0x1f || bytes[1] !== 0x8b) return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength); // already decoded by the server
   const s = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
@@ -28,24 +26,14 @@ export async function loadData(onProgress = () => {}) {
   const FILES = CITY.files;
   let done = 0;
   const parts = await Promise.all(FILES.map(async ([key, file]) => {
-    // the single-file build (tools/bundle.py) embeds each file as a <script> block:
-    // application/json as text, .gz files as base64 (application/gzip-base64)
-    const embedded = document.getElementById(`data-${CITY.prefix}${stem(file)}`);
+    const r = await fetch(`${CITY.dir}/${file}`);
+    if (!r.ok) throw new Error(`${CITY.dir}/${file}: HTTP ${r.status}`);
+    const bytes = new Uint8Array(await r.arrayBuffer());
     let out;
-    if (embedded && embedded.type === 'application/json') out = JSON.parse(embedded.textContent);
+    if (file.endsWith('.json')) out = JSON.parse(new TextDecoder().decode(bytes));
     else {
-      let bytes;
-      if (embedded) bytes = Uint8Array.from(atob(embedded.textContent.trim()), c => c.charCodeAt(0));
-      else {
-        const r = await fetch(`${CITY.dir}/${file}`);
-        if (!r.ok) throw new Error(`${CITY.dir}/${file}: HTTP ${r.status}`);
-        bytes = new Uint8Array(await r.arrayBuffer());
-      }
-      if (file.endsWith('.json')) out = JSON.parse(new TextDecoder().decode(bytes));
-      else {
-        const buf = await gunzip(bytes);
-        out = file.endsWith('.json.gz') ? JSON.parse(new TextDecoder().decode(buf)) : buf;
-      }
+      const buf = await gunzip(bytes);
+      out = file.endsWith('.json.gz') ? JSON.parse(new TextDecoder().decode(buf)) : buf;
     }
     onProgress(++done / FILES.length, key);
     return out;

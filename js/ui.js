@@ -284,7 +284,7 @@ export function createUI(api) {
     if (riding) { riding = false; rideBtn.textContent = 'Ride a line'; hint.textContent = HINT0; }
     openPicker(false); api.flyTo(p.view); markView(null); openEat(i);
   }
-  // the card's link to djour opens in a new tab (also from inside the single-file build)
+  // the card's link to djour opens in a new tab
   eatCard.querySelector('.eat-src a').addEventListener('click', e => { e.preventDefault(); window.open(e.currentTarget.href, '_blank', 'noopener'); });
   const eatTag = []; LABELS.forEach((l, k) => { if (l.layer === 'eat') eatTag[api.labels[k].eat] = l.el; });
   document.getElementById('eat-x').addEventListener('click', () => { eatCard.hidden = true; eatOn = null; LABELS.forEach(l => l.el.classList.remove('on')); });

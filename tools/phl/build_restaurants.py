@@ -13,7 +13,7 @@ Steps:
      footprints and the outer city's boxes and outlines), or at the kerb for trucks and
      markets, and note the building's height.
 
-Run: python -I tools/phl/build_restaurants.py   (then python -I tools/bundle.py)
+Run: python -I tools/phl/build_restaurants.py
 """
 import difflib
 import gzip

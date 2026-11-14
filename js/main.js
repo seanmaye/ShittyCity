@@ -91,7 +91,7 @@ try {
 } catch (e) {
   console.error(e);
   progress.hidden = true;
-  statusEl.textContent = location.protocol === 'file:' && !$(`data-${city.prefix}river`)
+  statusEl.textContent = location.protocol === 'file:'
     ? 'This page needs a local web server to load its data files. See README.md.'
     : `Couldn’t build the scene: ${e.message}`;
   const back = $('loading-back');
