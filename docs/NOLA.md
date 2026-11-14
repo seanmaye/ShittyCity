@@ -21,9 +21,9 @@ The French Quarter, the Central Business District, the Marigny, the Bywater and 
 ## Rebuilding the data
 
 ```bash
-python -m pip install shapely numpy pillow duckdb
-python -I tools/nola/fetch_nola.py      # downloads the sources into tools/nola/src/
-python -I tools/nola/build_nola.py      # writes data/nola/
+uv sync --group data --group fetch
+uv run python -I tools/nola/fetch_nola.py      # downloads the sources into tools/nola/src/
+uv run python -I tools/nola/build_nola.py      # writes data/nola/
 python -I tools/bundle.py
 ```
 

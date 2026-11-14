@@ -12,3 +12,7 @@ node_modules
 tools
 docs
 *.md
+pyproject.toml
+uv.lock
+.python-version
+.venv

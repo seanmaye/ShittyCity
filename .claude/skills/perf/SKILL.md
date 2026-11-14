@@ -5,14 +5,14 @@ description: Measure, find and prove runtime performance gains in the three.js c
 
 # Performance work on the Schuylkill model
 
-The harness is `tools/perf/perf.py`. Read `tools/perf/README.md` before your first run; it
+The harness is `tools/perf/perf.py` (setup: `uv sync --group qa`). Read `tools/perf/README.md` before your first run; it
 explains every metric and pitfall. The loop:
 
 1. **Baseline.** Run this and read the printed summary (also saved as `summary.md` in the
    output folder):
 
    ```bash
-   python -I tools/perf/perf.py run --quick
+   uv run python -I tools/perf/perf.py run --quick
    ```
 
    Run every scenario when the task is broad; `perf.py list` names them. Note each
@@ -20,7 +20,7 @@ explains every metric and pitfall. The loop:
 2. **Attribute.** For the slow scenarios:
 
    ```bash
-   python -I tools/perf/perf.py run -s <scenarios> --census --ablate
+   uv run python -I tools/perf/perf.py run -s <scenarios> --census --ablate
    ```
 
    The ablation table ranks what costs the frame (each builder hidden, the shadow pass,
@@ -33,7 +33,7 @@ explains every metric and pitfall. The loop:
    separate runs drift by 20–50% on this kind of laptop GPU, so don't compare them:
 
    ```bash
-   python -I tools/perf/perf.py ab -s <scenarios>
+   uv run python -I tools/perf/perf.py ab -s <scenarios>
    ```
 
    Claim only rows marked `better` (paired t-test, 99%) or `likely better` (95%), and say
