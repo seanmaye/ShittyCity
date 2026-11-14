@@ -43,6 +43,8 @@ This serves the working tree (`data/` as it is) and updates the page when you sa
 
 Then open <http://localhost:5173>. `npm run build` writes the site to `dist/`, which is what Cloudflare deploys, and `npm run preview` serves that build at <http://localhost:4173>.
 
+`npm run check` lints the JavaScript (Biome), runs `tsc` over it and runs the unit tests in `test/` (Vitest). Cloudflare runs it before every build (`npm run cf:build`), so a failing check stops the deploy: run it before you push.
+
 To measure how fast it loads and renders (frame and GPU time per scenario, hot code paths,
 draw calls by source line, before/after comparisons), see [tools/perf/README.md](tools/perf/README.md):
 
