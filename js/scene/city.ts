@@ -16,26 +16,15 @@ import { terrain, surface, footprint, buildTerrain, TOL_LAWN } from './terrain.t
 import { facadeKind, facadeColor, hash, addRooftop, aviationLights } from './buildings.ts';
 import { CITY } from '../cities.ts';
 import type { Pair } from '../types/data.ts';
+import { decodeCityBuildings } from '../formats.ts';
 
 const TILE = 1000, FULL = 5000, TREE_FAR = 7000;
 /** a TILE m square of the city: boxes drawn near (full), roofs far off (roof), outlines whenever in view (always) */
 interface Tile { cx: number; cz: number; r: number; top: number; base?: number; full: THREE.Object3D[]; roof: THREE.Object3D[]; trees: THREE.Object3D[]; always: THREE.Object3D[] }
 
-/** Decode city_buildings.bin (PHB1; written by tools/phl/build_city.py and tools/nyc/import_nyc.py). */
-export function decode(buf) {
-  const dv = new DataView(buf);
-  if (String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3)) !== 'PHB1') throw new Error('city buildings: bad header');
-  const nB = dv.getUint32(4, true), nP = dv.getUint32(8, true), nV = dv.getUint32(12, true);
-  let o = 16;
-  const i32 = n => { const a = new Int32Array(buf.slice(o, o + n * 4)); o += n * 4; return a; };
-  const u16 = n => { const a = new Uint16Array(buf.slice(o, o + n * 2)); o += n * 2; return a; };
-  const u8 = n => { const a = new Uint8Array(buf, o, n); o += n; return a; };
-  const bx = i32(nB), bz = i32(nB), vx = i32(nV), vz = i32(nV);
-  const bw = u16(nB), bd = u16(nB), br = u16(nB), bh = u16(nB), pn = u16(nP), ph = u16(nP);
-  const bk = u8(nB), pk = u8(nP);
-  for (let i = 1; i < nB; i++) { bx[i] += bx[i - 1]; bz[i] += bz[i - 1]; }
-  return { nB, nP, bx, bz, bw, bd, br, bh, bk, vx, vz, pn, ph, pk };
-}
+/** Decode city_buildings.bin: PHB1 as committed (written by tools/phl/build_city.py and tools/nyc/import_nyc.py), or the
+ * build's PHB2 (js/formats.ts) */
+export const decode = decodeCityBuildings;
 
 function unitBox() {   // 1 x 1 x 1 box standing on y = 0, without a bottom face
   const g = new THREE.BoxGeometry(1, 1, 1); g.translate(0, .5, 0);

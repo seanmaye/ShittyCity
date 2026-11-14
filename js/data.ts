@@ -3,6 +3,7 @@
 // are integer decimetres in that city's frame (js/cities.ts).
 import * as THREE from 'three';
 import { CITY } from './cities.ts';
+import { decodeJcol, formatOf } from './formats.ts';
 import type { CityData, Pair } from './types/data.ts';
 
 /** lat/lon -> scene position (x metres east, z metres south of the city's origin) */
@@ -16,8 +17,7 @@ export function pairs(flat: ArrayLike<number>): Pair[] {
   return out;
 }
 
-async function gunzip(bytes) {
-  if (bytes[0] !== 0x1f || bytes[1] !== 0x8b) return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength); // already decoded by the server
+async function gunzip(bytes: Uint8Array<ArrayBuffer>): Promise<ArrayBuffer> {
   const s = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
   return new Response(s).arrayBuffer();
 }
@@ -30,13 +30,13 @@ export async function loadData(onProgress: (done: number, key: string) => void =
     if (!CITY.urls[file]) throw new Error(`${CITY.dir}/${file}: not in the build's URL map (js/main.ts URLS)`);
     const r = await fetch(CITY.urls[file]);   // its URL in the build (CITY.urls, set by main.ts)
     if (!r.ok) throw new Error(`${CITY.dir}/${file}: HTTP ${r.status}`);
-    const bytes = new Uint8Array(await r.arrayBuffer());
+    // the file as committed (the dev server) or the build's encoding of it (js/formats.ts: JCOL for JSON, gzipped; TER2 and
+    // PHB2 are read where they are used): gzip by its first bytes, whatever the name (a server may have decoded it already)
+    const got = new Uint8Array(await r.arrayBuffer()), bytes = got[0] === 0x1f && got[1] === 0x8b ? new Uint8Array(await gunzip(got)) : got;
     let out: unknown;
-    if (file.endsWith('.json')) out = JSON.parse(new TextDecoder().decode(bytes));
-    else {
-      const buf = await gunzip(bytes);
-      out = file.endsWith('.json.gz') ? JSON.parse(new TextDecoder().decode(buf)) : buf;
-    }
+    if (formatOf(bytes) === 'JCOL') out = decodeJcol(bytes);
+    else if (/\.json(\.gz)?$/.test(file)) out = JSON.parse(new TextDecoder().decode(bytes));
+    else out = bytes.buffer;
     onProgress(++done / FILES.length, key);
     return out;
   }));

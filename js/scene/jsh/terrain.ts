@@ -13,19 +13,18 @@ import * as THREE from 'three';
 import { M } from '../materials.ts';
 import { Builder } from '../geometry.ts';
 import { seasonalGrass } from '../season.ts';
+import { readGridTerrain } from '../../formats.ts';
 
 /** the decoded grid: n x n points, cell m apart, from -half to half m on x and z; h heights m, cover land cover (below) */
 export interface Grid { n: number; half: number; cell: number; base: number; h: Float32Array; cover: Uint8Array }
 let T: Grid = null;
 
-/** decode terrain.bin: "TER1", n u32, half f32, cell f32, base f32, heights i16[n*n] (dm), cover u8[n*n] (0 open, 1 forest, 2 river bed, 3 cropland) */
+/** decode terrain.bin: "TER1" as committed (n u32, half f32, cell f32, base f32, heights i16[n*n] (dm), cover u8[n*n] (0 open,
+ * 1 forest, 2 river bed, 3 cropland)), or the build's TER2 (js/formats.ts readGridTerrain) */
 export function loadTerrain(buf: ArrayBuffer): Grid {
-  const dv = new DataView(buf);
-  if (String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3)) !== 'TER1') throw new Error('terrain: bad header');
-  const n = dv.getUint32(4, true), half = dv.getFloat32(8, true), cell = dv.getFloat32(12, true), base = dv.getFloat32(16, true);
-  const raw = new Int16Array(buf.slice(20, 20 + n * n * 2)), h = new Float32Array(n * n);
+  const { n, half, cell, base, raw, cover } = readGridTerrain(buf), h = new Float32Array(n * n);
   for (let i = 0; i < n * n; i++) h[i] = raw[i] / 10;
-  T = { n, half, cell, base, h, cover: new Uint8Array(buf, 20 + n * n * 2, n * n) };
+  T = { n, half, cell, base, h, cover };
   return T;
 }
 export const hasTerrain = () => !!T;
