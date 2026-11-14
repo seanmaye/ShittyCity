@@ -1394,13 +1394,14 @@ _SOURCES = {}
 def chunk_sources(base, url):
     """The source files a JS file the page loaded was built from: its own path for a source the dev server serves
     (/js/...), else the `sources` of its source map (the file its sourceMappingURL names), read from the served folder or,
-    for --url, fetched from the site. None if there is no map to read: then only the file's name was checked."""
+    for --url, fetched from the site (under our own User-Agent: Cloudflare answers urllib's default one with 403). None if
+    there is no map to read: then only the file's name was checked."""
     path = re.sub(r'[?#].*', '', url)
     if path.startswith('/js/'):
         return [path[1:]]
     if (base, path) not in _SOURCES:
         root, got = _SERVED.get(base), None
-        read = (lambda p: open(os.path.join(root, p.lstrip('/')), 'rb').read()) if root else (lambda p: urllib.request.urlopen(base + p, timeout=60).read())
+        read = (lambda p: open(os.path.join(root, p.lstrip('/')), 'rb').read()) if root else (lambda p: urllib.request.urlopen(urllib.request.Request(base + p, headers={'User-Agent': 'shittycity-perf-harness'}), timeout=60).read())
         try:
             m = re.search(r'//# sourceMappingURL=(\S+)\s*$', read(path).decode('utf-8', 'replace'))
             if m and not m.group(1).startswith('data:'):

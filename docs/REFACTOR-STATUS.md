@@ -523,8 +523,9 @@ equal those of a local build of `f718a5b`.
 
 **Found:** `smoke --url` reads source maps with urllib's default User-Agent, which Cloudflare
 answers with 403, so on the live site every JS file counted as "without a source map" and the
-other-city-code check fell back to names. With a named User-Agent (tried locally, not committed)
-the maps load and the check passes. One-line fix in `chunk_sources`' `read`, not yet made.
+other-city-code check fell back to names. Fixed after the merges: `chunk_sources` sends a named
+User-Agent, the maps load, and the check passes on production (one file per city has no map, as
+in a local `smoke --prod`).
 
 **Not done:** the three contributor messages (in #8, #9, #13) were not sent by this session:
 Micah sends them. Safari was not checked. The failing branch builds are not explained. Local
