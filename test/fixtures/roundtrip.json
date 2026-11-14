@@ -1,0 +1,23 @@
+{
+  "about": "Inputs to the PHB1 and TER1 writers in tools/phl/formats.py (metres, radians), which write phb1.bin and ter1.bin from them (tools/tests/test_roundtrip.py); test/roundtrip.test.js reads those with decode() and setTerrain(). Positions and sizes have one decimal, so decimetres hold them exactly.",
+  "phb1": {
+    "boxes": [
+      { "x": 12.3, "z": -45.6, "w": 6.1, "d": 18.2, "ry": 0, "h": 9.5, "kind": 0 },
+      { "x": -1024.7, "z": 2048.1, "w": 30, "d": 22.4, "ry": 0.7853981633974483, "h": 41.2, "kind": 1 },
+      { "x": 15000.5, "z": -20000.9, "w": 0.5, "d": 0.5, "ry": 3.0, "h": 3, "kind": 0 },
+      { "x": -30000, "z": -30000, "w": 120.7, "d": 64, "ry": 1.5, "h": 520.5, "kind": 1 },
+      { "x": -29999.9, "z": 8.8, "w": 7.7, "d": 9.9, "ry": 3.14159, "h": 6000, "kind": 0 }
+    ],
+    "polys": [
+      { "ring": [[10.1, 20.2], [15.5, 20.2], [12.8, 25.0]], "h": 7.5, "kind": 0 },
+      { "ring": [[-100, -100], [-80.4, -100], [-80.4, -90], [-90, -90], [-90, -70.3], [-100, -70.3]], "h": 66.6, "kind": 1 },
+      { "ring": [[5000, -5000], [5012.5, -4999.9], [5012.4, -4980.1], [4999.9, -4980]], "h": 250, "kind": 1 },
+      { "ring": [[-12.3, 4.5], [-2.2, 4.5], [-2.2, 14.6], [-12.3, 14.6]], "h": 12.1, "kind": 0 }
+    ]
+  },
+  "ter1": {
+    "x0": -12.3, "z0": 45.6, "cell": 10, "W": 3, "H": 2,
+    "ground": [-1.5, 0, 2.3, 12.7, -3.2, -0.1],
+    "water": [2.5, 0, 0, -0.4, 1.2, 0]
+  }
+}

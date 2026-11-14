@@ -18,12 +18,13 @@ city_buildings.bin layout (little endian; positions in decimetres, scene frame):
   poly vertex count u16[nPoly], poly h u16[nPoly]
   box kind u8[nBox], poly kind u8[nPoly]                   (0 rowhouse, 1 other)
 """
-import glob, gzip, json, math, os, random, struct, sys
+import glob, gzip, json, math, os, random, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from geom import (Grid, area, centroid, clip_line, clip_ring, min_rect, point_in_poly,  # noqa: E402
                   point_in_ring, proj, seg_dist, simplify, simplify_ring, stitch)
 from citylimits import Limits  # noqa: E402
+from formats import pack_phb1  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RAW = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "raw", "city")
@@ -182,38 +183,7 @@ T = 1000.0
 boxes.sort(key=lambda b: (int((b[1] - BZ0) // T), int((b[0] - BX0) // T), b[0]))
 polys.sort(key=lambda p: (int((p[0][0][1] - BZ0) // T), int((p[0][0][0] - BX0) // T)))
 
-
-def deltas(vals):
-    out, prev = [], 0
-    for v in vals:
-        out.append(v - prev)
-        prev = v
-    return out
-
-
-bx_i = deltas([dm(b[0]) for b in boxes])
-bz_i = deltas([dm(b[1]) for b in boxes])
-pv_x, pv_z, pv_n, pv_h, pv_k = [], [], [], [], []
-for r, h, k in polys:
-    xs_ = [dm(p[0]) for p in r]
-    zs_ = [dm(p[1]) for p in r]
-    pv_x += [xs_[0]] + [xs_[i] - xs_[i - 1] for i in range(1, len(xs_))]
-    pv_z += [zs_[0]] + [zs_[i] - zs_[i - 1] for i in range(1, len(zs_))]
-    pv_n.append(len(r))
-    pv_h.append(min(65535, dm(h)))
-    pv_k.append(k)
-u16 = lambda v: max(0, min(65535, int(round(v))))  # noqa: E731
-blob = b"".join([
-    b"PHB1", struct.pack("<III", len(boxes), len(polys), len(pv_x)),
-    struct.pack(f"<{len(bx_i)}i", *bx_i), struct.pack(f"<{len(bz_i)}i", *bz_i),
-    struct.pack(f"<{len(pv_x)}i", *pv_x), struct.pack(f"<{len(pv_z)}i", *pv_z),
-    struct.pack(f"<{len(boxes)}H", *[u16(b[2] * 10) for b in boxes]),
-    struct.pack(f"<{len(boxes)}H", *[u16(b[3] * 10) for b in boxes]),
-    struct.pack(f"<{len(boxes)}H", *[u16(b[4] / math.pi * 65535) for b in boxes]),
-    struct.pack(f"<{len(boxes)}H", *[u16(b[5] * 10) for b in boxes]),
-    struct.pack(f"<{len(pv_n)}H", *pv_n), struct.pack(f"<{len(pv_h)}H", *pv_h),
-    bytes(b[6] for b in boxes), bytes(pv_k),
-])
+blob = pack_phb1(boxes, polys)
 with open(os.path.join(OUT, "city_buildings.bin.gz"), "wb") as fo:
     with gzip.GzipFile(fileobj=fo, mode="wb", compresslevel=9, mtime=0) as gz:
         gz.write(blob)

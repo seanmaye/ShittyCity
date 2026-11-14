@@ -19,7 +19,7 @@ import { CITY } from '../cities.js';
 const TILE = 1000, FULL = 5000, TREE_FAR = 7000;
 
 /** Decode city_buildings.bin (PHB1; written by tools/phl/build_city.py and tools/nyc/import_nyc.py). */
-function decode(buf) {
+export function decode(buf) {
   const dv = new DataView(buf);
   if (String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3)) !== 'PHB1') throw new Error('city buildings: bad header');
   const nB = dv.getUint32(4, true), nP = dv.getUint32(8, true), nV = dv.getUint32(12, true);
