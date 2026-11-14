@@ -38,5 +38,7 @@ export default defineConfig({
     sourcemap: true,
     // no syntax lowering: js/main.js awaits at module top level, and the page runs today's syntax as is
     target: 'esnext',
+    // Lightning CSS (the default minifier) drops unprefixed backdrop-filter, the 100vh fallbacks and the loading headline's font; ~10 kB gzipped either way
+    cssMinify: false,
   },
 });
