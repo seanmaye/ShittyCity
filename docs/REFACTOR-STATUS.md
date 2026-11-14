@@ -3,7 +3,7 @@
 Kept by the orchestrator of [REFACTOR-PLAN.md](REFACTOR-PLAN.md). Only the orchestrator edits
 this file. It is how the work is picked up again after a context summary or in a new session.
 
-Last updated: 2026-11-13 (P1a, P1b, P1c in review; P2 waits on merges and an effort switch).
+Last updated: 2026-11-14 (P1a, P1b, P1c in review; P2 gates passed, #9 ready for review).
 
 ## Standing facts
 
@@ -40,22 +40,51 @@ floor seen, with a minimum of 0.001%; a share above it means "screenshots differ
 | smoke | phl | 0.0061% | 0.0122% |
 | smoke | nyc | 0.0001% | 0.001% |
 | smoke | jsh | 0.0000% | 0.001% |
-| smoke | nola | 0.0006% | 0.0012% |
-| smoke | pine | 0.0108% | 0.0216% |
-| `ab --shots` (phl) | overview-dusk | 0.0102% | 0.02% |
-| `ab --shots` (phl) | whole-city | 0.0009% | 0.002% |
-| `ab --shots` (phl) | ride-L | 0.8766% | 1.75% |
-| `ab --shots` (phl) | fly-market | 28.0% | not comparable by pixels (moving camera): look at it |
+| smoke | nola | 0.0007% | 0.0014% |
+| smoke | pine | 0.0124% | 0.0248% |
+| `ab --shots` (phl) | overview-dusk | 0.0114% | 0.0228% |
+| `ab --shots` (phl) | overview-noon | 0.0059% | 0.0118% |
+| `ab --shots` (phl) | overview-night | 0.0095% | 0.019% |
+| `ab --shots` (phl) | whole-city | 0.0016% | 0.0032% |
+| `ab --shots` (phl) | transit-map | 0.0002% | 0.001% |
+| `ab --shots` (phl) | market-cut | 0.1201% | 0.24% |
+| `ab --shots` (phl) | street-level | 0.0230% | 0.046% |
+| `ab --shots` (phl) | ride-L | 1.4931% | 2.99% |
+| `ab --shots` (phl) | ride-regional | 5.3001% | 10.6% |
+| `ab --shots` (phl) | ride-monorail | 4.3108% | 8.62% |
+| `ab --shots` (phl) | orbit, fly-market | 28–45% | not comparable by pixels (moving camera): look at it |
+| `ab --shots` (nyc) | overview-dusk/noon/night, transit-map | ≤ 0.0002% | 0.001% |
+| `ab --shots` (nyc) | whole-city | 0.0013% | 0.0026% |
+| `ab --shots` (nola) | overview-dusk | 0.0006% | 0.0012% |
+| `ab --shots` (nola) | overview-noon/night, whole-city, transit-map | ≤ 0.0003% | 0.001% |
+| `ab --shots` (jsh) | overview-dusk, overview-night, whole-city, transit-map | ≤ 0.0002% | 0.001% |
+| `ab --shots` (jsh) | overview-noon | 0.0006% | 0.0012% |
+| `ab --shots` (jsh) | overlook-stand | 0.0044% | 0.0088% |
+| `ab --shots` (jsh) | overlook-bino | 0.1644% | 0.33% |
+| `ab --shots` (nyc, nola, jsh) | orbit | 35–64% | moving camera: look at it |
 
-phl and pine were raised after P1b's smoke (a third sample, diff images showing only moving
-trains and the kitchen's monorail). Scenarios not listed get their floor from the first same-commit run that includes them. A
+phl and pine smoke were raised after P1b's smoke (a third sample, diff images showing only moving
+trains and the kitchen's monorail), and again from P2's perf-build same-commit smoke (nola, pine). A
 deliberate change (the `--accent` colour) came out 0.11–0.20% in smoke, about 40× the floor.
+The `ab --shots` floors are from P2's same-build runs (2026-11-14, both sides the same perf
+build; `tools/perf/out/20261114-*-ab-p2-bvb*`), max over runs. **They hold only when both sides
+load in the same time:** a change that moves load time shifts time-driven motion (trains, the jsh
+hunter's smoke, the binoculars' sway) at the moment of the shot. P2's build loaded sooner and came
+out above the floor on four jsh views: overview-noon 0.0020%, overview-night 0.0015%,
+overlook-stand 0.0269%, overlook-bino 18.1%. The diff images showed only moving things. When a
+share is above tolerance, open the diff image before calling it a change.
 
 **How to read `ab` (decided 2026-11-13):** a `worse` row (99%) fails a gate. A lone
 `likely worse` (95%) row means rerun that scenario with `--rounds 8`; with ~40 metrics per run,
 one or two 95% verdicts appear by chance (the fixed harness, same commit on both sides, gave
 one: `overview-dusk.frameP95` +3.1%). `heapMB` rows swing ±30% with GC timing; ignore them
 unless a load or frame row moves with them.
+Seen in P2 (same build on both sides, byte-identical pages): one 99% load row (nola river phase,
+0.8 ms) and one 99% scenario (nola `transit-map`, fps −3.5%) each vanished on rerun with more
+rounds (8, then 16 rounds of that scenario alone). So a lone `worse` can be chance too. Before
+failing a gate on one, rerun that scenario alone with `--rounds 16`; report both runs. Some frame
+metrics are bimodal per browser launch: phl `whole-city` (about 10 or 14 ms), and nola/jsh
+`transit-map` main-thread time (about ±0.2 ms).
 
 **Harness commands until P1a merges:** `uv run --no-project --with playwright==1.65.1 --with
 pillow==13.0.0 python -I tools/perf/perf.py …` (zsh: wrap in a function or script; a command in a
@@ -173,8 +202,9 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P2. The build
 
-- State: in progress (started 2026-11-14 at Micah's request, orchestrator at xhigh).
-- Branch `refactor/p2-build`, local for now: P1a + P1b with P1c's two commits cherry-picked
+- State: **in review, gates passed** (2026-11-14). https://github.com/seanmaye/ShittyCity/pull/9
+  is ready for review, with every gate's output in its description.
+- Branch `refactor/p2-build` (pushed): P1a + P1b with P1c's two commits cherry-picked
   (`5ac3781`, `2ac1357`) on `7fe4426`. Rebase onto `main` once #4, #7 and #8 merge; the P1
   commits then drop out.
 - Build done (`1161e44`, `aa7f9da`, `b272a50`; diff read by the orchestrator): vite 8.3.8
@@ -217,12 +247,35 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
   `origin/main` still `7fe4426`, so no rebase needed.
 - Gate 1 (Linux CI): **green** — Ubuntu 24.04.5, node v24.22.2, npm 11.19.1, `npm ci` 51
   packages, build passed in 20 s.
-- Gates 2–6 running (orchestrator, one at a time, AC power, no subagents): script
-  `gate-p2.sh` in the scratchpad, gate worktree `scratchpad/gate-p2`, no-build comparison
-  worktree `scratchpad/nobuild-2ac1357`.
-- Local follow-up at merge: `.claude/launch.json` (untracked) still starts `tools/serve.py`.
-- **Blocks merge:** P1a/P1b/P1c merged; the dashboard readout and the Build-command change
-  (human step) before the cutover; the contributor message about `npm ci` / `npm run dev`.
+- Gates 2–6: **passed** (orchestrator, one at a time, on AC power, no subagents, 02:32–06:15).
+  A = `2ac1357` (sources), B = `c7193fd` (perf build). Outputs:
+  `tools/perf/out/20261114-*-p2-*` and `tools/ux/out/20261114-035623-p2-build` in the main
+  checkout; scripts and logs in `tools/perf/out/20261114-p2-gate-logs/`.
+  - Smoke vs 2ac1357: all 5 ok, within tolerance (phl 0.0035%, nola 0.0002%, pine 0.0118%,
+    nyc/jsh 0). `smoke --prod`: all 5 ok, no errors or failed requests.
+  - `ab --rounds 5 --shots` vs 2ac1357, phl/nyc/nola/jsh: **no `worse`**. Data fetch + decode
+    faster on every city (phl −7.0%, nyc −8.6%, jsh −13.2%, nola −26.7%, all 99%). One
+    `likely worse` heap row (nola `overview-night.heapMB` +21.3%), ignored by the rule. Shots: all
+    phl views within tolerance. nyc and nola: every view within. jsh: 4 views above the
+    same-build floor, motion only (see the tolerance note above).
+  - Same build on both sides (phl 8 rounds all scenarios; jsh, nyc, nola 5 rounds; nola 8; nola
+    and jsh `transit-map` alone at 16): no frame or load row significant in the final runs, so
+    the harness adds no bias. The 99% rows seen on the way vanished with more rounds (see "How to
+    read `ab`").
+  - Census parity vs no-build 2ac1357: totals (1,879 calls, 5,423,923 tris), 20 builder rows, 25
+    site rows and the load inventory all identical. `hot` names the same functions at the same
+    file:line on both.
+  - `ux.py compare` vs P0: 531 screens, 16 errors, 345 warnings on both; +0/+0. The `loading`
+    state fails to capture on every city/device in P0 too (`ux.py` bug, not P2). Large pixel
+    shares only in moving or random states. `load-error`: same text and font.
+- Contributor message drafted in #9 (Micah sends). Note for #8: its proposed `COLLABORATING.md`
+  rewrite says three.js and the font load from CDNs; after P2 that line should say Node 24 and
+  `npm ci`.
+- Local follow-up at merge: `.claude/launch.json` (untracked) still starts `tools/serve.py` and
+  has a `p2-preview` entry pointing at a scratchpad folder. Replace with one `npm run dev`
+  entry on port 5173.
+- **Blocks merge:** P1a/P1b/P1c merged, then rebase #9 on `main`; the dashboard readout and the
+  Build-command change (human step) before the cutover; the contributor message sent.
 
 ### P3. Checks in the build
 
