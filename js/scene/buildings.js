@@ -1,3 +1,4 @@
+// @ts-check
 // Real building footprints (each city's footprints and heights: data/<city>/buildings.json),
 // extruded and merged into tiled meshes with lit-window facades.
 import * as THREE from 'three';
@@ -79,6 +80,7 @@ function displayShell(ring, y0, y1) {
   const mesh = new THREE.Mesh(b.geometry(), m); mesh.visible = false; mesh.renderOrder = 2; return mesh;
 }
 
+/** @param {THREE.Scene} scene @param {import('../types/data').Buildings} data */
 export function buildBuildings(scene, data) {
   const styles = data.styles;
   // sort footprints into tiles first so each tile's buffers can be built and released in turn
