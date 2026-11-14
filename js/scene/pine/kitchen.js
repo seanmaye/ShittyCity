@@ -11,8 +11,8 @@
 // The island sits so the aisle between it and the sink run is as wide as the gap between the
 // island's far (west) edge and the west wall: see ISLAND below.
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { LIGHT, makeRenderer } from '../../three-setup.js';
 import * as I from './items.js';
 import { buildMiniRail } from './minirail.js';

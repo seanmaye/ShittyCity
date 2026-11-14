@@ -22,7 +22,7 @@
 // js/scene/index.js treats a punk like a person you are inside (getInhabited() is the "car" you are
 // aboard); js/ui.js draws the card and the action buttons from that state.
 import * as THREE from 'three';
-import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { geo, pose } from './people.js';
 import { punkProfile } from './punkprofiles.js';
 import { litMats } from '../materials.js';

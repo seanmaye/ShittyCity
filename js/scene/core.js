@@ -1,6 +1,6 @@
 // Renderer, camera, controls, sky and lights.
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { G } from '../data.js';
 import { CITY } from '../cities.js';
 import { LIGHT, makeRenderer } from '../three-setup.js';

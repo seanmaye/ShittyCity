@@ -3,7 +3,7 @@
 // Queensboro cantilever. Ported from the NYC City Model (js/scene/bridges.js). The OSM decks of
 // these four are left out of the street data (tools/nyc/import_nyc.py), so nothing is drawn twice.
 import * as THREE from 'three';
-import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 // Bridge centrelines in the NYC frame (metres), anchored to the mapped approaches and shorelines.
 const groups = {
   deck: [], steel: [], cable: [], stone: []
