@@ -6,8 +6,11 @@ import { CITIES, setCity } from './cities.js';
 import { loadData } from './data.js';
 import { buildScene } from './scene/index.js';
 import { createUI } from './ui.js';
-import { buildKitchen } from './scene/pine/kitchen.js';
 import { startLoadingScreens } from './loading.js';
+// Each city's own code (js/scene/<city>/<city>.js), as a chunk of its own that no other city downloads. (Here rather than in
+// js/cities.js, which shares a chunk with three.js: a change to one city's code then renames only this chunk and that city's,
+// and the shared ones stay cached.)
+const CODE = { phl: () => import('./scene/phl/phl.js'), nyc: () => import('./scene/nyc/nyc.js'), jsh: () => import('./scene/jsh/jsh.js'), pine: () => import('./scene/pine/pine.js') };
 const $ = id => document.getElementById(id);
 const statusEl = $('status'), progress = $('loading-progress');
 const changeCity = () => location.assign(location.href.split(/[?#]/)[0]);
@@ -52,6 +55,11 @@ function chooseCity() {
 
 const asked = new URLSearchParams(location.search).get('city');
 const city = setCity(Object.hasOwn(CITIES, asked) ? asked : await chooseCity());
+// the city's own code, a chunk of its own: asked for now, it arrives while the data loads. (This module awaits at top level, so
+// a city's chunk must never import the chunk this module is in: each would wait for the other. The build keeps the modules
+// both use in chunks of their own; tools/perf's smoke would time out if that changed.)
+const own = CODE[city.id] ? CODE[city.id]() : Promise.resolve({});
+own.catch(() => {});   // (a failure shows where it is awaited, below)
 showLoading(city);
 // the page's text for this city
 document.title = city.title;
@@ -66,13 +74,15 @@ try {
     // a single room, not a map: no data to load and none of the city controls
     document.body.classList.add('kitchen');
     status('Setting out the kitchen…', 60);
+    const { buildKitchen } = await own;
     const api = buildKitchen($('c'));
     window.__kitchen = api;
     await api.start();
   } else {
     const data = await loadData(p => status(`Loading map data… ${Math.round(p * 100)}%`, p * 50));
-    const api = await buildScene($('c'), data, status);
-    const ui = createUI(api);
+    const code = await own;
+    const api = await buildScene($('c'), data, status, code);
+    const ui = createUI(api, code);
     slideshow.settle();   // no new slides while the city's first frames load the GPU
     status('Rendering the city…', 95);
     const firstFrame = api.start(camera => ui.placeTags(camera));

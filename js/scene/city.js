@@ -58,8 +58,8 @@ export function rectInRing(ring, [x0, z0, x1, z1]) {
 
 /** clear: rings ([[x, z], ...]) kept free of park trees (playing fields);
  *  sea: everything outside the land outlines (city.limits) is water, not countryside;
- *  core: the Center City extent [x0, z0, x1, z1] in metres, which buildGround paves itself */
-export async function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea = false, core = null }) {
+ *  core: the Center City extent [x0, z0, x1, z1] in metres, which buildGround paves itself; onPromenade: for drawLines */
+export async function buildCity(scene, data, { waterMat, status = () => {}, clear = [], sea = false, core = null, onPromenade }) {
   const city = data.city, B = decode(data.cityBuildings);
   const tiles = new Map();   // key -> { cx, cz, r, full: [], roof: [], trees: [] }
   const tileOf = (x, z) => {
@@ -140,7 +140,7 @@ export async function buildCity(scene, data, { waterMat, status = () => {}, clea
   const wet = (x, z) => (WG.get(wkey(x, z)) || []).some(p => inRing(x, z, p[0]) && !p.slice(1).some(h => inRing(x, z, h)));
 
   // ---- streets, rail and bridges, tiled
-  const { bridgeSegs, flat: streets } = drawLines(scene, city.lines, { wet, tile: 2000 });
+  const { bridgeSegs, flat: streets } = drawLines(scene, city.lines, { wet, tile: 2000, onPromenade });
 
   // ---- buildings
   await status(`Raising ${(B.nB + B.nP).toLocaleString()} more buildings…`);
