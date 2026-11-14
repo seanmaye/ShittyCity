@@ -24,6 +24,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { pairs } from '../../data.js';
 import { groundAt } from './terrain.ts';
 import { makeFigure } from '../phl/people.ts';
+import type { Buildings, Places } from '../../types/data.ts';
 
 const TAU = Math.PI * 2;
 const hash = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
@@ -42,11 +43,19 @@ const LOOP = { x: MID + AISLE / 2, zf: -11.3, zb: 9.3, r: 2, speed: 2.1 };
 const FLY = { z: -1, hub: 10.6, arm: 3, r: 7, y: 7.4, period: 30 };
 const BPM = 76;
 
+/** a makeFigure() figure (phl/people.ts): the joints this file poses */
+interface Rig {
+  root: THREE.Group; pelvis?: THREE.Object3D; chest?: THREE.Object3D; head?: THREE.Object3D;
+  hipL?: THREE.Object3D; hipR?: THREE.Object3D; kneeL?: THREE.Object3D; kneeR?: THREE.Object3D; shL?: THREE.Object3D; shR?: THREE.Object3D; elL?: THREE.Object3D; elR?: THREE.Object3D;
+}
+/** the parking lot (buildOutside), m in the building's frame: a out from the front, b across; rows of stalls [b0, b1, accessible] */
+interface Lot { a0: number; a1: number; b0: number; b1: number; stall0: number; rows?: [number, number, boolean][]; islands?: number[]; arrows?: number[] }
+
 /**
  * Where the church is: the "church" footprint under the label "Crossroads Church" (data/jsh/places.json),
  * and any small church footprint beside it (the pavilion). Returns { skip, main, pavilion } or null.
  */
-export function churchSite(buildings, places) {
+export function churchSite(buildings: Buildings, places: Places) {
   const lbl = places.labels.find(l => l.t === 'Crossroads Church'); if (!lbl) return null;
   const { j: J, jtypes: T, b: B } = buildings, rec = i => ({ i, type: T[J[i * 6]], cx: J[i * 6 + 1] / 10, cz: J[i * 6 + 2] / 10, w: J[i * 6 + 3] / 10, d: J[i * 6 + 4] / 10, ang: J[i * 6 + 5] / 1000 });
   let main = null, bd = 30;
@@ -152,6 +161,7 @@ function matcapTex(key, lo, rimL, rimR) {
 // ---- geometry -------------------------------------------------------------------------------------
 /** flat convex polygons by material, each wound and lit to face `hint`; UVs in metres / the material's tile */
 class Shell {
+  declare parts: Map<THREE.Material, { p: number[]; n: number[]; uv: number[] }>;
   constructor() { this.parts = new Map(); }
   poly(mat, pts, hint) {
     let nx = 0, ny = 0, nz = 0;
@@ -300,7 +310,7 @@ function buildOutside(bld, FL, toWorld, gmin) {
   }
 
   // the parking lot in front, following the ground
-  const L = { a0: AF + 2.2, a1: AF + 48, b0: -30, b1: 28, stall0: AF + 9 };
+  const L: Lot = { a0: AF + 2.2, a1: AF + 48, b0: -30, b1: 28, stall0: AF + 9 };
   L.rows = []; L.islands = []; L.arrows = [];
   { let b = L.b0 + 1; for (let k = 0; k < 3 && b + 18 < L.b1; k++) { L.rows.push([b, b + 5.5, k === 1], [b + 12, b + 17.5, k === 1]); L.arrows.push(b + 8.75); if (k < 2) L.islands.push(b + 18.5); b += 19; } }
   const nA = 24, nB = 28, pos = [], uv = [], idx = [];
@@ -340,7 +350,7 @@ function pavilion(r) {
 }
 
 // ---- inside -----------------------------------------------------------------------------------------
-function buildInside(hall) {
+function buildInside(hall): { update(dt: number, t: number, camera?: THREE.Camera): void } {
   const MC = { room: matcapTex(.55, .12, '#3a2a55', '#1d3a66'), stage: matcapTex(.75, .14, '#ff3fb0', '#3f7bff'), crowd: matcapTex(.42, .06, '#ff4fa8', '#4a8cff') };
   const mcs = new Map(), flashMats = [];
   const mc = (kind, color) => { const k = kind + color; let m = mcs.get(k); if (!m) { mcs.set(k, m = new THREE.MeshMatcapMaterial({ matcap: MC[kind], color })); m.userData.base = m.color.clone(); flashMats.push(m); } return m; };
@@ -426,7 +436,7 @@ function buildInside(hall) {
   // ---- the band
   const band = [];
   const player = (colors, x, z, ry, kind) => {
-    const F = makeFigure(colors); matcapify(F.root, 'stage');
+    const F: Rig = makeFigure(colors); matcapify(F.root, 'stage');
     F.root.position.set(x, STAGE.y, z); F.root.rotation.y = ry; hall.add(F.root);
     if (kind === 'guitar') { const g = new THREE.Mesh(new THREE.BoxGeometry(.36, .5, .08), mc('stage', colors.inst || '#8a4a22')); g.position.set(0, .2, .2); g.rotation.z = .9; F.pelvis.add(g); const n = new THREE.Mesh(new THREE.BoxGeometry(.05, .6, .04), mc('stage', '#2a1a10')); n.position.set(-.35, .45, .22); n.rotation.z = .9; F.pelvis.add(n); F.shL.rotation.x = -.9; F.shR.rotation.x = -.4; F.elR.rotation.x = -.9; F.elL.rotation.x = -1; }
     if (kind === 'keys') { const k = add(new THREE.BoxGeometry(1.3, .1, .4), mc('stage', '#141418'), x, STAGE.y + .95, z + .55); k.rotation.y = ry; add(new THREE.BoxGeometry(.04, .9, .04), chrome, x, STAGE.y + .45, z + .55); F.shL.rotation.x = F.shR.rotation.x = -.7; F.elL.rotation.x = F.elR.rotation.x = -.6; }
@@ -596,7 +606,7 @@ function crowdMeshes(P, mc) {
     m.userData.list = list; return m;
   };
   // (arms take the shirt colour of their owner: the same salt)
-  const meshes = [mk(G.legs, P, PANTS, 1), mk(G.torso, P, SHIRT, 2), mk(G.head, P, SKIN, 3), mk(G.hair, P, HAIR, 4), mk(G.down, downs, SHIRT, 2), mk(G.up, ups, SHIRT, 2)];
+  const meshes: THREE.InstancedMesh[] & { sway?: (beat: number) => void } = [mk(G.legs, P, PANTS, 1), mk(G.torso, P, SHIRT, 2), mk(G.head, P, SKIN, 3), mk(G.hair, P, HAIR, 4), mk(G.down, downs, SHIRT, 2), mk(G.up, ups, SHIRT, 2)];
   const dm = new THREE.Object3D();
   meshes.sway = beat => {
     for (const m of meshes) {
@@ -615,7 +625,7 @@ function crowdMeshes(P, mc) {
 
 /** the loop round the middle block: up the left aisle, across the front, down the right aisle, across the back */
 function loopPath() {
-  const { x, zf, zb, r } = LOOP, V = (a, b) => new THREE.Vector3(a, 0, b), P = new THREE.CurvePath();
+  const { x, zf, zb, r } = LOOP, V = (a, b) => new THREE.Vector3(a, 0, b), P: THREE.CurvePath<THREE.Vector3> & { length?: number } = new THREE.CurvePath();
   const corner = (cx, cz, a0) => { const pts = []; for (let k = 0; k <= 8; k++) { const a = a0 + k / 8 * Math.PI / 2; pts.push(V(cx + Math.cos(a) * r, cz + Math.sin(a) * r)); } return new THREE.CatmullRomCurve3(pts); };
   P.add(new THREE.LineCurve3(V(-x, zb - r), V(-x, zf + r)));      // up the left aisle, toward the stage
   P.add(corner(-x + r, zf + r, Math.PI));                          // round to the front
@@ -671,8 +681,8 @@ function motorcycle(mc) {
   }
   put(new THREE.BoxGeometry(.24, .07, .03), new THREE.MeshBasicMaterial({ color: '#ff2a2a' }), 0, .86, -.99);   // the tail light
   // the rider: black leather and jeans, a black helmet
-  const F = makeFigure({ shirt: '#1b1b1d', shorts: '#2f4a6e', skin: '#d9a888', shoe: '#111', hair: '#8a8a88' });
-  F.root.traverse(o => { if (o.isMesh) { o.material = mc('stage', '#' + o.material.color.getHexString()); o.castShadow = false; } });
+  const F: Rig = makeFigure({ shirt: '#1b1b1d', shorts: '#2f4a6e', skin: '#d9a888', shoe: '#111', hair: '#8a8a88' });
+  F.root.traverse((o: THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>) => { if (o.isMesh) { o.material = mc('stage', '#' + o.material.color.getHexString()); o.castShadow = false; } });
   F.root.position.set(0, .12, -.28); body.add(F.root);
   F.pelvis.rotation.x = .2; F.hipL.rotation.x = F.hipR.rotation.x = -1.35; F.kneeL.rotation.x = F.kneeR.rotation.x = 1.25;
   F.hipL.rotation.z = .25; F.hipR.rotation.z = -.25;
@@ -698,7 +708,7 @@ function motorcycle(mc) {
 
 /** the preacher in a flying harness: hangs from the cable, mic in his left hand, preaching with his right */
 function flyingPreacher(mc, matcapify) {
-  const F = makeFigure({ shirt: '#f4f1ea', shorts: '#26262c', skin: '#8d5a3c', shoe: '#111', hair: '#141010' });
+  const F: Rig = makeFigure({ shirt: '#f4f1ea', shorts: '#26262c', skin: '#8d5a3c', shoe: '#111', hair: '#141010' });
   matcapify(F.root, 'stage');
   const strap = mc('stage', '#1a1a1e');
   for (const s of [-1, 1]) { const b = new THREE.Mesh(new THREE.BoxGeometry(.05, .62, .4), strap); b.position.set(s * .1, .3, 0); b.rotation.z = s * .35; F.pelvis.add(b); }

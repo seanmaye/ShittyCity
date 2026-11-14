@@ -14,10 +14,12 @@ import { M } from '../materials.js';
 import { Builder } from '../geometry.js';
 import { seasonalGrass } from '../season.js';
 
-let T = null;   // { n, half, cell, base, h: Float32Array (m), cover: Uint8Array }
+/** the decoded grid: n x n points, cell m apart, from -half to half m on x and z; h heights m, cover land cover (below) */
+export interface Grid { n: number; half: number; cell: number; base: number; h: Float32Array; cover: Uint8Array }
+let T: Grid = null;
 
 /** decode terrain.bin: "TER1", n u32, half f32, cell f32, base f32, heights i16[n*n] (dm), cover u8[n*n] (0 open, 1 forest, 2 river bed, 3 cropland) */
-export function loadTerrain(buf) {
+export function loadTerrain(buf: ArrayBuffer): Grid {
   const dv = new DataView(buf);
   if (String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3)) !== 'TER1') throw new Error('terrain: bad header');
   const n = dv.getUint32(4, true), half = dv.getFloat32(8, true), cell = dv.getFloat32(12, true), base = dv.getFloat32(16, true);
@@ -29,7 +31,7 @@ export function loadTerrain(buf) {
 export const hasTerrain = () => !!T;
 
 /** ground height at (x, z): on the grid's triangles (each cell split from its north-west to south-east corner) */
-export function groundAt(x, z) {
+export function groundAt(x: number, z: number): number {
   if (!T) return 0;
   const { n, half, cell, h } = T, u = (x + half) / cell, v = (z + half) / cell;
   if (u < 0 || v < 0 || u > n - 1 || v > n - 1) return 0;
@@ -38,7 +40,7 @@ export function groundAt(x, z) {
   return fu >= fv ? h00 + fu * (h10 - h00) + fv * (h11 - h10) : h00 + fv * (h01 - h00) + fu * (h11 - h01);
 }
 /** where a footprint ([[x, z], ...]) stands: its lowest corner, so no wall floats on a slope */
-export function groundBase(ring) {
+export function groundBase(ring: number[][]): number {
   if (!T) return 0;
   let lo = Infinity; for (const [x, z] of ring) lo = Math.min(lo, groundAt(x, z));
   return lo;
@@ -48,7 +50,7 @@ const COUNTRY = '#69775a';   // ground.js COUNTRY (not imported: ground.js impor
 const OPEN = new THREE.Color(COUNTRY), FOREST = new THREE.Color('#4a5d3e'), BED = new THREE.Color('#5b6650'), CROP = new THREE.Color('#8f8c62');
 /** The terrain surface (in 2 km tiles, so the camera and the sun's shadow box can skip tiles) and,
  *  beyond it, flat country out to the horizon. */
-export function buildTerrain(scene) {
+export function buildTerrain(scene: THREE.Object3D): THREE.Mesh[] {
   const { n, half, cell, h, cover } = T, TILE = 50, col = new THREE.Color();
   const mat = seasonalGrass(M('#ffffff', { vertexColors: true, roughness: 1, side: THREE.FrontSide }));
   // colour: open land, woods and river bed, softened over a cell either side

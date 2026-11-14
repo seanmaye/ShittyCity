@@ -170,7 +170,7 @@ export function buildCornLOD(scene, fields, seed = null, late = null) {
     }
     // only the part of each buffer in use goes to the GPU
     near.count = tas.count = nN; mid.count = nM;
-    for (const [m, n] of [[near, nN], [tas, nN], [mid, nM]]) {
+    for (const [m, n] of [[near, nN], [tas, nN], [mid, nM]] as [THREE.InstancedMesh, number][]) {
       m.instanceMatrix.clearUpdateRanges(); m.instanceMatrix.addUpdateRange(0, n * 16); m.instanceMatrix.needsUpdate = true;
       if (m.instanceColor && m !== tas) { m.instanceColor.clearUpdateRanges(); m.instanceColor.addUpdateRange(0, n * 3); m.instanceColor.needsUpdate = true; }
     }

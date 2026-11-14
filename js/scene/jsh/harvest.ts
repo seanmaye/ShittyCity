@@ -22,6 +22,7 @@ import { Builder, addPolygon } from '../geometry.js';
 import { onSeason } from '../season.js';
 import { groundAt } from './terrain.ts';
 import { stage, rows, cutHole, CORN_HOLE } from './farms.ts';
+import type { JshFarms } from '../../types/data.ts';
 
 export const HARVEST = [286, 334];   // October 14 to December 1
 const HOURS = [7, 21.5];             // the combine's working day
@@ -33,7 +34,7 @@ const SPEED = 1.8, TURN = 9;         // working speed (m/s); how far a headland 
  *  one with little standing in front of it. blockers: [[x, z, radius], ...], what stands on the
  *  ground and could hide a combine from up there (buildings, barns, silos, trees). Returns the
  *  field's index in farms.fields, or -1. */
-export function pickLateField(farms, eye, blockers = []) {
+export function pickLateField(farms: JshFarms, eye: THREE.Vector3, blockers = []) {
   const sees = (x, z) => {
     const y = groundAt(x, z) + 1.5, n = Math.max(2, Math.ceil(Math.hypot(x - eye.x, z - eye.z) / 20));
     for (let i = 1; i < n; i++) { const t = i / n; if (groundAt(eye.x + (x - eye.x) * t, eye.z + (z - eye.z) * t) > eye.y + (y - eye.y) * t) return false; }
@@ -121,7 +122,7 @@ function buildCombine() {
 }
 
 /** f: the field (farms.fields[index]); opts.hour(): the clock, opts.night(): 0 day .. 1 night */
-export function buildHarvest(scene, f, index, { hour = () => 12, night = () => 0 } = {}) {
+export function buildHarvest(scene, f: JshFarms['fields'][number], index, { hour = () => 12, night = () => 0 } = {}) {
   const rings = f.p.map(pairs), ca = Math.cos(f.a), sa = Math.sin(f.a), tex = rows();
   // the field's own frame: u along the rows, v across them
   const U = (x, z) => x * ca + z * sa, V = (x, z) => -x * sa + z * ca, XZ = (u, v) => [u * ca - v * sa, u * sa + v * ca];
@@ -209,7 +210,7 @@ bool cutAt(vec2 p) { return cutSw(floor((p.y * uCutF.x - p.x * uCutF.y - uCutF.z
   const C = buildCombine(); scene.add(C.g);
   // chaff and dust blowing out behind, left in the air as it moves on
   const dustMat = () => new THREE.SpriteMaterial({ map: glow(), color: '#cdbb8a', transparent: true, opacity: 0, depthWrite: false });
-  const dust = Array.from({ length: 12 }, () => { const s = new THREE.Sprite(dustMat()); s.visible = false; s.userData.grounded = true; scene.add(s); return { s, life: 0, v: new THREE.Vector3() }; });
+  const dust: { s: THREE.Sprite; life: number; max?: number; v: THREE.Vector3 }[] = Array.from({ length: 12 }, () => { const s = new THREE.Sprite(dustMat()); s.visible = false; s.userData.grounded = true; scene.add(s); return { s, life: 0, v: new THREE.Vector3() }; });
   // the standing corn straight ahead of the head, where the slab would otherwise show its hollow end
   const face = new THREE.Mesh(new THREE.PlaneGeometry(HEAD, 1), M('#ffffff', { roughness: .95 })); face.geometry.translate(0, .5, 0); face.userData.grounded = true; scene.add(face);
 
@@ -220,7 +221,7 @@ bool cutAt(vec2 p) { return cutSw(floor((p.y * uCutF.x - p.x * uCutF.y - uCutF.z
   function place() {
     let d = where, leg = legs[0];
     for (const l of legs) { leg = l; if (d < l.len) break; d -= l.len; }
-    let u, v, du, dv;
+    let u: number, v: number, du: number, dv: number;
     if (leg.turn) {
       const t = Math.min(1, d / leg.len), a = leg.at(Math.max(0, t - .02)), b = leg.at(Math.min(1, t + .02)), L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
       [u, v] = leg.at(t); du = (b[0] - a[0]) / L; dv = (b[1] - a[1]) / L;

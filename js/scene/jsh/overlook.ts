@@ -23,6 +23,7 @@ import { geo } from '../phl/people.ts';
 import { groundAt } from './terrain.ts';
 import { buildTrees } from '../nature.js';
 import { LIGHT, makeRenderer } from '../../three-setup.js';
+import type { Places } from '../../types/data.ts';
 
 const CANS = 40, EMPTY = 6;          // cans in the case when he got here; how many he is through already
 const SEAT = .43, EYE = 1.72;        // the chair's seat and the visitor's eye, above the ground (m)
@@ -77,7 +78,7 @@ function textures() {
 }
 
 // ---- the folding chair, facing +z, with a cup holder in its left arm (+x is the sitter's left)
-const HOLDER = [.29, .625, .14];   // where the can's middle is when it stands in the holder
+const HOLDER: [number, number, number] = [.29, .625, .14];   // where the can's middle is when it stands in the holder
 function chair() {
   const g = new THREE.Group(), fab = mat('#2d4a66', { roughness: .95, side: THREE.DoubleSide }), fr = mat('#3a3d40', { roughness: .5, metalness: .6 });
   box(g, fab, .54, .02, .48, 0, SEAT, 0);
@@ -93,11 +94,21 @@ function chair() {
   return g;
 }
 
+/** the hunter's figure (hunter()): the joints are groups, turned to pose him (L his left, R his right) */
+interface Figure {
+  root: THREE.Group; mats: THREE.MeshStandardMaterial[];
+  pelvis?: THREE.Group; chest?: THREE.Group; head?: THREE.Mesh; wrist?: THREE.Group; tip?: THREE.Group; grip?: THREE.Group; rim?: THREE.Object3D;
+  ember?: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
+  hipL?: THREE.Group; hipR?: THREE.Group; kneeL?: THREE.Group; kneeR?: THREE.Group; shL?: THREE.Group; shR?: THREE.Group; elL?: THREE.Group; elR?: THREE.Group; handL?: THREE.Mesh; handR?: THREE.Mesh;
+}
+/** arm poses (reach()'s angles): at rest, on the can, and each hand at his mouth */
+interface Poses { restR: number[]; restL: number[]; grabL: number[]; mouthR?: number[]; mouthL?: number[] }
+
 // ---- the hunter: Kyle's limbs and joints (phl/people.js geo()), a little heavier, in camo with a
 // blaze-orange vest and a camo cap, a grey moustache, and a cigarette between his right fingers
 function hunter(T) {
-  const b = 1.12, g = geo(b), F = { root: new THREE.Group(), mats: [] };
-  const mk = (c, o) => { const m = mat(c, o); m.userData.noSnow = true; F.mats.push(m); return m; };
+  const b = 1.12, g = geo(b), F: Figure = { root: new THREE.Group(), mats: [] };
+  const mk = (c, o?) => { const m = mat(c, o); m.userData.noSnow = true; F.mats.push(m); return m; };
   const camo = mk('#ffffff', { map: T.camo, roughness: .95 }), orange = mk('#ff6410', { emissive: '#ff4a00', emissiveIntensity: .22, roughness: .8 });
   const skin = mk('#d2a37f'), boot = mk('#4a3626'), hair = mk('#a9a8a2'), eye = mk('#1b1b1b'), lip = mk('#8a4a44'), paper = mk('#f3f1ea'), filt = mk('#c98a4a');
   const mesh = (gg, mm, x, y, z, parent) => { const o = new THREE.Mesh(gg, mm); o.position.set(x, y, z); parent.add(o); return o; };
@@ -115,7 +126,7 @@ function hunter(T) {
   mesh(new THREE.SphereGeometry(.021, 8, 6), skin, 0, -.008, .106, F.head);
   mesh(new THREE.BoxGeometry(.075, .022, .02), hair, 0, -.036, .1, F.head);   // moustache
   mesh(new THREE.BoxGeometry(.04, .01, .012), lip, 0, -.056, .096, F.head);
-  for (const [s, sx] of [['L', 1], ['R', -1]]) {
+  for (const [s, sx] of [['L', 1], ['R', -1]] as [string, number][]) {
     const hip = F['hip' + s] = grp(F.pelvis, sx * .1, 0, 0); mesh(g.thigh, camo, 0, 0, 0, hip);
     const knee = F['knee' + s] = grp(hip, 0, -.45, 0); mesh(g.shin, camo, 0, 0, 0, knee); mesh(g.foot, boot, 0, -.45, 0, knee).scale.set(1.1, 1.3, 1.1);
     const sh = F['sh' + s] = grp(F.chest, sx * (.23 + (b - 1) * .14), -.04, 0); mesh(g.upper, camo, 0, 0, 0, sh);
@@ -134,7 +145,7 @@ function hunter(T) {
 /** sitting in the chair: thighs out along the seat, knees a little apart, shins down, leaning back */
 function sit(F) {
   F.pelvis.position.y = SEAT + .1; F.pelvis.rotation.x = -.16; F.chest.rotation.x = .1;
-  for (const [s, sx] of [['L', 1], ['R', -1]]) { F['hip' + s].rotation.set(-1.36, 0, sx * .16); F['knee' + s].rotation.x = 1.42; }
+  for (const [s, sx] of [['L', 1], ['R', -1]] as [string, number][]) { F['hip' + s].rotation.set(-1.36, 0, sx * .16); F['knee' + s].rotation.x = 1.42; }
 }
 /** Bend an arm (shoulder sh: x and z, elbow el: x) so that `eff`, something the forearm carries,
  *  comes as near as it can to `target` (world). A search from coarse to fine; returns the angles. */
@@ -229,7 +240,7 @@ function binoculars() {
 
 /** Where the overlook is: a few steps off the summit (the "Bald Eagle Mountain" label in
  *  places.json) toward town, which is where the hunter faces. Null without that label. */
-export function overlookSite(places) {
+export function overlookSite(places: Places) {
   const top = places.labels.find(l => l.t === 'Bald Eagle Mountain'); if (!top) return null;
   const d = Math.hypot(top.x, top.z), x = top.x - top.x / d * 24, z = top.z - top.z / d * 24, y = groundAt(x, z);
   return { x, z, y, h: Math.atan2(-x, -z), eye: new THREE.Vector3(x, y + 1.2, z) };   // h: heading to Allegheny & Main, the model's origin
@@ -268,7 +279,7 @@ export function buildOverlook(scene, site, { night = () => 0, spot = () => null 
   [...canMats, cm, em, card].forEach(m => { m.userData.noSnow = true; });
   const empties = [];
   function empty() {   // one more on the ground, on its side, some of them crushed
-    const o = new THREE.Mesh(canGeo, canMats), far = empties.length >= EMPTY; let lx, lz;
+    const o = new THREE.Mesh(canGeo, canMats), far = empties.length >= EMPTY; let lx: number, lz: number;
     do { const a = rnd() * 6.28, r = .2 + rnd() * (far ? 1.5 : .8); lx = 1.2 + Math.cos(a) * r; lz = .75 + Math.sin(a) * r; }
     while ((Math.abs(lx - .86) < .42 && Math.abs(lz - .12) < .32) || (lx < .5 && lz < 1));   // not in the case, nor under his boots
     put(o, lx, lz, rnd() * 6.28, .033); o.rotation.z = Math.PI / 2; if (rnd() < .45) o.scale.y = .45;
@@ -313,7 +324,7 @@ export function buildOverlook(scene, site, { night = () => 0, spot = () => null 
   const local = (x, y, z) => group.localToWorld(new THREE.Vector3(x, y, z));
   const chestW = local(0, .95, 0), headW = F.head.getWorldPosition(new THREE.Vector3()), mouthW = F.head.localToWorld(new THREE.Vector3(0, -.055, .125));
   const setArm = (s, a, b = a, k = 0) => { F['sh' + s].rotation.set(a[0] + (b[0] - a[0]) * k, 0, a[1] + (b[1] - a[1]) * k); F['el' + s].rotation.x = a[2] + (b[2] - a[2]) * k; };
-  const P = { restR: reach(F.shR, F.elR, F.handR, local(-.33, .705, .12)), restL: reach(F.shL, F.elL, F.handL, local(.32, .705, -.07)), grabL: reach(F.shL, F.elL, F.grip, local(...HOLDER)) };
+  const P: Poses = { restR: reach(F.shR, F.elR, F.handR, local(-.33, .705, .12)), restL: reach(F.shL, F.elL, F.handL, local(.32, .705, -.07)), grabL: reach(F.shL, F.elL, F.grip, local(...HOLDER)) };
   // the can keeps the place in his hand it has when he first closes his fingers on it
   setArm('L', P.grabL); group.updateMatrixWorld(true); F.elL.attach(can);
   const canP = can.position.clone(), canQ = can.quaternion.clone();
@@ -338,7 +349,7 @@ export function buildOverlook(scene, site, { night = () => 0, spot = () => null 
   const HIM = [.55, 0], BUCK = [-3.6, 4], CAB = [-6.1, 6.05], fitted = { a: 0, fov: 0 };
   function fit(aspect, fov) {
     const half = Math.atan(Math.tan(fov * Math.PI / 360) * aspect) * .9;   // half the view's width, less a margin
-    const ang = (b, [lx, lz]) => Math.atan2(lx + 1.5, lz + 4.6 + b);        // seen from b m behind the spot; + to the left
+    const ang = (b, [lx, lz]: number[]) => Math.atan2(lx + 1.5, lz + 4.6 + b);        // seen from b m behind the spot; + to the left
     let b = 0, yaw = VIEW_YAW; PITCH0 = -.09;
     if (ang(0, HIM) - VIEW_YAW > half || VIEW_YAW - ang(0, CAB) > half) {
       PITCH0 = -.02;

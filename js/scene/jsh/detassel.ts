@@ -20,16 +20,33 @@ import { onSeason } from '../season.js';
 import { stage, cutHole, CORN_HOLE } from './farms.ts';
 import { detasselerProfile, bossProfile } from './crewprofiles.ts';
 import { LIGHT, makeRenderer } from '../../three-setup.js';
+import type { JshFarms } from '../../types/data.ts';
 
 export const SEASON = [186, 218];   // July 5 to August 6: when the tassels are out
 const HOURS = [6, 15], DEW = 10.5;  // working hours; trash bags until the dew is off
 const SPEED = .25, SPACING = .3;    // walking pace in the rows (m/s); plants along a row (m)
 const BAG = '#16181a';
 
+/** a crew member's figure (figure()): the joints are groups, posed by phl/people.ts pose() and workPose() */
+interface CrewFigure {
+  root: THREE.Group; mats: THREE.MeshStandardMaterial[]; bags?: THREE.Mesh[]; pelvis?: THREE.Group; chest?: THREE.Group; head?: THREE.Mesh;
+  hipL?: THREE.Group; hipR?: THREE.Group; kneeL?: THREE.Group; kneeR?: THREE.Group; shL?: THREE.Group; shR?: THREE.Group; elL?: THREE.Group; elR?: THREE.Group; handL?: THREE.Mesh; handR?: THREE.Mesh;
+}
+/** figure()'s colours; mean: the boss's face, belt and pistol */
+interface Spec { shirt: string; pants: string; skin: string; hair: string; cap: string; mean?: boolean; scale?: number }
+/** a stretch of the crew's route (buildDetassel legs): up or down set k, or across the headland from one set to the next */
+interface Leg { len: number; k?: number; dir?: number; cross?: boolean; from?: number; to?: number; end?: number; wrap?: boolean }
+/** one of the crew (i 0..3 the detasselers, 4 the boss): F, ph ... are set as they work */
+interface Crew {
+  i: number; prof: ReturnType<typeof detasselerProfile>; spec: Spec; F?: CrewFigure;
+  /** the walk's phase, the tassel-pulling clock and the arm doing it, where they are and their heading */
+  ph?: number; pullT?: number; arm?: number; x?: number; z?: number; h?: number; leg?: Leg;
+}
+
 // ---- one figure: Kyle's limbs and joints, with a face, long sleeves and trousers, a cap,
 // and trash bags (shown in the morning); the boss gets a scowl, a belt and a holstered pistol
 function figure(spec) {
-  const g = geo(1), F = { root: new THREE.Group(), mats: [] };
+  const g = geo(1), F: CrewFigure = { root: new THREE.Group(), mats: [] };
   const mat = (c, o = {}) => { const m = new THREE.MeshStandardMaterial({ color: c, roughness: .8, ...o }); F.mats.push(m); return m; };
   const M = { shirt: mat(spec.shirt), pants: mat(spec.pants), skin: mat(spec.skin), shoe: mat('#3a3029'), hair: mat(spec.hair), cap: mat(spec.cap),
     eye: mat('#1b1b1b'), lip: mat('#8a4a44'), bag: mat(BAG, { roughness: .32, metalness: .15 }) };
@@ -54,7 +71,7 @@ function figure(spec) {
   mesh(new THREE.SphereGeometry(.018, 8, 6), M.skin, 0, -.008, .106, F.head);
   if (spec.mean) for (const sx of [1, -1]) { const m = mesh(new THREE.BoxGeometry(.032, .013, .012), M.lip, sx * .015, -.052, .096, F.head); m.rotation.z = -sx * .55; }   // a frown
   else mesh(new THREE.BoxGeometry(.046, .011, .012), M.lip, 0, -.05, .096, F.head);
-  for (const [s, sx] of [['L', 1], ['R', -1]]) {
+  for (const [s, sx] of [['L', 1], ['R', -1]] as [string, number][]) {
     const hip = F['hip' + s] = grp(F.pelvis, sx * .1, 0, 0);
     mesh(g.thigh, M.pants, 0, 0, 0, hip);
     const lb = new THREE.CylinderGeometry(.11, .1, .47, 8); lb.translate(0, -.22, 0); F.bags.push(mesh(lb, M.bag, 0, 0, 0, hip));
@@ -125,7 +142,7 @@ export function tasselGeometry() {   // a spike and four branches, 35 cm
 }
 
 /** opts.hour(): the clock (0..24) */
-export function buildDetassel(scene, seed, { hour = () => 9 } = {}) {
+export function buildDetassel(scene, seed: JshFarms['seed'], { hour = () => 9 } = {}) {
   const { x: cx, z: cz, a, len: L, sets: S, row: RW } = seed, R = S * 5 + 1;
   const ux = Math.cos(a), uz = Math.sin(a), vx = -uz, vz = ux;
   const at = (u, v) => [cx + ux * u + vx * v, cz + uz * u + vz * v];
@@ -184,13 +201,13 @@ export function buildDetassel(scene, seed, { hour = () => 9 } = {}) {
   // ---- the crew
   const SKIN = ['#e0b48f', '#f0c9a6', '#c99370', '#d9a77e', '#8d5a3c'], HAIR = ['#6b4a2b', '#2a1d16', '#c9a25a', '#3a2a20', '#a07a4a'];
   const SHIRT = ['#2f4a6b', '#8c2f2f', '#7a8c99', '#3d6b4a', '#d9b44a'], PANTS = ['#3a4a5a', '#2e3542', '#4a5a6b', '#5a4a3a'], CAP = ['#c86a3a', '#1f2a33', '#e8e4da', '#3d6b4a'];
-  const crew = [0, 1, 2, 3].map(i => ({ i, prof: detasselerProfile(i), spec: { shirt: SHIRT[i], pants: PANTS[i], skin: SKIN[i], hair: HAIR[i], cap: CAP[i] } }))
+  const crew = [0, 1, 2, 3].map((i): Crew => ({ i, prof: detasselerProfile(i), spec: { shirt: SHIRT[i], pants: PANTS[i], skin: SKIN[i], hair: HAIR[i], cap: CAP[i] } }))
     .concat([{ i: 4, prof: bossProfile(), spec: { shirt: '#5b5a3c', pants: '#4a4034', skin: '#c99370', hair: '#3a2a20', cap: '#4f553a', mean: true } }]);
   if (crew[4].prof.grey) crew[4].spec.hair = '#9a9a96';
   crew.forEach(P => { P.spec.scale = P.prof.scale; P.F = figure(P.spec); group.add(P.F.root); P.ph = Math.random() * 6; P.pullT = Math.random() * 1.4; P.arm = P.i % 2; });
 
   // the route: each set walked in turn (up one, back down the next), then around again
-  const CROSS = 5 * RW, legs = [];
+  const CROSS = 5 * RW, legs: Leg[] = [];
   for (let k = 0; k < S; k++) { const dir = k % 2 ? -1 : 1; legs.push({ k, dir, len: L + 2 }); if (k < S - 1) legs.push({ cross: true, from: k, to: k + 1, end: dir, len: CROSS + 2 }); }
   legs.push({ cross: true, from: S - 1, to: 0, end: (S - 1) % 2 ? -1 : 1, len: (S - 1) * 5 * RW + 4, wrap: true });
   const LOOP = legs.reduce((s, l) => s + l.len, 0);

@@ -24,6 +24,7 @@ import { worldWinMat, WIN_W, WIN_H, M } from '../materials.js';
 import { Builder, addPolygon, colorOf } from '../geometry.js';
 import { groundBase } from './terrain.ts';
 import { hash } from '../buildings.js';
+import type { Buildings } from '../../types/data.ts';
 
 const TILE = 700;
 const SHINGLE = ['#4a4c4f', '#3b3d40', '#5d5f60', '#6b5a4c', '#4f4238', '#3f4a42', '#6e6f6c', '#56493f', '#2f3134'];
@@ -41,7 +42,7 @@ const pick = (a, r) => a[Math.floor(r * a.length) % a.length];
 
 /** One face (a convex polygon of world points), wound and lit to face the side `hint` points to.
  *  uvs: facade UVs per point (walls), or none (roof UV, plain parts). */
-function face(b, pts, hint, col, uvs) {
+function face(b, pts, hint, col, uvs?) {
   let nx = 0, ny = 0, nz = 0;
   for (let i = 0; i < pts.length; i++) {
     const p = pts[i], q = pts[(i + 1) % pts.length];
@@ -158,10 +159,10 @@ function parts(F, wall, trim, base, u0) {
 }
 
 /** skip: indices of footprints something else builds (Crossroads Church: jsh/church.js) */
-export function buildTown(scene, data, skip = null) {
+export function buildTown(scene, data: Buildings, skip: Set<number> = null) {
   const { b: B, j: J, jtypes: T, styles } = data;
   const tiles = new Map();
-  const tile = (x, z, kind) => {
+  const tile = (x, z, kind): [Builder, Builder] => {
     const key = Math.floor(x / TILE) + ',' + Math.floor(z / TILE);
     let t = tiles.get(key); if (!t) tiles.set(key, t = { walls: new Map(), trim: new Builder({ color: true }) });
     let w = t.walls.get(kind); if (!w) t.walls.set(kind, w = new Builder({ uv: true, color: true }));
@@ -184,7 +185,7 @@ export function buildTown(scene, data, skip = null) {
       const E = base + .6 + storeys * 3.1;
       const roofCol = brick && r(7) < .25 ? pick(SLATE, r(8)) : !brick && r(7) < .15 ? pick(TIN, r(8)) : shingle;
       q.walls(W, D, y0, E, col);
-      let top;
+      let top: number;
       if (type === 'big') {
         top = q.roof('hip', W > D ? 'x' : 'z', W, D, E, .45, roofCol, col);
         if (r(9) < .5) q.porch(-W * .8, W * .8, D, 2.4, roofCol);
@@ -267,7 +268,7 @@ export function buildTown(scene, data, skip = null) {
       } else flatTop(at('metal'), B[i], cx, cz, base, base + Math.max(5, Math.min(12, h)), col, pick(FLAT, r(6)), null);
     } else {
       // block, school, store, and mills with courtyards: their real outline with a flat roof
-      let kind, col, top, cornice = null;
+      let kind: string, col: string, top: number, cornice = null;
       if (type === 'block') { kind = 'block'; col = pick(BLOCK, r(4)); top = base + Math.max(7.6, Math.min(14, h)); cornice = r(5) < .55 ? '#e8e2d2' : r(5) < .8 ? '#4c3a30' : col; }
       else if (type === 'school') { kind = 'office'; col = pick(BRICK, r(4)); top = base + Math.max(7, Math.min(11, h)); cornice = '#cfc6b2'; }
       else if (type === 'store') { const brick = r(4) < .5; kind = brick ? 'block' : 'metal'; col = brick ? pick(BLOCK, r(5)) : pick(STEEL, r(5)); top = base + (brick ? 5 : 6); cornice = brick ? '#d8d0bc' : null; }

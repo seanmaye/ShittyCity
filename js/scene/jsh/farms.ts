@@ -14,6 +14,7 @@ import { M } from '../materials.js';
 import { Builder, addPolygon } from '../geometry.js';
 import { onSeason } from '../season.js';
 import { groundAt, groundBase } from './terrain.ts';
+import type { JshFarms } from '../../types/data.ts';
 
 /** where real corn plants stand in for the canopy slab (cornlod.ts sets it each frame): x, z, radius */
 export const CORN_HOLE = { value: new THREE.Vector3(0, 0, 0) };
@@ -60,7 +61,7 @@ export function rows() {
  * { ground: colour, canopy: height (m, 0 = none), top: canopy colour, bales: hay just cut }
  * harvestDay: the day this field comes off, when it isn't its group's (harvest.ts: the last corn standing)
  */
-export function stage(k, day, dd, harvestDay) {
+export function stage(k, day, dd, harvestDay?: number) {
   const d = day - dd;
   if (k === 'corn' || k === 'soy' || k === 'veg') {
     const corn = k !== 'soy', tall = corn ? 2.7 : .9, plant = corn ? 130 : 140, harvest = harvestDay ?? (corn ? 282 + dd * 1.5 : 275 + dd);
@@ -87,7 +88,7 @@ export function stage(k, day, dd, harvestDay) {
 }
 
 /** skip: the index of a field that is drawn elsewhere (harvest.ts) */
-export function buildFarms(scene, data, skip = -1) {
+export function buildFarms(scene, data: JshFarms, skip = -1) {
   const tex = rows(), groups = new Map();   // "kind:cohort" -> { k, dd, fields: [] }
   for (const [i, f] of data.fields.entries()) {
     if (i === skip) continue;
