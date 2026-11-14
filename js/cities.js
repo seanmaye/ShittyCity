@@ -1,8 +1,10 @@
+// @ts-check
 // The cities this model can show, and the active one. Everything that differs between cities
 // and isn't data (projection, camera, sun, HUD text, which data files to load) lives here.
 // js/main.js calls setCity() once, before any data is loaded or scene module runs, so modules
 // may read CITY inside their functions (never at module top level: imported modules run their
 // top level before main.js calls setCity()).
+/** @import { City, CityEntry } from './types/city' */
 
 // Philadelphia's SEPTA station tags: Metro ids, trolley ranges, then the networks
 export function septaLines(s, LINES) {
@@ -13,6 +15,7 @@ export function septaLines(s, LINES) {
   return [...parts, ...groups].join(' · ');
 }
 
+/** @type {Record<string, CityEntry>} */
 export const CITIES = {
   phl: {
     id: 'phl', name: 'Philadelphia',
@@ -164,5 +167,5 @@ export const CITIES = {
 
 /** the active city (filled in place by setCity, so every importer sees the same object; main.js then adds
  *  urls: each data file's and loading screen's URL in the build, by file name, from its URLS) */
-export const CITY = {};
+export const CITY = /** @type {City} */ ({});
 export function setCity(id) { return Object.assign(CITY, CITIES[id]); }
