@@ -5,7 +5,7 @@ this file. It is how the work is picked up again after a context summary or in a
 
 Last updated: 2026-11-14 (P1a, P1b, P1c in review; P2 gates passed, #9 ready for review; P3 #10
 gates passed, #10 ready for review, stacked on #9; P4a gates passed, #12 on #10, waiting on
-Micah's kitchen look; P4b gates passed, #13 on #12; P4c gates passed, #14 on #13; P5 started). Orchestrator from P3 on: a new session (the P0–P2 one handed over).
+Micah's kitchen look; P4b gates passed, #13 on #12; P4c gates passed, #14 on #13; P5 no-go, #15 closed with its numbers; closing report below). Orchestrator from P3 on: a new session (the P0–P2 one handed over).
 
 ## Standing facts
 
@@ -396,4 +396,70 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P5. Data decoding in a worker (go or no-go)
 
-- State: not started.
+- State: **no-go, closed** (2026-11-14). https://github.com/seanmaye/ShittyCity/pull/15 (closed,
+  numbers in its description); branch `refactor/p5-worker` kept on origin for a later attempt.
+- Built (implementer worktree `.claude/worktrees/agent-a0a8745f285892c82`): `bf40d79` harness
+  (the worker's Resource Timing replayed on the page with `performance.measure`; probe.js
+  `P.resources()`), `98d5d89` streamed gunzip, `f736b55` module worker `js/load-worker.js` with
+  the readers moved unchanged to `js/formats.js` (all typed arrays transferred), `564cb5b` JSON
+  parsed in the worker. check, build, smoke (same data files and bytes), dev, preview all pass.
+- Per step, `ab --rounds 8`, one scenario (`gate-p5-steps.sh`): stream neutral (ready +0.0% phl,
+  +0.2% nyc); worker: phl ready **worse** +4.0%, fetch + decode **worse** in both (+5.3%, +6.9%);
+  JSON in worker: fetch + decode **worse** +20–21%, nyc ready **worse** +7.7%.
+- Plan's gate on the worker step vs `2327970` (`ab --rounds 5 --shots`, phl 12, nyc 6): ready
+  phl +1.5%, nyc −4.8% (both not significant); nyc fetch + decode `likely worse` +3.9% (5/5);
+  nyc buildings phase `better` −13.9%; shots within tolerance (phl overview-noon 0.0126%:
+  moving things only).
+- Profile (phl, `run` on steps 1 and 2, twice): decode functions gone from the main thread, busy
+  −57 to −116 ms, idle +98 to +108 ms; scene ready unchanged. `load.dataFetchedMs` excluded:
+  with streaming it includes decompression.
+- Why no-go: nothing finishes sooner, and the worker's start delays the first data request (the
+  consistently worse row). A later attempt would start the worker before loadData and keep
+  JSON on the main thread.
+
+## Closing report (2026-11-14, P3–P5 orchestrator)
+
+P0 to P4c are built, gated and in review; **nothing is merged yet** (every merge is Micah's yes).
+P5 is closed as no-go with its numbers. P6a and P6b wait for Micah's go-ahead.
+
+**Load, P0 → end state** (`perf.py run --repeat 3`, P0's settings, medians; P0 on `9c38eae`
+unbuilt, end state `2327970` = #14's tip, perf build; unpaired runs a day apart; outputs
+`tools/perf/out/20261114-1152*-final-*` in the gate worktree):
+
+| city | scene ready ms | first frame ms | data fetched ms | JS heap MB |
+| --- | ---: | ---: | ---: | ---: |
+| phl | 4441 → 3974 (−10.5%) | 4798 → 4279 (−10.8%) | 275 → 238 | 275 → 155 |
+| nyc | 1360 → 1267 (−6.8%) | 1540 → 1439 (−6.6%) | 224 → 172 | 92 → 81 |
+| jsh | 1174 → 1080 (−8.0%) | 1335 → 1241 (−7.0%) | 219 → 174 | 52 → 38 |
+| nola | 682 → 623 (−8.6%) | 833 → 776 (−6.9%) | 94 → 46 | 44 → 44 |
+
+Geometry identical in every city. The ranges do not overlap for nyc, jsh and nola; phl's do.
+Frame times unchanged: phl overview-dusk 7.5 → 7.3 ms, whole-city 14.9 → 14.7, ride-L
+12.5 → 12.6, street-level 5.7 → 5.6; jsh and nola within 0.2 ms. nyc overview GPU looked +0.9 ms
+unpaired; paired across the three.js bump (`ab --base 9877a18 --rounds 8 --city nyc`, overviews):
+GPU 2.50 → 2.52 ms, no change (one `likely worse` row, JS p50 +0.07 ms).
+
+**JS each city downloads** (gzip): P4b's split. Before, every city 419 kB; after phl 349, nyc
+266, jsh 297, nola 253, kitchen 278.
+
+**Repeat visits** (P4b): everything under /assets/ is content-hashed and cached a year, so a
+second visit should fetch only index.html. Not yet verified: it needs production (after #13).
+
+**Skipped or departed from the plan, with reasons:** P4b's URL map in main, not a chunk per city
+(no caching gain, cost a round trip); P4b review findings 5 and 7 (shared-file renaming,
+source-map names); P4c `strict: false` and js/cities.js unchecked (new entry fields would stop
+deploys); P5 no-go. `perf.py run --ablate` crashes (r186), not fixed.
+
+**Unverified:** anything live: #9's cutover checks (Workers Builds run on the merge commit,
+`smoke --url <prod>`, `curl -sI`), #13's live cache checks, Safari after P2 and P4b. New
+Orleans' pipeline under the uv lock (sources git-ignored). Windows builds (P4b's path fix is by
+reading). The Workers Builds check failing on non-main branches (cause in the dashboard). ux.py's
+`loading` state. jsh's TER1 variant has no round-trip test.
+
+**Merge order:** #3; #4, #8, #7; rebase #9 on main, then #9 (after the dashboard's Build command
+is `if [ -f package.json ]; then npm run cf:build; fi` with build cache on, its contributor
+message sent, the dashboard readout); then #10, #12 (after Micah's kitchen look), #13 (its
+contributor message), #14, each retargeted to main as the one below merges.
+
+**Not ours to settle:** the history rewrite, New York's data source, P6 (a: `.ts` renames per
+folder; b: smaller data formats).
