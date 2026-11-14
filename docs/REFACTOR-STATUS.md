@@ -3,10 +3,10 @@
 Kept by the orchestrator of [REFACTOR-PLAN.md](REFACTOR-PLAN.md). Only the orchestrator edits
 this file. It is how the work is picked up again after a context summary or in a new session.
 
-Last updated: 2026-11-14, by the merge session (P0, P1a, P1b, P1c **merged**: #3, #4, #8, #7;
-#9, #10, #12, #13, #14 rebased onto `main` at `f6962c7`, CI green, **not merged**: #9 waits on the
-Cloudflare Build command, which Micah's dashboard login cannot see or change. See "Merge log" at
-the end). Before that: P5 no-go, #15 closed with its numbers; closing report below.
+Last updated: 2026-11-14, by the merge session. **P0 to P4c are all merged and live** (#3, #4, #8,
+#7, #9, #10, #12, #13, #14; `main` at `f718a5b`), and the cutover and cache checks passed on
+production. P5 is closed as no-go. P6a and P6b wait for Micah's go-ahead. See "Merge log" at the
+end; the sections above it are the record of how each phase was built and gated.
 
 ## Standing facts
 
@@ -205,7 +205,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P2. The build
 
-- State: **in review, gates passed** (2026-11-14). https://github.com/seanmaye/ShittyCity/pull/9
+- State: **merged** (2026-11-14, `927dd0f`). https://github.com/seanmaye/ShittyCity/pull/9
   is ready for review, with every gate's output in its description.
 - Branch `refactor/p2-build` (pushed): P1a + P1b with P1c's two commits cherry-picked
   (`5ac3781`, `2ac1357`) on `7fe4426`. Rebase onto `main` once #4, #7 and #8 merge; the P1
@@ -282,7 +282,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P3. Checks in the build
 
-- State: **in review, gates passed** (2026-11-14). https://github.com/seanmaye/ShittyCity/pull/10,
+- State: **merged** (2026-11-14, `9eaca95`). https://github.com/seanmaye/ShittyCity/pull/10,
   base `refactor/p2-build` (retarget to `main` after #9 merges). Contributor message drafted in #10
   (Micah sends when it merges).
 - Branch `refactor/p3-checks` = two parallel implementers stacked: P3a (JS, `5d8d57a`) then P3b
@@ -315,7 +315,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P4a. three.js 0.187.0
 
-- State: **in review, gates passed; waiting on Micah's kitchen look** (2026-11-14).
+- State: **merged** (2026-11-14, `057cdc6`; Micah was shown the kitchen before/after and said to proceed).
   https://github.com/seanmaye/ShittyCity/pull/12, base `refactor/p3-checks`.
 - Branch `refactor/p4a-three-187`: `d8b308e` bump (three + @types/three 0.187.0, lockfile 4
   entries), `a3a24a9` kitchen `PCFShadowMap` (three already substituted it: no pixel change, the
@@ -339,7 +339,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P4b. Per-city code splitting, hashed data, long-lived caching
 
-- State: **in review, gates passed; live checks after merge** (2026-11-14).
+- State: **merged** (2026-11-14, `1a72a95`); live checks passed, see "Merge log".
   https://github.com/seanmaye/ShittyCity/pull/13, base `refactor/p4a-three-187`. Contributor
   message drafted in #13 (Micah sends when it merges).
 - Branch `refactor/p4b-split-cache`: `5f2d648` city code chunks (`js/scene/<city>/<city>.js`,
@@ -378,7 +378,7 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P4c. Typed contracts, opt-in checking
 
-- State: **in review, gates passed** (2026-11-14). https://github.com/seanmaye/ShittyCity/pull/14,
+- State: **merged** (2026-11-14, `f718a5b`). https://github.com/seanmaye/ShittyCity/pull/14,
   base `refactor/p4b-split-cache`.
 - Branch `refactor/p4c-types`: `943bd63` js/types/ (data.d.ts, city.d.ts, scene.d.ts; index.js one
   `@returns` line), `288a664` `// @ts-check` on data.js, cities.js, geometry.js, season.js and
@@ -489,25 +489,43 @@ On `4a66b4e`: `npm ci`, `npm run cf:build`, Ruff, pytest (41) pass locally; `smo
 cities pass. CI green on all five PRs. Local branches of the same names in the implementers'
 worktrees still point at the gated tips.
 
-**Dashboard readout: blocked.** Micah's Cloudflare member on Sean's account has the role
-"Individual Workers Admin". Every Workers Builds endpoint answers 403 for it, the worker's
-Settings page shows no Build section, and build logs say "Build not found … Forbidden". So the
-Build command could be neither read nor changed, and the cause of the failing branch builds is
-still unknown. What the login can see: production deploys come from Workers Builds through
-Wrangler, custom domain `ashitty.city`, each branch has an empty preview ("No deployments yet").
+**Dashboard.** Micah's Cloudflare member on Sean's account has the role "Individual Workers
+Admin". Every Workers Builds endpoint answers 403 for it, the worker's Settings page shows no
+Build section, and build logs say "Build not found … Forbidden". So this session could neither
+read nor change the Build command, and the cause of the failing branch builds is still unknown.
+**Sean set the Build command himself** (`if [ -f package.json ]; then npm run cf:build; fi`, as
+Micah reported); the build-cache setting was not confirmed. What the login can see: production
+deploys come from Workers Builds through Wrangler, custom domain `ashitty.city`, each branch has
+an empty preview ("No deployments yet").
 
-**#9 is not merged for that reason:** with `assets.directory` `./dist` and no build step,
-`wrangler deploy` stops with "The directory specified by the "assets.directory" field … does not
-exist", so production would stay on `f6962c7` and every later merge would fail to deploy. Two
-ways forward, Micah's choice:
+**Merged after that**, each retargeted to `main` first, merge commits:
 
-1. Sean (or a login with Workers Builds access) sets Build command to
-   `if [ -f package.json ]; then npm run cf:build; fi`, build cache on, as planned.
-2. Put the build in the repo: `"build": { "command": "npm run cf:build" }` in `wrangler.jsonc`.
-   Tried locally on `4a66b4e` with wrangler 4.162.0 and no `dist/`: `wrangler deploy --dry-run`
-   ran the build first and read 99 files from `dist/`. Not tried on Cloudflare: it relies on
-   Workers Builds installing the npm dependencies before the deploy command, and a failure's log
-   could not be read with this login.
+| PR | merge commit | Workers Builds on it |
+| --- | --- | --- |
+| #9 | `927dd0f` | success |
+| #10 | `9eaca95` | success (the first deploy that runs `npm run check`) |
+| #12 | `057cdc6` | success |
+| #13 | `1a72a95` | success |
+| #14 | `f718a5b` | success |
 
-Then, as before: #9, cutover checks, #10, #12 (Micah has not yet looked at the kitchen), #13 with
-its live cache checks, #14, each retargeted to `main` as the one below merges.
+**Cutover checks after #9** (production, `https://ashitty.city`): the page no longer references
+jsDelivr or Google Fonts; `/js/main.js` and `/tools/serve.py` are 404; `data/*.gz` is served as
+`application/gzip` with no `Content-Encoding`; `smoke --url`: all 5 cities pass.
+
+**Cache checks after #13:** `/` is `public, max-age=0, must-revalidate`; every `/assets/`
+response (chunks, fonts, data) is `public, max-age=31536000, immutable`, one Cache-Control each.
+Two loads in one Chromium profile: phl 41 responses and 17.3 MB the first time, the second time
+only the page (4.4 kB) and Cloudflare's own `/cdn-cgi/rum` beacon went over the network; nola the
+same (27 responses, 3.9 MB, then the page and the beacon).
+
+**After #14:** `smoke --url`: all 5 cities pass; no file or code of another city; the chunk names
+equal those of a local build of `f718a5b`.
+
+**Found:** `smoke --url` reads source maps with urllib's default User-Agent, which Cloudflare
+answers with 403, so on the live site every JS file counted as "without a source map" and the
+other-city-code check fell back to names. With a named User-Agent (tried locally, not committed)
+the maps load and the check passes. One-line fix in `chunk_sources`' `read`, not yet made.
+
+**Not done:** the three contributor messages (in #8, #9, #13) were not sent by this session:
+Micah sends them. Safari was not checked. The failing branch builds are not explained. Local
+branches of the same names in the implementers' worktrees still point at the gated tips.
