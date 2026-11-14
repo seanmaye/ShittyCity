@@ -27,3 +27,30 @@ qa = [
     "pillow>=13.0.0",
     "playwright>=1.65.1",
 ]
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+# Lint only (no formatter). Ruff's long-standing default set, named so a Ruff upgrade does not change it; the dense
+# style is intended, so the rules against it are off: several imports or statements on a line, lambdas bound to
+# names, one-letter names (l, I, O).
+select = ["E4", "E7", "E9", "F"]
+ignore = ["E401", "E701", "E702", "E731", "E741"]
+
+[tool.ruff.lint.per-file-ignores]
+# leftovers in scripts left as they are: unused imports and variables, one late import, one `not x in`, one f-string
+# without placeholders
+"tools/jsh/build_jsh.py" = ["F401"]
+"tools/nola/build_nola.py" = ["F401"]
+"tools/nola/fetch_nola.py" = ["F401"]
+"tools/phl/build_restaurants.py" = ["F841"]
+"tools/phl/build_terrain.py" = ["F841"]
+"tools/phl/build_trolley1953.py" = ["E402"]
+"tools/phl/fetch_city.py" = ["E713"]
+"tools/phl/proposal.py" = ["F841"]
+"tools/ux/ux.py" = ["F541"]
+
+[tool.pytest.ini_options]
+testpaths = ["tools/tests"]
+pythonpath = ["tools/phl"]
