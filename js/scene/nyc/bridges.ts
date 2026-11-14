@@ -22,10 +22,10 @@ const specs = [
 ];
 const unitY=new THREE.Vector3(0,1,0);
 function makeFrame(s){const dx=s.b[0]-s.a[0],dz=s.b[1]-s.a[1],len=Math.hypot(dx,dz);return {a:s.a,b:s.b,dx:dx/len,dz:dz/len,nx:-dz/len,nz:dx/len,len,yaw:Math.atan2(-dz,dx)};}
-function point(f,t,side,y){return [f.a[0]+(f.b[0]-f.a[0])*t+f.nx*side,y,f.a[1]+(f.b[1]-f.a[1])*t+f.nz*side];}
+function point(f,t,side,y): THREE.Vector3Tuple {return [f.a[0]+(f.b[0]-f.a[0])*t+f.nx*side,y,f.a[1]+(f.b[1]-f.a[1])*t+f.nz*side];}
 function deckY(s,t){const ramp=.31, u=Math.min(1,t/ramp,(1-t)/ramp);return .8+(s.height-.8)*(u*u*(3-2*u));}
 function append(key,geometry,matrix){const g=geometry.clone();g.applyMatrix4(matrix);groups[key].push(g.index?g.toNonIndexed():g);}
-function box(key,pos,size,yaw=0){const geo=new THREE.BoxGeometry(...size),obj=new THREE.Object3D();obj.position.set(...pos);obj.rotation.y=yaw;obj.updateMatrix();append(key,geo,obj.matrix);geo.dispose();}
+function box(key,pos: THREE.Vector3Tuple,size,yaw=0){const geo=new THREE.BoxGeometry(...size),obj=new THREE.Object3D();obj.position.set(...pos);obj.rotation.y=yaw;obj.updateMatrix();append(key,geo,obj.matrix);geo.dispose();}
 function cylinder(key,a,b,r,sides=6){const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),d=B.clone().sub(A),obj=new THREE.Object3D();obj.position.copy(A).add(B).multiplyScalar(.5);obj.quaternion.setFromUnitVectors(unitY,d.clone().normalize());obj.updateMatrix();const geo=new THREE.CylinderGeometry(r,r,d.length(),sides);append(key,geo,obj.matrix);geo.dispose();}
 function tube(key,pts,r){const curve=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(...p)));append(key,new THREE.TubeGeometry(curve,40,r,5,false),new THREE.Matrix4());}
 function deck(s,f){const p=[],idx=[],n=40,w=s.width/2;for(let i=0;i<=n;i++){const t=i/n,y=deckY(s,t);p.push(...point(f,t,-w,y),...point(f,t,w,y));if(i<n){const k=2*i;idx.push(k,k+1,k+2,k+1,k+3,k+2);}}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(idx);g.computeVertexNormals();groups.deck.push(g.toNonIndexed());
@@ -61,7 +61,7 @@ function tower(s, f, t) {
 }
 function suspension(s,f){
   let ts=s.type==='brooklyn'?[.41,.59]:s.type==='manhattan'?[.38,.62]:[.37,.615];
-  if(s.towers){const dist=(x,z)=>Math.hypot(x-s.a[0],z-s.a[1])/f.len;ts=s.towers.map(p=>dist(...p));}
+  if(s.towers){const dist=(x,z)=>Math.hypot(x-s.a[0],z-s.a[1])/f.len;ts=s.towers.map((p: [number, number])=>dist(...p));}
   for(const t of ts)tower(s,f,t);
   for(const side of [-1,1]){
     const lateral=side*s.width*.42, pts=[];

@@ -10,7 +10,7 @@ const cylinder = new THREE.CylinderGeometry(1, 1, 1, 16);
 const plane = new THREE.PlaneGeometry(1, 1);
 const V = p => new THREE.Vector3(...p);
 
-function add(parent, geometry, material, position, scale, yaw = 0) {
+function add(parent, geometry, material, position: THREE.Vector3Tuple, scale: THREE.Vector3Tuple, yaw = 0) {
   const o = new THREE.Mesh(geometry, material);
   o.position.set(...position); o.scale.set(...scale); o.rotation.y = yaw;
   parent.add(o);
@@ -79,7 +79,7 @@ function sign(parent, text, color, position, scale, yaw = 0) {
   return add(parent, plane, new THREE.MeshBasicMaterial({ map, side: THREE.DoubleSide }), position, scale, yaw);
 }
 
-function cruiser(parent, position, yaw, tilt) {
+function cruiser(parent, position: THREE.Vector3Tuple, yaw, tilt) {
   const car = new THREE.Group(); car.position.set(...position); car.rotation.set(0, yaw, tilt, 'YXZ'); parent.add(car);
   const body = lit('#b6c9d9', '#506883', .52), trim = lit('#1a2436', '#232d4c', .58);
   const glass = lit('#243b5c', '#263c60', .75), bumper = lit('#526680');
@@ -139,7 +139,7 @@ function streetFurniture(parent) {
   const lamp = bright('#fff1bd'), red = bright('#ff5858'), green = bright('#65f4ba');
   // Merge the repeated paving, stairs, barriers and rails by material.
   const batches = new Map(), dummy = new THREE.Object3D();
-  function part(g, m, p, s, q) {
+  function part(g, m, p: THREE.Vector3Tuple, s: THREE.Vector3Tuple, q?: THREE.Quaternion) {
     dummy.position.set(...p); dummy.scale.set(...s); dummy.quaternion.copy(q ?? identity); dummy.updateMatrix();
     const batch = batches.get(m) ?? [];
     if (!batches.has(m)) batches.set(m, batch);
@@ -150,7 +150,7 @@ function streetFurniture(parent) {
   const pole = (m, x, y, z, r, h) => part(cylinder, m, [x, y, z], [r, h, r]);
   function rail(m, from, to, r) {
     const a = V(from), b = V(to), d = b.clone().sub(a);
-    part(cylinder, m, a.lerp(b, .5).toArray(), [r, d.length(), r], new THREE.Quaternion().setFromUnitVectors(up, d.normalize()));
+    part(cylinder, m, a.lerp(b, .5).toArray() as THREE.Vector3Tuple, [r, d.length(), r], new THREE.Quaternion().setFromUnitVectors(up, d.normalize()));
   }
   for (const z of [-25, 16]) {
     for (let i = 0; i < 11; i++) slab(paint, -1 + i * .95, .105, z, .5, .016, 2.4);
@@ -225,7 +225,7 @@ export function buildShowdownStreet(root) {
     ...cruiser(root, [5.9, .12, -9.1], -1.18, .03),
   ];
 
-  const people = [
+  const people: [number, number, number, string, number][] = [
     [-5.2, 1.45, -16.0, '#e8a661', .8], [-8.9, 2.14, -17.8, '#39476e', -.7],
     [-6.6, .96, -14.5, '#986b9b', -.5], [-10.2, 2.84, -19.55, '#ca7457', .9],
     [-8.4, .28, -11.9, '#688b8a', .6], [-11.1, .10, -9.5, '#85435a', -1.3],
@@ -235,7 +235,7 @@ export function buildShowdownStreet(root) {
   for (const [i, [x, y, z, shirt, yaw]] of people.entries()) {
     const F = makeFigure({ shirt, skin: ['#a87762', '#c4947e', '#775543'][i % 3] });
     F.root.position.set(x, y, z); F.root.rotation.y = yaw; root.add(F.root);
-    F.root.traverse(o => { if (o.isMesh) { o.castShadow = false; o.material.emissive.set(o.material.color); o.material.emissiveIntensity = .47; } });
+    F.root.traverse((o: THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>) => { if (o.isMesh) { o.castShadow = false; o.material.emissive.set(o.material.color); o.material.emissiveIntensity = .47; } });
     F.pelvis.rotation.x = .13; F.hipL.rotation.x = -.27; F.hipR.rotation.x = .24;
     F.kneeL.rotation.x = .34; F.kneeR.rotation.x = .21;
     F.shL.rotation.set(-.72 - i % 3 * .24, 0, .3);

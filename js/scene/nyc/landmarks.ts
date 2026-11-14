@@ -26,7 +26,7 @@ function box(g, f, w, d, y0, y1, x=0) {
   if (y1 <= y0) return;
   part(g, bx(w, y1-y0, d), facade(f, w, y1-y0), x, (y0+y1)/2, 0);
 }
-function taperSquare(g, f, w0, w1, d0, d1, y0, y1, material) {
+function taperSquare(g, f, w0, w1, d0, d1, y0, y1, material?) {
   const h=y1-y0, geo=new THREE.CylinderGeometry(w1/Math.SQRT2,h? w0/Math.SQRT2:w0/2,h,4,1,false);
   // (constructor arguments: radiusTop, radiusBottom, height)
   geo.rotateY(Math.PI/4); part(g,geo,material || facade(f,Math.max(w0,w1),h),0,(y0+y1)/2,0);

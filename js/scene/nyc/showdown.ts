@@ -29,7 +29,7 @@ function groundGlow(root, map, color, x, z, w, d, opacity, shade = false) {
   return o;
 }
 
-function sprite(root, map, color, size, opacity, blending = THREE.AdditiveBlending) {
+function sprite(root, map, color, size, opacity, blending: THREE.Blending = THREE.AdditiveBlending) {
   const material = new THREE.SpriteMaterial({ map, color, opacity, blending, depthWrite: false });
   const o = new THREE.Sprite(material);
   o.scale.set(size, size, 1);
@@ -39,7 +39,7 @@ function sprite(root, map, color, size, opacity, blending = THREE.AdditiveBlendi
 
 function makeArcs(root) {
   const geometry = new THREE.CylinderGeometry(1, 1, 1, 6, 1, true);
-  const layers = [[.051, '#408bff', .32], [.020, '#c9f4ff', .97]].map(([radius, color, opacity]) => {
+  const layers = [[.051, '#408bff', .32], [.020, '#c9f4ff', .97]].map(([radius, color, opacity]: [number, string, number]) => {
     const material = new THREE.MeshBasicMaterial({ color, opacity, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
     const mesh = new THREE.InstancedMesh(geometry, material, 12 * STEPS);
     mesh.count = 0;

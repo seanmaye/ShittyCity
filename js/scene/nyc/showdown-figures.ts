@@ -12,7 +12,7 @@ function mesh(parent, geometry, material, [x, y, z]) {
   return o;
 }
 
-function oval(parent, material, center, scale) {
+function oval(parent, material, center, scale: THREE.Vector3Tuple) {
   const o = mesh(parent, sphere, material, center);
   o.scale.set(...scale);
   return o;
