@@ -499,7 +499,7 @@ would add 4 to 8 points but needs a dependency; not done. Every candidate decode
   on both sides, and for nola it builds trees from a 16,244-number array (no measurable cost
   either way). Not proven, but most likely the same GC timing as phl's heap rows: the branch's
   major collection lands later in the load. P2 saw a 99% nola phase (0.8 ms) on byte-identical
-  builds. Micah to decide whether it holds the merge.
+  builds. **Micah's call (2026-11-14): noise; it does not hold the merge.**
 - Earlier phl runs on the old base showed `readyMs` +4.2%, -3.2% and +6.8% (one `likely worse`);
   timed directly, 8 alternating production loads each: main 5032 ms, branch 5076 ms (median), the
   last four rounds within 30 ms of each other. A variant with packed arrays (as JSON.parse makes)
