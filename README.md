@@ -121,6 +121,6 @@ All cities share one set of data formats, which [docs/EDITING.md](docs/EDITING.m
 
 1. Make its data in `data/<id>/` in the shared formats, with the tools that make it in `tools/<id>/`.
 2. Add its entry to `CITIES` in `js/cities.js`. The menu shows it automatically.
-3. Put anything hand-built in `js/scene/<id>/`, and call it from `js/scene/index.js` when that city's data is loaded.
+3. Put anything hand-built in `js/scene/<id>/`, re-export from `js/scene/<id>/<id>.js` what `js/scene/index.js` calls, add that file to `CODE` in `js/main.js`, and call it in `buildScene` (it arrives in `own`) when that city's data is loaded. (Its data needs no step of its own: the build picks up every file in `data/<id>/`.)
 4. List a few points of interest in its `loadingScreens` and capture them with `uv run python -I tools/loading/capture.py <id>`.
 5. Write `docs/<ID>.md`.
