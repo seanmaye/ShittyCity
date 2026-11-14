@@ -4,8 +4,8 @@ Kept by the orchestrator of [REFACTOR-PLAN.md](REFACTOR-PLAN.md). Only the orche
 this file. It is how the work is picked up again after a context summary or in a new session.
 
 Last updated: 2026-11-14 (P1a, P1b, P1c in review; P2 gates passed, #9 ready for review; P3 #10
-gates passed, #10 ready for review, stacked on #9). Orchestrator from P3 on: a new session (the
-P0–P2 one handed over).
+gates passed, #10 ready for review, stacked on #9; P4a gates passed, #12 on #10, waiting on
+Micah's kitchen look). Orchestrator from P3 on: a new session (the P0–P2 one handed over).
 
 ## Standing facts
 
@@ -314,7 +314,27 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P4a. three.js 0.187.0
 
-- State: not started.
+- State: **in review, gates passed; waiting on Micah's kitchen look** (2026-11-14).
+  https://github.com/seanmaye/ShittyCity/pull/12, base `refactor/p3-checks`.
+- Branch `refactor/p4a-three-187`: `d8b308e` bump (three + @types/three 0.187.0, lockfile 4
+  entries), `a3a24a9` kitchen `PCFShadowMap` (three already substituted it: no pixel change, the
+  warning goes), `2823e17` 19 import lines in 12 files to `three/addons/` (bundle byte-identical).
+  `js/three-setup.js` untouched: `restoreAnisotropy` still reads anisotropy 8 back on every
+  nearest-magnified texture (phl/nyc/nola 12/12, jsh 14/14); harness patch `"patched": 1`.
+  Main chunk 1,290.50 → 1,295.60 kB (gzip +0.43 kB).
+- Gates (A = `9877a18`, B = `2823e17`; scripts `gate-p4a.sh` in the orchestrator scratchpad):
+  - phl `ab --rounds 5 --shots` (quick set + street-level): no significant difference. Shots:
+    overview-dusk 0.0022%, whole-city 0.0011%, ride-L 1.08%, street-level 0.0194%, fly-market
+    8.2% (moving camera). `tools/perf/out/20261114-065446-ab-p4a-phl` (gate worktree).
+  - jsh overlook-stand, 5 rounds: one `worse` load phase (parks and streets +3.3%, 0.9 ms) and
+    three `likely worse` load rows; 16 rounds: no significant difference (that phase +0.4%).
+    First frame (shader compile) leans +2.7–3.3% in both, under the threshold. Shot 0.0001%.
+  - Smoke vs `9877a18`: all 5 ok; pine 13.4% (r187 PMREM), others ≤ 0.0044%.
+- Kitchen before/after for Micah: `tools/perf/out/20261114-p4a-kitchen/` in the main checkout
+  (side by side, changed pixels). Floor and island top +3 to +8 per channel, cabinets a touch less
+  yellow. Fix drift in `js/three-setup.js` only, if Micah wants it.
+- Gate worktree `scratchpad/gate-p4a` (detached at `2823e17`); implementer worktree
+  `.claude/worktrees/agent-ac2c045edff12d217`.
 
 ### P4b. Per-city code splitting, hashed data, long-lived caching
 
