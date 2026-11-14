@@ -1,0 +1,16 @@
+{
+  // npm run typecheck (tsc --noEmit; part of npm run check). The code stays plain JS: checkJs is off, so today tsc only
+  // parses it. A file opts in to type checking with // @ts-check at its top.
+  "compilerOptions": {
+    "target": "esnext",
+    "lib": ["esnext", "dom"],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": []
+  },
+  "include": ["js", "test", "vite.config.js"]
+}

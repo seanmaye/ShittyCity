@@ -19,7 +19,7 @@ import { CITY } from '../cities.js';
 const TILE = 1000, FULL = 5000, TREE_FAR = 7000;
 
 /** Decode city_buildings.bin (PHB1; written by tools/phl/build_city.py and tools/nyc/import_nyc.py). */
-function decode(buf) {
+export function decode(buf) {
   const dv = new DataView(buf);
   if (String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3)) !== 'PHB1') throw new Error('city buildings: bad header');
   const nB = dv.getUint32(4, true), nP = dv.getUint32(8, true), nV = dv.getUint32(12, true);
@@ -43,7 +43,7 @@ function unitBox() {   // 1 x 1 x 1 box standing on y = 0, without a bottom face
 function unitRoof() { const g = new THREE.PlaneGeometry(1, 1); g.rotateX(-Math.PI / 2); g.translate(0, 1, 0); return g; }
 
 /** Does the rectangle [x0, z0, x1, z1] lie wholly inside the ring ([[x,z],...])? */
-function rectInRing(ring, [x0, z0, x1, z1]) {
+export function rectInRing(ring, [x0, z0, x1, z1]) {
   const inside = (x, z) => { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const [xi, zi] = ring[i], [xj, zj] = ring[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; };
   if (![[x0, z0], [x1, z0], [x1, z1], [x0, z1]].every(([x, z]) => inside(x, z))) return false;
   // all four corners are inside, so it is wholly inside unless the outline dips into it somewhere

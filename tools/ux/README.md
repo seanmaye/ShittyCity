@@ -11,7 +11,7 @@ every screen:
 - writes `summary.md`, `report.json` and a contact sheet, `index.html` (states × devices).
 
 It reuses the perf harness's sides (the working tree or `--ref` built in perf mode, see "Sides" in
-[tools/perf/README.md](../perf/README.md)), server, CDN cache and GPU flags (`tools/perf/perf.py`), and the
+[tools/perf/README.md](../perf/README.md)), server and GPU flags (`tools/perf/perf.py`), and the
 same deterministic seed and date, so two runs of the same code give the same pictures.
 
 ## Setup

@@ -41,4 +41,6 @@ export default defineConfig({
     // Lightning CSS (the default minifier) drops unprefixed backdrop-filter, the 100vh fallbacks and the loading headline's font; ~10 kB gzipped either way
     cssMinify: false,
   },
+  // Vitest (npm test): the unit tests in test/ run in Node, without a browser
+  test: { include: ['test/**/*.test.js'], environment: 'node' },
 });

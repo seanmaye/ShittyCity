@@ -5,7 +5,7 @@
 // top level before main.js calls setCity()).
 
 // Philadelphia's SEPTA station tags: Metro ids, trolley ranges, then the networks
-function septaLines(s, LINES) {
+export function septaLines(s, LINES) {
   const ids = s.lines || [], parts = [], t = ids.filter(i => /^T\d$/.test(i)).map(i => +i.slice(1)).sort((a, b) => a - b);
   for (const id of ids) if (/^(L|B\d|G\d)$/.test(id)) parts.push(id);
   if (t.length) parts.push(t.length > 2 && t[t.length - 1] - t[0] === t.length - 1 ? `T${t[0]}–T${t[t.length - 1]}` : t.map(v => 'T' + v).join(', '));
