@@ -5,7 +5,7 @@ this file. It is how the work is picked up again after a context summary or in a
 
 Last updated: 2026-11-14 (P1a, P1b, P1c in review; P2 gates passed, #9 ready for review; P3 #10
 gates passed, #10 ready for review, stacked on #9; P4a gates passed, #12 on #10, waiting on
-Micah's kitchen look). Orchestrator from P3 on: a new session (the P0–P2 one handed over).
+Micah's kitchen look; P4b gates passed, #13 on #12; P4c started). Orchestrator from P3 on: a new session (the P0–P2 one handed over).
 
 ## Standing facts
 
@@ -338,7 +338,42 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P4b. Per-city code splitting, hashed data, long-lived caching
 
-- State: not started.
+- State: **in review, gates passed; live checks after merge** (2026-11-14).
+  https://github.com/seanmaye/ShittyCity/pull/13, base `refactor/p4a-three-187`. Contributor
+  message drafted in #13 (Micah sends when it merges).
+- Branch `refactor/p4b-split-cache`: `5f2d648` city code chunks (`js/scene/<city>/<city>.js`,
+  `CODE` in main.js, `own` into buildScene/createUI; `onPromenade` as an option), `ae83172` hashed
+  data (`data-<city>-<file>-<hash>`; byte-identical files across cities built once, named for all),
+  `2104567` `public/_headers`, `825ead6` smoke name check; after review `9c9b727` URL map in main
+  (one glob over data/*/*), `dd38073` missing-file error, `1faaa55` three.js chunks (`three-core`,
+  `three`, `three-addons`), `1d6353d` normalizePath (Windows), `b459fc6` reload once on
+  `vite:preloadError`, `401ab31` smoke checks source maps (`SHARED_CITY_FILES`: phl/people.js,
+  jsh/terrain.js, jsh/places.js), `8a40f33` README/EDITING.md.
+- **Departures from the plan:** the URL map is in main, not a chunk per city (main held those
+  chunks' names, so no caching gain, and it cost the loading screen a round trip). Not fixed from
+  review: a byte-identical file shared by cities renames when one city's copy changes (rare, one
+  re-download); source maps take their JS file's hash (devtools only).
+- JS per city, kB raw / gzip (before: every city 1,298.03 / 419.11): phl 1,110.88 / 349.38
+  (−16.6% gzip), nyc 902.93 / 266.31 (−36.5%), jsh 977.41 / 296.66 (−29.2%), nola 871.13 /
+  252.94 (−39.6%, shared only), pine 933.31 / 277.88 (−33.7%). Shared 12 files 871.13 / 252.94.
+- Gates (A = `2823e17`, B = `8a40f33`; `gate-p4b*.sh` in the orchestrator scratchpad, outputs in
+  its `gate-p4b` worktree):
+  - 5 rounds, matrix with shots: no `worse`. phl: 4 `likely worse` (overview-dusk frameP95 +5.1%,
+    market-cut/ride-regional style +3.6/+4.3%, a build phase +3.0%) → 8 rounds of those 3: none.
+    nyc: buildings phase `likely worse` +3.4% → 8 rounds `worse` +4.5% (15 ms, 0/8) → 16 rounds
+    +2.0% not significant, ready −2.0% (14/16). nola `better` (ready −3.9%, data −39.8%); jsh
+    data −12.1%. Data fetched 9–12% sooner everywhere. Build phases after the data lean 2–3%
+    slower (phl, nyc), under threshold; phl ready +1.0–1.2%.
+  - Shots: every fixed view within tolerance; moving views looked at. phl overlook-* (jsh-only
+    scenarios run by "all") show ride-monorail's leftover camera: ignore.
+  - Smoke and `smoke --prod` at `8a40f33`: all 5 ok, no other city's file or code, all /assets/
+    hashed (`20261114-095118-smoke-p4b-final`, `-095151-smoke-p4b-final-prod`).
+- **Live after merge (production):** `curl -sI` of `/`, a chunk and a data file (one
+  Cache-Control, immutable on /assets/, default on `/`); a second load transfers only index.html;
+  Micah in Safari.
+- Reviewer (fresh agent, diff + phase goal): no city-breaking defect; 8 findings, 6 fixed (above).
+- Implementer worktree `.claude/worktrees/agent-a2a84bddf363d95ae`; gate worktree
+  `scratchpad/gate-p4b` (detached at `8a40f33`).
 
 ### P4c. Typed contracts, opt-in checking
 
