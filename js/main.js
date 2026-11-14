@@ -7,10 +7,11 @@ import { loadData } from './data.js';
 import { buildScene } from './scene/index.js';
 import { createUI } from './ui.js';
 import { startLoadingScreens } from './loading.js';
-// Each city's own code (js/scene/<city>/<city>.js), as a chunk of its own that no other city downloads. (Here rather than in
-// js/cities.js, which shares a chunk with three.js: a change to one city's code then renames only this chunk and that city's,
-// and the shared ones stay cached.)
+// Each city's own code (js/scene/<city>/<city>.js) and the URLs the build gave its data files (js/urls/<city>.js), as chunks
+// of their own that no other city downloads. (Here rather than in js/cities.js, which shares a chunk with three.js: a change
+// to one city's code or data then renames only this chunk and that city's, and the shared ones stay cached.)
 const CODE = { phl: () => import('./scene/phl/phl.js'), nyc: () => import('./scene/nyc/nyc.js'), jsh: () => import('./scene/jsh/jsh.js'), pine: () => import('./scene/pine/pine.js') };
+const URLS = { phl: () => import('./urls/phl.js'), nyc: () => import('./urls/nyc.js'), jsh: () => import('./urls/jsh.js'), nola: () => import('./urls/nola.js') };
 const $ = id => document.getElementById(id);
 const statusEl = $('status'), progress = $('loading-progress');
 const changeCity = () => location.assign(location.href.split(/[?#]/)[0]);
@@ -55,11 +56,14 @@ function chooseCity() {
 
 const asked = new URLSearchParams(location.search).get('city');
 const city = setCity(Object.hasOwn(CITIES, asked) ? asked : await chooseCity());
-// the city's own code, a chunk of its own: asked for now, it arrives while the data loads. (This module awaits at top level, so
-// a city's chunk must never import the chunk this module is in: each would wait for the other. The build keeps the modules
-// both use in chunks of their own; tools/perf's smoke would time out if that changed.)
+// the URLs of the city's data files and its own code, each a chunk of its own, both asked for at once: the loading screen and
+// the data wait only for the URLs (a small chunk), and the code arrives while the data loads. (This module awaits at
+// top level, so a city's chunk must never import the chunk this module is in: each would wait for the other. The build keeps
+// the modules both use in chunks of their own; tools/perf's smoke would time out if that changed.)
+const urls = URLS[city.id] ? URLS[city.id]() : Promise.resolve({ default: {} });
 const own = CODE[city.id] ? CODE[city.id]() : Promise.resolve({});
 own.catch(() => {});   // (a failure shows where it is awaited, below)
+city.urls = Object.fromEntries(Object.entries((await urls).default).map(([path, url]) => [path.slice(path.lastIndexOf('/') + 1), url]));
 showLoading(city);
 // the page's text for this city
 document.title = city.title;

@@ -266,7 +266,9 @@
   P.loadReport = () => {
     const nav = performance.getEntriesByType('navigation')[0] || {};
     const res = performance.getEntriesByType('resource');
-    const files = res.filter(e => /\/data\//.test(e.name)).map(e => ({ file: e.name.split('/data/')[1], start: e.startTime, end: e.responseEnd, kb: Math.round(e.encodedBodySize / 1024) }));
+    // the data files: assets/data-<city>-<file> (content-hashed in production: vite.config.js), or data/<city>/<file> in older builds
+    const DATA = /\/(?:data\/|assets\/(?=data-))([^?#]+)/;
+    const files = res.filter(e => DATA.test(e.name)).map(e => ({ file: DATA.exec(e.name)[1], start: e.startTime, end: e.responseEnd, kb: Math.round(e.encodedBodySize / 1024) }));
     const cdn = res.filter(e => /^https:/.test(e.name)).map(e => ({ url: e.name, start: e.startTime, end: e.responseEnd }));
     const ff = P.firstFrame;
     return {
