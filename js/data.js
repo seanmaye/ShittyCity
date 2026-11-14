@@ -20,10 +20,12 @@ export function pairs(flat) {
   return out;
 }
 
-async function gunzip(bytes) {
-  if (bytes[0] !== 0x1f || bytes[1] !== 0x8b) return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength); // already decoded by the server
-  const s = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
-  return new Response(s).arrayBuffer();
+/** a .gz file's body, gunzipped as it streams in (its first bytes, read from a tee of it, say whether it is gzip at all) */
+async function gunzip(body) {
+  const [peek, all] = body.tee(), reader = peek.getReader(), head = [];
+  for (let c; head.length < 2 && !(c = await reader.read()).done;) head.push(...c.value.subarray(0, 2 - head.length));
+  reader.cancel();
+  return new Response(head[0] === 0x1f && head[1] === 0x8b ? all.pipeThrough(new DecompressionStream('gzip')) : all).arrayBuffer();   // else already decoded by the server
 }
 
 /** load the active city's files (CITY.files, from CITY.dir) */
@@ -35,11 +37,10 @@ export async function loadData(onProgress = () => {}) {
     if (!CITY.urls[file]) throw new Error(`${CITY.dir}/${file}: not in the build's URL map (js/main.js URLS)`);
     const r = await fetch(CITY.urls[file]);   // its URL in the build (CITY.urls, set by main.js)
     if (!r.ok) throw new Error(`${CITY.dir}/${file}: HTTP ${r.status}`);
-    const bytes = new Uint8Array(await r.arrayBuffer());
     let out;
-    if (file.endsWith('.json')) out = JSON.parse(new TextDecoder().decode(bytes));
+    if (file.endsWith('.json')) out = JSON.parse(new TextDecoder().decode(await r.arrayBuffer()));
     else {
-      const buf = await gunzip(bytes);
+      const buf = await gunzip(r.body);
       out = file.endsWith('.json.gz') ? JSON.parse(new TextDecoder().decode(buf)) : buf;
     }
     onProgress(++done / FILES.length, key);
