@@ -173,8 +173,16 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P2. The build
 
-- State: not started. Waiting on: P1b and P1c merged (P2 builds on both); Micah switching the
-  orchestrator to xhigh (it cannot change its own effort); the dashboard readout before cutover.
+- State: in progress (started 2026-11-14 at Micah's request, orchestrator at xhigh).
+- Branch `refactor/p2-build`, local for now: P1a + P1b with P1c's two commits cherry-picked
+  (`5ac3781`, `2ac1357`) on `7fe4426`. Rebase onto `main` once #4, #7 and #8 merge; the P1
+  commits then drop out.
+- Build implementer (xhigh, own worktree) started: Vite 8, three@0.186.1 and Archivo from npm,
+  data/ copied to dist/data, wrangler → ./dist, minimal GitHub Actions job, serve.py and
+  `.assetsignore` deleted. Brief: scratchpad `brief-p2-build.md`. Next: harness implementer
+  (xhigh), then a reviewer (xhigh), then the gates.
+- **Blocks merge:** P1a/P1b/P1c merged; the dashboard readout and the Build-command change
+  (human step) before the cutover; the contributor message about `npm ci` / `npm run dev`.
 
 ### P3. Checks in the build
 
