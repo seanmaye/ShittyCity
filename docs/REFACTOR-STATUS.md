@@ -187,10 +187,19 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
   Dev and preview: all 5 cities load, 0 errors, 0 failed requests, every request to localhost;
   `#err` shows when the main chunk fails. Smoke on dist: all pass; pixel shares vs 2ac1357 3.1%
   phl, 11.0% jsh (trees: three's UUID patch can't apply to the bundle), text identical.
-- Harness implementer (xhigh) started: build-aware sides, harness-owned perf-mode Vite build
-  with both patches, node_modules cache, strict serving of builds, source-map attribution,
-  `snap` builds, `smoke --prod/--url`. Brief: scratchpad `brief-p2-harness.md`. Then a reviewer
-  (xhigh), then the gates.
+- Harness done (`3e009ea`, `5e08f8f`; diff read): `prepare_side()` for run/ab/snap/smoke/ux;
+  built sides staged from their exact inputs, cached by input hash
+  (`tools/perf/.cache/build/`), node_modules by lockfile (`.cache/npm-*`), served strictly
+  (marker `.perf-build.json`). `tools/perf/build.mjs` loads each side's vite.config.js and adds
+  the harness overrides (unminified, fixed names, source maps) and the patch plugin; patch text
+  only in perf.py. Census stacks and saved profiles resolved through source maps (own VLQ
+  decoder). `capture.py` → `npm run dev` (5173). Implementer's checks: perf-build smoke vs
+  2ac1357 within tolerance (phl 0.0033%, nola 0.0006%, pine 0.0122%, others 0); new same-commit
+  floor phl 0.0052%, nola 0.0007%, pine 0.0124%; census rows identical old-vs-build on phl and
+  jsh; `smoke --prod` and `--url` (local preview) pass. Found: `run --ablate` likely broken
+  before P2 (`WebGLMultisampleRenderTarget` gone in r186) — not fixed, out of scope.
+- Reviewer (xhigh) started on `2ac1357..refactor/p2-build` (review before the timing gates,
+  so fixes don't force reruns). Then: rebase, push, PR, CI, gates.
 - **Blocks merge:** P1a/P1b/P1c merged; the dashboard readout and the Build-command change
   (human step) before the cutover; the contributor message about `npm ci` / `npm run dev`.
 
