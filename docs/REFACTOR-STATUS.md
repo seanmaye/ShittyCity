@@ -210,7 +210,16 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
   staging re-read race, `.env*` not staged (none exist). Found sound: lockfile (linux/win
   binaries), wrangler dry-run, dist/data identical, `#err`, TLA, font, CI actions, VLQ decoder
   (0 mismatches in 747k lookups), census parity, patch symmetry, serving symmetry.
-- Fixes sent back to the harness implementer. Then: rebase, push, PR, CI, gates.
+- Fixes done (`bdf7e82` `cssMinify: false`; `c7193fd` perf builds keep production's CSS
+  minification + the six minor fixes). Shipped CSS = sources concatenated, font url()s
+  rewritten (13 kB gzip). `run --ablate` confirmed broken before P2 on every side (MSAA toggle).
+- Pushed; draft PR https://github.com/seanmaye/ShittyCity/pull/9 (stacked on #4/#8/#7).
+  `origin/main` still `7fe4426`, so no rebase needed.
+- Gate 1 (Linux CI): **green** — Ubuntu 24.04.5, node v24.22.2, npm 11.19.1, `npm ci` 51
+  packages, build passed in 20 s.
+- Gates 2–6 running (orchestrator, one at a time, AC power, no subagents): script
+  `gate-p2.sh` in the scratchpad, gate worktree `scratchpad/gate-p2`, no-build comparison
+  worktree `scratchpad/nobuild-2ac1357`.
 - Local follow-up at merge: `.claude/launch.json` (untracked) still starts `tools/serve.py`.
 - **Blocks merge:** P1a/P1b/P1c merged; the dashboard readout and the Build-command change
   (human step) before the cutover; the contributor message about `npm ci` / `npm run dev`.
