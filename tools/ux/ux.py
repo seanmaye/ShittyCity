@@ -16,8 +16,6 @@ import importlib.util
 import json
 import os
 import re
-import shutil
-import subprocess
 import sys
 import time
 import traceback
@@ -26,7 +24,7 @@ from collections import Counter, defaultdict
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, os.path.join(ROOT, 'tools', 'perf'))
-from perf import CDN, FIXED_DATE, PROBE, cdn_handler, diff_note, diff_table, gpu_args, git, prepare_side, serve, side_has  # noqa: E402
+from perf import FIXED_DATE, PROBE, diff_note, diff_table, gpu_args, git, prepare_side, serve  # noqa: E402
 
 AUDIT = os.path.join(HERE, 'audit.js')
 OUT = os.path.join(HERE, 'out')
@@ -184,7 +182,6 @@ def new_context(browser, device, base, block=None):
     ctx.add_init_script(script='window.__PERF_CFG = ' + json.dumps({'seed': 1, 'date': FIXED_DATE}) + ';')
     ctx.add_init_script(path=PROBE)
     ctx.add_init_script(path=AUDIT)
-    ctx.route(CDN, cdn_handler(False))
     if block:
         ctx.route(block, lambda r: r.abort())
     return ctx
@@ -420,20 +417,10 @@ def cmd_run(a):
     stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
     art = os.path.join(OUT, stamp + ('-' + re.sub(r'[^\w.-]+', '-', a.label) if a.label else ''))
     os.makedirs(art, exist_ok=True)
-    snap = None
-    if a.ref and not side_has(ROOT, a.ref, 'package.json'):   # the app as it was at a commit (index.html, css/, js/; data/ from the working tree)
-        sha = git('rev-parse', '--short', a.ref)
-        if not sha:
-            raise SystemExit(f'unknown git ref {a.ref}')
-        snap = root = os.path.join(OUT, f'.ref-{sha}-{os.getpid()}')
-        os.makedirs(snap, exist_ok=True)
-        arc = subprocess.run(['git', 'archive', a.ref, 'index.html', 'css', 'js'], cwd=ROOT, capture_output=True, check=True).stdout
-        subprocess.run(['tar', '-x', '-C', snap], input=arc, check=True)
-        done = lambda: None   # noqa: E731
-    else:   # the working tree, or a commit with a package.json: built in perf mode like perf.py's sides (perf.prepare_side)
-        if a.ref and not git('rev-parse', '--short', a.ref):
-            raise SystemExit(f'unknown git ref {a.ref}')
-        root, _, done = prepare_side(ROOT, a.ref)
+    # the working tree, or a commit: built in perf mode like perf.py's sides (perf.prepare_side)
+    if a.ref and not git('rev-parse', '--short', a.ref):
+        raise SystemExit(f'unknown git ref {a.ref}')
+    root, _, done = prepare_side(ROOT, a.ref)
     srv, base = serve(root)
     report = {'header': {'time': stamp, 'label': a.label, 'git': git('rev-parse', '--short', a.ref) if a.ref else git('rev-parse', '--short', 'HEAD'),
                          'dirty': False if a.ref else bool(git('status', '--porcelain', '--', 'index.html', 'css', 'js')),
@@ -458,8 +445,6 @@ def cmd_run(a):
     finally:
         srv.shutdown()
         done()
-        if snap:
-            shutil.rmtree(snap, ignore_errors=True)
         # 'all' (menu, load error) first
         res = report['results']
         report['results'] = {k: res[k] for k in sorted(res, key=lambda c: (c != 'all', cities.index(c) if c in cities else 0))}

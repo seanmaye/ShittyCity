@@ -54,10 +54,10 @@ prepares each, the same way for both sides of an `ab` (and for `ux.py`):
   `node_modules` is never used or touched). Builds go to `tools/perf/.cache/build/<mode>-<key>/`,
   keyed by the side's files, so the same tree gives the same folder: `ab` with the same code on both
   sides serves one build twice. The 8 most recent builds and 2 most recent installs are kept.
-- **A side without a `package.json`** (a commit from before the build) is served as its sources:
-  three.js and the font come from their CDNs, cached in `tools/perf/.cache/` on first use and
-  patched the same way, and files it lacks come from the working tree. This path exists until P3
-  of the refactor removes it.
+- **Only builds are measured.** A side without a `package.json` (a commit from before the Vite
+  build, P2 of the refactor) is refused with a message. `smoke --root` also serves a folder that
+  is built output already as it is (`--root dist` after `npm run build`); files it lacks come from
+  the working tree.
 
 **Attribution in a build.** Stacks and profiles point into `assets/main.js`; `perf.py` resolves
 them through the chunk's source map, so the census, the load builder table and `hot` still name
@@ -109,7 +109,7 @@ python -I tools/perf/perf.py smoke --against tools/perf/out/<time>-smoke-base
 | `ab` | A/B: `--base` commit (default HEAD) vs your working tree, alternating fresh browsers, paired t-test per metric; timings only | (~8 s + 8 s per scenario) × (2 × rounds + 1); `-s overview-dusk` at 5 rounds ≈ 3 min |
 | `ab --shots` | also saves a screenshot of every scenario for both sides (`A-<name>.png`, `B-<name>.png`) in the last round, and reports the share of changed pixels per scenario (`diff-<name>.png` marks them) | + a moment |
 | `smoke` | loads every city in `js/cities.js` (the working tree, `--ref REF` or `--root DIR`), fails on any page error, `console.error` or failed request, and saves `<city>.png` in a fixed view; `--against <earlier smoke folder>` reports the changed pixels per city. `--prod` serves the side's own `npm run build` (unpatched) instead of the perf build; `--url ORIGIN` loads a deployed site. Exits non-zero if a city failed | ~10 s per city |
-| `snap NAME` | freezes the app as it is now in `out/.snap/NAME`: its perf build (or, for a side without a `package.json`, its `index.html`, `css/`, `js/`); `--ref REF` snapshots a commit instead. `ab --a-snap X --b-snap Y` then compares two snapshots, so stacked changes can be measured one at a time without committing, while you keep editing. A build snapshot records the harness version that patched it, and `ab` warns if that differs from the current one | a second |
+| `snap NAME` | freezes the app as it is now in `out/.snap/NAME`: its perf build; `--ref REF` snapshots a commit instead. `ab --a-snap X --b-snap Y` then compares two snapshots, so stacked changes can be measured one at a time without committing, while you keep editing. A build snapshot records the harness version that patched it, and `ab` warns if that differs from the current one | a second |
 | `hot` | re-analyses a saved `.cpuprofile` / `.heapprofile`; `--focus fn` limits it to one function's subtree, `--total` ranks by inclusive time | instant |
 | `compare` | diffs two `report.json` files from separate `run`s (ideally `--repeat 3` each); weaker than `ab` because of drift between runs | instant |
 
