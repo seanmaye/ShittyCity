@@ -3,10 +3,11 @@
 Kept by the orchestrator of [REFACTOR-PLAN.md](REFACTOR-PLAN.md). Only the orchestrator edits
 this file. It is how the work is picked up again after a context summary or in a new session.
 
-Last updated: 2026-11-14, by the merge session. **P0 to P4c are all merged and live** (#3, #4, #8,
+Last updated: 2026-11-14, by the P6 session. **P0 to P4c are all merged and live** (#3, #4, #8,
 #7, #9, #10, #12, #13, #14; `main` at `f718a5b`), and the cutover and cache checks passed on
-production. P5 is closed as no-go. P6a and P6b wait for Micah's go-ahead. See "Merge log" at the
-end; the sections above it are the record of how each phase was built and gated.
+production. P5 is closed as no-go. **P6 (a and b) is built and gated as one pull request** at Micah's
+go-ahead (2026-11-14: "implement P6 ... as one PR"); see "P6" below. See "Merge log" at the end;
+the sections above it are the record of how each phase was built and gated.
 
 ## Standing facts
 
@@ -417,6 +418,78 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 - Why no-go: nothing finishes sooner, and the worker's start delays the first data request (the
   consistently worse row). A later attempt would start the worker before loadData and keep
   JSON on the main thread.
+
+### P6. `.ts` renames (P6a) and smaller data (P6b), one pull request
+
+- State: **in review**. Branch `refactor/p6` on `8bfd9b4`, PR: PR-LINK. Micah asked for P6a and P6b
+  together in one pull request, not one per folder and one per format as the plan has it; the
+  commits keep the plan's structure (per folder a pure rename, then its typing; P6b after).
+- Built by a P6 session: the orchestrator wrote the prep, the renames (`rename_ts.py`: `git mv`,
+  import paths and path mentions, nothing else) and P6b; one agent per folder typed it in its own
+  worktree (phl; jsh; nyc + pine; js/scene; js), each gated on its own before its commit was taken.
+
+**P6a.** `90a605b` prep: tsconfig `allowImportingTsExtensions` (imports say `./x.ts`),
+`erasableSyntaxOnly`, `verbatimModuleSyntax` (no import elided: main's `three-setup` import must
+stay), `types: ["vite/client"]`; Biome lints `js/**/*.ts`; perf.py reads `js/cities.ts` or `.js`,
+whichever a side has (a base from before the renames still works), allows a type on `CITIES`, and
+compares `SHARED_CITY_FILES` without the extension. Then rename and typing for `js/scene/phl`
+(`509b8e3`, `8e705dc`), `nyc` (`29944dc`, `7abf4f3`), `jsh` (`5cbf18d`, `858829d`), `pine`
+(`0649bbe`, `64e4439`), `js/scene` (`4b85c25`, `7ba6035`), `js` (`ddf6c68`, `da89e73`). 70 `.ts`
+files, no `.js` left in `js/`; `test/` and `vite.config.js` stay JS.
+- Typing: types only. Local interfaces for objects that grow after creation, optional trailing
+  parameters, tuple casts, DOM element casts, `declare` class fields (`Builder`, church's `Shell`:
+  a typed field without `declare` would be emitted), the P4c JSDoc types turned into TypeScript.
+  phl's `people.ts` exports `Figure`, `Joints`, `Outfit`; `buildScene` returns `Promise<SceneApi>`.
+  Three `Record<string, any>` (Biome warnings): index.ts's `Feature` and `own`, monorail's
+  `proposal.routes`. `strict` stays off.
+- `CITIES` is `Record<string, CityEntry & Record<string, unknown>>`: a new field on a city entry
+  passes the check (the reason P4c left cities.js unchecked), a wrong type on a known one fails.
+  A new field inside a loading screen or other sub-object is still strict.
+- Gates: check passes (tsc 0 errors, Biome 0 errors, tests 58). Built JS byte-identical to `main`
+  at every typing commit (compared per file, hashes and the sourceMappingURL line set aside);
+  against `main` the only change is one string, data.ts's error message naming `js/main.ts`
+  (and CSS comments that name files). ab: GATE-AB-P6A.
+
+**P6b.** Measured first (offline, on the committed files; production wire bytes per file by
+`curl`, every hashed name found). Each change alone, as a share of a city's first-load transfer:
+JSON columns 19.3% phl, 27.4% nyc, 10.2% jsh, 16.0% nola; planar terrain 10.6% phl, 9.5% jsh;
+PHB2 4.3% phl, 7.3% nyc, 15.2% nola. Recompressing the same bytes better (zopfli or libdeflate)
+would add 4 to 8 points but needs a dependency; not done. Every candidate decoded identically.
+- **Departure from the plan:** the plan puts the new formats in the pipeline (writers in tools/,
+  a transcoder for the committed files). Here the build encodes instead: `data/` stays as the
+  pipeline writes it (readable JSON, PHB1, TER1), and `vite.config.js` `dataCodec` ships each
+  large file encoded. Why: the raw sources the writers need are not in the repository
+  (`tools/phl/raw/`, `tools/nola/src/` are git-ignored and not on this machine), so changed
+  writers could not be run; about 15 writers and 8 readers in tools/ would change at once; the
+  committed data would become binary and grow the repository by about 17 MB. The page reads
+  both forms (the dev server serves `data/` as is).
+- `a61a479`: js/formats.ts (JCOL: JSON with every integer array moved into one column of zigzag
+  deltas in byte planes; TER2: planar-predicted terrain, a byte per residual; PHB2: PHB1's columns
+  in byte planes, outlines chained), the PHB1 and TER1 readers moved there unchanged, and
+  `dataCodec`, which keeps an encoding only if the page's readers decode it to exactly what they
+  read from the committed file (numbers by `Object.is`, typed arrays byte for byte) and it is
+  smaller. JSON under 32 kB stays JSON. Build time 0.2 s -> about 9 s.
+- Gates: test/formats.test.js reads all 26 encoded committed files both ways through the page's
+  own readers (`setTerrain`, `loadTerrain`, `decode`, JSON) and finds them identical; check
+  passes; smoke `--prod` all 5 ok, no error or failed request, pixel diff vs main within tolerance
+  (phl 0.0035%, nyc 0.0001%, jsh 0.0001%, nola 0.0011%) except pine 0.0336% (tolerance 0.0248%):
+  its diff image marks only the mini monorail's trains, and pine's code is unchanged
+  (`tools/perf/out/20261114-143440-smoke-p6`). ab (load rows): GATE-AB-P6B.
+- Transfer, estimated (production bytes for unchanged files, this build's for the encoded ones;
+  not counting the two font files): phl data 16.0 -> 10.0 MB, first load 17.1 -> 11.2 MB (-34.7%);
+  nyc 9.35 -> 6.05 MB (-35.3%); jsh 1.95 -> 1.52 MB (-21.9%); nola 3.67 -> 2.47 MB (-32.9%).
+  The perf harness cannot see transfer (it serves from localhost). To confirm after the deploy:
+  `smoke --url https://ashitty.city` lists bytes per city.
+- Not tried: pre-compressed Brotli (needs a preview deployment; there is none).
+- Unverified: transfer on production (after merge), Safari, decode time on a slow device.
+
+**Found while typing, not changed (would change runtime):** js/scene/index.ts passes
+`createCinematic` a `ground:` option that sits inside a `//` comment on the line before, so
+cinematic shots use a flat ground (probably a bug); church.ts calls `inside.update(dt, t, camera)`
+and concert.ts `effects(dt)` with an argument the function does not take.
+
+**Before merge:** a message to the contributors (every file in js/ is renamed; branches made
+before need a rebase, which carries edits across the renames).
 
 ## Closing report (2026-11-14, P3–P5 orchestrator)
 
