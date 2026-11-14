@@ -11,8 +11,8 @@
 // The island sits so the aisle between it and the sink run is as wide as the gap between the
 // island's far (west) edge and the west wall: see ISLAND below.
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { LIGHT, makeRenderer } from '../../three-setup.js';
 import * as I from './items.js';
 import { buildMiniRail } from './minirail.js';
@@ -94,7 +94,7 @@ function paintingTex() {   // the still life of onions by the window
 export function buildKitchen(canvas) {
   const renderer = makeRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#2b2530');
   const pmrem = new THREE.PMREMGenerator(renderer);
