@@ -2,7 +2,7 @@
 // Outline, paths, trees and the bowl's site come from data/phl/yardpark.json (tools/phl/cap.py).
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
-import { pairs } from '../../data.js';
+import { pairs } from '../../data.ts';
 import { M, litMats } from '../materials.ts';
 import { Builder, addPolygon, addRibbon } from '../geometry.ts';
 import { buildTrees } from '../nature.ts';

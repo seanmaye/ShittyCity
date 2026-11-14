@@ -5,7 +5,7 @@ import { terrain, surface, profile } from '../terrain.ts';
 export const H = 18;               // guideway height (m)
 const EAST = 58, WEST = 65;        // set-back from the water's edge (m)
 const SOUTH_LAT = 39.9452, NORTH_LAT = 39.9752;
-// [lat, bank (1 east, -1 west), name]: the names are for the ride bar's stops (js/ridebar.js)
+// [lat, bank (1 east, -1 west), name]: the names are for the ride bar's stops (js/ridebar.ts)
 const STATIONS = [[39.9478, 1, 'Schuylkill River Park'], [39.9640, 1, 'Art Museum'], [39.9702, 1, 'Boathouse Row'], [39.9548, -1, '30th Street Station'], [39.9662, -1, 'Spring Garden']];
 
 function segDist2(px, pz, ax, az, bx, bz) {

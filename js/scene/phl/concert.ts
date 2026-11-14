@@ -20,13 +20,13 @@
 // K-hole leaves the body and floats above it.
 //
 // js/scene/index.ts treats a punk like a person you are inside (getInhabited() is the "car" you are
-// aboard); js/ui.js draws the card and the action buttons from that state.
+// aboard); js/ui.ts draws the card and the action buttons from that state.
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { geo, pose, type Joints } from './people.ts';
 import { punkProfile } from './punkprofiles.ts';
 import { litMats } from '../materials.ts';
-import { LIGHT, makeRenderer } from '../../three-setup.js';
+import { LIGHT, makeRenderer } from '../../three-setup.ts';
 
 const BPM = 172, STAGE = 1.6;     // the band's tempo; the stage deck's height in the bowl (yardpark.ts)
 const GAP = 7;                    // seconds between songs

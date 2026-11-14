@@ -1,8 +1,8 @@
 // The cities this model can show, and the active one. Everything that differs between cities
 // and isn't data (projection, camera, sun, HUD text, which data files to load) lives here.
-// js/main.js calls setCity() once, before any data is loaded or scene module runs, so modules
+// js/main.ts calls setCity() once, before any data is loaded or scene module runs, so modules
 // may read CITY inside their functions (never at module top level: imported modules run their
-// top level before main.js calls setCity()).
+// top level before main.ts calls setCity()).
 /** @import { City, CityEntry } from './types/city' */
 
 // Philadelphia's SEPTA station tags: Metro ids, trolley ranges, then the networks
@@ -18,10 +18,10 @@ export function septaLines(s, LINES) {
 export const CITIES = {
   phl: {
     id: 'phl', name: 'Philadelphia',
-    // the loading slideshow (js/loading.js): frames of the 3D city at its points of interest, made
+    // the loading slideshow (js/loading.ts): frames of the 3D city at its points of interest, made
     // by tools/loading/capture.py. view: a "Go to" view id, or cam: [[x, y, z], [tx, ty, tz]] (y over
     // the ground); hour: hours from sunset; day: day of the year (0 = 1 Jan; 285, mid-October, if left
-    // out). hero: [pose, outfit] (POSES and OUTFITS in js/loading.js); side: where the figure stands.
+    // out). hero: [pose, outfit] (POSES and OUTFITS in js/loading.ts); side: where the figure stands.
     loadingScreens: [
       { file: 'poi-independence-hall.webp', name: 'Independence Hall', area: 'Old City', view: 'indhall', hour: -1, hero: ['akimbo', 'tee'], side: 'right' },
       { file: 'poi-chinatown.webp', name: 'Friendship Gate', area: 'Chinatown', view: 'chinatown', hour: 0, hero: ['point', 'red'], side: 'left' },
@@ -47,7 +47,7 @@ export const CITIES = {
     title: 'Philadelphia: Schuylkill riverfront and monorail',
     heading: 'Philadelphia’s Schuylkill, reimagined',
     canvasLabel: '3D model of Philadelphia to the city limits, with its rail transit network and a proposed monorail loop along the Schuylkill',
-    // what the city is; the panel adds how to move around (for a mouse or a touch screen, js/ui.js)
+    // what the city is; the panel adds how to move around (for a mouse or a touch screen, js/ui.ts)
     hint: 'All of Philadelphia to the city limits, every rail transit line, and a proposed monorail loop along the Schuylkill.',
     cutButton: 'Cut away Market St',
     cutHint: 'Market Street cut open: the L (blue) and the T1–T5 trolleys (green) in the subway below. Tunnels that turn away from Market are drawn see-through. Track positions are from OpenStreetMap; depths are estimates.',
@@ -151,7 +151,7 @@ export const CITIES = {
     presets: [],   // no lit skyline: the panel leaves out Skyline lights
   },
   pine: {
-    // not a map: one kitchen, built by hand in js/scene/pine/kitchen.ts (main.js skips the map
+    // not a map: one kitchen, built by hand in js/scene/pine/kitchen.ts (main.ts skips the map
     // data, the city scene and its panel controls for a city with kitchen: true)
     id: 'pine', name: '1938 Pine St Kitchen', kitchen: true,
     blurb: 'One kitchen, drawer by drawer: open any drawer or cabinet to see what goes in it under the organization plan.',
@@ -164,7 +164,7 @@ export const CITIES = {
   },
 };
 
-/** the active city (filled in place by setCity, so every importer sees the same object; main.js then adds
+/** the active city (filled in place by setCity, so every importer sees the same object; main.ts then adds
  *  urls: each data file's and loading screen's URL in the build, by file name, from its URLS) */
 export const CITY = /** @type {City} */ ({});
 export function setCity(id) { return Object.assign(CITY, CITIES[id]); }

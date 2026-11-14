@@ -1,14 +1,14 @@
 // Entry point: pick a city (start menu, or ?city=phl / ?city=nyc) -> load its data -> build the
 // scene -> wire up the UI -> run. One city per page load: "Change city" reloads to the menu.
 // first: three.js settings, before any module makes a colour
-import { LIGHT } from './three-setup.js';
-import { CITIES, setCity } from './cities.js';
-import { loadData } from './data.js';
+import { LIGHT } from './three-setup.ts';
+import { CITIES, setCity } from './cities.ts';
+import { loadData } from './data.ts';
 import { buildScene } from './scene/index.ts';
-import { createUI } from './ui.js';
-import { startLoadingScreens } from './loading.js';
+import { createUI } from './ui.ts';
+import { startLoadingScreens } from './loading.ts';
 // Each city's own code (js/scene/<city>/<city>.js), as a chunk of its own that no other city downloads. (Here rather than in
-// js/cities.js, whose chunk the shared code and every city's chunk import: a change to one city's code then renames only this
+// js/cities.ts, whose chunk the shared code and every city's chunk import: a change to one city's code then renames only this
 // chunk and that city's, and the shared ones stay cached.)
 const CODE = { phl: () => import('./scene/phl/phl.ts'), nyc: () => import('./scene/nyc/nyc.ts'), jsh: () => import('./scene/jsh/jsh.ts'), pine: () => import('./scene/pine/pine.ts') };
 // Every city's data files and loading screens, keyed by their path on disk (/data/<city>/<file>): the URL each has in the build

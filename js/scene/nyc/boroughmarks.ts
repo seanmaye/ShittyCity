@@ -2,7 +2,7 @@
 // Ported from the NYC City Model (js/scene/boroughmarks.js). Their labels and camera views are
 // in data/nyc/landmarks.json.
 import * as THREE from 'three';
-// Coordinates are NYC-frame metres (origin 40.745, -73.984; js/cities.js).
+// Coordinates are NYC-frame metres (origin 40.745, -73.984; js/cities.ts).
 
 const UP = new THREE.Vector3(0, 1, 0);
 const Z_AXIS = new THREE.Vector3(0, 0, 1);

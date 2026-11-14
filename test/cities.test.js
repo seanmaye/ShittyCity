@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CITIES, septaLines } from '../js/cities.js';
+import { CITIES, septaLines } from '../js/cities.ts';
 
 const LINES = { L: { group: 'SEPTA Metro' }, B1: { group: 'SEPTA Metro' }, G1: { group: 'SEPTA Metro' }, T1: { group: 'SEPTA Metro' }, PAO: { group: 'Regional Rail' }, CHW: { group: 'Regional Rail' }, PATCO: { group: 'PATCO' } };
 

@@ -3,7 +3,7 @@ import { join, resolve, sep } from 'node:path';
 import { defineConfig, normalizePath } from 'vite';
 
 // data/ stays at the repository root, where the pipeline writes it. The page asks for each file by the URL that
-// js/main.js's import.meta.glob ?url (URLS) gives it: the dev server serves data/ as it is, and a build copies
+// js/main.ts's import.meta.glob ?url (URLS) gives it: the dev server serves data/ as it is, and a build copies
 // each file into dist/assets/ under a content-hashed name. (Forward slashes, as Vite's ids have them on Windows too.)
 const DATA = normalizePath(resolve(import.meta.dirname, 'data')) + '/';
 
@@ -50,7 +50,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
-    // no syntax lowering: js/main.js awaits at module top level, and the page runs today's syntax as is
+    // no syntax lowering: js/main.ts awaits at module top level, and the page runs today's syntax as is
     target: 'esnext',
     // Lightning CSS (the default minifier) drops unprefixed backdrop-filter, the 100vh fallbacks and the loading headline's font; ~10 kB gzipped either way
     cssMinify: false,
@@ -60,7 +60,7 @@ export default defineConfig({
       output: {
         ...names,
         // three.js in chunks of its own, apart from our code (three-core, three, three-addons: its two build files and the
-        // addons, each under 500 kB): an edit to js/cities.js or materials.js, which shared chunks with it, no longer renames it
+        // addons, each under 500 kB): an edit to js/cities.ts or materials.js, which shared chunks with it, no longer renames it
         codeSplitting: { groups: [
           { name: 'three-core', test: /[\\/]node_modules[\\/]three[\\/]build[\\/]three\.core\.js$/, priority: 3 },
           { name: 'three', test: /[\\/]node_modules[\\/]three[\\/]build[\\/]/, priority: 2 },

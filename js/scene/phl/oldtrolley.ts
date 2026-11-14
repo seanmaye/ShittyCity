@@ -6,7 +6,7 @@
 // labels; track OSM still maps gets a wider outline behind its line.
 // The cars can be boarded like any other train (kind 'pcc53', registered with the subway).
 import * as THREE from 'three';
-import { pairs } from '../../data.js';
+import { pairs } from '../../data.ts';
 import { M, litMats } from '../materials.ts';
 import { Builder, addRibbon } from '../geometry.ts';
 import { SPEC } from '../subway.ts';

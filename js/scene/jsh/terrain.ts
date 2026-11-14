@@ -1,5 +1,5 @@
 // Jersey Shore's terrain: an elevation grid with land cover (data/jsh/terrain.bin.gz, written by
-// tools/jsh/build_jsh.py; loaded as data.grid, see cities.js `grid`). Philadelphia's lidar terrain
+// tools/jsh/build_jsh.py; loaded as data.grid, see cities.ts `grid`). Philadelphia's lidar terrain
 // is a different format and engine (js/scene/terrain.ts); this one is Jersey Shore's own. Without
 // a grid loaded, everything here returns 0 and the scene stays on the flat plane y = 0.
 //

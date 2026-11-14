@@ -1,11 +1,11 @@
 // Ground, parks and green space, streets, trails, rail lines and bridges (OpenStreetMap).
 import * as THREE from 'three';
-import { pairs } from '../data.js';
+import { pairs } from '../data.ts';
 import { M } from './materials.ts';
 import { Builder, addPolygon, addRibbon } from './geometry.ts';
 import { seasonalGrass } from './season.ts';
 import { terrain, surface, TOL_LAWN } from './terrain.ts';
-import { CITY } from '../cities.js';
+import { CITY } from '../cities.ts';
 import type { Flat, Pair } from '../types/data.ts';
 // Colours sampled to match summer aerial imagery: mown grass, darker park woodland, asphalt,
 // gravel and dirt trails, rail ballast, the mixed concrete, asphalt and yards between buildings,

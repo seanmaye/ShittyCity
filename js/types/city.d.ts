@@ -1,4 +1,4 @@
-// A city's settings: an entry of CITIES in js/cities.js, and CITY, the active one (docs/EDITING.md section 8).
+// A city's settings: an entry of CITIES in js/cities.ts, and CITY, the active one (docs/EDITING.md section 8).
 import type { Station, TransitLine } from './data';
 
 /** the projection: x = (lon - LON0) * MX metres east, z = -(lat - LAT0) * MZ metres south (EDITING.md section 2) */
@@ -7,7 +7,7 @@ export interface Frame { LAT0: number; LON0: number; MX: number; MZ: number }
 /** [lat, lon, height m] */
 export type LatLonH = [number, number, number];
 
-/** a loading-screen slide (js/loading.js; made by tools/loading/capture.py, which reads view, cam, hour and day) */
+/** a loading-screen slide (js/loading.ts; made by tools/loading/capture.py, which reads view, cam, hour and day) */
 export interface LoadingScreen {
   /** data/<city>/<file> */
   file: string;
@@ -20,7 +20,7 @@ export interface LoadingScreen {
   hour: number;
   /** day of the year (0 = 1 Jan); 285 if left out */
   day?: number;
-  /** [pose, outfit]: POSES and OUTFITS in js/loading.js */
+  /** [pose, outfit]: POSES and OUTFITS in js/loading.ts */
   hero: [string, string];
   side: 'left' | 'right';
 }
@@ -42,13 +42,13 @@ interface CityBase {
   title: string;
   heading: string;
   canvasLabel: string;
-  /** what the city is; js/ui.js adds how to move around */
+  /** what the city is; js/ui.ts adds how to move around */
   hint: string;
   credit: string;
   loadingScreens?: LoadingScreen[];
 }
 
-/** a map city (js/cities.js phl, nyc, jsh, nola) */
+/** a map city (js/cities.ts phl, nyc, jsh, nola) */
 export interface MapCityEntry extends CityBase {
   kitchen?: undefined;
   frame: Frame;
@@ -75,20 +75,20 @@ export interface MapCityEntry extends CityBase {
   presets: string[] | null;
 }
 
-/** not a map: one room built by hand (js/cities.js pine; main.js skips the data, the city scene and its panel controls) */
+/** not a map: one room built by hand (js/cities.ts pine; main.ts skips the data, the city scene and its panel controls) */
 export interface KitchenEntry extends CityBase {
   kitchen: true;
 }
 
-/** an entry of CITIES (js/cities.js) */
+/** an entry of CITIES (js/cities.ts) */
 export type CityEntry = MapCityEntry | KitchenEntry;
 
 /**
- * CITY (js/cities.js): the active map city. Empty until main.js calls setCity(), which fills it in place before any data
- * loads or scene module runs; main.js then adds urls. Read it inside functions, never at module top level. (A kitchen
+ * CITY (js/cities.ts): the active map city. Empty until main.ts calls setCity(), which fills it in place before any data
+ * loads or scene module runs; main.ts then adds urls. Read it inside functions, never at module top level. (A kitchen
  * city passes through CITY too, but nothing that reads these fields runs for it.)
  */
 export type City = MapCityEntry & {
-  /** each data file's and loading screen's URL in the build, by file name (main.js, from its import.meta.glob URLS) */
+  /** each data file's and loading screen's URL in the build, by file name (main.ts, from its import.meta.glob URLS) */
   urls: Record<string, string>;
 };

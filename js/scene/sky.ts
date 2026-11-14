@@ -1,8 +1,8 @@
 // Time of day: the real sun position over the city (CITY.sun) for today's date, and everything that
 // follows from it (sky gradient, fog, sun/moon light, ambient light, stars, lit windows).
 import * as THREE from 'three';
-import { CITY } from '../cities.js';
-import { LIGHT as PI_LIGHT } from '../three-setup.js';
+import { CITY } from '../cities.ts';
+import { LIGHT as PI_LIGHT } from '../three-setup.ts';
 
 const RAD = Math.PI / 180;
 

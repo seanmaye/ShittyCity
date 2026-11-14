@@ -13,7 +13,7 @@
 // two instanced meshes, each plant scaled to its field's planting group's height and coloured
 // by its stage (farms.ts stage()), so they grow, turn and are harvested with the slab.
 import * as THREE from 'three';
-import { pairs } from '../../data.js';
+import { pairs } from '../../data.ts';
 import { groundAt } from './terrain.ts';
 import { onSeason } from '../season.ts';
 import { stage, CORN_HOLE } from './farms.ts';

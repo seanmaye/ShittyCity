@@ -7,7 +7,7 @@
 //  - a dragon dance winding up and down Race Street, its dancers holding the dragon up on poles
 //  - OUR ADDITION: a night market on the open lot on 10th Street between Race and Cherry, with
 //    food stalls, tables, string lights and a pavilion, and "Lucky Arcade", a street stall whose
-//    arcade games you can play: click it (pickStall) and ui.js opens js/arcade.js.
+//    arcade games you can play: click it (pickStall) and ui.ts opens js/arcade.ts.
 // Street lines are OpenStreetMap centrelines in scene metres (tools/phl/osm/streets_cc.json).
 import * as THREE from 'three';
 import { litMats } from '../materials.ts';

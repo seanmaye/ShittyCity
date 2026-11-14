@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { setCity } from '../js/cities.js';
+import { setCity } from '../js/cities.ts';
 import { sunAt, sunsetHour } from '../js/scene/sky.ts';
 
 // the sun over Philadelphia (CITY.sun: 39.952 N, 75.164 W) on the solstices of 2025, in local clock time

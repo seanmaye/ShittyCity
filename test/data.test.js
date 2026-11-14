@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CITIES, setCity } from '../js/cities.js';
-import { G, latOf, pairs } from '../js/data.js';
+import { CITIES, setCity } from '../js/cities.ts';
+import { G, latOf, pairs } from '../js/data.ts';
 
 describe('pairs', () => {
   it('turns flat decimetres into [x, z] pairs in metres', () => {

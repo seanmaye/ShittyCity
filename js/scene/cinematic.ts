@@ -19,7 +19,7 @@
 // that fails, or that is too like one already shown, is thrown away and another made.
 //
 // index.ts drives it: step(dt) each frame while it is on (the orbit controls are off meanwhile),
-// and ui.js draws the letterbox, the fade and the caption from state.
+// and ui.ts draws the letterbox, the fade and the caption from state.
 import * as THREE from 'three';
 import type { Label, View } from '../types/scene.ts';
 

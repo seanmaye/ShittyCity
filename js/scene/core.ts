@@ -1,9 +1,9 @@
 // Renderer, camera, controls, sky and lights.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { G } from '../data.js';
-import { CITY } from '../cities.js';
-import { LIGHT, makeRenderer } from '../three-setup.js';
+import { G } from '../data.ts';
+import { CITY } from '../cities.ts';
+import { LIGHT, makeRenderer } from '../three-setup.ts';
 export function createCore(canvas) {
   const renderer = makeRenderer({ canvas, antialias: true, logarithmicDepthBuffer: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));

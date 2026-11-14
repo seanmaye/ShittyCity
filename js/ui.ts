@@ -1,10 +1,10 @@
 // HUD buttons, hint text and the floating landmark labels.
 import * as THREE from 'three';
 import { formatHour } from './scene/sky.ts';
-import { createMinimap } from './minimap.js';
-import { createRidebar } from './ridebar.js';
-import { createCinema } from './cinema.js';
-import { CITY } from './cities.js';
+import { createMinimap } from './minimap.ts';
+import { createRidebar } from './ridebar.ts';
+import { createCinema } from './cinema.ts';
+import { CITY } from './cities.ts';
 // remembered per viewer and city (browser storage may be unavailable: then nothing is remembered)
 const store = { get: k => { try { return localStorage.getItem(CITY.storage + k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(CITY.storage + k, v); } catch (e) { /* ignore */ } } };
 // a touch screen (no mouse, no keyboard to speak of), and a small screen (a phone either way up):
@@ -20,7 +20,7 @@ export function touchify(t) {
 const controlsHint = trains => TOUCH.matches
   ? 'Drag to turn the view, pinch to zoom, and drag with two fingers to move.' + (trains ? ' Tap any train to ride inside it.' : '')
   : 'Right-click the view to fly with the mouse, like creative mode: the mouse looks around, W A S D fly, Space and Shift rise and sink, scroll sets the speed, Esc lets go. Or drag to orbit and scroll to zoom.' + (trains ? ' Click any train to ride inside it.' : '');
-// createFishing, createArcade: Philadelphia's minigames (js/fishing.js, js/arcade.js), from its own code (js/scene/phl/phl.ts)
+// createFishing, createArcade: Philadelphia's minigames (js/fishing.ts, js/arcade.ts), from its own code (js/scene/phl/phl.ts)
 export function createUI(api, { createFishing, createArcade } = {}) {
   const toastEl = document.getElementById('toast'); let toastTimer = 0;
   const toast = (msg, ms) => { toastEl.textContent = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => { toastEl.textContent = ''; }, ms); };
@@ -451,7 +451,7 @@ export function createUI(api, { createFishing, createArcade } = {}) {
   // fishing (Philadelphia): the anglers on the Schuylkill banks, and the minigame
   const fishing = createFishing ? createFishing(api) : { open() {}, active: () => false };
   const anglerAt = (x, y) => (api.pickAngler ? api.pickAngler(x, y) : null);
-  // the arcade stall in Chinatown's night market (Philadelphia): its games (js/arcade.js)
+  // the arcade stall in Chinatown's night market (Philadelphia): its games (js/arcade.ts)
   const arcade = api.pickStall ? createArcade(api) : { open() {}, active: () => false };
   const stallAt = (x, y) => (api.pickStall ? api.pickStall(x, y) : false);
   canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointercancel', endDrag);
@@ -572,7 +572,7 @@ export function createUI(api, { createFishing, createArcade } = {}) {
   else setScheme(pre ? pre.id : 'white', (pre || api.displayPresets[0]).colors, (pre || api.displayPresets[0]).name, true);
 
   const minimap = createMinimap(api, { eats: () => (showEats && EATS.length ? EATS : null) }), ridebar = createRidebar(api);
-  // Cinematic mode (js/cinema.js, js/scene/cinematic.ts): hands-free fly-arounds; also starts by itself
+  // Cinematic mode (js/cinema.ts, js/scene/cinematic.ts): hands-free fly-arounds; also starts by itself
   // after a while with nobody at the controls
   const cineBtn = document.getElementById('cine-btn');
   const cinema = createCinema(api, {

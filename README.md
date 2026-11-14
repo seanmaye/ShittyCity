@@ -61,17 +61,17 @@ Shared code sits at the top level. Each city has a folder of the same name in `d
 
 ```
 index.html            page shell, start menu, HUD markup; the entry Vite builds from
-vite.config.js        the build: dist/, each data/<city>/ file under a content-hashed name in dist/assets/ (js/main.js URLS)
+vite.config.js        the build: dist/, each data/<city>/ file under a content-hashed name in dist/assets/ (js/main.ts URLS)
 css/fonts.css         the Archivo font from npm, both axes, upright and italic
 css/style.css         HUD, menu and label styles
-js/three-setup.js     three.js settings that keep the r128-tuned look (colours, light scale)
-js/main.js            entry point: city menu -> load data -> build scene -> start UI
-js/cities.js          every city's settings (projection, data files, home view, sun, page text)
-js/data.js            data loader + lat/lon -> scene projection
-js/ui.js              buttons, hint text, floating labels, panel fold, skyline lights
-js/minimap.js         the top-right map
-js/ridebar.js         the line diagram shown while riding
-js/loading.js         the loading screens: posed figures over frames of the city
+js/three-setup.ts     three.js settings that keep the r128-tuned look (colours, light scale)
+js/main.ts            entry point: city menu -> load data -> build scene -> start UI
+js/cities.ts          every city's settings (projection, data files, home view, sun, page text)
+js/data.ts            data loader + lat/lon -> scene projection
+js/ui.ts              buttons, hint text, floating labels, panel fold, skyline lights
+js/minimap.ts         the top-right map
+js/ridebar.ts         the line diagram shown while riding
+js/loading.ts         the loading screens: posed figures over frames of the city
 js/scene/
   index.js            assembles the scene: each city's parts, time of day, rides, views
   core.js             renderer, camera, orbit controls, lights
@@ -120,7 +120,7 @@ All cities share one set of data formats, which [docs/EDITING.md](docs/EDITING.m
 ## Adding a city
 
 1. Make its data in `data/<id>/` in the shared formats, with the tools that make it in `tools/<id>/`.
-2. Add its entry to `CITIES` in `js/cities.js`. The menu shows it automatically.
-3. Put anything hand-built in `js/scene/<id>/`, re-export from `js/scene/<id>/<id>.js` what `js/scene/index.ts` calls, add that file to `CODE` in `js/main.js`, and call it in `buildScene` (it arrives in `own`) when that city's data is loaded. (Its data needs no step of its own: the build picks up every file in `data/<id>/`.)
+2. Add its entry to `CITIES` in `js/cities.ts`. The menu shows it automatically.
+3. Put anything hand-built in `js/scene/<id>/`, re-export from `js/scene/<id>/<id>.js` what `js/scene/index.ts` calls, add that file to `CODE` in `js/main.ts`, and call it in `buildScene` (it arrives in `own`) when that city's data is loaded. (Its data needs no step of its own: the build picks up every file in `data/<id>/`.)
 4. List a few points of interest in its `loadingScreens` and capture them with `uv run python -I tools/loading/capture.py <id>`.
 5. Write `docs/<ID>.md`.

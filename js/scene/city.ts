@@ -6,7 +6,7 @@
 // real outlines for large irregular ones. Near tiles draw full boxes with window textures;
 // far tiles draw only their roofs; tiles outside the view or past the fog are hidden.
 import * as THREE from 'three';
-import { pairs } from '../data.js';
+import { pairs } from '../data.ts';
 import { M, worldWinMat, instancedWinMat, roofColor, WIN_W, WIN_H } from './materials.ts';
 import { Builder, addPolygon, addRibbon, addPrism, withBounds, colorOf } from './geometry.ts';
 import { drawLines, GREEN, GROUND, COUNTRY, groundMat } from './ground.ts';
@@ -14,7 +14,7 @@ import { buildTrees } from './nature.ts';
 import { seasonalGrass } from './season.ts';
 import { terrain, surface, footprint, buildTerrain, TOL_LAWN } from './terrain.ts';
 import { facadeKind, facadeColor, hash, addRooftop, aviationLights } from './buildings.ts';
-import { CITY } from '../cities.js';
+import { CITY } from '../cities.ts';
 import type { Pair } from '../types/data.ts';
 
 const TILE = 1000, FULL = 5000, TREE_FAR = 7000;

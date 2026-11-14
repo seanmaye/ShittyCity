@@ -3,7 +3,7 @@
 // upriver and downriver at the boat piers' banks (Bartram's Garden, Grays Ferry, Strawberry
 // Mansion, East Falls, Manayunk). Each sits on a stool or stands with a rod out over the water,
 // a bobber riding the current, a bucket and a cooler beside them. Clicking one (pick) opens an
-// invitation to fish with them (js/fishing.js).
+// invitation to fish with them (js/fishing.ts).
 import * as THREE from 'three';
 import { makeFigure } from './people.ts';
 import { terrain, surface, water } from '../terrain.ts';

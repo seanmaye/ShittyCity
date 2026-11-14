@@ -1,9 +1,9 @@
 // @ts-check
 // Data loading and the local map projection shared by every scene module.
 // Each city's generated files live in data/<city>/ (tools/<city>/ makes them); coordinates there
-// are integer decimetres in that city's frame (js/cities.js).
+// are integer decimetres in that city's frame (js/cities.ts).
 import * as THREE from 'three';
-import { CITY } from './cities.js';
+import { CITY } from './cities.ts';
 /** @import { CityData, Pair } from './types/data' */
 
 /** lat/lon -> scene position (x metres east, z metres south of the city's origin) */
@@ -32,8 +32,8 @@ export async function loadData(onProgress = () => {}) {
   const FILES = CITY.files;
   let done = 0;
   const parts = await Promise.all(FILES.map(async ([key, file]) => {
-    if (!CITY.urls[file]) throw new Error(`${CITY.dir}/${file}: not in the build's URL map (js/main.js URLS)`);
-    const r = await fetch(CITY.urls[file]);   // its URL in the build (CITY.urls, set by main.js)
+    if (!CITY.urls[file]) throw new Error(`${CITY.dir}/${file}: not in the build's URL map (js/main.ts URLS)`);
+    const r = await fetch(CITY.urls[file]);   // its URL in the build (CITY.urls, set by main.ts)
     if (!r.ok) throw new Error(`${CITY.dir}/${file}: HTTP ${r.status}`);
     const bytes = new Uint8Array(await r.arrayBuffer());
     let out;

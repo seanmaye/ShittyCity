@@ -9,7 +9,7 @@
 // isn't all planted or harvested on one day. The ground and canopy are built flat and draped
 // onto the terrain with everything else (terrain.ts); barns and silos stand on it themselves.
 import * as THREE from 'three';
-import { pairs } from '../../data.js';
+import { pairs } from '../../data.ts';
 import { M } from '../materials.ts';
 import { Builder, addPolygon } from '../geometry.ts';
 import { onSeason } from '../season.ts';

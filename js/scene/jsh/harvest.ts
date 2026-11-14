@@ -16,7 +16,7 @@
 // and the other still stands. Near the camera the slab gives way to real plants like any corn
 // field (cornlod.ts), which asks cut(x, z) for each plant of this field.
 import * as THREE from 'three';
-import { pairs } from '../../data.js';
+import { pairs } from '../../data.ts';
 import { M } from '../materials.ts';
 import { Builder, addPolygon } from '../geometry.ts';
 import { onSeason } from '../season.ts';

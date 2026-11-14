@@ -13,11 +13,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { LIGHT, makeRenderer } from '../../three-setup.js';
+import { LIGHT, makeRenderer } from '../../three-setup.ts';
 import * as I from './items.ts';
 import { buildMiniRail } from './minirail.ts';
 import { buildSubway } from '../subway.ts';
-import { createRidebar } from '../../ridebar.js';
+import { createRidebar } from '../../ridebar.ts';
 
 const { B, C, mat, mesh } = I;
 const PI = Math.PI;
@@ -98,7 +98,7 @@ function paintingTex() {   // the still life of onions by the window
 
 /**
  * Build the kitchen into the canvas. Returns { start(): Promise (first frame drawn) }.
- * hud: the page's panel (main.js hides the city controls; this fills in the kitchen ones).
+ * hud: the page's panel (main.ts hides the city controls; this fills in the kitchen ones).
  */
 export function buildKitchen(canvas) {
   const renderer = makeRenderer({ canvas, antialias: true });

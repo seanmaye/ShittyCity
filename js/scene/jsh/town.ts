@@ -19,7 +19,7 @@
 // Walls use the small-town facade textures in materials.ts; roofs, porches, chimneys, cornices
 // and steeples are plain vertex-coloured geometry. Both are merged in 700 m tiles.
 import * as THREE from 'three';
-import { pairs } from '../../data.js';
+import { pairs } from '../../data.ts';
 import { worldWinMat, WIN_W, WIN_H, M } from '../materials.ts';
 import { Builder, addPolygon, colorOf } from '../geometry.ts';
 import { groundBase } from './terrain.ts';

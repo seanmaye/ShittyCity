@@ -271,7 +271,7 @@ def run_device(browser, base, city, dname, device, states, a, art, first_city):
             try:
                 page.evaluate('__ux.reset()')
                 fold = st.get('fold')
-                if fold is None:   # the app's first-visit default: folded on small screens (js/ui.js COMPACT)
+                if fold is None:   # the app's first-visit default: folded on small screens (js/ui.ts COMPACT)
                     w, h = device['viewport']
                     fold = 'folded' if w <= 640 or h <= 500 else 'open'
                 if fold in ('open', 'folded'):

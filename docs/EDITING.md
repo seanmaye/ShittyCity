@@ -10,7 +10,7 @@ The page holds several cities on one engine: today Philadelphia (id "phl"), New 
 (id "nyc"), New Orleans (id "nola") and Jersey Shore, PA (id "jsh"). It opens on a start menu (#menu) to pick one, or
 goes straight to one with ?city=phl, ?city=nyc, ?city=nola or ?city=jsh; "Change city" (#switch-city) reloads to the menu. Each city has its
 own data files (this guide calls data/<city>/NAME.json, .json.gz or .bin.gz "data-<city>-NAME"),
-its own settings in js/cities.js, and its own hand-built scene code (js/scene/<city>/);
+its own settings in js/cities.ts, and its own hand-built scene code (js/scene/<city>/);
 everything else is shared.
 
 Read this guide before opening the data. The data files are single-line JSON or gzip,
@@ -29,21 +29,21 @@ Python helper below.
               detasseling crew, the hunter);
               #actions (what the person you are inside can do) and #binoc (their binocular mask);
               the start menu #menu with #cities and the #city-loading screen with #status
-  data files, city by city, in data/<city>/ (js/data.js fetches them):
+  data files, city by city, in data/<city>/ (js/data.ts fetches them):
               NAME.json (JSON), NAME.json.gz and NAME.bin.gz (gzip: JSON or binary); this guide
               calls each one data-<city>-NAME. Which files a city
-              has is listed in section 3 and in its `files` entry in js/cities.js.
+              has is listed in section 3 and in its `files` entry in js/cities.ts.
               Loading-screen backgrounds are data/<city>/poi-*.webp (frames captured from the
               3D city by tools/loading/capture.py). The city lists each screen in
               `loadingScreens`: file, caption, the view it was captured from, and the posed
-              figure in front (js/loading.js has the poses and outfits).
-  js/         the code, as ES modules (section 4); index.html imports js/main.js, which starts everything
+              figure in front (js/loading.ts has the poses and outfits).
+  js/         the code, as ES modules (section 4); index.html imports js/main.ts, which starts everything
 
 
 2. Coordinates and units (read this before touching any data)
 -------------------------------------------------------------
 
-  Every city has its own local frame (js/cities.js `frame`), with the same axes:
+  Every city has its own local frame (js/cities.ts `frame`), with the same axes:
   x       metres EAST   = (lon - LON0) * MX
   z       metres SOUTH  = -(lat - LAT0) * 111000      (north is -z)
   y       metres UP. New York is flat (ground at y = 0). Philadelphia has real terrain
@@ -144,7 +144,7 @@ data-<city>-transit     rail transit (DEPTHS ARE ESTIMATES in both cities)
   platforms: [{x, z, y (top), ry, l, w, k: kind}] METRES
   stations:  [{t, x, z, k: [kinds], u: [kinds underground here], lines?: [ids], T?: [trolley refs]}]
              METRES. Each gets a small label within 1.6 km of the camera (its line text comes
-             from the city's stationLines in js/cities.js), and a sign post if it is a street
+             from the city's stationLines in js/cities.ts), and a sign post if it is a street
              stop; underground ones near a section also get a label on the cut face.
   entrances: [{x, z, k}] METRES: subway entrances near a station (stair opening + sign post)
   sections:  [{id, name, p: [x, z] m, d: [dx, dz] unit, band, depth}] cut-away planes. The cut
@@ -290,7 +290,7 @@ data-nyc-landmarks      the modelled towers, labels and camera views, all in MET
             source_id = the NYC Open Data footprint it replaces (left out of the buildings).
   labels:   [{t, x, y, z}]
   views:    [{id, name, pos: [x, y, z], target: [x, y, z]}] the "Go to" buttons ("overview"
-            is the home view, set in js/cities.js)
+            is the home view, set in js/cities.ts)
 
 data-nyc-monorail       PROPOSAL: the East River Loop
   {name, height (m, default guideway height), speed (m/s),
@@ -336,17 +336,17 @@ tools/jsh/build_jsh.py.
 
 Shared engine:
 
-js/cities.js     CITIES (per city: projection frame, data folder and files, home view, sun
+js/cities.ts     CITIES (per city: projection frame, data folder and files, home view, sun
                  position, page text, transit groups, station-tag text, skyline presets, `sea`)
                  and CITY, the active one (section 8)
-js/three-setup.js  three.js settings that keep the look tuned under r128: colour management
+js/three-setup.ts  three.js settings that keep the look tuned under r128: colour management
                  off, LIGHT (= PI, multiply every light intensity by it), makeRenderer()
                  (linear output), single-pass transparent materials (as in r128;
                  three.js would draw double-sided ones twice and re-check their shader
                  every frame), restoreAnisotropy() for nearest-magnified textures. main.js imports it first, before any colour is made.
-js/main.js       the start menu, then setCity -> loadData -> buildScene -> createUI -> start.
+js/main.ts       the start menu, then setCity -> loadData -> buildScene -> createUI -> start.
                  Exposes window.__city.
-js/data.js       projection (G(lat,lon), latOf, using CITY.frame) and the data loader
+js/data.ts       projection (G(lat,lon), latOf, using CITY.frame) and the data loader
                  (fetches CITY.files by the URLs the build gave them, CITY.urls, set by main.js from its
                  URLS: .gz files gunzipped with DecompressionStream)
 js/scene/core.ts  renderer, camera, OrbitControls, sun, fog. HOME_POS and HOME_TGT
@@ -462,7 +462,7 @@ js/scene/index.ts      builds everything in order, each city's parts only when i
                  boardLine; setFly (W A S D / Space / Shift free flight, speed scales with
                  distance); views; the frame loop (fog, draw distance and the sun's shadow area
                  follow the camera)
-js/ui.js         buttons, line picker, floating labels, keys (inside a car KEYMAP walks; otherwise
+js/ui.ts         buttons, line picker, floating labels, keys (inside a car KEYMAP walks; otherwise
                  FLYMAP flies the camera; Space up, Shift down)
                  Creative mode: a right-click (only a right-click) on the view captures the
                  mouse (pointer lock), and the #modehint pill at the bottom says so; the mouse
@@ -480,7 +480,7 @@ js/ui.js         buttons, line picker, floating labels, keys (inside a car KEYMA
                  binocular mask (#binoc, its opacity is the person's bino 0..1; the wheel zooms
                  through api.wheelCar first). Standing somewhere (kind 'vista', the overlook)
                  the button reads "Step away" and clicks still pick the person there.
-js/cinema.js     cinematic mode's screen (#cine, made here): letterbox bars, the fade through black
+js/cinema.ts     cinematic mode's screen (#cine, made here): letterbox bars, the fade through black
                  (state.fade), each shot's title for its first seconds; body.cinematic hides the
                  rest of the chrome (css/style.css) and ui.js hides the labels. The Time, Season
                  and Speed sliders are left as they are and keep working underneath: the tour
@@ -519,11 +519,11 @@ js/scene/cinematic.ts  the camera work, for any city: createCinematic({ scene, c
                  api.cinematic.shots). A view out of season (its when.days) is left out.
                  step(dt) runs the shot and the fades; index.js calls it instead of the orbit
                  controls (startCinematic / stopCinematic; flyTo, boarding and riding stop it).
-js/minimap.js    top-right map (#minimap): base map of limits, parks, water and rail drawn once
+js/minimap.ts    top-right map (#minimap): base map of limits, parks, water and rail drawn once
                  from api.mapData; LEVELS = metres across per zoom step; you as a view cone, or
                  the train and its line in bold when riding; a click calls api.flyToPoint(x, z).
                  createMinimap(api, { eats }): eats() returns the restaurants to dot (or null).
-js/fishing.js    the fishing minigame (a dialog over the city): invitation, then cast (power meter),
+js/fishing.ts    the fishing minigame (a dialog over the city): invitation, then cast (power meter),
                  wait (nibbles that look like bites), bite (strike window, shorter for rarer
                  catches), reel (hold: tension vs. progress, line gained only in the green band;
                  the fish runs, shakes its head and tires; snap over the top, slack shakes the
@@ -534,7 +534,7 @@ js/fishing.js    the fishing minigame (a dialog over the city): invitation, then
                  The catch log is kept in localStorage (CITY.storage + 'creel'). Snap the line and
                  the angler yells at you (YELLS, in a speech bubble), then always gives you one
                  more try (ONE_MORE; the button becomes "One more try").
-js/arcade.js     Lucky Arcade (a dialog over the city), opened by a click on the stall in Chinatown's
+js/arcade.ts     Lucky Arcade (a dialog over the city), opened by a click on the stall in Chinatown's
                  night market: a menu of GAMES, each make() -> { update(dt, inp), draw(g), score,
                  over, result, help } on one 480 x 480 canvas. pingPong (first to 7 against a CPU
                  paddle; score = longest rally), skySwarm (fixed shooter: bugs enter on curves,
@@ -543,7 +543,7 @@ js/arcade.js     Lucky Arcade (a dialog over the city), opened by a click on the
                  door, 'C' pen, ' ' void except the row-9 tunnel, '_' eaten; four CATS with their
                  own chase targets on a scatter/chase SCHEDULE). Best scores in localStorage
                  (CITY.storage + 'arcade').
-js/ridebar.js    line diagram (#ridebar) while riding, from api.rideStrip() (subway.js): stops
+js/ridebar.ts    line diagram (#ridebar) while riding, from api.rideStrip() (subway.js): stops
                  evenly spaced, the train between them, passed stops greyed, the next in bold.
 
 Philadelphia (js/scene/phl/):
@@ -573,7 +573,7 @@ anglers.js       people fishing the Schuylkill (buildAnglers(scene, river, boats
                  on the river centreline and PIER_SPOTS by the boat piers, each stood at the real
                  water's edge (walked out from the water to the bank); figure, rod, line, bobber,
                  bucket, cooler. pick() / info(i) (name, hello, spot, view); wired as api.pickAngler,
-                 anglerInfo, viewAngler; ui.js opens js/fishing.js on a click.
+                 anglerInfo, viewAngler; ui.js opens js/fishing.ts on a click.
 chinatown.js     Chinatown dressed in detail (buildChinatown(scene, { buildings })). Streets are OSM
                  centrelines in metres (RACE, TENTH, NINTH, ELEVENTH, ARCH; CROSSINGS keep things
                  back from the corners). Facades 5-26 m tall that face a street get a lit board
@@ -583,7 +583,7 @@ chinatown.js     Chinatown dressed in detail (buildChinatown(scene, { buildings 
                  Race (loopAt). OUR ADDITION: a night market on the open lot east of 10th between
                  Race and Cherry (LOT_S; lot frame u east, v south), with stalls, tables, string
                  lights, a pavilion and the Lucky Arcade stall: pickStall / stallView, wired as
-                 api.pickStall and api.viewStall; ui.js opens js/arcade.js on a click. Static
+                 api.pickStall and api.viewStall; ui.js opens js/arcade.ts on a click. Static
                  pieces are merged into one mesh per material (batch / mergeGeos).
 restaurants.js   djour's starred restaurants from data-phl-restaurants
                  (buildRestaurants(scene, data.restaurants) -> { places, labels, credit, stars }).
@@ -929,7 +929,7 @@ Add another rail line
 Change the sky and light by time of day: KEYS and LIGHT in the js/scene/sky.ts chunk
 (keyed by sun elevation in degrees). The time and season open at the browser's
 current local date and time, set in js/scene/index.ts.
-Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, height]).
+Change a city's opening camera: `home` in its js/cities.ts entry ([lat, lon, height]).
 
 
 7. Pitfalls
@@ -938,7 +938,7 @@ Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, hei
 - Never print a whole data block. Use load()/save(), or regex with small slices.
 - three.js is r186. BufferGeometryUtils is imported as a namespace
   (import * as BufferGeometryUtils) and merges with mergeGeometries. Colour management is off
-  and lights are scaled by LIGHT (js/three-setup.js): a new light's intensity is
+  and lights are scaled by LIGHT (js/three-setup.ts): a new light's intensity is
   "r128 value * LIGHT", and colours are written as plain hex. A shader hook (onBeforeCompile)
   sets each map's own UV varying (vMapUv, vEmissiveMapUv), not vUv.
 - Units: most arrays are decimetres, landmark boxes and labels are metres. Mixing them up
@@ -973,9 +973,9 @@ Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, hei
   module you changed.
 - Type checks: the modules with `// @ts-check` at the top are type-checked against the types
   in js/types/ (data.d.ts: the blocks in section 3; city.d.ts: a city entry and CITY;
-  scene.d.ts: window.__city), through JSDoc comments. They are js/data.js,
+  scene.d.ts: window.__city), through JSDoc comments. They are js/data.ts,
   js/scene/geometry.ts, season.js, core.js, river.js and buildings.js. `npm run check`, which
-  every deploy runs, fails on a type error in them. js/cities.js is not checked (city entries
+  every deploy runs, fails on a type error in them. js/cities.ts is not checked (city entries
   change often), but its types are what the checked files see: a new field a checked file
   reads goes in city.d.ts.
 - If you change how the page works, update this guide too.
@@ -984,7 +984,7 @@ Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, hei
 8. Cities
 ---------
 
-js/cities.js lists the cities (CITIES.phl, CITIES.nyc, CITIES.jsh). main.js picks one and calls
+js/cities.ts lists the cities (CITIES.phl, CITIES.nyc, CITIES.jsh). main.js picks one and calls
 setCity(id) before anything loads; every module then reads the active city from CITY inside
 its functions (never at module top level: imported modules run their top level before main.js
 calls setCity()).
@@ -1003,7 +1003,7 @@ A city entry holds:
                                `terrain` file is enough, js/scene/terrain.ts.)
   storage                      localStorage prefix (folded panel, skyline lights)
   title, heading, hint, canvasLabel, cutButton, cutHint, credit, building   page text (hint says
-                               what the city is; js/ui.js adds how to move, for mouse or touch)
+                               what the city is; js/ui.ts adds how to move, for mouse or touch)
   groups                       the "Ride a line" networks in order (a line without `group` is
                                in the first); stationLines(s, LINES) = a station tag's line text
   presets                      skyline-light preset ids from materials.js (null = all; [] = no
@@ -1014,4 +1014,4 @@ only when their blocks are there.
 
 Adding a city: put its data in data/<id>/ in these schemas (its own tools in tools/<id>/), add
 an entry to CITIES, and any hand-built parts in js/scene/<id>/ (re-exported from js/scene/<id>/<id>.js,
-which goes in CODE in js/main.js, and called from index.js through `own`).
+which goes in CODE in js/main.ts, and called from index.js through `own`).

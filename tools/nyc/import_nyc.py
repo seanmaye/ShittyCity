@@ -30,7 +30,7 @@ SRC = sys.argv[1]
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "..", "..", "data", "nyc")
 
-LAT0, LON0 = 40.745, -73.984          # the NYC frame (js/cities.js), x east / z south in metres
+LAT0, LON0 = 40.745, -73.984          # the NYC frame (js/cities.ts), x east / z south in metres
 MX, MZ = 111000 * math.cos(math.radians(LAT0)), 111000
 # Manhattan's detailed extent (the NYC fetch_map.py bbox): the "core" of this city
 CORE_WSEN = (-74.025, 40.695, -73.944, 40.804)

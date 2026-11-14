@@ -51,7 +51,7 @@ Jersey Shore borough in Lycoming County and the country around it: the town on t
 
 ## How terrain works
 
-Each city's data is still built flat, in the shared formats. Jersey Shore has `grid: true` in `js/cities.js`, and its `terrain.bin.gz` is loaded as `data.grid` (not `data.terrain`, which is Philadelphia's format). Everything gets laid onto its hills as the scene is built (`js/scene/jsh/terrain.ts`):
+Each city's data is still built flat, in the shared formats. Jersey Shore has `grid: true` in `js/cities.ts`, and its `terrain.bin.gz` is loaded as `data.grid` (not `data.terrain`, which is Philadelphia's format). Everything gets laid onto its hills as the scene is built (`js/scene/jsh/terrain.ts`):
 
 - **Buildings** stand at the lowest ground under their footprint, so no wall floats on a slope. Their roofs stay level.
 - **Trees** stand on the ground at their own spot.
@@ -70,7 +70,7 @@ uv run python -I tools/jsh/build_jsh.py      # writes data/jsh/
 
 `TOWN` in `tools/jsh/extent.py` is the borough's own stretch of the valley, the first mapped area. The seed corn goes in the biggest corn field inside it, and the Pine Creek label and view go on the creek's mouth inside it, so a wider `MODEL`, with bigger fields in Nippenose Valley and more of Pine Creek up the valley, doesn't move them.
 
-`fetch_jsh.py` only needs re-running to refresh the sources, and only it needs the `fetch` group (`duckdb` for its buildings step, `rasterio` for its crop step); `build_jsh.py` needs only `data`. The sources are committed in `tools/jsh/src/`. `tools/jsh/extent.py` holds the frame and the extents: the origin is Allegheny & Main, `MODEL` is the mapped area and `TERRAIN` is the elevation grid. If you change the frame there, change `CITIES.jsh.frame` in `js/cities.js` to match.
+`fetch_jsh.py` only needs re-running to refresh the sources, and only it needs the `fetch` group (`duckdb` for its buildings step, `rasterio` for its crop step); `build_jsh.py` needs only `data`. The sources are committed in `tools/jsh/src/`. `tools/jsh/extent.py` holds the frame and the extents: the origin is Allegheny & Main, `MODEL` is the mapped area and `TERRAIN` is the elevation grid. If you change the frame there, change `CITIES.jsh.frame` in `js/cities.ts` to match.
 
 **Farms are estimated from 30 m crop pixels.** Fields of one crop that touch are merged into one, and their edges are smoothed and kept off roads, buildings, woods and water. The newest Cropland Data Layer online is 2021, and corn and soybeans rotate from year to year. Barns are footprints of at least 140 m² outside the borough, near fields or pasture, and not among a cluster of houses. Silos are small round footprints beside a barn. The rules are under `# farms` in `build_jsh.py`. Farm buildings are drawn by `js/scene/jsh/farms.ts`, not as ordinary buildings.
 

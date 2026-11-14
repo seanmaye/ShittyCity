@@ -3,7 +3,7 @@
 // Court positions come from data/phl/sports.json (tools/phl/proposal.py).
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
-import { pairs } from '../../data.js';
+import { pairs } from '../../data.ts';
 import { M, litMats } from '../materials.ts';
 import { Builder } from '../geometry.ts';
 import { beam, piers, station, train, liftCurve } from './monorail.ts';

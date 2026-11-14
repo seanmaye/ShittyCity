@@ -7,7 +7,7 @@
 //    breweries a roll-up tap-room door and picnic tables;
 //  - food trucks parked at the kerb, serving hatch to the pavement; farmers markets as rows of tents;
 //  - places with no wall to stand on get a lit menu board on a post;
-//  - a label for each and a camera view (ui.js lists them under "Restaurants" and shows djour's note).
+//  - a label for each and a camera view (ui.ts lists them under "Restaurants" and shows djour's note).
 // Every part is merged into one mesh per material: the whole set costs a handful of draw calls.
 import * as THREE from 'three';
 import { litMats } from '../materials.ts';

@@ -9,11 +9,11 @@
 // Animations API, so it keeps running on the compositor while the city parses its data and the
 // page's own code can't run. Nothing else may be animated (clip-path, colours, filters): those
 // need the main thread, and froze half-way through a transition while a city loaded.
-// Each city lists its screens in js/cities.js (loadingScreens).
+// Each city lists its screens in js/cities.ts (loadingScreens).
 import * as THREE from 'three';
 import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
 import { makeFigure, pose as runPose } from './scene/phl/people.ts';
-import { makeRenderer, LIGHT } from './three-setup.js';
+import { makeRenderer, LIGHT } from './three-setup.ts';
 
 const HOLD = 4000;   // ms a screen stays before the next one comes in
 const IN = 1700;     // the new panel's slide
@@ -351,7 +351,7 @@ export function startLoadingScreens(city, host) {
   });
   return {
     // Hold still from now on: slides that haven't started are called off (one under way finishes),
-    // so the screen that is up stays up. main.js calls this as the city draws its first frames: the
+    // so the screen that is up stays up. main.ts calls this as the city draws its first frames: the
     // GPU is busy compiling and uploading the whole city then, and a slide during it stuttered badly
     // (a third to a quarter of its frames dropped, against almost none while the city was being built).
     settle() {

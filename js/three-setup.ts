@@ -1,5 +1,5 @@
 // three.js settings that keep the look the city was tuned with under three.js r128.
-// main.js imports this first, so it runs before any module creates a colour.
+// main.ts imports this first, so it runs before any module creates a colour.
 import * as THREE from 'three';
 
 // Colours are used as written (r128 had no colour management): '#ffb27a' goes to the shader

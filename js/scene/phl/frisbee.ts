@@ -4,7 +4,7 @@
 // defenders mark them; a catch in the end zone scores, a dropped pass turns it over.
 import * as THREE from 'three';
 import { makeFigure, pose } from './people.ts';
-import { pairs } from '../../data.js';
+import { pairs } from '../../data.ts';
 import { Builder, addPolygon } from '../geometry.ts';
 import { seasonalGrass } from '../season.ts';
 import { terrain, surface, drape } from '../terrain.ts';

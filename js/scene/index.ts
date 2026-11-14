@@ -1,9 +1,9 @@
 // Assembles the whole scene from the loaded data and exposes what the UI needs.
 import * as THREE from 'three';
 import { createCore } from './core.ts';
-import { restoreAnisotropy } from '../three-setup.js';
-import { pairs } from '../data.js';
-import { CITY } from '../cities.js';
+import { restoreAnisotropy } from '../three-setup.ts';
+import { pairs } from '../data.ts';
+import { CITY } from '../cities.ts';
 import { litMats, setWindowHour, DISPLAY_PRESETS, setDisplayColors } from './materials.ts';
 import { buildRiver } from './river.ts';
 import { buildGround } from './ground.ts';
@@ -80,7 +80,7 @@ function liftTransit(T) {
 
 /** resolves to the scene API (window.__city) */
 export async function buildScene(canvas, data, status: (message: string, percent?: number) => void = () => {}, own: Record<string, any> = {}): Promise<SceneApi> {
-  // the city's own code (js/scene/<city>/<city>.js, which main.js loads for this city alone): another city's names are undefined, never called
+  // the city's own code (js/scene/<city>/<city>.js, which main.ts loads for this city alone): another city's names are undefined, never called
   const { buildLandmarks, buildMonorail, buildSports, courtTest, buildYardPark, buildConcert, buildCityMarks, buildOldTrolleys, buildPromenade, onPromenade, buildPedestrians, buildBoats, buildAnglers, buildChinatown, buildRestaurants,
     buildNycLandmarks, buildNycBridges, buildBoroughMarks, buildShowdown, buildTown, buildFarms, buildDetassel, buildCornLOD, pickLateField, buildHarvest, overlookSite, buildOverlook, churchSite, buildChurch } = own;
   // the real ground under everything, where the city has it (data/<city>/terrain.bin.gz)
@@ -238,7 +238,7 @@ export async function buildScene(canvas, data, status: (message: string, percent
   // river boats on the Delaware and the Schuylkill (where the city has them), boarded like any train
   const boats = data.boats ? buildBoats(scene, data.boats) : { slots: [], lines: [], routes: [], labels: [], update() {} };
   if (boats.slots.length) subway.registerFleet('boat', boats.spec, boats.slots);
-  // people fishing along the Schuylkill: click one to be asked to fish with them (js/fishing.js)
+  // people fishing along the Schuylkill: click one to be asked to fish with them (js/fishing.ts)
   const anglers = isPhl ? buildAnglers(scene, river, data.boats, [...data.river.water, ...data.city.water]) : { update() {}, pick: () => null, info: () => null, views: [] };
   // everything else onto the ground: drape the flat ground pieces, set the rest down on it (terrain.ts)
   if (terrain.on) { status('Setting the city on its hills…', 92); await nextFrame(); seat(scene); }
@@ -287,7 +287,7 @@ export async function buildScene(canvas, data, status: (message: string, percent
     .concat(sports.lines.map((l, i) => ({ id: i, group: PROPOSED, color: '#1f9a8f', ...l })))
     .concat(proposedMono.routes.map(r => ({ id: 'm:mono:' + r.id, name: r.name, group: PROPOSED, color: r.color,
       hint: `You’re in the lead car of the proposed ${r.name}. Look through the front or side windows as the monorail crosses the river.` })));
-  // the city's networks in order (js/cities.js); a line without a group belongs to the first
+  // the city's networks in order (js/cities.ts); a line without a group belongs to the first
   const GROUPS = CITY.groups, groupOf = l => l.group || GROUPS[0];
   const rideable = new Set(subway.routes.map(r => r.id));
   for (const g of GROUPS) for (const l of transit.lines) {
@@ -388,7 +388,7 @@ export async function buildScene(canvas, data, status: (message: string, percent
     if (off.y < 150) off.multiplyScalar(150 / Math.max(1, off.y));
     fly = { t: 0, dur: 1.8, p0: camera.position.clone(), t0: controls.target.clone(), p1: t1.clone().add(off), t1, lift: Math.min(450, camera.position.distanceTo(t1) * .12) };
   }
-  // for the minimap: the outline layers (flat dm arrays, see data.js pairs) and every rail route
+  // for the minimap: the outline layers (flat dm arrays, see data.ts pairs) and every rail route
   const mapData = {
     bbox: data.city.bbox, limits: data.city.limits,
     water: [...data.city.water, ...data.river.water], green: [...data.city.green.map(g => g.slice(1)), ...data.ground.green.map(g => g.slice(1))],

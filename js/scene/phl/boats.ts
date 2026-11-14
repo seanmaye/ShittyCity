@@ -4,7 +4,7 @@
 // up, with a shelter; boats run out and back, easing in and dwelling at every stop. They can be
 // boarded like any train (subway.ts registerFleet, kind 'boat'): the cabin is walkable.
 import * as THREE from 'three';
-import { pairs } from '../../data.js';
+import { pairs } from '../../data.ts';
 import { litMats } from '../materials.ts';
 import { terrain, water } from '../terrain.ts';
 

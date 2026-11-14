@@ -9,7 +9,7 @@
 // What bites depends on rarity, how far you cast, the season (shad run in spring), the time of
 // day (catfish at night) and luck. Every catch goes in your catch log (kept in this browser).
 // Press: click or tap the dialog's water, Space or Enter. Esc closes.
-import { CITY } from './cities.js';
+import { CITY } from './cities.ts';
 
 export const RARITY = {
   common: { w: 60, color: '#7d8a94', label: 'Common' }, uncommon: { w: 25, color: '#3d9a4a', label: 'Uncommon' },

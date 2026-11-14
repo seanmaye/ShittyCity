@@ -1,7 +1,7 @@
 // Real building footprints (each city's footprints and heights: data/<city>/buildings.json),
 // extruded and merged into tiled meshes with lit-window facades.
 import * as THREE from 'three';
-import { pairs } from '../data.js';
+import { pairs } from '../data.ts';
 import type { Buildings } from '../types/data.ts';
 import { worldWinMat, WIN_W, WIN_H, roofColor, M, addDisplay } from './materials.ts';
 import { Builder, addPrism, addLoft, colorOf } from './geometry.ts';

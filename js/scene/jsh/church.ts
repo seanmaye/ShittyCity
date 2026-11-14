@@ -21,7 +21,7 @@
 // view ends with the camera held inside the hall (hold/clamp) until another view is chosen.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { pairs } from '../../data.js';
+import { pairs } from '../../data.ts';
 import { groundAt } from './terrain.ts';
 import { makeFigure } from '../phl/people.ts';
 import type { Buildings, Places } from '../../types/data.ts';

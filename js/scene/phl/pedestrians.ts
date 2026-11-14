@@ -15,7 +15,7 @@ import * as THREE from 'three';
 import { geo, pose } from './people.ts';
 import { makeProfile, SHOPS } from './profiles.ts';
 import { pullBack } from './promenade.ts';
-import { LIGHT, makeRenderer } from '../../three-setup.js';
+import { LIGHT, makeRenderer } from '../../three-setup.ts';
 
 const LANE = [2.4, 3.5];          // walking lanes (|o|): clear of the streetcar and of the kerb furniture
 const SPEED = [1.05, 1.5];        // walking speeds, m/s

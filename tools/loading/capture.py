@@ -1,12 +1,12 @@
 """Capture the loading-screen backgrounds: frames of each city's own 3D model at its points of interest.
 
-Each city lists its screens in js/cities.js (loadingScreens): a "Go to" view id or a camera, the
+Each city lists its screens in js/cities.ts (loadingScreens): a "Go to" view id or a camera, the
 time of day (hours from sunset) and the day of the year. This opens the real app in Chromium with
 the GPU on, flies to each one, waits for it to settle, and saves what the city's canvas drew (no
 panel or labels), with the loading screens' colour grade, as data/<city>/<file>, a 1920x1080 WebP.
 
 Needs the dev server running (npm ci, then npm run dev, which serves http://localhost:5173: the app
-as its sources, so the city list comes from importing /js/cities.js in the page) and Playwright, like
+as its sources, so the city list comes from importing /js/cities.ts in the page) and Playwright, like
 tools/perf (uv sync --group qa; uv run python -m playwright install chromium). If Vite picked another
 port, pass --base.
 
@@ -80,7 +80,7 @@ def main():
         browser = pw.chromium.launch(headless=not a.headed, args=gpu_args())
         probe = browser.new_page()
         probe.goto(a.base + '/index.html', wait_until='load')
-        cities = probe.evaluate("""async () => { const { CITIES } = await import('/js/cities.js');
+        cities = probe.evaluate("""async () => { const { CITIES } = await import('/js/cities.ts');
             return Object.values(CITIES).filter(c => c.loadingScreens).map(c => ({ id: c.id, dir: c.dir, screens: c.loadingScreens })); }""")
         probe.close()
         for c in cities:

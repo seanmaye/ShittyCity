@@ -1,5 +1,5 @@
-// The scene API: the object js/scene/index.ts buildScene() returns, which js/main.js exposes as window.__city. The UI
-// (js/ui.js) drives it, and so do the harnesses: tools/perf (scenarios.py, perf.py, probe.js), tools/ux (ux.py, audit.js,
+// The scene API: the object js/scene/index.ts buildScene() returns, which js/main.ts exposes as window.__city. The UI
+// (js/ui.ts) drives it, and so do the harnesses: tools/perf (scenarios.py, perf.py, probe.js), tools/ux (ux.py, audit.js,
 // states/) and tools/loading/capture.py. Members typed from index.ts and the module each comes from; what the harnesses
 // do not use and is not simple to type is `unknown` (a module's own object) or loose. Debug list: docs/EDITING.md section 4.
 import type { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -148,7 +148,7 @@ export interface SceneApi {
 
 declare global {
   interface Window {
-    /** the scene API, set by js/main.js once the city is built (the kitchen sets window.__kitchen instead) */
+    /** the scene API, set by js/main.ts once the city is built (the kitchen sets window.__kitchen instead) */
     __city?: SceneApi;
   }
 }

@@ -11,7 +11,7 @@ import * as THREE from 'three';
 import { litMats } from './materials.ts';
 import { Builder } from './geometry.ts';
 import type { ColorBuilder } from './geometry.ts';
-import { CITY } from '../cities.js';
+import { CITY } from '../cities.ts';
 import { terrain, surface, water } from './terrain.ts';
 export const SPEC = {
   // hw/h: tunnel half-width and height above the rail; car: length, width, height; cars per train;
@@ -372,7 +372,7 @@ export function buildSubway(scene, data, river) {
   const labels = [];
   for (const s of data.stations) {
     let text: string;
-    if (s.lines) text = `${s.t} · ${CITY.stationLines(s, LINES)}`;   // how a tag reads its lines is per city (js/cities.js)
+    if (s.lines) text = `${s.t} · ${CITY.stationLines(s, LINES)}`;   // how a tag reads its lines is per city (js/cities.ts)
     else { const parts = []; if (s.k.includes('metro')) parts.push('L'); if (s.k.includes('trolley')) parts.push(range(s.T || [])); text = `${s.t} · ${parts.join(' · ')}`; }
     const under = (s.u || []).length > 0;
     const secs = under ? sections.filter(sec => Math.abs(sec.O(s.x, s.z)) <= 200) : [];

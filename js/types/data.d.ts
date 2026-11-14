@@ -1,9 +1,9 @@
-// The data files as js/data.js loadData() returns them: one key per [key, file] in the city's CITY.files (js/cities.js),
+// The data files as js/data.ts loadData() returns them: one key per [key, file] in the city's CITY.files (js/cities.ts),
 // each file decoded by its name (.json and .json.gz: JSON; .bin.gz: the gunzipped bytes as an ArrayBuffer). Shapes from
 // docs/EDITING.md section 3 and the modules that read them (named per block). Units (EDITING.md section 2): dm = integer
 // decimetres in the city's frame, m = metres. Types only: nothing here is checked against the files when they load.
 
-/** flat [x, z, x, z, ...] dm (data.js pairs() turns it into [x, z] m) */
+/** flat [x, z, x, z, ...] dm (data.ts pairs() turns it into [x, z] m) */
 export type Flat = number[];
 /** flat [x, z, y, x, z, y, ...] dm: transit track and runs (NOTE the order x, z, y) */
 export type Flat3 = number[];
@@ -13,7 +13,7 @@ export type Ring = Flat;
 export type Polygon = Ring[];
 /** [x0, z0, x1, z1] dm */
 export type Box = [number, number, number, number];
-/** [x, z] m, as data.js pairs() returns them */
+/** [x, z] m, as data.ts pairs() returns them */
 export type Pair = [number, number];
 export type Vec3 = [number, number, number];
 
@@ -218,7 +218,7 @@ export type PhlTerrain = ArrayBuffer;
 export interface NycLandmarks {
   features: { id: string; name: string; x: number; z: number; w: number; d: number; h: number; color: string; kind: 'glass' | 'stone'; cap: string; ry: number; source_id?: number }[];
   labels: { t: string; x: number; y: number; z: number }[];
-  /** the "Go to" buttons ("overview" is the home view, from js/cities.js) */
+  /** the "Go to" buttons ("overview" is the home view, from js/cities.ts) */
   views: { id: string; name: string; pos: Vec3; target: Vec3 }[];
 }
 

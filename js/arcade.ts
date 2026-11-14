@@ -8,7 +8,7 @@
 // to the menu, then closes. Pointer or touch: Ping-Pong's paddle follows it, Sky Swarm's launcher
 // moves to it and fires while pressed, Dumpling Dash turns on a swipe. Best scores stay in this browser.
 // On a touch screen the instructions speak of fingers, not keys.
-import { CITY } from './cities.js';
+import { CITY } from './cities.ts';
 
 const TOUCH = matchMedia('(pointer: coarse)');
 const say = (keys, touch) => (TOUCH.matches ? touch : keys);

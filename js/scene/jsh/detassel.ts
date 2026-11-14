@@ -12,14 +12,14 @@
 // The people are Kyle's jointed figures (phl/people.js geo() and pose()), each with a face; click
 // one to see through their eyes, with a card about them (crewprofiles.ts), the same way as the
 // people on Philadelphia's Walnut St promenade. This module offers the same interface as
-// phl/pedestrians.js, so js/scene/index.ts and js/ui.js use it in that one's place.
+// phl/pedestrians.js, so js/scene/index.ts and js/ui.ts use it in that one's place.
 import * as THREE from 'three';
 import { geo, pose } from '../phl/people.ts';
 import { groundAt } from './terrain.ts';
 import { onSeason } from '../season.ts';
 import { stage, cutHole, CORN_HOLE } from './farms.ts';
 import { detasselerProfile, bossProfile } from './crewprofiles.ts';
-import { LIGHT, makeRenderer } from '../../three-setup.js';
+import { LIGHT, makeRenderer } from '../../three-setup.ts';
 import type { JshFarms } from '../../types/data.ts';
 
 export const SEASON = [186, 218];   // July 5 to August 6: when the tassels are out
@@ -328,7 +328,7 @@ export function buildDetassel(scene, seed: JshFarms['seed'], { hour = () => 9 } 
     if (!inside) return null;
     const p = inside.prof;
     return { kind: 'person', id: inside.i, name: p.name, sex: p.sex, age: p.age, height: p.height, kg: p.kg, lb: p.lb, bio: p.bio, now: activity(inside),
-      // (js/ui.js's own wording for a person is Walnut Street's; on a touch screen it says this with tap)
+      // (js/ui.ts's own wording for a person is Walnut Street's; on a touch screen it says this with tap)
       hint: `In the seed corn on the island, through ${p.name}’s eyes${p.boss ? ', behind the crew' : ', pulling tassels'}. You can’t steer; you go where they go. Drag or click to look around, Space, Esc or “Leave” to step out.` };
   }
   const lookAt = (dx, dy) => { look.yaw = Math.max(-2.2, Math.min(2.2, look.yaw - dx * .0045)); look.pitch = Math.max(-1.1, Math.min(1.1, look.pitch - dy * .0045)); };
