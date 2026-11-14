@@ -421,21 +421,23 @@ Data on disk: `phl` 20 MB (22 files), `nyc` 9.0 MB (14), `nola` 4.0 MB (9), `jsh
 
 ### P6. `.ts` renames (P6a) and smaller data (P6b), one pull request
 
-- State: **in review**. Branch `refactor/p6` on `8bfd9b4`, PR: PR-LINK. Micah asked for P6a and P6b
-  together in one pull request, not one per folder and one per format as the plan has it; the
-  commits keep the plan's structure (per folder a pure rename, then its typing; P6b after).
+- State: **in review**. Branch `refactor/p6`, rebased on `a926cc2` (Micah's Jersey Shore extension,
+  pushed while the gates ran); PR: PR-LINK. Micah asked for P6a and P6b together in one pull request,
+  not one per folder and one per format as the plan has it; the commits keep the plan's structure
+  (per folder a pure rename, then its typing; P6b after).
 - Built by a P6 session: the orchestrator wrote the prep, the renames (`rename_ts.py`: `git mv`,
   import paths and path mentions, nothing else) and P6b; one agent per folder typed it in its own
   worktree (phl; jsh; nyc + pine; js/scene; js), each gated on its own before its commit was taken.
 
-**P6a.** `90a605b` prep: tsconfig `allowImportingTsExtensions` (imports say `./x.ts`),
+**P6a.** Prep commit: tsconfig `allowImportingTsExtensions` (imports say `./x.ts`),
 `erasableSyntaxOnly`, `verbatimModuleSyntax` (no import elided: main's `three-setup` import must
 stay), `types: ["vite/client"]`; Biome lints `js/**/*.ts`; perf.py reads `js/cities.ts` or `.js`,
 whichever a side has (a base from before the renames still works), allows a type on `CITIES`, and
-compares `SHARED_CITY_FILES` without the extension. Then rename and typing for `js/scene/phl`
-(`509b8e3`, `8e705dc`), `nyc` (`29944dc`, `7abf4f3`), `jsh` (`5cbf18d`, `858829d`), `pine`
-(`0649bbe`, `64e4439`), `js/scene` (`4b85c25`, `7ba6035`), `js` (`ddf6c68`, `da89e73`). 70 `.ts`
-files, no `.js` left in `js/`; `test/` and `vite.config.js` stay JS.
+compares `SHARED_CITY_FILES` without the extension. Then rename and typing for `js/scene/phl`,
+`nyc`, `jsh`, `pine`, `js/scene` and `js`. 70 `.ts` files, no `.js` left in `js/`; `test/` and
+`vite.config.js` stay JS. The rebase onto `a926cc2` carried its edits to city.js and
+jsh/terrain.js into the `.ts` files (conflicts only in lines of docs/JSH.md and a comment that name
+files).
 - Typing: types only. Local interfaces for objects that grow after creation, optional trailing
   parameters, tuple casts, DOM element casts, `declare` class fields (`Builder`, church's `Shell`:
   a typed field without `declare` would be emitted), the P4c JSDoc types turned into TypeScript.
@@ -445,10 +447,12 @@ files, no `.js` left in `js/`; `test/` and `vite.config.js` stay JS.
 - `CITIES` is `Record<string, CityEntry & Record<string, unknown>>`: a new field on a city entry
   passes the check (the reason P4c left cities.js unchecked), a wrong type on a known one fails.
   A new field inside a loading screen or other sub-object is still strict.
-- Gates: check passes (tsc 0 errors, Biome 0 errors, tests 58). Built JS byte-identical to `main`
-  at every typing commit (compared per file, hashes and the sourceMappingURL line set aside);
-  against `main` the only change is one string, data.ts's error message naming `js/main.ts`
-  (and CSS comments that name files). ab: GATE-AB-P6A.
+- Gates: check passes (tsc 0 errors, Biome 0 errors, tests 58). Built JS byte-identical at every
+  typing commit to the rename before it (per file, hashes and the sourceMappingURL line set aside);
+  the P6a tip against `a926cc2`: the only change is one string, data.ts's error message naming
+  `js/main.ts` (and CSS comments that name files). **Departure:** the plan's per-folder
+  `ab --quick --shots` was not run per folder; the byte-identical builds stand in for it, and the
+  whole branch went through `ab` (below).
 
 **P6b.** Measured first (offline, on the committed files; production wire bytes per file by
 `curl`, every hashed name found). Each change alone, as a share of a city's first-load transfer:
@@ -463,22 +467,48 @@ would add 4 to 8 points but needs a dependency; not done. Every candidate decode
   writers could not be run; about 15 writers and 8 readers in tools/ would change at once; the
   committed data would become binary and grow the repository by about 17 MB. The page reads
   both forms (the dev server serves `data/` as is).
-- `a61a479`: js/formats.ts (JCOL: JSON with every integer array moved into one column of zigzag
-  deltas in byte planes; TER2: planar-predicted terrain, a byte per residual; PHB2: PHB1's columns
-  in byte planes, outlines chained), the PHB1 and TER1 readers moved there unchanged, and
-  `dataCodec`, which keeps an encoding only if the page's readers decode it to exactly what they
-  read from the committed file (numbers by `Object.is`, typed arrays byte for byte) and it is
-  smaller. JSON under 32 kB stays JSON. Build time 0.2 s -> about 9 s.
-- Gates: test/formats.test.js reads all 26 encoded committed files both ways through the page's
-  own readers (`setTerrain`, `loadTerrain`, `decode`, JSON) and finds them identical; check
-  passes; smoke `--prod` all 5 ok, no error or failed request, pixel diff vs main within tolerance
-  (phl 0.0035%, nyc 0.0001%, jsh 0.0001%, nola 0.0011%) except pine 0.0336% (tolerance 0.0248%):
-  its diff image marks only the mini monorail's trains, and pine's code is unchanged
-  (`tools/perf/out/20261114-143440-smoke-p6`). ab (load rows): GATE-AB-P6B.
-- Transfer, estimated (production bytes for unchanged files, this build's for the encoded ones;
+- js/formats.ts: JCOL (JSON with every integer array moved into one column of zigzag deltas in
+  byte planes), TER2 (planar-predicted terrain, a byte per residual), PHB2 (PHB1's columns in byte
+  planes, outlines chained); the PHB1 and TER1 readers moved there unchanged. `dataCodec` keeps an
+  encoding only if the page's readers decode it to exactly what they read from the committed file
+  (numbers by `Object.is`, typed arrays byte for byte) and it is smaller. JSON under 32 kB stays
+  JSON. Build time 0.2 s -> about 9 s. JS each city loads: +2.5 kB (the readers).
+- Fixed on the way, from the gates: JCOL's arrays first came out of `push` with spare capacity
+  (phl heap +25 MB; nola one load phase worse at 99%): now exactly their length. The first TER2
+  reader took 36 ms on phl (TER1 10 ms): now 17 ms, with phl's JCOL 22 ms against JSON.parse's 26
+  (Node).
+- Gates (final, `3d8ef47` vs `a926cc2`): test/formats.test.js reads every encoded committed file
+  both ways through the page's own readers (`setTerrain`, `loadTerrain`, `decode`, JSON) and finds
+  them identical; check passes. smoke `--prod`: all 5 ok, no error, no failed request, pixel diff
+  within tolerance (phl 0.0008%, nyc 0.0001%, jsh 0.0001%, nola 0.0002%, pine 0.0162%;
+  `20261114-155134-smoke-final`). ab, 8 rounds: phl `--quick --shots` no load or frame row; nyc
+  data load `better` -5.6%; nola data fetched `better` -17.8%, ready -4.0% (not significant), and
+  `whole-city.frameP95` `likely worse` +4.6%, which the 8-round rerun cleared (-3.6%, not
+  significant; `20261114-162213-ab-final-nola-rerun`); jsh no significant difference. Shots within tolerance (fly-market 35.6%: moving camera). (`20261114-155215-ab-final-phl`,
+  `-160321-…-nyc`, `-160851-…-nola`, `-161413-…-jsh`.)
+- **phl `heapMB` rows `worse` (+120 to 160 MB), and why they do not count:** the harness reads
+  `JSHeapUsedSize` after 10 frames, which includes garbage not yet collected (about 8 GB is
+  allocated during phl's load). Loaded the harness's way (same perf builds, probe, seed, date)
+  and then garbage-collected, both sides hold 122.8 MB, every time (3 loads each); before the
+  collection both swing between about 145 and 340 MB (the base read 340.7 MB once). Allocation
+  during the load is the same (8,091 vs 8,116 MB sampled). The branch reads high more often,
+  most likely because its smaller ArrayBuffers put less external-memory pressure on V8, so its
+  major collection comes later. No load or frame row moves with it.
+- **Open: nola's "Placing landmarks and the monorail…" phase `worse`, +1.3 ms (+3.7%, 0/8)** in the
+  rerun, as in one earlier run (+1.7 ms; another had +1.35 ms, not significant). Its code is the same
+  on both sides, and for nola it builds trees from a 16,244-number array (no measurable cost
+  either way). Not proven, but most likely the same GC timing as phl's heap rows: the branch's
+  major collection lands later in the load. P2 saw a 99% nola phase (0.8 ms) on byte-identical
+  builds. Micah to decide whether it holds the merge.
+- Earlier phl runs on the old base showed `readyMs` +4.2%, -3.2% and +6.8% (one `likely worse`);
+  timed directly, 8 alternating production loads each: main 5032 ms, branch 5076 ms (median), the
+  last four rounds within 30 ms of each other. A variant with packed arrays (as JSON.parse makes)
+  loaded no faster.
+- Transfer, estimated (production's bytes for unchanged files, this build's for the encoded ones;
   not counting the two font files): phl data 16.0 -> 10.0 MB, first load 17.1 -> 11.2 MB (-34.7%);
-  nyc 9.35 -> 6.05 MB (-35.3%); jsh 1.95 -> 1.52 MB (-21.9%); nola 3.67 -> 2.47 MB (-32.9%).
-  The perf harness cannot see transfer (it serves from localhost). To confirm after the deploy:
+  nyc 9.35 -> 6.05 MB (-35.3%); jsh (`a926cc2`'s data, production bytes re-measured) data 2.33 ->
+  1.10 MB, first load 3.40 -> 2.17 MB (-36.3%); nola 3.67 -> 2.47 MB (-32.9%). The perf harness
+  cannot see transfer (it serves from localhost). To confirm after the deploy:
   `smoke --url https://ashitty.city` lists bytes per city.
 - Not tried: pre-compressed Brotli (needs a preview deployment; there is none).
 - Unverified: transfer on production (after merge), Safari, decode time on a slow device.
@@ -489,7 +519,7 @@ cinematic shots use a flat ground (probably a bug); church.ts calls `inside.upda
 and concert.ts `effects(dt)` with an argument the function does not take.
 
 **Before merge:** a message to the contributors (every file in js/ is renamed; branches made
-before need a rebase, which carries edits across the renames).
+before need a rebase, which carries edits across the renames; drafted in the PR).
 
 ## Closing report (2026-11-14, P3–P5 orchestrator)
 
