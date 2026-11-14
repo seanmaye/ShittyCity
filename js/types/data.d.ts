@@ -214,7 +214,7 @@ export type PhlTerrain = ArrayBuffer;
 
 // ---- New York (EDITING.md "New York only")
 
-/** data-nyc-landmarks, m (js/scene/nyc/landmarks.js) */
+/** data-nyc-landmarks, m (js/scene/nyc/landmarks.ts) */
 export interface NycLandmarks {
   features: { id: string; name: string; x: number; z: number; w: number; d: number; h: number; color: string; kind: 'glass' | 'stone'; cap: string; ry: number; source_id?: number }[];
   labels: { t: string; x: number; y: number; z: number }[];

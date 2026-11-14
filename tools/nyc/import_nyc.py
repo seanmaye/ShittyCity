@@ -16,7 +16,7 @@ landmarks.json and monorail.json, and writes data/nyc/ in the same formats as Ph
   ground.json            the Manhattan extent only (everything it would hold is in city.json.gz)
   river.json, trees.json empty: New York's water and trees are in city.json.gz
   transit.json           the MTA lines, as kind "nycsub", with each stop's lines merged into one station
-  landmarks.json         the modelled towers, labels and camera views (js/scene/nyc/landmarks.js)
+  landmarks.json         the modelled towers, labels and camera views (js/scene/nyc/landmarks.ts)
   monorail.json          the proposed East River Loop (js/scene/nyc/monorail.js)
 
 Standard library only. The footprint helpers (simplify_*, dm_ring, fit_rectangular_lowrise) are
@@ -34,7 +34,7 @@ LAT0, LON0 = 40.745, -73.984          # the NYC frame (js/cities.js), x east / z
 MX, MZ = 111000 * math.cos(math.radians(LAT0)), 111000
 # Manhattan's detailed extent (the NYC fetch_map.py bbox): the "core" of this city
 CORE_WSEN = (-74.025, 40.695, -73.944, 40.804)
-# the hand-modelled bridges (js/scene/nyc/bridges.js): their OSM decks are left out of the streets
+# the hand-modelled bridges (js/scene/nyc/bridges.ts): their OSM decks are left out of the streets
 MODELLED_BRIDGES = ("Brooklyn Bridge", "Manhattan Bridge", "Williamsburg Bridge", "Queensboro Bridge")
 
 

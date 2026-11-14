@@ -284,7 +284,7 @@ New York only:
 
 data-nyc-landmarks      the modelled towers, labels and camera views, all in METRES
   features: [{id, name, x, z, w, d, h, color, kind: "glass" | "stone", cap, ry, source_id?}]
-            js/scene/nyc/landmarks.js draws empire_state, chrysler, one_wtc, flatiron,
+            js/scene/nyc/landmarks.ts draws empire_state, chrysler, one_wtc, flatiron,
             woolworth, st_patrick and rockefeller by id, others by cap (wedge, museum,
             terminal, arena, slab, gothic; anything else gives a plain box with windows).
             source_id = the NYC Open Data footprint it replaces (left out of the buildings).

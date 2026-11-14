@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { buildElectro, buildSpiderMan } from './showdown-figures.js';
-import { buildShowdownStreet } from './showdown-street.js';
+import { buildElectro, buildSpiderMan } from './showdown-figures.ts';
+import { buildShowdownStreet } from './showdown-street.ts';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const STEPS = 14;
