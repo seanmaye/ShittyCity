@@ -13,7 +13,8 @@ to rebuild its data. The Git repository lives on the office share:
 
 - Git for Windows (https://git-scm.com/download/win)
 - To be on the office network
-- Chrome or Edge, with internet access (the page loads three.js from a CDN)
+- Chrome or Edge
+- Node.js 24 (https://nodejs.org), and internet access for `npm ci`
 
 ## One-time setup
 
@@ -42,8 +43,8 @@ Run these in Git Bash or PowerShell.
 
 ## Looking at the models
 
-Run `python -I tools/serve.py` in your clone and open http://localhost:8765, then pick a city
-(see "Run it" in `README.md`). There is no build step.
+Run `npm ci` and then `npm run dev` in your clone and open http://localhost:5173, then pick a city
+(see "Run it" in `README.md`).
 
 ## Making changes
 

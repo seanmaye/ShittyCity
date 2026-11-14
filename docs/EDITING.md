@@ -3,8 +3,8 @@ EDITING GUIDE: City models
 
 This guide is for an AI assistant (or a person) who wants to change a city. The page is
 index.html, css/style.css, the modules in js/ and each city's data files and loading-screen
-backgrounds in data/<city>/, served as they are (python -I tools/serve.py). three.js r186
-(0.186.1) loads from the jsDelivr CDN.
+backgrounds in data/<city>/, served as they are (npm ci, then npm run dev). three.js r186
+(0.186.1) and the Archivo font come from npm; npm run build writes the site to dist/.
 
 The page holds several cities on one engine: today Philadelphia (id "phl"), New York
 (id "nyc"), New Orleans (id "nola") and Jersey Shore, PA (id "jsh"). It opens on a start menu (#menu) to pick one, or
@@ -21,7 +21,7 @@ Python helper below.
 1. What is in the page
 ----------------------
 
-  index.html <head>: css/style.css (HUD, labels, start menu) and an import map that maps "three" to three@0.186.1
+  index.html <head>: css/fonts.css (Archivo) and css/style.css (HUD, labels, start menu); "three" is three@0.186.1 from npm
   <body>      HUD markup: #ride, #transit, #lbl, #cut, #cine-btn (Cinematic), #getoff, #switch-city buttons, #xhair
               (creative-mode crosshair), #modehint, #time slider (+ #time-out), #legend,
               #lines picker, #view-btns (Go to), #heading, #hint, #tags, #credit;
@@ -965,7 +965,7 @@ Change a city's opening camera: `home` in its js/cities.js entry ([lat, lon, hei
   subway routes MTA GTFS. Jersey Shore: buildings Overture Maps (Microsoft ML Buildings,
   OpenStreetMap); map data (c) OpenStreetMap contributors, ODbL; terrain AWS Terrain Tiles;
   crops USDA NASS Cropland Data Layer.
-- After a change, serve the page (python -I tools/serve.py), open it in a browser and check
+- After a change, serve the page (npm run dev), open it in a browser and check
   the console. Without a browser, at least check the syntax: run `node --check` on each
   module you changed.
 - If you change how the page works, update this guide too.
