@@ -6,7 +6,7 @@
 // hill into the brakes and creeps round the turnaround home. About one launch in fifteen comes up short, as the real
 // ones sometimes did: the train stops short of the crest, falls back down the tower into the launch track's raised
 // brake fins, is rolled back and launched again. physics.ts decides all of that (it is the only thing that moves the
-// train); train-cars.ts is the cars, riders and restraints; hud.ts the rider's readout. This file puts each car on the
+// train); train-cars.ts is the cars, riders and restraints; hud.ts the rider's readout; sound.ts what they hear. This file puts each car on the
 // rails at its own place along them, so the train bends through the pull-up and round the twist; opens the restraints
 // and changes the riders in the station; and is the seat: click one (pick), sit in it (board), and frame() holds the
 // camera at that rider's eyes with the whole of the track's attitude (the car's own rotation: the track goes vertical
@@ -22,6 +22,8 @@ import { FT, MPH, makeRide } from './physics.ts';
 import type { GForce, Phase } from './physics.ts';
 import { buildConsist, poseArms } from './train-cars.ts';
 import { createHud } from './hud.ts';
+import { createSound } from './sound.ts';
+import { CITY } from '../../cities.ts';
 import { setLaunchFins } from './structure.ts';
 
 const NECK = { yaw: 2.2, up: 1.25, down: 1.15 };   // how far a head turns each way, and tips (radians): past the shoulder, not right round
@@ -34,7 +36,7 @@ const WHERE: Record<string, string> = { station: 'In the station', launch: 'Laun
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
 export function buildTrain(scene: THREE.Scene, layout: Layout, data: Coaster, _opts: CoasterOpts): TrainApi {
-  const ride = makeRide(layout), C = buildConsist('green'), hud = createHud();
+  const ride = makeRide(layout), C = buildConsist('green'), hud = createHud(), snd = createSound(CITY.storage + 'sound');
   for (const c of C.cars) scene.add(c.group);
   for (const b of C.bogies) scene.add(b);
   ride.t = 8;   // (the first launch of a visit comes soon)
@@ -97,6 +99,7 @@ export function buildTrain(scene: THREE.Scene, layout: Layout, data: Coaster, _o
     ride.g(back(), raw); const k = 1 - Math.exp(-dt / .1);
     g.lon += (raw.lon - g.lon) * k; g.vert += (raw.vert - g.vert) * k; g.lat += (raw.lat - g.lat) * k;
     if (seat < 0) return;
+    snd.update(dt, { phase: ride.phase, section: ride.section(), v: ride.v, vMax: ride.cal.vLaunch, fins: ride.fins, bars, gVert: g.vert });
     qHead.slerp(C.cars[C.seats[seat].car].group.quaternion, 1 - Math.exp(-dt * HEAD));
     const sp = Math.min(1.1, Math.abs(ride.v) / ride.cal.vLaunch);
     widen += (sp ** 1.4 + .12 * clamp(g.lon, 0, 2) - widen) * (1 - Math.exp(-dt * 3.5));
@@ -147,11 +150,12 @@ export function buildTrain(scene: THREE.Scene, layout: Layout, data: Coaster, _o
     else if (!ride.crested && ride.short && ride.v < 14) phase = 'Not going to make it…';
     return { phase, hot, mph: Math.abs(ride.v) * MPH, ft: height(), g: tot, vert: g.vert, grey: grey < .02 ? 0 : grey };
   }
-  const ACTS = [{ id: 'launch', label: 'Launch now', key: '1' }, { id: 'rollback', label: 'Force a rollback', key: '2', on: false }, { id: 'row', label: 'Back row', key: '3' }];
+  const ACTS: { id: string; label: string; key: string; on?: boolean }[] = [{ id: 'launch', label: 'Launch now', key: '1' }, { id: 'rollback', label: 'Force a rollback', key: '2', on: false }, { id: 'row', label: 'Back row', key: '3' },
+    ...(snd.available() ? [{ id: 'sound', label: 'Sound off', key: '4' }] : [])];   // (a browser with no Web Audio gets no button)
   const rows = C.seats.length / 2, rowOf = (i: number) => Math.floor(i / 2);
   function state(): RideState {
     const row = rowOf(seat), r = readout();
-    ACTS[1].on = ride.armed; ACTS[2].label = row === rows - 1 ? 'Front row' : 'Back row';
+    ACTS[1].on = ride.armed; ACTS[2].label = row === rows - 1 ? 'Front row' : 'Back row'; if (ACTS[3]) ACTS[3].label = snd.enabled() ? 'Sound off' : 'Sound on';
     // (the hint does not say which row: the page rewrites it only when you board, and the 3 key changes rows without that)
     const what = 'Riding Kingda Ka: 128 mph in 3.5 seconds, straight up a 456 ft tower, and straight down through a 270° spiral.';
     const acts = '“Launch now” skips the waiting; “Force a rollback” makes the next launch come up short, as about one in fifteen does by itself.';
@@ -164,12 +168,12 @@ export function buildTrain(scene: THREE.Scene, layout: Layout, data: Coaster, _o
     yaw = 0; pitch = PITCH[seat < 2 ? 0 : 1]; widen = grey = 0;
     C.seats[seat].rider.root.visible = true;
     qHead.copy(C.cars[C.seats[seat].car].group.quaternion);
-    hud.show(true); hud.set(readout());
+    hud.show(true); hud.set(readout()); snd.start();
     return state();
   }
   function leave() {
     if (seat < 0) return null;
-    seat = -1; hud.show(false);
+    seat = -1; hud.show(false); snd.stop();
     if (cam && Number.isFinite(fovSet)) { cam.fov = fov0; cam.updateProjectionMatrix(); }
     fovSet = NaN;
     // somewhere to watch the train from: off to the riders' right (the outside of the circuit), a little behind and above.
@@ -197,6 +201,7 @@ export function buildTrain(scene: THREE.Scene, layout: Layout, data: Coaster, _o
     if (seat < 0) return false;
     if (id === 'launch') ride.launchNow();
     else if (id === 'rollback') ride.forceRollback(!ride.armed);
+    else if (id === 'sound') snd.setEnabled(!snd.enabled());
     else if (id === 'row') { const last = rowOf(seat) === rows - 1, side = seat % 2; C.seats[seat].rider.up = 0; poseArms(C.seats[seat].rider, C.rest, 0, 0); board(last ? side : C.seats.length - 2 + side); }
     else return false;
     return true;
@@ -222,6 +227,8 @@ export function buildTrain(scene: THREE.Scene, layout: Layout, data: Coaster, _o
       return debug.state();
     },
     seat(i = 0) { return board(i); },
+    /** the sound: level() 0..1 as it is being played, state() the audio context's */
+    sound: snd.debug,
   };
   return {
     line: { id: 'ka', name: 'Kingda Ka', group: 'Roller coasters', color: '#3f9b4b', hint: 'You’re in the front row of Kingda Ka.' },

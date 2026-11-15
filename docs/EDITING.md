@@ -776,10 +776,18 @@ train.ts         the train on the rails (each car on two points of the track, so
                  pull-up and the twists), the riders and restraints, and the seat: frame(camera) sets
                  the camera's quaternion from the car (the track goes vertical and rolls over, so
                  nothing here may use lookAt with a world up). getState() is what js/ui.ts shows: kind
-                 'coaster', hint, now, actions ('launch', 'rollback', 'row').
+                 'coaster', hint, now, actions ('launch', 'rollback', 'row', 'sound').
 train-cars.ts    the cars, bogies, seats, restraints and riders (phl/people.ts figures)
 hud.ts           the rider's readout (#ka-hud, made in code; its CSS is the "Kingda Ka" block at the end
                  of css/style.css)
+sound.ts         what the rider hears, synthesised with Web Audio (no sound files): createSound(storage key)
+                 -> start() on boarding (the click or key that boards is what lets a browser play sound),
+                 stop() on leaving, update(dt, { phase, section, v, vMax, fins, bars, gVert }) every frame
+                 aboard. Lasting voices (wind, rumble with the ties ticking, the truss's howl, the launch
+                 whine, the drive tyres, the brakes, the hold's hiss) are levels and pitches eased toward
+                 what the physics says; one-off sounds (the catch car's thump, fins, ratchets, air) fire on
+                 a change of phase, fins or restraints. The rider's "Sound off" (act 'sound') is kept in
+                 localStorage (CITY.storage + 'sound'). debug.level() is how loud it is now.
 
 Debug handle in the browser console: window.__city
   { scene, camera, controls, renderer, labels, lines, views, restaurants, flyTo(viewId or a view),
@@ -793,7 +801,8 @@ Debug handle in the browser console: window.__city
     actCar(id) ('drag' | 'drink' | 'glass': the person you are inside, today only the hunter),
     wheelCar(dy) (binocular zoom; true if it zoomed), corn, harvest, overlook (the jsh modules),
     coaster (Kingda Ka: coaster.train.debug has state(), setS(s, v), launch(), rollback(on), freeze(on),
-    to(phase, section, t), seat(i); coaster.structure.debug has fins(down) and tally()) }
+    to(phase, section, t), seat(i), sound.level() and sound.state(); coaster.structure.debug has
+    fins(down) and tally()) }
 
 
 5. Editing data: stdlib-only Python helper

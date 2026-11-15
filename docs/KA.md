@@ -4,7 +4,7 @@ One roller coaster and the park round it: Kingda Ka at Six Flags Great Adventure
 
 - City id: `ka`. Open it with `?city=ka`.
 - Data: `data/ka/`.
-- Hand-built scene parts: `js/scene/ka/` (the track's layout, the standing structure, the train, its physics and the rider's seat).
+- Hand-built scene parts: `js/scene/ka/` (the track's layout, the standing structure, the train, its physics, the rider's seat and what they hear).
 - Data tools: `tools/ka/` (`tools/ka/README.md` documents the track pipeline and every field of `coaster.json`).
 
 ## What's in it
@@ -25,6 +25,7 @@ Pick **Kingda Ka** under **Ride a line**, or click the train. You sit in the fro
 - The readout at the top shows speed, height and g-force, and what part of the ride you are on.
 - **Launch now** (key 1) skips the waiting. **Back row / Front row** (key 3) changes seats.
 - **Rollbacks.** About one launch in fifteen comes up short, as the real ones sometimes did: the train stops short of the crest, falls back down the tower, is caught by the launch track's brake fins and is launched again. **Force a rollback** (key 2) makes the next launch one of these.
+- **Sound.** You hear the ride while you are aboard: the wind, the wheels on the steel, the hydraulic launch winding up, the launch track's brake fins dropping and the brake run taking hold, the tyres that drive the train about the station, the air let go when it stops. It is all made in the browser as it plays (`js/scene/ka/sound.ts`); there are no recordings, and no riders' screams. **Sound off** (key 4) silences it, and the choice is remembered.
 - Drag to look around. Esc or **Get off** leaves.
 
 ## How close it is to the real ride
