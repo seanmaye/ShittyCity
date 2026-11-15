@@ -34,8 +34,8 @@ export interface View {
 /** an entry of "Ride a line" (index.ts lines): id 'loop', a sports shuttle's index, 'm:mono:<route>', 'm:<line id>', ... */
 export interface RideLine { id: string | number; name: string; group: string; color: string; hint?: string }
 
-/** what pickCar() found under a screen point (subway.ts pick, or the person, punk, seat or hunter modules' pick) */
-export interface Hit { kind?: string; i?: number; person?: number; punk?: number; seat?: number; hunter?: boolean }
+/** what pickCar() found under a screen point (subway.ts pick, or the person, punk, seat or hunter modules' pick; coaster: a seat on Kingda Ka's train) */
+export interface Hit { kind?: string; i?: number; person?: number; punk?: number; seat?: number; hunter?: boolean; coaster?: number }
 
 /** where the ride is along its line, for the line diagram (subway.ts rideStrip) */
 export interface RideStrip {
@@ -142,6 +142,8 @@ export interface SceneApi {
   corn: unknown;
   harvest: unknown;
   overlook: unknown;
+  /** Kingda Ka (js/scene/ka/coaster.ts); elsewhere a stand-in that does nothing */
+  coaster: unknown;
   /** in Crossroads Church's sanctuary (jsh/church.js) */
   indoors(): boolean;
 }

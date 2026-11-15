@@ -151,6 +151,40 @@ export const CITIES: Record<string, CityEntry & Record<string, unknown>> = {
     stationLines: s => (s.lines || []).join(' '),
     presets: [],   // no lit skyline: the panel leaves out Skyline lights
   },
+  ka: {
+    // one roller coaster and the park round it: Kingda Ka at Six Flags Great Adventure, as it stood until 2024
+    // (js/scene/ka/; the track is data/ka/coaster.json, from OpenStreetMap's plan and the USGS lidar survey)
+    id: 'ka', name: 'Kingda Ka',
+    loadingScreens: [
+      { file: 'poi-whole-ride.webp', name: 'Kingda Ka', area: 'Six Flags Great Adventure', view: 'ka-ride', hour: -1.2, day: 200, hero: ['point', 'green'], side: 'left' },
+      { file: 'poi-top-hat.webp', name: 'The top hat', area: '456 feet up', view: 'ka-tophat', hour: -1.6, day: 200, hero: ['akimbo', 'tee'], side: 'right' },
+      { file: 'poi-station.webp', name: 'The station', area: 'Golden Kingdom', view: 'ka-station', hour: -.9, day: 200, hero: ['wave', 'yellow'], side: 'right' },
+      { file: 'poi-airtime-hill.webp', name: 'The airtime hill', area: '129 feet', view: 'ka-hill', hour: -.7, day: 200, hero: ['flex', 'red'], side: 'left' },
+    ],
+    blurb: 'The tallest roller coaster ever built, as it stood at Six Flags Great Adventure until 2024: 456 feet up at 128 mph, rebuilt from the lidar survey of the real ride. Take a seat.',
+    frame: { LAT0: 40.1400, LON0: -74.4350, MX: 85219.2867194834, MZ: 111000 },   // the middle of the ride's layout; tools/ka/extent.py
+    dir: 'data/ka', prefix: 'ka-',
+    files: [
+      ['buildings', 'buildings.json'], ['river', 'river.json'], ['ground', 'ground.json'], ['trees', 'trees.json'],
+      ['transit', 'transit.json'], ['city', 'city.json.gz'], ['cityBuildings', 'city_buildings.bin.gz'],
+      ['places', 'places.json'], ['coaster', 'coaster.json'],
+    ],
+    // from over the station end, looking up the launch track to the tower
+    home: { pos: [40.13700, -74.43950, 190], target: [40.14020, -74.43440, 45] },
+    sunTarget: [40.1400, -74.4350], sun: { lat: 40.1400, lon: -74.4350 },
+    sea: false,
+    storage: 'ka3d:',
+    title: 'Kingda Ka: 456 feet, 128 mph',
+    heading: 'Kingda Ka, as it stood',
+    canvasLabel: '3D model of the Kingda Ka roller coaster at Six Flags Great Adventure, with its 456-foot top-hat tower and a train you can ride',
+    hint: 'Kingda Ka at Six Flags Great Adventure in Jackson, New Jersey: the tallest roller coaster ever built (456 ft) and for years the fastest (128 mph in 3.5 seconds), open 2005 to 2024 and taken down in 2025. The track follows the lidar survey of the standing ride. Pick Kingda Ka under “Ride a line”, or click the train, to take a seat.',
+    cutButton: '', cutHint: '',
+    credit: 'Track plan, paths, water, woods: © OpenStreetMap contributors · Track heights and structure: USGS 3DEP lidar · Buildings: Overture Maps (Microsoft ML Buildings, OpenStreetMap)',
+    building: 'Laying out the park…',
+    groups: [],
+    stationLines: s => (s.lines || []).join(' '),
+    presets: [],   // no lit skyline: the panel leaves out Skyline lights
+  },
   pine: {
     // not a map: one kitchen, built by hand in js/scene/pine/kitchen.ts (main.ts skips the map
     // data, the city scene and its panel controls for a city with kitchen: true)

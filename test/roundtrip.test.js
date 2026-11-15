@@ -56,7 +56,7 @@ describe('TER1 fixture', () => {
 });
 
 describe('committed data', () => {
-  test.each(['phl', 'nyc', 'nola', 'jsh'])('%s city_buildings.bin.gz decodes whole', city => {
+  test.each(['phl', 'nyc', 'nola', 'jsh', 'ka'])('%s city_buildings.bin.gz decodes whole', city => {
     const buf = gunzip(`../data/${city}/city_buildings.bin.gz`), B = decode(buf);
     // per box: x, z i32, w, d, ry, h u16, kind u8 (17 bytes); per outline: count, h u16, kind u8 (5); per vertex: x, z i32 (8)
     expect(16 + B.nB * 17 + B.nP * 5 + B.vx.length * 8).toBe(buf.byteLength);

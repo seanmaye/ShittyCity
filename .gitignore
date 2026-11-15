@@ -1,6 +1,8 @@
 tools/phl/raw/
 # New Orleans's raw sources are a 45 MB re-fetchable download (tools/nola/fetch_nola.py)
 tools/nola/src/
+# Kingda Ka's raw sources (lidar crops, OSM extracts) are re-fetchable downloads (tools/ka/)
+tools/ka/src/
 __pycache__/
 tools/.venv/
 .venv/

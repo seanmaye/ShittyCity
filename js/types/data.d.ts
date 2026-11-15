@@ -252,5 +252,32 @@ export interface NycData extends SharedData { nycLandmarks: NycLandmarks; monora
 export interface JshData extends SharedData { grid: JshGrid; places: Places; farms: JshFarms; monorailRoutes: Monorail }
 export interface NolaData extends SharedData { places: Places; monorailRoutes: Monorail }
 
+// ---- Kingda Ka (EDITING.md "Kingda Ka only")
+
+/** data-ka-coaster (tools/ka/build_track.py; js/scene/ka/layout.ts), m in the scene frame, y above the ground */
+export interface Coaster {
+  name: string;
+  note?: string;
+  track: {
+    /** the spacing of p along the track, m */
+    step: number;
+    closed: boolean;
+    /** the centreline (midway between the running rails, at rail height), in order of travel from the station */
+    p: Vec3[];
+    /** the riders' up at each point of p: a unit vector square to the track there (banking and twist included) */
+    n: Vec3[];
+    /** named stretches, s0..s1 m along p */
+    sections: { id: string; s0: number; s1: number }[];
+  };
+  /** the top-hat tower: its middle on the ground and its height */
+  tower: { x: number; z: number; h: number; [more: string]: unknown };
+  /** where supports stand (kind picks the shape: structure.ts) */
+  supports: { x: number; z: number; [more: string]: unknown }[];
+  /** the station building: middle, rotation.y, width along the track, depth, height */
+  station: { x: number; z: number; ry: number; w: number; d: number; h: number; [more: string]: unknown };
+  [more: string]: unknown;
+}
+export interface KaData extends SharedData { places: Places; coaster: Coaster }
+
 /** the active city's data: the shared blocks, and each other block only if this city has it (index.ts tests: data.landmarks ? ...) */
-export type CityData = SharedData & Partial<Omit<PhlData & NycData & JshData & NolaData, keyof SharedData>>;
+export type CityData = SharedData & Partial<Omit<PhlData & NycData & JshData & NolaData & KaData, keyof SharedData>>;

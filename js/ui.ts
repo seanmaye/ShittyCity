@@ -370,7 +370,7 @@ export function createUI(api, { createFishing, createArcade }: Games = {}) {
   const rel = (e): [number, number] => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   function syncCar() {
     const c = api.getCar(); carOn = !!c; offBtn.hidden = !carOn; canvas.style.cursor = carOn ? 'grab' : '';
-    const walk = carOn && !['seat', 'person', 'vista'].includes(c.kind);
+    const walk = carOn && !['seat', 'person', 'vista', 'coaster'].includes(c.kind);   // (seated, or going where they go: nothing to walk)
     document.body.classList.toggle('aboard', carOn); document.body.classList.toggle('aboard-walk', walk);
     walkpad.hidden = !(walk && TOUCH.matches); if (walkpad.hidden) releaseWalk();
     if (!carOn && locked) api.setCreative(true);   // got off with the mouse still captured: back to flying
