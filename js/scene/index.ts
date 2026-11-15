@@ -82,7 +82,7 @@ function liftTransit(T) {
 export async function buildScene(canvas, data, status: (message: string, percent?: number) => void = () => {}, own: Record<string, any> = {}): Promise<SceneApi> {
   // the city's own code (js/scene/<city>/<city>.js, which main.ts loads for this city alone): another city's names are undefined, never called
   const { buildLandmarks, buildMonorail, buildSports, courtTest, buildYardPark, buildConcert, buildCityMarks, buildOldTrolleys, buildPromenade, onPromenade, buildPedestrians, buildBoats, buildAnglers, buildChinatown, buildRestaurants,
-    buildNycLandmarks, buildNycBridges, buildBoroughMarks, buildShowdown, buildTown, buildFarms, buildDetassel, buildCornLOD, pickLateField, buildHarvest, overlookSite, buildOverlook, churchSite, buildChurch } = own;
+    buildNycLandmarks, buildNycBridges, buildBoroughMarks, buildShowdown, buildTown, buildFarms, buildDetassel, buildCornLOD, pickLateField, buildHarvest, overlookSite, buildOverlook, churchSite, buildChurch, buildCoaster } = own;
   // the real ground under everything, where the city has it (data/<city>/terrain.bin.gz)
   setTerrain(data.terrain || null);
   const core = createCore(canvas);
@@ -152,6 +152,10 @@ export async function buildScene(canvas, data, status: (message: string, percent
     : { view: null, update() {}, frame() {}, look() {}, zoom: () => false, stand: () => null, inhabit: () => null, leave: () => null, pick: () => null, act: () => false, getState: () => null, on: () => false };
   // Crossroads Church, outside and in ("Take me to church"): the view ends with the camera held in the sanctuary
   const church = crossroads ? buildChurch(scene, crossroads) : { view: null, update() {}, clamp() {}, hold() {}, release() {}, indoors: () => false };
+  // Kingda Ka: the standing ride and its train (ka/coaster.ts). A seat on the train is somewhere to be, like the overlook:
+  // pick -> boardCar({ coaster }) -> frame/look -> leave
+  const coaster = data.coaster ? buildCoaster(scene, data.coaster, { night: () => sky.getState().night, hour: () => sky.getTime(), canvas })
+    : { labels: [], views: [], nightOnly: [], lines: [], routes: [], update() {}, frame() {}, look() {}, pick: () => null, board: () => null, leave: () => null, act: () => false, getState: () => null, on: () => false, vehicles: () => [] };
   // PROPOSAL (Philadelphia only): Walnut St, 22nd to Front, as a brick-paved shopping street, with people
   const isPhl = CITY.id === 'phl';
   const walnut = isPhl ? buildPromenade(scene, { buildings: data.buildings, cityB: city.boxes, roads: [data.ground.lines, data.city.lines], trees: data.trees })
@@ -256,7 +260,7 @@ export async function buildScene(canvas, data, status: (message: string, percent
     if (l.t === 'City Hall') return { text: l.t, pos: lm.cityhall.clone().setY(l.y) };
     if (l.river !== undefined) return { text: l.t, pos: river.atLat(39.9575).p.clone().setY(l.y) };
     return { text: l.t, pos: new THREE.Vector3(l.x, l.y, l.z) };
-  }).concat(sports.labels, yard.labels, subway.labels, marks.labels, old53.labels, boats.labels, chinatown.labels, eats.labels, nyc.labels.filter(l => !nycBridges.some(b => b.id === l.text)), proposedMono.labels, places.labels,
+  }).concat(sports.labels, yard.labels, subway.labels, marks.labels, old53.labels, boats.labels, chinatown.labels, eats.labels, nyc.labels.filter(l => !nycBridges.some(b => b.id === l.text)), proposedMono.labels, places.labels, coaster.labels,
     nycBridges.map(b => ({ text: b.id, far: 3700, pos: new THREE.Vector3((b.a[0] + b.b[0]) / 2, b.labelHeight, (b.a[1] + b.b[1]) / 2) })));
   // tags float the same height above the ground as they did above the flat model
   if (terrain.on) for (const l of labels) if (!l.abs && l.pos) l.pos.y += surface(l.pos.x, l.pos.z);
@@ -268,12 +272,12 @@ export async function buildScene(canvas, data, status: (message: string, percent
   const mono = [...(monorail.curve ? [{ id: 'loop', color: '#d6452f', P: monorail.curve.getSpacedPoints(1500) }] : []),
     ...sports.curves.map((c, i) => ({ id: 'shuttle' + i, color: '#1f9a8f', P: c.getSpacedPoints(800) })),
     ...proposedMono.routes.map(r => ({ id: r.id, color: r.color, P: r.curve.getSpacedPoints(1500) }))];
-  const tmap = buildTransitMap(scene, renderer, [...subway.routes, ...mono, ...boats.routes]);
+  const tmap = buildTransitMap(scene, renderer, [...subway.routes, ...mono, ...boats.routes, ...coaster.routes]);
 
   let riding: string | number | false = false;
   // 24-hour clock: the sun's real position over the city today drives the sky and lighting
   const sky = createSky({
-    scene, sun, hemi, litMats, nightOnly: [...lm.boatLines, ...yard.duskOnly, ...marks.nightOnly, ...lm.nightOnly, ...blds.nightOnly, ...city.nightOnly],
+    scene, sun, hemi, litMats, nightOnly: [...lm.boatLines, ...yard.duskOnly, ...marks.nightOnly, ...lm.nightOnly, ...blds.nightOnly, ...city.nightOnly, ...coaster.nightOnly],
     onChange: st => { setWindowHour(sky.getTime()); monorail.trainWinMat.emissiveIntensity = .05 + .75 * st.night; river.waterMat.color.set(st.water); },
   });
   const setTime = h => sky.setTime(h);
@@ -299,6 +303,7 @@ export async function buildScene(canvas, data, status: (message: string, percent
   // the 1953 streetcars, one entry per loop
   lines.push(...boats.lines.map(l => ({ ...l, group: 'River boats' })));
   lines.push(...old53.lines.map(l => ({ ...l, group: '1953 streetcars' })));
+  lines.push(...coaster.lines);   // Kingda Ka
   /** r: a line id from `lines`, or false for the overview (stay = keep the camera where it is) */
   function setRiding(r, stay = false) {
     if (aboard()) leaveCar(true);
@@ -340,7 +345,7 @@ export async function buildScene(canvas, data, status: (message: string, percent
   if (nycBridges.length) views.push({ id: 'bridges', name: 'East River bridges', pos: V(1260, 475, 5070), target: V(-460, 70, 4030) });
   // the overlook's view ends with you standing there, looking around for yourself
   const arriveAtOverlook = () => { controls.update(); overlook.stand(camera); controls.enabled = false; camera.near = .05; camera.updateProjectionMatrix(); };
-  views.push(...places.views, ...(overlook.view ? [{ ...overlook.view, arrive: arriveAtOverlook }] : []), ...(church.view ? [{ ...church.view, arrive: () => { controls.update(); church.hold(); } }] : []), ...(peds.view ? [peds.view] : []), ...subway.views, ...marks.views, ...anglers.views, ...chinatown.views);
+  views.push(...places.views, ...(overlook.view ? [{ ...overlook.view, arrive: arriveAtOverlook }] : []), ...(church.view ? [{ ...church.view, arrive: () => { controls.update(); church.hold(); } }] : []), ...(peds.view ? [peds.view] : []), ...subway.views, ...marks.views, ...anglers.views, ...chinatown.views, ...coaster.views);
   // the river boats at Penn's Landing, from over Columbus Boulevard
   const rsp = data.boats && data.boats.lines.flatMap(l => l.stops).find(st => st.t === 'Race Street Pier');
   if (rsp) views.push({ id: 'boats', name: 'River boats', pos: V(rsp.x - 300, 150, rsp.z + 300), target: V(rsp.x + 80, 0, rsp.z - 40) });
@@ -392,7 +397,7 @@ export async function buildScene(canvas, data, status: (message: string, percent
   const mapData = {
     bbox: data.city.bbox, limits: data.city.limits,
     water: [...data.city.water, ...data.river.water], green: [...data.city.green.map(g => g.slice(1)), ...data.ground.green.map(g => g.slice(1))],
-    routes: [...subway.routes, ...mono, ...boats.routes].map(r => ({ id: r.id, color: r.color, P: r.P })),
+    routes: [...subway.routes, ...mono, ...boats.routes, ...coaster.routes].map(r => ({ id: r.id, color: r.color, P: r.P })),
   };
   function stepFly(dt) {
     fly.t = Math.min(1, fly.t + dt / fly.dur);
@@ -414,6 +419,12 @@ export async function buildScene(canvas, data, status: (message: string, percent
       return r;
     }
     overlook.leave(true);
+    if (h && h.coaster !== undefined) {   // a seat on Kingda Ka's train
+      subway.leave(); walnut.stand(); peds.leave(); concert.leave(); const r = coaster.board(h.coaster); if (!r) return null;
+      controls.enabled = false; camera.near = .05; camera.updateProjectionMatrix();
+      return r;
+    }
+    coaster.leave();
     if (h && h.punk !== undefined) {   // a punk at the Railyard Bowl show: see through their eyes
       subway.leave(); walnut.stand(); peds.leave(); const r = concert.inhabit(h.punk); if (!r) return null;
       controls.enabled = false; camera.near = .05; camera.updateProjectionMatrix();
@@ -437,7 +448,7 @@ export async function buildScene(canvas, data, status: (message: string, percent
   }
   /** stay: leave the camera where it is (another view is about to take over) */
   function leaveCar(stay = false) {
-    const o = subway.leave() || walnut.stand() || peds.leave() || concert.leave() || overlook.leave(stay); if (!o) return;
+    const o = subway.leave() || walnut.stand() || peds.leave() || concert.leave() || coaster.leave() || overlook.leave(stay); if (!o) return;
     if (o.spectate) return;   // out of the hunter, but still standing at the overlook
     camera.near = 2; camera.updateProjectionMatrix(); camera.up.set(0, 1, 0); controls.enabled = riding === false;
     if (stay) return;
@@ -456,7 +467,8 @@ export async function buildScene(canvas, data, status: (message: string, percent
     if (riding !== false) setRiding(false, true);
     fly = null; if (subway.getCut()) setCut(false);
     walnut.stand(); peds.leave(); concert.leave(); overlook.leave(true);
-    const r = subway.boardLine(key); if (!r) return null;
+    // Kingda Ka: its "Ride a line" entry seats you in the front row
+    const r = coaster.lines.some(l => l.id === id) ? (subway.leave(), coaster.board()) : (coaster.leave(), subway.boardLine(key)); if (!r) return null;
     controls.enabled = false; camera.near = .05; camera.updateProjectionMatrix();
     return r;
   }
@@ -515,7 +527,7 @@ export async function buildScene(canvas, data, status: (message: string, percent
     // djour's three-star picks, at their modelled shop fronts (not the stalls inside a market hall)
     spots: eats.places.filter(p => p.s >= 3 && p.look && !p.look.indoor && !p.soon).map(p => ({ title: p.n, sub: '★★★  ·  ' + CITY.name, target: p.view.target, front: p.view.pos, street: p.street.pos })),
     labels, routes: mapData.routes.map(r => ({ ...r, name: lineName(r.id) })),
-    vehicles: id => [...subway.cars(id), ...subway.cars('mono:' + id)],   // (a line's trains; a monorail's cars are 'mono:' + its route id)
+    vehicles: id => [...subway.cars(id), ...subway.cars('mono:' + id), ...(coaster.routes.some(r => r.id === id) ? coaster.vehicles() : [])],   // (a line's trains; a monorail's cars are 'mono:' + its route id)
     ground: (x, z) => (terrain.on ? surface(x, z) : data.grid ? gridAt(x, z) : 0),   // (Jersey Shore: its own ground grid)
     getDay: () => getSeason().day,   // (the clock and season are left alone: the tour shows the live city)
   });
@@ -536,9 +548,10 @@ export async function buildScene(canvas, data, status: (message: string, percent
     controls.minDistance = Math.min(40, Math.max(2, camera.position.distanceTo(controls.target) * .9)); controls.enabled = true; controls.update();
     return r;
   }
-  // click a train car to board it, or a cafe chair or bench on Walnut St to sit down
-  const pickCar = (x, y) => { camera.updateMatrixWorld(); const w = canvas.clientWidth, h = canvas.clientHeight; return subway.pick(camera, x, y, w, h) || peds.pickPerson(camera, x, y, w, h) || concert.pick(camera, x, y, w, h) || walnut.pickSeat(camera, x, y, w, h) || overlook.pick(camera, x, y, w, h); };
-  const aboard = () => subway.getRide() || walnut.getSeat() || peds.getInhabited() || concert.getInhabited() || overlook.getState();
+  // click a train car to board it, or a cafe chair or bench on Walnut St to sit down (or a seat on Kingda Ka's train)
+  const coasterSeat = (seat: number | null) => (seat === null ? null : { coaster: seat });
+  const pickCar = (x, y) => { camera.updateMatrixWorld(); const w = canvas.clientWidth, h = canvas.clientHeight; return subway.pick(camera, x, y, w, h) || peds.pickPerson(camera, x, y, w, h) || concert.pick(camera, x, y, w, h) || walnut.pickSeat(camera, x, y, w, h) || overlook.pick(camera, x, y, w, h) || coasterSeat(coaster.pick(camera, x, y, w, h)); };
+  const aboard = () => subway.getRide() || walnut.getSeat() || peds.getInhabited() || concert.getInhabited() || coaster.getState() || overlook.getState();
   // Start the season and lighting from the same local date and time.
   const now = new Date();
   const year = now.getFullYear();
@@ -586,10 +599,10 @@ export async function buildScene(canvas, data, status: (message: string, percent
     restoreAnisotropy(renderer, scene);
     function frame() {
       clock.update(); const dt = Math.min(clock.getDelta(), .05);
-      monorail.update(dt, riding === 'loop', camera); proposedMono.update(dt); old53.update(dt); boats.update(dt); anglers.update(dt); subway.update(dt, camera); updateShells(dt); sports.update(dt, riding, camera); yard.update(dt); marks.update(dt); chinatown.update(dt, camera); harvest.update(dt); corn.update(camera);
+      monorail.update(dt, riding === 'loop', camera); proposedMono.update(dt); old53.update(dt); boats.update(dt); anglers.update(dt); subway.update(dt, camera); updateShells(dt); sports.update(dt, riding, camera); yard.update(dt); marks.update(dt); chinatown.update(dt, camera); harvest.update(dt); corn.update(camera); coaster.update(dt, camera);
       if (cine.on()) { const t = cine.step(dt); if (t) controls.target.copy(t); }
       else if (fly) stepFly(dt);
-      peds.update(dt, camera); walnut.seatFrame(camera); peds.inhabitFrame(camera); concert.update(dt, camera); concert.frame(camera); overlook.update(dt, camera); overlook.frame(camera); church.update(dt, camera);
+      peds.update(dt, camera); walnut.seatFrame(camera); peds.inhabitFrame(camera); concert.update(dt, camera); concert.frame(camera); overlook.update(dt, camera); overlook.frame(camera); coaster.frame(camera); church.update(dt, camera);
       if ((flyKeys.f || flyKeys.s || flyKeys.u) && riding === false && !aboard() && !cine.on()) stepFlyKeys(dt);
       if (riding === false && !aboard() && !creative && !cine.on()) controls.update();
       // fog, draw distance and the shadowed area follow the camera, so the whole city reads from above
@@ -640,5 +653,5 @@ export async function buildScene(canvas, data, status: (message: string, percent
     pickAngler: (x, y) => { camera.updateMatrixWorld(); return anglers.pick(camera, x, y, canvas.clientWidth, canvas.clientHeight); }, anglerInfo: anglers.info,
     viewAngler: i => { const a = anglers.info(i); if (a) flyTo(a.view); },
     pickStall: isPhl ? (x, y) => { camera.updateMatrixWorld(); return chinatown.pickStall(camera, x, y, canvas.clientWidth, canvas.clientHeight); } : null,
-    viewStall: () => { if (chinatown.stallView) flyTo(chinatown.stallView); }, mapData, flyToPoint, displayPresets: CITY.presets ? DISPLAY_PRESETS.filter(p => CITY.presets.includes(p.id)) : DISPLAY_PRESETS, setDisplayLights: setDisplayColors, lookCar: (dx, dy) => (walnut.getSeat() ? walnut.lookSeat(dx, dy) : peds.getInhabited() ? peds.lookAt(dx, dy) : concert.on() ? concert.lookAt(dx, dy) : overlook.on() ? overlook.look(dx, dy) : subway.look(dx, dy)), moveCar: subway.move, actCar: id => (concert.on() ? concert.act(id) : overlook.act(id)), wheelCar: dy => overlook.zoom(dy), start, startCinematic, stopCinematic, cinematic: cine, subway, river, monorail, peds, concert, corn, harvest, overlook, indoors: () => church.indoors() };
+    viewStall: () => { if (chinatown.stallView) flyTo(chinatown.stallView); }, mapData, flyToPoint, displayPresets: CITY.presets ? DISPLAY_PRESETS.filter(p => CITY.presets.includes(p.id)) : DISPLAY_PRESETS, setDisplayLights: setDisplayColors, lookCar: (dx, dy) => (walnut.getSeat() ? walnut.lookSeat(dx, dy) : peds.getInhabited() ? peds.lookAt(dx, dy) : concert.on() ? concert.lookAt(dx, dy) : coaster.on() ? coaster.look(dx, dy) : overlook.on() ? overlook.look(dx, dy) : subway.look(dx, dy)), moveCar: subway.move, actCar: id => (concert.on() ? concert.act(id) : coaster.on() ? coaster.act(id) : overlook.act(id)), wheelCar: dy => overlook.zoom(dy), start, startCinematic, stopCinematic, cinematic: cine, subway, river, monorail, peds, concert, corn, harvest, overlook, coaster, indoors: () => church.indoors() };
 }

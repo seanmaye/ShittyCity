@@ -7,8 +7,8 @@ backgrounds in data/<city>/, served as they are (npm ci, then npm run dev). thre
 (0.186.1) and the Archivo font come from npm; npm run build writes the site to dist/.
 
 The page holds several cities on one engine: today Philadelphia (id "phl"), New York
-(id "nyc"), New Orleans (id "nola") and Jersey Shore, PA (id "jsh"). It opens on a start menu (#menu) to pick one, or
-goes straight to one with ?city=phl, ?city=nyc, ?city=nola or ?city=jsh; "Change city" (#switch-city) reloads to the menu. Each city has its
+(id "nyc"), New Orleans (id "nola"), Jersey Shore, PA (id "jsh") and one roller coaster, Kingda Ka (id "ka"). It opens on a start menu (#menu) to pick one, or
+goes straight to one with ?city=phl, ?city=nyc, ?city=nola, ?city=jsh or ?city=ka; "Change city" (#switch-city) reloads to the menu. Each city has its
 own data files (this guide calls data/<city>/NAME.json, .json.gz or .bin.gz "data-<city>-NAME"),
 its own settings in js/cities.ts, and its own hand-built scene code (js/scene/<city>/);
 everything else is shared.
@@ -60,6 +60,7 @@ Python helper below.
   Philadelphia   39.9560   -75.1760   85390      near 22nd and Arch Streets
   New York       40.745    -73.984    84096.04   Midtown, near Herald Square
   Jersey Shore   41.2025   -77.2536   83877.23   Allegheny & Main Streets
+  Kingda Ka      40.1400   -74.4350   85219.29   the middle of the ride's layout (flat: ground at y = 0)
 
   Mixed units:
   - Most data arrays are FLAT INTEGER DECIMETRES: [x0, z0, x1, z1, ...] with value =
@@ -333,6 +334,26 @@ data-jsh-monorail       PROPOSAL: the West Branch Loop, in the same format as da
 
 Edit data/jsh/monorail.json to change the proposal. The other Jersey Shore data blocks come from
 tools/jsh/build_jsh.py.
+
+Kingda Ka only:
+
+data-ka-coaster         the ride, METRES in the scene frame, y above the (flat) ground. Written by
+  tools/ka/build_track.py from the lidar surveys; tools/ka/README.md documents every field and says which
+  numbers are measured and which assumed. Never edit it by hand: change the builder.
+  track:    { step, closed, p: [[x, y, z], ...] the centreline (midway between the running rails, at the
+            height of their centres) in order of travel from the station, about 1 m apart;
+            n: [[nx, ny, nz], ...] the riders' up at each point (a unit vector square to the track: banking,
+            the vertical runs and both twists are in it);
+            sections: [{id, s0, s1}] m along p, in this order and covering the circuit exactly once:
+            station, launch, pullup, tower_up, tophat, tower_down, pullout, hill, brakes, turnaround }
+  tower:    { x, z, h, ry, w, d, legs, levels, rear, feet, struts, crest, track_offset, base }
+  supports: [{ x, z, y, s, kind: 'column' | 'aframe' | 'bent', feet?, strut_y?, tie_y?, pedestal? }]
+  station:  { x, z, ry, w, d, h, eave, roof, floor, lanes, ... }
+  sidings:  [{ p, n }] the station's second lane and the two storage tracks (drawn, never ridden)
+  brakes, truss, twist, ground, axis, check, assumed: measurements and notes (README.md there)
+data-ka-places          labels and views, as data-jsh-places (the ride's own labels and views are made in
+                        js/scene/ka/structure.ts; their ids start 'ka-')
+data/ka/rides.json      the park's other mapped rides (tracks and outlines). Not loaded by the page.
 
 
 4. Code map (chunk, then what you would change there)
@@ -729,6 +750,37 @@ harvest.ts       the last corn standing: pickLateField(farms, eye, blockers) cho
                  cornlod.ts asks its cut(x, z) per plant). spot() is what the overlook's
                  binoculars aim at while it is in the field, null outside the window
 
+Kingda Ka (js/scene/ka/):
+
+layout.ts        the contract between the data and the two halves of the ride. makeLayout(coaster) ->
+                 Layout: at(s, frame) gives pos, tan, up and side (the riders' LEFT) s m along the track,
+                 quatAt(s) the rotation of something facing along it, sectionAt(s) / section(id) the named
+                 stretches. GAUGE and RAIL are the rails. StructureApi, TrainApi and RideState are what
+                 structure.ts and train.ts return.
+coaster.ts       buildCoaster(scene, data.coaster, opts): puts the two together as one feature with the
+                 calls index.ts uses for anything you can step into (pick, board, frame, look, act, leave,
+                 getState, on), plus labels, views, lines (the "Ride a line" entry, id 'ka'), routes (the
+                 circuit, for the minimap and cinematic mode) and vehicles().
+structure.ts     everything that stands still, placed from the layout's frames and sections, never from
+                 fixed coordinates: struct-track.ts (the track: 'box' truss on raised sections, 'flat'
+                 ladder track, by KIND per section), struct-tower.ts (the tower and Zumanjaro),
+                 struct-ground.ts (supports, footers, the station, launch hardware, fences),
+                 struct-kit.ts (the tube and box batches they are built with). Colours GREEN and TEAL.
+                 Exports setLaunchFins(down): 0 raised .. 1 dropped. Owns the 'ka-' views and the labels.
+physics.ts       the ride, with no three.js scene objects (test/ka-physics.test.js runs it): the train as
+                 a chain of cars under gravity, rolling friction and air drag, and by phase: station,
+                 advance, hold, launch, coast, brakes, return, and rollback then reset. Everything is derived from
+                 the layout at start-up (drag is solved so the crest is 8 m/s), so a better fit of the
+                 track needs no retuning.
+train.ts         the train on the rails (each car on two points of the track, so it bends through the
+                 pull-up and the twists), the riders and restraints, and the seat: frame(camera) sets
+                 the camera's quaternion from the car (the track goes vertical and rolls over, so
+                 nothing here may use lookAt with a world up). getState() is what js/ui.ts shows: kind
+                 'coaster', hint, now, actions ('launch', 'rollback', 'row').
+train-cars.ts    the cars, bogies, seats, restraints and riders (phl/people.ts figures)
+hud.ts           the rider's readout (#ka-hud, made in code; its CSS is the "Kingda Ka" block at the end
+                 of css/style.css)
+
 Debug handle in the browser console: window.__city
   { scene, camera, controls, renderer, labels, lines, views, restaurants, flyTo(viewId or a view),
     setTime(hours 0-24), getTime(), sunset, setMood('day'|'dusk'), getMood(),
@@ -739,7 +791,9 @@ Debug handle in the browser console: window.__city
     oldTrolleyLegend, setCut('market' | 'times-square' | false), getCut(), pickCar(x, y),
     boardCar(hit), leaveCar(), getCar(), lookCar(dx, dy), moveCar(forward, strafe), river, monorail,
     actCar(id) ('drag' | 'drink' | 'glass': the person you are inside, today only the hunter),
-    wheelCar(dy) (binocular zoom; true if it zoomed), corn, harvest, overlook (the jsh modules) }
+    wheelCar(dy) (binocular zoom; true if it zoomed), corn, harvest, overlook (the jsh modules),
+    coaster (Kingda Ka: coaster.train.debug has state(), setS(s, v), launch(), rollback(on), freeze(on),
+    to(phase, section, t), seat(i); coaster.structure.debug has fins(down) and tally()) }
 
 
 5. Editing data: stdlib-only Python helper
@@ -964,7 +1018,7 @@ Change a city's opening camera: `home` in its js/cities.ts entry ([lat, lon, hei
   withBounds(mesh, centre, radius) (geometry chunk), as city.ts's tiles and the trees do. One
   made later is culled by a sphere three.js works out on its first draw: if its instances move
   after that, call mesh.computeBoundingSphere() or set frustumCulled = false.
-- data/ is about 34 MB (Philadelphia about 20, 6 of it the terrain; New York about 9; New Orleans about 4; Jersey Shore about 2). The gzip files hold most
+- data/ is about 34 MB (Philadelphia about 20, 6 of it the terrain; New York about 9; New Orleans about 4; Jersey Shore about 2; Kingda Ka about 0.5). The gzip files hold most
   of the data; keep new bulky data in a gzip file rather than JSON. What a city downloads is
   smaller (Philadelphia about 10 MB of data): the build encodes the large files (js/formats.ts).
   Coordinates as flat integer arrays (decimetres) are what makes JSON small there.
@@ -973,7 +1027,8 @@ Change a city's opening camera: `home` in its js/cities.ts entry ([lat, lon, hei
   Data; shorelines NYC Open Data and NJDEP; map data (c) OpenStreetMap contributors, ODbL;
   subway routes MTA GTFS. Jersey Shore: buildings Overture Maps (Microsoft ML Buildings,
   OpenStreetMap); map data (c) OpenStreetMap contributors, ODbL; terrain AWS Terrain Tiles;
-  crops USDA NASS Cropland Data Layer.
+  crops USDA NASS Cropland Data Layer. Kingda Ka: map data (c) OpenStreetMap contributors, ODbL; lidar USGS 3DEP;
+  buildings Overture Maps.
 - After a change, serve the page (npm run dev), open it in a browser and check
   the console. Without a browser, at least run `npm run check`.
 - Types: the code is TypeScript (js/**/*.ts), type-checked whole by `npm run check`, which
@@ -991,7 +1046,7 @@ Change a city's opening camera: `home` in its js/cities.ts entry ([lat, lon, hei
 8. Cities
 ---------
 
-js/cities.ts lists the cities (CITIES.phl, CITIES.nyc, CITIES.jsh). main.ts picks one and calls
+js/cities.ts lists the cities (CITIES.phl, CITIES.nyc, CITIES.nola, CITIES.jsh, CITIES.ka). main.ts picks one and calls
 setCity(id) before anything loads; every module then reads the active city from CITY inside
 its functions (never at module top level: imported modules run their top level before main.ts
 calls setCity()).
