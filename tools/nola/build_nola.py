@@ -145,6 +145,53 @@ for e in osm:
             p = rel_poly(e)
             if p:
                 water_polys.append(p)
+# the Mississippi is built as a variable-width polygon following its real banks (src/riverbanks.json,
+# OSM relation 534928): for each point on the centreline, offset perpendicular by the distance to the
+# nearest bank on each side, so it is narrow at the bend and wide downstream (the riverbank ways are
+# self-intersecting and unusable as plain polygons)
+rb = json.load(open(os.path.join(SRC, 'riverbanks.json')))
+banks = [LineString([proj(lat, lon) for lon, lat in w['geometry']])
+         for w in rb['ways'] if len(w['geometry']) >= 2]
+miss = [e for e in osm if e['type'] == 'way' and e.get('tags', {}).get('waterway') == 'river'
+        and 'mississippi' in (e.get('tags', {}).get('name') or '').lower()]
+cl_pts = []
+for e in sorted(miss, key=lambda e: e['id']):
+    pts = [proj(p['lat'], p['lon']) for p in e['geometry']]
+    if cl_pts and math.hypot(cl_pts[-1][0] - pts[0][0], cl_pts[-1][1] - pts[0][1]) < 5:
+        pts = pts[1:]
+    cl_pts += pts
+if banks and cl_pts:
+    cl = LineString(cl_pts)
+    left_edge, right_edge = [], []
+    for i in range(241):
+        P = cl.interpolate(i / 240, normalized=True)
+        d = cl.project(P)
+        a = cl.interpolate(max(0.0, d - 10))
+        b = cl.interpolate(min(cl.length, d + 10))
+        dx, dy = b.x - a.x, b.y - a.y
+        L = math.hypot(dx, dy) or 1
+        tx, ty = dx / L, dy / L
+        px_, py_ = -ty, tx
+        left_d = right_d = None
+        for bl in banks:
+            for bx, by in bl.coords:
+                if math.hypot(bx - P.x, by - P.y) > 1200:
+                    continue
+                cross = tx * (by - P.y) - ty * (bx - P.x)
+                dist = math.hypot(bx - P.x, by - P.y)
+                if cross > 0:
+                    left_d = dist if left_d is None else min(left_d, dist)
+                else:
+                    right_d = dist if right_d is None else min(right_d, dist)
+        if left_d is None or right_d is None:
+            continue
+        left_edge.append((P.x + px_ * min(left_d, 900), P.y + py_ * min(left_d, 900)))
+        right_edge.append((P.x - px_ * min(right_d, 900), P.y - py_ * min(right_d, 900)))
+    if len(left_edge) >= 3:
+        river = Polygon(left_edge + list(reversed(right_edge)))
+        if not river.is_valid:
+            river = river.buffer(0)
+        water_polys.append(river)
 water_union = unary_union([p for p in water_polys if p.area > 200])
 # clip the water to the model box: bayous and canals that run out of the mapped area would
 # otherwise render as thin strips of raised water (the sea sits lower) radiating out from the city
