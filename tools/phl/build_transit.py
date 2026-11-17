@@ -1,24 +1,21 @@
-"""Build the data-transit block (L and T1-T5) from OpenStreetMap extracts and write it into the HTML.
+"""Build data/phl/transit.json (L and T1-T5) from OpenStreetMap extracts.
 
-usage: python -I build_transit.py transit.json routes.json page.html [--write]
+usage: python -I build_transit.py transit.json routes.json data/phl [--write]
 
 Depths are ESTIMATES: OSM only gives tunnel layers, not metres. Model used:
   layer -2 -> rail 9 m below street, layer -3 -> 13 m, under the Schuylkill -> 17.5 m,
   grades limited to 3.5 % (L) / 5 % (trolleys), ramping to street level at portals.
 """
-import json, math, re, sys
+import json, math, os, sys
 
 sys.stdout.reconfigure(encoding="utf-8")
-TRANSIT, ROUTES, PAGE = sys.argv[1:4]
+TRANSIT, ROUTES, DATA = sys.argv[1:4]
 WRITE = "--write" in sys.argv
 
 LAT0, LON0, MX, MZ = 39.9560, -75.1760, 85390, 111000
 def xz(g): return ((g["lon"] - LON0) * MX, -(g["lat"] - LAT0) * MZ)
 
-html = open(PAGE, encoding="utf-8").read()
-def block(name):
-    return re.search(r'(<script type="application/json" id="data-phl-%s"[^>]*>)(.*?)(</script>)' % name, html, re.S)
-def load(name): return json.loads(block(name).group(2))
+def load(name): return json.load(open(os.path.join(DATA, name + ".json"), encoding="utf-8"))
 
 bx0, bz0, bx1, bz1 = [v / 10 for v in load("ground")["bbox"]]
 rc = load("river")["center"]
@@ -305,15 +302,9 @@ print("stations", len(stations)); [print("  ", s) for s in stations]
 print("entrances", len(entrances))
 ys = [t["p"][i + 2] / 10 for t in tracks for i in range(0, len(t["p"]), 3)]
 print("depth range", min(ys), max(ys))
-body = json.dumps(out, separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
-print("block size", len(body))
+body = json.dumps(out, separators=(",", ":"), ensure_ascii=False)
+print("file size", len(body))
 
 if WRITE:
-    tag = '<script type="application/json" id="data-phl-transit" data-file="phl/transit.json">'
-    m = block("transit")
-    if m: html = html[:m.start(2)] + body + html[m.end(2):]
-    else:
-        anchor = html.index('<script type="module">', html.index('id="data-phl-yardpark"'))
-        html = html[:anchor] + tag + body + "</script>\n" + html[anchor:]
-    open(PAGE, "w", encoding="utf-8", newline="").write(html)
+    open(os.path.join(DATA, "transit.json"), "w", encoding="utf-8", newline="").write(body)
     print("written")

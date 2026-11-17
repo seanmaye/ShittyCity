@@ -16,7 +16,7 @@ landmarks.json and monorail.json, and writes data/nyc/ in the same formats as Ph
   ground.json            the Manhattan extent only (everything it would hold is in city.json.gz)
   river.json, trees.json empty: New York's water and trees are in city.json.gz
   transit.json           the MTA lines, as kind "nycsub", with each stop's lines merged into one station
-  landmarks.json         the modelled towers, labels and camera views (js/scene/nyc/landmarks.js)
+  landmarks.json         the modelled towers, labels and camera views (js/scene/nyc/landmarks.ts)
   monorail.json          the proposed East River Loop (js/scene/nyc/monorail.js)
 
 Standard library only. The footprint helpers (simplify_*, dm_ring, fit_rectangular_lowrise) are
@@ -30,11 +30,11 @@ SRC = sys.argv[1]
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "..", "..", "data", "nyc")
 
-LAT0, LON0 = 40.745, -73.984          # the NYC frame (js/cities.js), x east / z south in metres
+LAT0, LON0 = 40.745, -73.984          # the NYC frame (js/cities.ts), x east / z south in metres
 MX, MZ = 111000 * math.cos(math.radians(LAT0)), 111000
 # Manhattan's detailed extent (the NYC fetch_map.py bbox): the "core" of this city
 CORE_WSEN = (-74.025, 40.695, -73.944, 40.804)
-# the hand-modelled bridges (js/scene/nyc/bridges.js): their OSM decks are left out of the streets
+# the hand-modelled bridges (js/scene/nyc/bridges.ts): their OSM decks are left out of the streets
 MODELLED_BRIDGES = ("Brooklyn Bridge", "Manhattan Bridge", "Williamsburg Bridge", "Queensboro Bridge")
 
 
@@ -250,7 +250,7 @@ print(f"  city_buildings.bin.gz: {os.path.getsize(os.path.join(OUT, 'city_buildi
 
 # ---- ground: land outlines, parks, streets and paths, water, trees (all in city.json.gz)
 def green_kind(t):
-    """this engine's park colours (ground.js GREEN): park, grass, pitch, wood, cemetery"""
+    """this engine's park colours (ground.ts GREEN): park, grass, pitch, wood, cemetery"""
     if t.get("natural") in ("wood", "heath") or t.get("landuse") == "forest" or t.get("leisure") == "nature_reserve":
         return 3
     if t.get("landuse") == "cemetery":

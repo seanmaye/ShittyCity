@@ -1,0 +1,33 @@
+// Lint only (npm run lint; part of npm run check, which every deploy runs). No formatter: the dense style is intended.
+// An error here stops the deploy, so only rules that flag code that is wrong whatever the style are errors. Taste rules
+// are off or warnings. Counts are hits on the code of 2026-11-14 (none of them a bug); tighten a rule by fixing its hits.
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "files": { "includes": ["js/**/*.ts", "js/**/*.js", "test/**/*.js", "vite.config.js", "tools/perf/build.mjs"] },
+  "formatter": { "enabled": false },
+  "assist": { "enabled": false },   // no import sorting either
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "style": "off",        // 181 hits (useTemplate 172, useExponentiationOperator 6, useConst 3, ...)
+      "complexity": "off",   // 53 hits (useOptionalChain 51, ...)
+      "correctness": {
+        "noUndeclaredVariables": "error",       // not in the preset: a mistyped name (browser and Node globals are known)
+        "noUnusedVariables": "off",             // 22 hits (10 of them catch (e) bindings)
+        "noUnusedFunctionParameters": "off",    // 15 hits
+        "noUnusedImports": "off",               // 2 hits; js/main.ts's must stay: it runs three-setup.ts first
+        "noConstantCondition": "warn",          // no hits; a warning, as working code trips it: if (false) { ... } to switch a block off
+        "noSwitchDeclarations": "warn"          // no hits; a warning: a const in a case without braces works
+      },
+      "suspicious": {
+        "noAssignInExpressions": "off",         // 63 hits: (cache[k] || (cache[k] = make())), while ((t -= dt) <= 0)
+        "useIterableCallbackReturn": "off",     // 77 hits: forEach(x => f(x)) where f returns a value
+        "noThenProperty": "off",                // 8 hits: walkers' P.then and the camera flight's fly.then, never awaited
+        "noFocusedTests": "off",                // 3 hits: an app function named fit(), which it takes for Jasmine's fit
+        "noDoubleEquals": "warn",               // no hits; a warning: x == 1 works
+        "noFallthroughSwitchClause": "warn"     // no hits; a warning: a fallthrough can be deliberate
+      }
+    }
+  }
+}

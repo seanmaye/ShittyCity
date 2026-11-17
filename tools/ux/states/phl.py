@@ -76,7 +76,7 @@ def mark_scroll(c):
 # ---------------------------------------------------------------- fishing on the Schuylkill
 FMSG = "return (document.querySelector('.fish-msg') || {}).textContent || '';"
 # the line-tension gauge, read off the canvas: the length of the bar's run of solid colour (red,
-# green or gold) along its middle row, as a fraction of the bar (fishing.js draws it)
+# green or gold) along its middle row, as a fraction of the bar (fishing.ts draws it)
 TENSION = """
 const cv = document.querySelector('.fish-cv'), g = cv.getContext('2d'), k = cv.height / 400;
 const G = cv.dataset.gauge ? JSON.parse(cv.dataset.gauge) : { x: 20, y: 348, w: 260, h: 14 };

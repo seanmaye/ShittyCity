@@ -1,0 +1,23 @@
+{
+  // npm run typecheck (tsc --noEmit; part of npm run check). The app is TypeScript (js/**/*.ts), checked whole; types are
+  // erased by Vite, so the built JS is the source minus its types (erasableSyntaxOnly: no enum, namespace or parameter
+  // properties; verbatimModuleSyntax: an import stays unless it says `import type`, as js/main.ts's three-setup import must).
+  // Plain .js files (test/, vite.config.js) are only parsed unless they opt in with // @ts-check (allowJs, checkJs off).
+  // Shared shapes: js/types/*.d.ts.
+  "compilerOptions": {
+    "target": "esnext",
+    "lib": ["esnext", "dom"],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,   // imports name the file as it is, ./data.ts (no emit, so nothing rewrites them)
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "allowJs": true,
+    "checkJs": false,
+    "strict": false,   // on by default in TypeScript 7; off, so a parameter may go without a type
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": ["vite/client"]   // import.meta.glob (js/main.ts)
+  },
+  "include": ["js", "test", "vite.config.js"]
+}

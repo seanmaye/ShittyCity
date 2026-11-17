@@ -1,13 +1,14 @@
 # City models
 
-Interactive three.js models of whole cities, built from real map data, with proposals of our own. There are four so far: Philadelphia, New York, New Orleans and Jersey Shore, PA, plus one kitchen (1938 Pine St). They run on one shared engine and are delivered as one shareable HTML file. The page opens on a menu where you pick a city. "Change city" returns to that menu, and `?city=phl`, `?city=nyc`, `?city=nola` or `?city=jsh` links straight to a city.
+Interactive three.js models of whole cities, built from real map data, with proposals of our own. There are four so far: Philadelphia, New York, New Orleans and Jersey Shore, PA, plus one roller coaster (Kingda Ka) and one kitchen (1938 Pine St). They run on one shared engine, and people see them on the live site. The page opens on a menu where you pick a city. "Change city" returns to that menu, and `?city=phl`, `?city=nyc`, `?city=nola`, `?city=jsh` or `?city=ka` links straight to a city.
 
 | City | What's in it | More |
 | --- | --- | --- |
 | **Philadelphia** (`phl`) | Philadelphia out to the city limits on its real terrain (USGS 3DEP elevation); every rail transit line (SEPTA Metro, Regional Rail, PATCO, NJ Transit); the 1953 streetcars; stadiums, Independence Hall and the Delaware bridges. Proposals: a Schuylkill riverfront monorail loop, expressway sports parks, a rail yard park and a bowl where Alvin and the Chipmunks play to a crowd of punks you can see through the eyes of (and get high as), and Walnut Street as a brick promenade busy with people you can see through the eyes of, djour's 265 starred restaurants modelled as storefronts on their real buildings with their own labels and cards, and a Chinatown night market whose arcade stall has games you can play. Chinatown is modelled in detail, Friendship Gate and all. Cut-away: under Market Street. | [docs/PHL.md](docs/PHL.md) |
 | **New York** (`nyc`) | Manhattan, Brooklyn and Queens; the four East River bridges; Manhattan's towers, the Wonder Wheel, the Unisphere and Citi Field; 11 subway lines. Proposal: an East River monorail loop. Cut-away: under Times Square. | [docs/NYC.md](docs/NYC.md) |
 | **New Orleans** (`nola`) | The French Quarter, the CBD, the Marigny, the Bywater and the Garden District out to Uptown, City Park, the Lakefront and the Lower Ninth Ward; the Mississippi and Lake Pontchartrain; about 106,000 buildings; the six RTA streetcar lines on their real alignments (Arts, Broad, Cleveland, DC, Esplanade and Canal). Proposal: a Mississippi riverfront monorail loop. | [docs/NOLA.md](docs/NOLA.md) |
-| **Jersey Shore, PA** (`jsh`) | Jersey Shore borough and its neighbours on the West Branch of the Susquehanna: about 4,100 buildings, every street, the river round the island, Pine Creek, and Bald Eagle Mountain and the hills, on real terrain, with crop fields that grow and are harvested through the year, barns and silos, and in July a detasseling crew in the seed corn whose eyes you can see through. Proposal: the West Branch monorail loop via the river island and Antes Fort. | [docs/JSH.md](docs/JSH.md) |
+| **Jersey Shore, PA** (`jsh`) | Jersey Shore borough and its neighbours on the West Branch of the Susquehanna, from Avis and South Avis to Antes Fort, up Larrys Creek to Salladasburg and over Bald Eagle Mountain to Oriole in Nippenose Valley: about 10,000 buildings, every street, the river round the island, Pine Creek, and the mountains and hills, on real terrain, with crop fields that grow and are harvested through the year, barns and silos, and in July a detasseling crew in the seed corn whose eyes you can see through. Proposal: the West Branch monorail loop via the river island and Antes Fort. | [docs/JSH.md](docs/JSH.md) |
+| **Kingda Ka** (`ka`) | Not a city: one roller coaster, the tallest ever built (456 ft, 128 mph), as it stood at Six Flags Great Adventure in Jackson, NJ until 2024, with the park and pine woods round it. The track, tower, supports and station are fitted to the USGS lidar survey of the standing ride (949 m of track against the published 950). A train runs the circuit all day: take a seat for the launch, the vertical climb, the 270-degree spiral down and the airtime hill, with a speed, height and g-force readout, and the sound of it (synthesised: wind, wheels, the launch, the brakes). About one launch in fifteen rolls back, as the real ones did. Zumanjaro: Drop of Doom runs on the tower's face. | [docs/KA.md](docs/KA.md) |
 | **1938 Pine St Kitchen** (`pine`) | Not a city: one kitchen, modelled from photos, with every drawer and cabinet in the kitchen organization plan. Click a drawer or door (or pick it in the panel) to open it and see what goes inside; the corner lazy susan turns. The island sits with equal gaps on both sides: the aisle to the sink run is as wide as the space between the island and the west wall. | [docs/PINE.md](docs/PINE.md) |
 
 ## In every city
@@ -32,87 +33,66 @@ Interactive three.js models of whole cities, built from real map data, with prop
 
 ## Run it
 
-The source page loads its data with `fetch`, so it needs a local web server. Opening `index.html` directly from disk won't work.
+The page loads its data with `fetch`, so it needs a local web server. Opening `index.html` directly from disk won't work. It is built with [Vite](https://vite.dev/), and three.js and the Archivo font come from npm, so you need Node.js 24 (`.nvmrc`).
 
 ```bash
-python -I tools/serve.py
+npm ci
+npm run dev
 ```
 
-This serves the repo with caching turned off, so a reload always picks up your edits. A plain `python -m http.server` lets the browser keep using an old copy of a module after you change it, and the page then mixes new and stale code (Ctrl+Shift+R fixes that).
+This serves the working tree (`data/` as it is) and updates the page when you save a file.
 
-Then open <http://localhost:8765>.
+Then open <http://localhost:5173>. `npm run build` writes the site to `dist/`, which is what Cloudflare deploys, and `npm run preview` serves that build at <http://localhost:4173>.
+
+`npm run check` lints the code (Biome), type-checks the TypeScript in `js/` (`tsc`) and runs the unit tests in `test/` (Vitest). Cloudflare runs it before every build (`npm run cf:build`), so a failing check stops the deploy: run it before you push.
 
 To measure how fast it loads and renders (frame and GPU time per scenario, hot code paths,
 draw calls by source line, before/after comparisons), see [tools/perf/README.md](tools/perf/README.md):
 
 ```bash
-python -I tools/perf/perf.py run --quick
+uv sync --group qa
+uv run python -I tools/perf/perf.py run --quick
 ```
 
-## Sharing as one file
-
-```bash
-python -I tools/bundle.py
-```
-
-This rebuilds `city-models.html` at the repo root (about 41 MB), the file you send people. It has the CSS, every script and every city's data inline, so it opens with a double-click and needs no server. three.js and the font still load from their CDNs, so viewers need an internet connection.
-
-**Workflow.** Edit the sources (`js/`, `css/`, `data/`, `index.html`) and check them with the local server. Then run the bundler and commit the sources and the rebuilt HTML together.
-
-**If someone edited the HTML directly** (as the guide inside it allows), bring their changes back into the sources before editing anything else:
-
-```bash
-python -I tools/unbundle.py --check
-```
-
-```bash
-python -I tools/unbundle.py
-```
-
-`--check` unpacks into a temporary folder, rebuilds the bundle, and confirms nothing would be lost. The data blocks may come out in a different order, but their contents must match. The second command then overwrites the sources from the HTML.
-
-The bundle starts with an editing guide ([docs/EDITING.md](docs/EDITING.md)) as an HTML comment. It lets someone, or another Claude, change a city with only the HTML file. It covers:
-- the file layout
-- each city's coordinates
-- every data schema
-- a Python helper for editing the embedded data
-- recipes
+The Python tools that need libraries run in one environment locked with [uv](https://docs.astral.sh/uv/) (`pyproject.toml` and `uv.lock`, made with uv 0.13.4, Python 3.12 from `.python-version`). `uv sync --group <name>` puts it in `.venv/` at the repo root with that group: `data` (the city builders), `fetch` (their downloaders), `qa` (perf, ux and the loading-screen capture) and `dev` (Ruff, pytest). `uv sync` removes the groups you don't name, so name them all in one command (`uv sync --group data --group fetch`) or use `--all-groups`.
 
 ## Layout
 
 Shared code sits at the top level. Each city has a folder of the same name in `data/`, `js/scene/` and `tools/`.
 
 ```
-city-models.html      the shareable single-file build (generated: run tools/bundle.py)
-index.html            page shell, start menu, HUD markup, import map for three.js 0.186
+index.html            page shell, start menu, HUD markup; the entry Vite builds from
+vite.config.js        the build: dist/, each data/<city>/ file encoded smaller (js/formats.ts) under a content-hashed name in dist/assets/ (js/main.ts URLS)
+css/fonts.css         the Archivo font from npm, both axes, upright and italic
 css/style.css         HUD, menu and label styles
-js/three-setup.js     three.js settings that keep the r128-tuned look (colours, light scale)
-js/main.js            entry point: city menu -> load data -> build scene -> start UI
-js/cities.js          every city's settings (projection, data files, home view, sun, page text)
-js/data.js            data loader + lat/lon -> scene projection
-js/ui.js              buttons, hint text, floating labels, panel fold, skyline lights
-js/minimap.js         the top-right map
-js/ridebar.js         the line diagram shown while riding
-js/loading.js         the loading screens: posed figures over frames of the city
+js/three-setup.ts     three.js settings that keep the r128-tuned look (colours, light scale)
+js/main.ts            entry point: city menu -> load data -> build scene -> start UI
+js/cities.ts          every city's settings (projection, data files, home view, sun, page text)
+js/data.ts            data loader + lat/lon -> scene projection
+js/formats.ts         the smaller encodings the build ships the data in (JCOL, TER2, PHB2), and their readers
+js/ui.ts              buttons, hint text, floating labels, panel fold, skyline lights
+js/minimap.ts         the top-right map
+js/ridebar.ts         the line diagram shown while riding
+js/loading.ts         the loading screens: posed figures over frames of the city
 js/scene/
-  index.js            assembles the scene: each city's parts, time of day, rides, views
-  core.js             renderer, camera, orbit controls, lights
-  sky.js              the 24-hour clock: real sun position, sky colours, stars, night lights
-  buildings.js        the core's footprints, extruded and tiled
-  city.js             the rest of the city: tiled instanced buildings, streets, parks, water
-  ground.js           the core's ground, parks, streets, trails, rail, bridges
-  river.js            water polygons, bulkheads, dams, an optional river centreline
-  nature.js           trees (seasonal), rowing shells
-  season.js           time of year: snow, foliage, blossom, flower beds, grass
-  terrain.js          real ground heights (where a city has them): the ground mesh, and
+  index.ts            assembles the scene: each city's parts, time of day, rides, views
+  core.ts             renderer, camera, orbit controls, lights
+  sky.ts              the 24-hour clock: real sun position, sky colours, stars, night lights
+  buildings.ts        the core's footprints, extruded and tiled
+  city.ts             the rest of the city: tiled instanced buildings, streets, parks, water
+  ground.ts           the core's ground, parks, streets, trails, rail, bridges
+  river.ts            water polygons, bulkheads, dams, an optional river centreline
+  nature.ts           trees (seasonal), rowing shells
+  season.ts           time of year: snow, foliage, blossom, flower beds, grass
+  terrain.ts          real ground heights (where a city has them): the ground mesh, and
                       setting buildings, streets, transit and everything else on it
-  subway.js           every rail line: tracks, tunnels, Els, platforms, trains, rides,
+  subway.ts           every rail line: tracks, tunnels, Els, platforms, trains, rides,
                       cut-aways and the walkable cabins of every car
-  transitmap.js       "Show transit lines" highlight
-  materials.js        shared materials, lit-window textures, skyline lights
-  geometry.js         polygon / ribbon / footprint-extrusion builders
+  transitmap.ts       "Show transit lines" highlight
+  materials.ts        shared materials, lit-window textures, skyline lights
+  geometry.ts         polygon / ribbon / footprint-extrusion builders
   phl/                Philadelphia's hand-built parts: landmarks, citymarks (stadiums, halls,
-                      djour's restaurants (restaurants.js),
+                      djour's restaurants (restaurants.ts),
                       bridges), people and frisbee, the riverfront monorail, the river boats,
                       the sports parks,
                       the rail yard park, the Walnut St promenade with its pedestrians and their
@@ -120,22 +100,23 @@ js/scene/
   nyc/                New York's hand-built parts: landmarks (Manhattan towers), bridges (East
                       River), boroughmarks (Wonder Wheel, Unisphere, Citi Field), the monorail
   pine/               1938 Pine St Kitchen: the room, cabinets, appliances and opening drawers
-                      (kitchen.js) and the things stored in them (items.js)
-  jsh/                Jersey Shore's labels and views, its elevation grid (terrain.js, laying
+                      (kitchen.ts) and the things stored in them (items.ts)
+  ka/                 Kingda Ka: the track's layout (layout.ts), the standing ride (structure.ts and struct-*.ts),
+                      the train, its physics, the rider's seat and sound (train.ts, train-cars.ts, physics.ts, hud.ts, sound.ts)
+  jsh/                Jersey Shore's labels and views, its elevation grid (terrain.ts, laying
                       everything onto the hills), house types, farms, the detasseling crew,
                       the overlook and the late harvest
 data/
   phl/                Philadelphia's data (generated by tools/phl/; don't edit by hand)
   nyc/                New York's data (generated by tools/nyc/; don't edit by hand)
   jsh/                Jersey Shore's data (generated by tools/jsh/; don't edit by hand)
+  ka/                 Kingda Ka's data (generated by tools/ka/; don't edit by hand)
 tools/
-  serve.py            local server for the source page, with caching off (Run it)
-  bundle.py           packs everything into city-models.html
-  unbundle.py         the reverse: unpacks city-models.html into the sources
   loading/capture.py  captures the loading-screen backgrounds from each city (needs Playwright)
   phl/                Philadelphia's data tools (see docs/PHL.md and tools/phl/README.md)
   nyc/                New York's data tools (see docs/NYC.md)
   jsh/                Jersey Shore's data tools and their downloaded sources (see docs/JSH.md)
+  ka/                 Kingda Ka's data tools: the park, and the track from lidar (see docs/KA.md and tools/ka/README.md)
   perf/               runtime performance harness: frame/GPU/load timings, profiles,
                       draw-call attribution, A/B checks (see tools/perf/README.md)
 ```
@@ -145,7 +126,7 @@ All cities share one set of data formats, which [docs/EDITING.md](docs/EDITING.m
 ## Adding a city
 
 1. Make its data in `data/<id>/` in the shared formats, with the tools that make it in `tools/<id>/`.
-2. Add its entry to `CITIES` in `js/cities.js`. The menu shows it automatically.
-3. Put anything hand-built in `js/scene/<id>/`, and call it from `js/scene/index.js` when that city's data is loaded.
-4. List a few points of interest in its `loadingScreens` and capture them with `python -I tools/loading/capture.py <id>`.
-5. Write `docs/<ID>.md`, and run `python -I tools/bundle.py`.
+2. Add its entry to `CITIES` in `js/cities.ts`. The menu shows it automatically.
+3. Put anything hand-built in `js/scene/<id>/`, re-export from `js/scene/<id>/<id>.js` what `js/scene/index.ts` calls, add that file to `CODE` in `js/main.ts`, and call it in `buildScene` (it arrives in `own`) when that city's data is loaded. (Its data needs no step of its own: the build picks up every file in `data/<id>/`.)
+4. List a few points of interest in its `loadingScreens` and capture them with `uv run python -I tools/loading/capture.py <id>`.
+5. Write `docs/<ID>.md`.

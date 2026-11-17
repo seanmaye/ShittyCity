@@ -13,9 +13,9 @@ Writes, in the shared formats (docs/EDITING.md section 3):
                        West Branch of the Susquehanna, Pine Creek and smaller streams, trees
   city_buildings.bin.gz  empty (every footprint is in buildings.json)
 and, for this city only:
-  terrain.bin.gz       elevation grid the scene drapes everything over (js/scene/jsh/terrain.js)
-  places.json          labels and "Go to" views (js/scene/jsh/places.js)
-  farms.json.gz        crop fields (USDA Cropland Data Layer), barns and silos (js/scene/jsh/farms.js)
+  terrain.bin.gz       elevation grid the scene drapes everything over (js/scene/jsh/terrain.ts)
+  places.json          labels and "Go to" views (js/scene/jsh/places.ts)
+  farms.json.gz        crop fields (USDA Cropland Data Layer), barns and silos (js/scene/jsh/farms.ts)
 """
 import gzip, json, math, os, random, struct, sys, csv
 import numpy as np
@@ -31,7 +31,7 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 SRC, OUT = os.path.join(HERE, 'src'), os.path.join(ROOT, 'data', 'jsh')
 
 sys.path.insert(0, HERE)
-from extent import LAT0, LON0, MZ, MX, MODEL, HALF, CELL, BOROUGH  # noqa: E402
+from extent import LAT0, LON0, MZ, MX, MODEL, TOWN, HALF, CELL, BOROUGH  # noqa: E402
 
 
 def proj(lat, lon):
@@ -83,6 +83,7 @@ def xy_box(W, S, E, N):
 
 
 MODEL_BOX = xy_box(*MODEL)
+TOWN_BOX = xy_box(*TOWN)
 TERR_BOX = box(-HALF, -HALF, HALF, HALF)
 
 # ---------------------------------------------------------------- OSM
@@ -166,6 +167,11 @@ for e in osm:
         continue
     if t.get('name') and t.get('amenity') in ('school', 'townhall', 'library', 'place_of_worship'):
         named.append((t, way_poly(e).representative_point().coords[0] if way_poly(e) else way_line(e).coords[0]))
+    if t.get('natural') == 'valley':                   # Nippenose Valley: its label at the middle of its line in the model
+        g = way_line(e).intersection(MODEL_BOX)
+        if not g.is_empty:
+            named.append((t, g.interpolate(.5, normalized=True).coords[0]))
+        continue
     hw, rw, ww = t.get('highway'), t.get('railway'), t.get('waterway')
     if t.get('area') == 'yes' or hw in ('steps', 'construction', 'proposed', 'platform', 'elevator', 'corridor'):
         continue
@@ -232,7 +238,8 @@ H = np.apply_along_axis(lambda r: np.convolve(np.pad(r, 1, mode='edge'), k, 'val
 H = np.apply_along_axis(lambda r: np.convolve(np.pad(r, 1, mode='edge'), k, 'valid'), 0, H)
 
 # water mask on the grid: inside any water polygon (the river, Pine Creek, ponds)
-from shapely import contains_xy  # noqa: E402
+from shapely import contains_xy, prepare as sprepare  # noqa: E402
+sprepare(water_union)   # prepared, so testing every grid point takes seconds, not minutes
 wet = contains_xy(water_union, GX.ravel(), GZ.ravel()).reshape(GX.shape) if not water_union.is_empty else np.zeros(GX.shape, bool)
 # BASE: the river surface by town = y 0 in the scene
 near = wet & (np.hypot(GX, GZ) < 4000)
@@ -253,6 +260,7 @@ Hrel = (H - BASE) * fade
 gzs, gxs = np.gradient(H, CELL)
 slope = np.hypot(gxs, gzs)
 woods_u = unary_union(wood_polys)
+sprepare(woods_u)
 forest = contains_xy(woods_u, GX.ravel(), GZ.ravel()).reshape(GX.shape) if not woods_u.is_empty else np.zeros(GX.shape, bool)
 inside_model = contains_xy(MODEL_BOX, GX.ravel(), GZ.ravel()).reshape(GX.shape)
 forest = np.where(inside_model, forest, slope > .12)
@@ -260,7 +268,7 @@ cover = np.where(wet, 2, forest.astype(int)).astype(np.uint8)   # 2 = water bed
 
 
 def h_at(x, z_):
-    """terrain height (m above BASE) as the scene computes it (js/scene/jsh/terrain.js): the grid's triangles"""
+    """terrain height (m above BASE) as the scene computes it (js/scene/jsh/terrain.ts): the grid's triangles"""
     u, v = (x + HALF) / CELL, (z_ + HALF) / CELL
     i, j = min(N - 2, max(0, int(u))), min(N - 2, max(0, int(v)))
     fu, fv = u - i, v - j
@@ -437,14 +445,17 @@ for gi, name in enumerate(list(CROPS) + ['pasture'], 1):
             e1, e2 = (rr[1][0] - rr[0][0], rr[1][1] - rr[0][1]), (rr[2][0] - rr[1][0], rr[2][1] - rr[1][1])
             ex, ez = e1 if math.hypot(*e1) >= math.hypot(*e2) else e2
             fields.append({'k': name, 'a': round(math.atan2(ez, ex), 3), 's': round(random.random(), 3), 'p': poly_rings(q)})
-# a seed-corn block in the biggest corn field (js/scene/jsh/detassel.js): sets of four female rows,
+# a seed-corn block in the biggest corn field (js/scene/jsh/detassel.ts): sets of four female rows,
 # each between two taller male rows, down which a detasseling crew walks in July
 SEED_SETS, SEED_LEN, ROW_W = 4, 120.0, .76
 seed = None
 corn = [(i, Polygon([(f['p'][0][k] / 10, f['p'][0][k + 1] / 10) for k in range(0, len(f['p'][0]), 2)],
                     [[(h[k] / 10, h[k + 1] / 10) for k in range(0, len(h), 2)] for h in f['p'][1:]])) for i, f in enumerate(fields) if f['k'] == 'corn']
+corn = [c for c in corn if TOWN_BOX.contains(c[1].centroid)]   # the biggest by town, on the island, not out in Nippenose Valley
+seed_field = None                                               # its outline, for the Corn fields view
 if corn:
     fi, fp = max(corn, key=lambda c: c[1].area)
+    seed_field = Polygon(fp.exterior.coords)
     a = fields[fi]['a']; ux, uz = math.cos(a), math.sin(a); vx, vz = -uz, ux
     rows = SEED_SETS * 5 + 1; W = (rows - 1) * ROW_W
     def block(cx, cz, mu=0, mv=0):
@@ -463,7 +474,7 @@ if corn:
         _, cx, cz = best
         seed = {'x': round(float(cx), 1), 'z': round(float(cz), 1), 'a': a, 'len': SEED_LEN, 'sets': SEED_SETS, 'row': ROW_W, 's': fields[fi]['s']}   # s: its field's planting group
         # the field keeps its outline: its canopy covers the block from afar, and near the camera
-        # js/scene/jsh/cornlod.js leaves the block and its 8 m headlands to detassel.js
+        # js/scene/jsh/cornlod.ts leaves the block and its 8 m headlands to detassel.ts
         print(f'farms: seed-corn block at ({cx:.0f}, {cz:.0f}), {SEED_SETS} sets of 4 female rows')
 farm_ctx = prep(unary_union(farm_any).buffer(150)) if farm_any else None
 blocked = unary_union([blocked] + [Polygon([(f['p'][0][i] / 10, f['p'][0][i + 1] / 10) for i in range(0, len(f['p'][0]), 2)]) for f in fields])
@@ -472,7 +483,7 @@ print(f'farms: {len(fields)} fields (' + ', '.join(f"{k} {sum(1 for f in fields 
       f'), {sum(Polygon([(f["p"][0][i] / 10, f["p"][0][i + 1] / 10) for i in range(0, len(f["p"][0]), 2)]).area for f in fields) / 1e6:.2f} km2')
 
 # barns: big farm buildings outside the borough, near fields and pasture, away from house clusters;
-# silos: small round footprints beside them. Both are modelled in js/scene/jsh/farms.js instead.
+# silos: small round footprints beside them. Both are modelled in js/scene/jsh/farms.ts instead.
 SILO_ROUND = .62
 BARN_WALL = ['#8e2f25', '#8e2f25', '#9b3a2c', '#7e2a22', '#e6e2d8', '#d9d3c4', '#8a8173', '#a33d2e']
 BARN_ROOF = ['#4d5256', '#3d4245', '#5a5e60', '#3f5a45', '#6b3a2e', '#7a7f82']
@@ -513,7 +524,7 @@ for i, p in enumerate(foot):
     drop.add(i)
 print(f'farms: {len(barns)} barns, {len(silos)} silos')
 
-# what each remaining building is, for js/scene/jsh/town.js, which gives it a shape of its own:
+# what each remaining building is, for js/scene/jsh/town.ts, which gives it a shape of its own:
 # pitched roofs, porches and chimneys on houses, storefronts and cornices downtown, steeples on
 # churches, metal sheds at the mills. Per building: [type, x, z, w, d, angle] (dm, dm, dm, dm,
 # mrad): the footprint's best-fit rectangle with its front (+d) turned to the nearest street.
@@ -600,7 +611,30 @@ cdl_forest = np.isin(cls, [141, 142, 143, 152])
 cdl_crop = np.isin(cls, list(set().union(*CROPS.values())))
 cover = np.where(cover == 2, 2, np.where(inside_model, cover, np.where(cdl_forest, 1, np.where(cdl_crop, 3, 0)))).astype(np.uint8)
 
-trees = list(tree_nodes)
+# Bald Eagle Mountain: the highest ground of the ridge south of the river (its label, and the overlook's site)
+ridge = (GZ > 2500) & (GZ < 6500) & (np.abs(GX) < 5000)
+j, i = np.unravel_index(np.where(ridge, Hrel, -1e9).argmax(), Hrel.shape)
+summit = (float(gx[i]), float(gx[j]))
+# the overlook (js/scene/jsh/overlook.ts overlookSite(): 24 m off the summit toward town, the eye 1.2 m
+# up) keeps a clearing and its view: no tree within 40 m, nor one in the half he faces whose top would
+# stand in a sight line dropping 9 degrees from his eye, which is as steeply as he looks down into the valley
+_d = math.hypot(*summit)
+OVER = (summit[0] - summit[0] / _d * 24, summit[1] - summit[1] / _d * 24)
+OVER_EYE, OVER_DIR = h_at(*OVER) + 1.2, (-OVER[0] / math.hypot(*OVER), -OVER[1] / math.hypot(*OVER))
+TAN9 = math.tan(math.radians(9))
+
+
+def in_view(x, z_):
+    dx, dz = x - OVER[0], z_ - OVER[1]
+    r = math.hypot(dx, dz)
+    if r < 40:
+        return True
+    if r > 600 or dx * OVER_DIR[0] + dz * OVER_DIR[1] < -.17 * r:   # behind him (past 100 degrees off his heading)
+        return False
+    return h_at(x, z_) + 20 > OVER_EYE - r * TAN9                  # a tree tops out at 20-odd m
+
+
+trees = [t for t in tree_nodes if not in_view(*t)]
 # street trees along residential streets in the borough and around it
 lim_buf = limits_geom.buffer(600)
 for l in lines:
@@ -622,13 +656,15 @@ for l in lines:
                 trees.append((x, zz))
 # yard trees in the town, and woodland on the hills
 x0b, z0b, x1b, z1b = MODEL_BOX.bounds
-lim_p, woods_p = prep(lim_buf), prep(woods_u.intersection(MODEL_BOX))
+lim_p, woods_p, town_p_box = prep(lim_buf), prep(woods_u.intersection(MODEL_BOX)), prep(TOWN_BOX)
 for xx in np.arange(x0b, x1b, 26):
     for zz in np.arange(z0b, z1b, 26):
         x, z_ = xx + random.uniform(-11, 11), zz + random.uniform(-11, 11)
         pt = Point(x, z_)
         if woods_p.contains(pt):
-            if random.random() < .82 and not blocked_p.contains(pt):
+            # woods by town as thick as ever; out on the hills thinner, where they are mostly seen from afar
+            # on ground the terrain already colours as forest (and every tree there costs a frame)
+            if random.random() < (.82 if town_p_box.contains(pt) else .4) and not blocked_p.contains(pt) and not in_view(x, z_):
                 trees.append((x, z_))
         elif lim_p.contains(pt) and random.random() < .22 and not blocked_p.contains(pt):
             trees.append((x, z_))
@@ -649,21 +685,26 @@ for t, (x, z_) in named:
     nm = t['name']
     if t.get('place') in ('village', 'town', 'hamlet'):
         labels.append(lbl(nm, x, z_, 70, 9000))
+    elif t.get('natural') == 'valley':
+        labels.append(lbl(nm, x, z_, 60, 14000))
     elif t.get('amenity') or t.get('leisure') in ('park', 'sports_centre', 'stadium'):
         labels.append(lbl(nm, x, z_, 22))
+# South Avis has no place node in OSM: its name goes over its park and old school
+places_xy = {t['name']: xy for t, xy in named if t.get('place') or t.get('leisure') == 'park'}
+if 'South Avis' not in places_xy and 'South Avis Park' in places_xy:
+    places_xy['South Avis'] = places_xy['South Avis Park']
+    labels.append(lbl('South Avis', *places_xy['South Avis'], 70, 9000))
 # the rivers: the widest water by town, and Pine Creek
 river_poly = max(water_polys, key=lambda p: p.intersection(Point(0, 0).buffer(3000)).area)
 rp = river_poly.intersection(Point(0, 1200).buffer(1500)).representative_point()
 labels.append(lbl('West Branch Susquehanna River', rp.x, rp.y, 30, 8000))
-pine = [p for p in water_polys if p.centroid.x < -3600 and p.centroid.y < 0]
+pine = [p for p in water_polys if p.centroid.x < -3600 and p.centroid.y < 0 and TOWN_BOX.contains(p.centroid)]   # its mouth, not the wider creek up the valley
 pp = Point(-3800, -400)
 if pine:
     pp = max(pine, key=lambda p: p.area).representative_point()
     labels.append(lbl('Pine Creek', pp.x, pp.y, 25, 6000))
 # Bald Eagle Mountain: the highest ground of the ridge south of the river
-ridge = (GZ > 2500) & (GZ < 6500) & (np.abs(GX) < 5000)
-j, i = np.unravel_index(np.where(ridge, Hrel, -1e9).argmax(), Hrel.shape)
-labels.append(lbl('Bald Eagle Mountain', float(gx[i]), float(gx[j]), 60, 14000))
+labels.append(lbl('Bald Eagle Mountain', *summit, 60, 14000))
 labels.append(lbl('Allegheny St', -110, -25, 30, 2500))
 
 
@@ -680,11 +721,26 @@ bx, bz = LineString([(bridge['p'][i] / 10, bridge['p'][i + 1] / 10) for i in ran
 views = [
     {'id': 'downtown', 'name': 'Allegheny St', **V(-330, 260, 110, -60, -30, 5)},
     {'id': 'bridge', 'name': 'River bridge', **V(bx + 380, bz + 330, 90, bx - 60, bz - 20, 5)},
-    # (the view from Bald Eagle Mountain is the overlook's: js/scene/jsh/overlook.js, at the mountain's label)
-    *([{'id': 'farms', 'name': 'Corn fields', **V(cf.x + 800, cf.y + 1250, 600, cf.x + 60, cf.y + 250, 0)}] if (cf := (lambda cs: max(cs, key=lambda q: q.area).centroid if cs else None)(
-        [Polygon([(f['p'][0][i] / 10, f['p'][0][i + 1] / 10) for i in range(0, len(f['p'][0]), 2)]) for f in fields if f['k'] == 'corn'])) else []),
-    # (the detasseling crew's view follows the crew: js/scene/jsh/detassel.js)
+    # (the view from Bald Eagle Mountain is the overlook's: js/scene/jsh/overlook.ts, at the mountain's label)
+    *([{'id': 'farms', 'name': 'Corn fields', **V(cf.x + 800, cf.y + 1250, 600, cf.x + 60, cf.y + 250, 0)}] if (cf := seed_field and seed_field.centroid) else []),   # the seed corn's field
+    # (the detasseling crew's view follows the crew: js/scene/jsh/detassel.ts)
     {'id': 'pinecreek', 'name': 'Pine Creek', **V(pp.x + 900, pp.y + 1100, 380, pp.x, pp.y, 0)},
+]
+
+
+def place_view(vid, name, place, dx, dz, up, tdx=0, tdz=0):
+    """a view of a village from dx, dz off it, up m above the ground there"""
+    if place not in places_xy:
+        return []
+    x, z_ = places_xy[place]
+    return [{'id': vid, 'name': name, **V(x + dx, z_ + dz, up, x + tdx, z_ + tdz, 0)}]
+
+
+views += [
+    *place_view('avis', 'Avis', 'Avis', 700, 1000, 280),                                # over the river from the foot of the mountain
+    *place_view('antesfort', 'Antes Fort', 'Antes Fort', -800, -900, 250, 150, 200),    # from over the river, the Antes Creek gap behind
+    *place_view('salladasburg', 'Salladasburg', 'Salladasburg', 500, 1300, 300, 0, -100),   # up Larrys Creek from the south
+    *place_view('nippenose', 'Nippenose Valley', 'Oriole', 1300, -700, 320, -300, 300),   # over Oriole and down the valley
 ]
 
 # ---------------------------------------------------------------- write

@@ -36,7 +36,7 @@ way[leisure~"park|pitch|playground|golf_course|sports_centre|track|stadium"]({b}
 way[landuse~"grass|cemetery|forest|meadow|recreation_ground|farmland|farmyard|orchard"]({b});
 relation[landuse~"forest|cemetery|meadow"]({b}); way[natural~"wood|scrub|grassland"]({b});
 relation[natural~"wood|water"]({b}); way[amenity=grave_yard]({b});
-relation(188746);
+relation(188746); way[natural=valley][name]({b});
 node[place]({b}); node[amenity~"school|townhall|library|place_of_worship"]({b});
 way[amenity~"school|townhall|library|place_of_worship"]({b}); way[man_made]({b}); node[natural=tree]({b});
 );out geom;"""

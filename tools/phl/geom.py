@@ -1,7 +1,7 @@
 """Small pure-Python 2D geometry helpers used by build_data.py (no shapely/numpy needed)."""
 import math
 
-# Same local projection the scene uses (js/data.js): metres east (x) and south (z) of the origin.
+# Same local projection the scene uses (js/data.ts): metres east (x) and south (z) of the origin.
 LAT0, LON0, MX, MZ = 39.9560, -75.1760, 85390.0, 111000.0
 
 

@@ -5,14 +5,14 @@ description: Measure, find and prove runtime performance gains in the three.js c
 
 # Performance work on the Schuylkill model
 
-The harness is `tools/perf/perf.py`. Read `tools/perf/README.md` before your first run; it
-explains every metric and pitfall. The loop:
+The harness is `tools/perf/perf.py` (setup: `uv sync --group qa`, plus Node 24 and npm: it builds each side, cached; see
+"Sides" in the README). Read `tools/perf/README.md` before your first run; it explains every metric and pitfall. The loop:
 
 1. **Baseline.** Run this and read the printed summary (also saved as `summary.md` in the
    output folder):
 
    ```bash
-   python -I tools/perf/perf.py run --quick
+   uv run python -I tools/perf/perf.py run --quick
    ```
 
    Run every scenario when the task is broad; `perf.py list` names them. Note each
@@ -20,7 +20,7 @@ explains every metric and pitfall. The loop:
 2. **Attribute.** For the slow scenarios:
 
    ```bash
-   python -I tools/perf/perf.py run -s <scenarios> --census --ablate
+   uv run python -I tools/perf/perf.py run -s <scenarios> --census --ablate
    ```
 
    The ablation table ranks what costs the frame (each builder hidden, the shadow pass,
@@ -33,7 +33,7 @@ explains every metric and pitfall. The loop:
    separate runs drift by 20–50% on this kind of laptop GPU, so don't compare them:
 
    ```bash
-   python -I tools/perf/perf.py ab -s <scenarios>
+   uv run python -I tools/perf/perf.py ab -s <scenarios>
    ```
 
    Claim only rows marked `better` (paired t-test, 99%) or `likely better` (95%), and say
@@ -45,8 +45,7 @@ explains every metric and pitfall. The loop:
    `perf.py ab --a-snap <before> --b-snap <after>` measures one change at a time, and can run
    while you keep editing. Add `--shots` to save both sides' screenshots (`A-<scenario>.png`,
    `B-<scenario>.png`): they should differ only where trains moved.
-5. Report the numbers with the scenario names and the GPU from the report header. Rebuild
-   the single-file bundle (`python -I tools/bundle.py`) only if the user asks to ship it.
+5. Report the numbers with the scenario names and the GPU from the report header.
 
 Rules of thumb for this codebase:
 
@@ -56,7 +55,7 @@ Rules of thumb for this codebase:
 - The renderer uses a 4096² PCF soft shadow map that re-renders every frame, a logarithmic
   depth buffer, MSAA, and clipping planes on every material (the Market St cut-away).
   Weigh changes to those against how the scene looks.
-- `js/scene/city.js` already tiles and LODs the outer city (1 km tiles; full boxes within
+- `js/scene/city.ts` already tiles and LODs the outer city (1 km tiles; full boxes within
   5 km, roofs farther out, hidden past the fog). Measure before reworking it.
 - A change that only helps the load (data format, builders, shader count) shows up in the
   `load.*` rows and the first frame, not in frame time.

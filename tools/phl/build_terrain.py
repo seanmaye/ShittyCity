@@ -18,6 +18,8 @@ import array, gzip, json, math, os, struct, sys
 from collections import deque
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from formats import pack_ter1  # noqa: E402
 ROOT = os.path.join(HERE, "..", "..")
 RAW = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "raw")
 CELL = float(sys.argv[2]) if len(sys.argv) > 2 else 10.0
@@ -153,18 +155,8 @@ for c in dout:
     Wd[c] = src[c] - G[c]    # usually negative: the bank stands above the water
 
 # ---- write: int16 decimetres, rows delta-coded, gzip
-def pack(a):
-    out = array.array("h", bytes(W * H * 2))
-    for j in range(H):
-        prev = 0
-        for i in range(W):
-            v = max(-32767, min(32767, int(round(a[j * W + i] * 10))))
-            out[j * W + i] = v - prev; prev = v
-    if sys.byteorder == "big": out.byteswap()
-    return out.tobytes()
-head = b"TER1" + struct.pack("<5i", round(X0 * 10), round(Z0 * 10), round(CELL * 10), W, H)
 path = os.path.join(ROOT, "data", "phl", "terrain.bin.gz")
 with gzip.open(path, "wb", compresslevel=9) as f:
-    f.write(head + pack(G) + pack(Wd))
+    f.write(pack_ter1(X0, Z0, CELL, W, H, G, Wd))
 lo, hi = min(G), max(G)
 print(f"  ground {lo:.1f} to {hi:.1f} m; wrote data/phl/terrain.bin.gz ({os.path.getsize(path) / 1e6:.1f} MB)")

@@ -16,8 +16,6 @@ import importlib.util
 import json
 import os
 import re
-import shutil
-import subprocess
 import sys
 import time
 import traceback
@@ -26,7 +24,7 @@ from collections import Counter, defaultdict
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, os.path.join(ROOT, 'tools', 'perf'))
-from perf import CDN, FIXED_DATE, PROBE, cdn_handler, gpu_args, git, serve  # noqa: E402
+from perf import FIXED_DATE, PROBE, diff_note, diff_table, gpu_args, git, prepare_side, serve  # noqa: E402
 
 AUDIT = os.path.join(HERE, 'audit.js')
 OUT = os.path.join(HERE, 'out')
@@ -184,7 +182,6 @@ def new_context(browser, device, base, block=None):
     ctx.add_init_script(script='window.__PERF_CFG = ' + json.dumps({'seed': 1, 'date': FIXED_DATE}) + ';')
     ctx.add_init_script(path=PROBE)
     ctx.add_init_script(path=AUDIT)
-    ctx.route(CDN, cdn_handler(False))
     if block:
         ctx.route(block, lambda r: r.abort())
     return ctx
@@ -233,7 +230,8 @@ def run_device(browser, base, city, dname, device, states, a, art, first_city):
                     page.wait_for_selector('#menu:not([hidden])', timeout=20000)
                     page.wait_for_timeout(400)
                 elif st['pre'] == 'error':
-                    page.route(re.compile(r'/data/[a-z]+/river\.json$'), lambda r: r.abort())
+                    # the city's river.json: data/<city>/river.json, or assets/data-<city>-river[-<hash>].json in a build that names data so (vite.config.js)
+                    page.route(re.compile(r'/(?:data/[a-z]+/|assets/data-(?:[a-z]+-)+)river(?:-[\w-]{8})?\.json$'), lambda r: r.abort())
                     page.goto(base + '/index.html?city=' + city, wait_until='load')
                     page.wait_for_selector('#loading-back:not([hidden])', timeout=60000)
                     page.wait_for_timeout(300)
@@ -273,7 +271,7 @@ def run_device(browser, base, city, dname, device, states, a, art, first_city):
             try:
                 page.evaluate('__ux.reset()')
                 fold = st.get('fold')
-                if fold is None:   # the app's first-visit default: folded on small screens (js/ui.js COMPACT)
+                if fold is None:   # the app's first-visit default: folded on small screens (js/ui.ts COMPACT)
                     w, h = device['viewport']
                     fold = 'folded' if w <= 640 or h <= 500 else 'open'
                 if fold in ('open', 'folded'):
@@ -420,15 +418,10 @@ def cmd_run(a):
     stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
     art = os.path.join(OUT, stamp + ('-' + re.sub(r'[^\w.-]+', '-', a.label) if a.label else ''))
     os.makedirs(art, exist_ok=True)
-    root, snap = ROOT, None
-    if a.ref:   # the app as it was at a commit (index.html, css/, js/; data/ from the working tree)
-        sha = git('rev-parse', '--short', a.ref)
-        if not sha:
-            raise SystemExit(f'unknown git ref {a.ref}')
-        snap = root = os.path.join(OUT, f'.ref-{sha}-{os.getpid()}')
-        os.makedirs(snap, exist_ok=True)
-        arc = subprocess.run(['git', 'archive', a.ref, 'index.html', 'css', 'js'], cwd=ROOT, capture_output=True, check=True).stdout
-        subprocess.run(['tar', '-x', '-C', snap], input=arc, check=True)
+    # the working tree, or a commit: built in perf mode like perf.py's sides (perf.prepare_side)
+    if a.ref and not git('rev-parse', '--short', a.ref):
+        raise SystemExit(f'unknown git ref {a.ref}')
+    root, _, done = prepare_side(ROOT, a.ref)
     srv, base = serve(root)
     report = {'header': {'time': stamp, 'label': a.label, 'git': git('rev-parse', '--short', a.ref) if a.ref else git('rev-parse', '--short', 'HEAD'),
                          'dirty': False if a.ref else bool(git('status', '--porcelain', '--', 'index.html', 'css', 'js')),
@@ -452,8 +445,7 @@ def cmd_run(a):
             browser.close()
     finally:
         srv.shutdown()
-        if snap:
-            shutil.rmtree(snap, ignore_errors=True)
+        done()
         # 'all' (menu, load error) first
         res = report['results']
         report['results'] = {k: res[k] for k in sorted(res, key=lambda c: (c != 'all', cities.index(c) if c in cities else 0))}
@@ -498,6 +490,9 @@ def cmd_compare(a):
         if (ea, wa, ca) != (eb, wb, cb):
             print(f"| {' | '.join(k)} | {ea} → {eb} | {wa} → {wb} | {ca} → {cb} |")
     print(f'\nTotal change: errors {te:+d}, warnings {tw:+d}')
+    t, _ = diff_table([(' · '.join(k), os.path.join(a.a, fa[k]['png']), os.path.join(a.b, fb[k]['png']), os.path.join(a.b, 'diff', fb[k]['png']))
+                       for k in sorted(set(fa) & set(fb))], 'city · device · state')
+    print('\n## Pixels\n\n' + diff_note(os.path.join(a.b, 'diff', '<city>/<device>/<state>.png')) + '\n' + '\n'.join(t))
     if a.detail:
         for k in sorted(set(fa) & set(fb)):
             ka = Counter(key(f) for f in fa[k]['findings'] if f['sev'] != 'info')

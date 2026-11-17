@@ -8,7 +8,7 @@ body{background:#e9a888;font-family:Archivo,system-ui,-apple-system,"Segoe UI",R
 #tags{position:fixed;inset:0;pointer-events:none;overflow:hidden}
 .tag{position:absolute;left:0;top:0;transform:translate(-50%,-100%);background:var(--tag);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:12px;font-weight:600;white-space:nowrap}
 .tag::after{content:"";position:absolute;left:calc(50% + var(--sx,0px));top:100%;width:1px;height:8px;background:var(--ink);opacity:.5}
-.tag.below::after{top:auto;bottom:100%}   /* no room above the place (js/ui.js placeTags): hung below it */
+.tag.below::after{top:auto;bottom:100%}   /* no room above the place (js/ui.ts placeTags): hung below it */
 .hud{position:fixed;top:0;left:0;padding:calc(env(safe-area-inset-top,0px) + 14px) 14px 0 calc(env(safe-area-inset-left,0px) + 14px);max-width:min(380px,calc(100vw - 28px));box-sizing:border-box}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px 16px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;flex-direction:column;box-sizing:border-box;max-height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 28px);max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 28px)}
 #hud-body{min-height:0;overflow-y:auto;overscroll-behavior:contain;margin:0 -10px 0 0;padding:0 10px 2px 0}
@@ -49,7 +49,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 #xhair::before{left:10px;top:0;width:2px;height:22px}
 #xhair::after{top:10px;left:0;height:2px;width:22px}
 .legend .legend-h{flex-basis:100%;font-weight:600;margin-top:4px;color:var(--muted)}
-/* on a phone with the panel folded (js/ui.js), the dock carries a line for what the panel would
+/* on a phone with the panel folded (js/ui.ts), the dock carries a line for what the panel would
    show: the legend's strip (one row, swiped sideways) with Hide, or what the cut-away is with Close */
 .dock-mini{display:none}
 .lm-list{flex:1;min-width:0;display:flex;gap:6px 14px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;font-size:12px;font-weight:600;white-space:nowrap;padding:4px 0;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 24px),transparent)}
@@ -144,7 +144,7 @@ button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 
   #loading-city { font-size: clamp(1.5rem, 9vw, 3.25rem); }
 }
 
-/* The loading slideshow (js/loading.js): a city's points of interest, each a frame from its
+/* The loading slideshow (js/loading.ts): a city's points of interest, each a frame from its
    3D model with one of our figures posed in front, sliding in one after another. */
 .city-loading.ls-on { background: #000; --bar: 4.5vh; }
 .ls-on .ls-stage, .ls-on .ls-flash, .ls-on .ls-fx { display: block; position: absolute; inset: 0; pointer-events: none; }
@@ -156,7 +156,7 @@ button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 
 /* letterbox bars */
 .ls-on::before, .ls-on::after { content: ""; position: absolute; left: 0; right: 0; height: var(--bar); background: #000; z-index: 0; pointer-events: none; }
 .ls-on::before { top: 0; } .ls-on::after { bottom: 0; }
-/* film grain: a noise tile (made in loading.js) jumping about a few times a second */
+/* film grain: a noise tile (made in loading.ts) jumping about a few times a second */
 .ls-grain { position: absolute; inset: -5%; background-image: var(--grain); opacity: .07; animation: ls-grain .5s steps(1) infinite; }
 @keyframes ls-grain {
   0% { transform: translate(0, 0); } 20% { transform: translate(-3%, 2%); } 40% { transform: translate(2.5%, -3%); }
@@ -166,7 +166,7 @@ button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 
 /* a screen is a window a little wider than the viewport (so it still covers it when skewed into the
    slanted panel it slides in as), holding the viewport-sized picture in the middle; kept within
    ~1.1x the viewport so Firefox animates it off the main thread */
-.ls-on .ls-screen { left: -5%; right: -5%; }   /* EDGE in loading.js */
+.ls-on .ls-screen { left: -5%; right: -5%; }   /* EDGE in loading.ts */
 .ls-inner { position: absolute; top: 0; bottom: 0; left: 4.5455%; width: 90.9091%; overflow: hidden; }
 .ls-pan { position: absolute; inset: -5%; }
 .ls-bg { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; }   /* colour grade baked in by tools/loading/capture.py */
@@ -176,7 +176,7 @@ button.ghost[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 
 .ls-dim, .ls-glow { position: absolute; inset: 0; opacity: 0; background: #000; }
 .ls-glow { background: #fff; }
 .ls-drift { position: absolute; inset: 0; }
-.ls-hero { position: absolute; bottom: 2vh; height: 90vh; max-width: none; }   /* outline and shadow are drawn into the image (loading.js) */
+.ls-hero { position: absolute; bottom: 2vh; height: 90vh; max-width: none; }   /* outline and shadow are drawn into the image (loading.ts) */
 .ls-screen[data-side="right"] .ls-hero { right: 6vw; }
 .ls-screen[data-side="left"] .ls-hero { left: 5vw; }
 .ls-poi { position: absolute; top: calc(var(--bar) + 3vh); display: flex; flex-direction: column; gap: .5vh; max-width: 46vw; }
@@ -248,8 +248,8 @@ button.fold svg{transition:transform .2s}
 .mm-ctl button{width:26px;height:26px;padding:0;font-size:16px;line-height:1;background:var(--panel);color:var(--ink);border-color:var(--line)}
 .mm-tog{display:none}
 .mm-scale{position:absolute;left:8px;bottom:6px;font-size:10.5px;font-weight:600;color:#1d2b36;background:rgba(255,255,255,.75);border-radius:4px;padding:1px 5px}
-/* the line diagram while riding (js/ridebar.js): bottom centre, or in the space right of the open
-   panel (--hud-w, js/ui.js) so it never runs under it; a small screen docks it (.dock, below) */
+/* the line diagram while riding (js/ridebar.ts): bottom centre, or in the space right of the open
+   panel (--hud-w, js/ui.ts) so it never runs under it; a small screen docks it (.dock, below) */
 .ridebar{position:fixed;left:calc(env(safe-area-inset-left,0px) + 14px);right:calc(env(safe-area-inset-right,0px) + 14px);bottom:calc(env(safe-area-inset-bottom,0px) + 30px);max-width:760px;margin:0 auto;box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:9px 14px 6px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--ink);container:rb/inline-size}
 @media (min-width:641px) and (min-height:501px){body.hud-open .ridebar{left:calc(var(--hud-w,0px) + 14px)}}
 .ridebar[hidden]{display:none}
@@ -267,7 +267,7 @@ button.fold svg{transition:transform .2s}
 #rb-svg text.done{opacity:.55}
 /* a narrow bar (a phone; a tablet beside the panel): the whole line's names would be ~5 px tall, so
    the next stop gets a line of its own in large type, and the strip shows just the stops around the
-   train, in the order it reaches them (js/ridebar.js) */
+   train, in the order it reaches them (js/ridebar.ts) */
 .rb-near{display:none;position:relative;margin:9px 0 1px}
 .rb-rail{position:absolute;top:5px;height:6px;border-radius:3px;background:var(--c,#8a96a0)}
 .rb-rail.more-l{-webkit-mask-image:linear-gradient(90deg,transparent,#000 28px);mask-image:linear-gradient(90deg,transparent,#000 28px)}
@@ -299,7 +299,7 @@ button.fold svg{transition:transform .2s}
   .rb-near{display:block}
   .rb-near[hidden]{display:none}
 }
-/* through someone's eyes: things they can do (js/ui.js syncActions), and the mask of their binoculars */
+/* through someone's eyes: things they can do (js/ui.ts syncActions), and the mask of their binoculars */
 .actions{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 30px);transform:translateX(-50%);display:flex;gap:6px;padding:6px;background:var(--panel);border:1px solid var(--line);border-radius:999px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);max-width:calc(100vw - 20px);box-sizing:border-box}
 .actions[hidden]{display:none}
 body:has(#actions:not([hidden])) .credit{display:none}   /* the bar has the bottom of the screen (as the ride bar does): a credit that wraps would run into it */
@@ -311,7 +311,7 @@ body:has(#actions:not([hidden])) .credit{display:none}   /* the bar has the bott
 #binoc svg{display:block;width:100%;height:100%}
 #binoc-cap{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 88px);width:fit-content;margin:0 auto;padding:6px 14px;border-radius:16px;background:rgba(0,0,0,.55);color:#fff;font-size:13px;font-weight:600;text-align:center;max-width:calc(100vw - 32px);box-sizing:border-box}
 #binoc-cap:empty{display:none}
-#binoc-cap::after{content:attr(data-how);display:block;font-size:11.5px;font-weight:500;opacity:.8}   /* how to zoom (js/ui.js) */
+#binoc-cap::after{content:attr(data-how);display:block;font-size:11.5px;font-weight:500;opacity:.8}   /* how to zoom (js/ui.ts) */
 /* upright screens: the lenses as wide as the screen (at "meet" they'd fill only a band across the middle) */
 @media (max-aspect-ratio:1/1){#binoc svg{transform:scale(1.3)}}
 /* phones on their side: the dock has the right of the bottom edge, so the caption takes the left (off the lenses' middle) */
@@ -323,7 +323,7 @@ body:has(#binoc:not([hidden])) .minimap{display:none}
 @media (max-width:640px),(max-height:500px){.actions{bottom:calc(env(safe-area-inset-bottom,0px) + 10px);gap:4px;padding:4px}.actions button{flex:0 1 auto;min-width:0;white-space:normal;justify-content:center;text-align:center;line-height:1.2;font-size:13px;padding:6px 10px}.actions kbd{display:none}}
 /* no keyboard on a touch screen: no key chips */
 @media (hover:none),(pointer:coarse){.actions kbd{display:none}}
-/* start menu: pick a city (js/main.js). The page behind it shows the dusk sky colours. */
+/* start menu: pick a city (js/main.ts). The page behind it shows the dusk sky colours. */
 body.choosing{background:linear-gradient(#363a66,#e98e72 62%,#f6c89f)}
 body.choosing .hud,body.choosing .credit,body.choosing #modehint{display:none}
 .menu{position:fixed;inset:0;display:grid;place-items:center;padding:16px;box-sizing:border-box;overflow:auto;z-index:10}
@@ -366,7 +366,7 @@ button.pe-fold{display:none}
   .persona.min .pe-now{margin-bottom:8px}
 }
 @media (pointer:coarse){button.pe-fold{width:44px;height:44px;margin:-9px -4px -6px 0}}
-/* fishing on the Schuylkill (js/fishing.js) */
+/* fishing on the Schuylkill (js/fishing.ts) */
 .fish-modal{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,14,20,.45)}
 .fish-modal[hidden]{display:none}
 .fish-card{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:14px 16px 16px;width:min(760px,100%);max-height:calc(100vh - 32px);overflow:auto;box-sizing:border-box;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 10px 40px rgba(0,0,0,.35)}
@@ -401,7 +401,7 @@ button.fish-back{position:sticky;bottom:0;box-shadow:0 2px 12px rgba(0,0,0,.3)} 
   .fish-cell{padding:4px}
   .fish-cell canvas{width:56px;height:56px}
 }
-@media (max-width:640px){.fish-cv{aspect-ratio:480/400}}   /* phones upright: a squarer picture, bigger on the screen (js/fishing.js follows its shape) */
+@media (max-width:640px){.fish-cv{aspect-ratio:480/400}}   /* phones upright: a squarer picture, bigger on the screen (js/fishing.ts follows its shape) */
 /* phones on their side: the picture down the left as tall as the screen, the words and buttons beside it */
 @media (max-height:500px) and (min-width:560px){
   .fish-card[data-part="game"]{display:grid;grid-template-columns:min(calc(100vw - 300px),calc((100vh - 40px) * 1.4)) minmax(0,1fr);grid-template-columns:min(calc(100vw - 300px),calc((100dvh - 40px) * 1.4)) minmax(0,1fr);grid-template-rows:auto auto 1fr;column-gap:14px;align-items:start}
@@ -411,7 +411,7 @@ button.fish-back{position:sticky;bottom:0;box-shadow:0 2px 12px rgba(0,0,0,.3)} 
   .fish-card[data-part="game"] .fish-msg{grid-column:2;grid-row:2;margin:0}
   .fish-card[data-part="game"] .fish-row{grid-column:2;grid-row:3;margin-top:10px}
 }
-/* Lucky Arcade in Chinatown's night market (js/arcade.js) */
+/* Lucky Arcade in Chinatown's night market (js/arcade.ts) */
 .arc-modal{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,14,20,.5)}
 .arc-modal[hidden],.arc-menu[hidden],.arc-game[hidden]{display:none}
 .arc-card{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:14px 16px 16px;width:min(760px,100%);max-height:calc(100vh - 32px);overflow:auto;box-sizing:border-box;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 10px 40px rgba(0,0,0,.35)}
@@ -431,7 +431,7 @@ button.arc-pick:hover{border-color:var(--accent)}
 .arc-msg{margin:10px 0 0;min-height:42px;color:var(--ink)}
 .arc-row{margin-top:8px}
 
-/* djour's restaurants (js/scene/phl/restaurants.js): their labels, the panel section and the card */
+/* djour's restaurants (js/scene/phl/restaurants.ts): their labels, the panel section and the card */
 .tag.eat{pointer-events:auto;cursor:pointer;border-color:#b5832a;font-weight:600}
 .tag.eat .st{color:#c8901c;margin-right:4px;letter-spacing:-1px;font-size:10px}
 .tag.eat.s3{border-width:1.5px;border-color:#c8901c}
@@ -452,7 +452,7 @@ button.arc-pick:hover{border-color:var(--accent)}
 .eat-x{position:absolute;top:6px;right:8px;background:transparent;color:var(--ink);border:0;font-size:20px;line-height:1;padding:4px 6px;cursor:pointer}
 @media (max-width:640px){.eatcard{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 74px);left:16px;right:16px;width:auto;max-height:40vh}}
 
-/* 1938 Pine St Kitchen (js/scene/pine/kitchen.js): only Change city stays of the city controls */
+/* 1938 Pine St Kitchen (js/scene/pine/kitchen.ts): only Change city stays of the city controls */
 body.kitchen{background:#2b2530}
 body.kitchen #ride,body.kitchen #transit,body.kitchen #lbl,body.kitchen #cut,body.kitchen #getoff,body.kitchen .clock,body.kitchen .skyline,body.kitchen #views,body.kitchen #legend,body.kitchen #lines{display:none}
 body.kitchen #hud-body{max-height:calc(100vh - 110px);overflow:auto;overscroll-behavior:contain}
@@ -472,7 +472,7 @@ body.kitchen #hud-body{max-height:calc(100vh - 110px);overflow:auto;overscroll-b
 .kinfo .kclose{font-size:12.5px;padding:6px 12px}
 @media (max-width:600px){.kinfo{left:14px;right:14px;width:auto;max-height:42vh;overflow:auto}}
 
-/* the kitchen's mini monorail lines (js/scene/pine/minirail.js) */
+/* the kitchen's mini monorail lines (js/scene/pine/minirail.ts) */
 .klines .kline{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 8px;margin:4px 0 8px}
 .klines .kline b{font-size:13px;display:flex;align-items:center;gap:6px}
 .klines .kdot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
@@ -510,7 +510,7 @@ body.kitchen #hud-body{max-height:calc(100vh - 110px);overflow:auto;overscroll-b
    small ones the dock stacks them at the bottom so they never cover each other */
 .dock{display:contents}
 body:has(#ridebar:not([hidden])) .credit{display:none}   /* riding: the line diagram has the bottom of the screen */
-/* walking inside a car on a touch screen: hold an arrow (js/ui.js), like holding W A S D */
+/* walking inside a car on a touch screen: hold an arrow (js/ui.ts), like holding W A S D */
 .walkpad{position:fixed;right:calc(env(safe-area-inset-right,0px) + 14px);top:50%;transform:translateY(-50%);display:grid;grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,48px);grid-template-areas:". f ." "l . r" ". b .";gap:2px;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .walkpad[hidden]{display:none}
 .walkpad button{width:48px;height:48px;padding:0;display:grid;place-items:center;border-radius:12px;background:var(--panel);color:var(--ink);border-color:var(--line);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);touch-action:none}
@@ -519,7 +519,7 @@ body:has(#ridebar:not([hidden])) .credit{display:none}   /* riding: the line dia
 /* short messages over the view: flying speed, skyline lights after dark */
 .toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 14px);transform:translateX(-50%);margin:0;max-width:calc(100vw - 32px);box-sizing:border-box;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600;text-align:center;pointer-events:none;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .toast:empty{display:none}
-/* ---- small screens: phones either way up (js/ui.js COMPACT has the same query). Measured with
+/* ---- small screens: phones either way up (js/ui.ts COMPACT has the same query). Measured with
    tools/ux (README there). */
 @media (max-width:640px),(max-height:500px){
   #hint:not(.open){display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow:hidden}
@@ -532,7 +532,7 @@ body:has(#ridebar:not([hidden])) .credit{display:none}   /* riding: the line dia
   .dock>.persona{max-height:min(38vh,300px);max-height:min(38dvh,300px);overflow:auto;overscroll-behavior:contain}
   body:has(#ridebar:not([hidden])) .credit,body:has(#persona:not([hidden])) .credit,body:has(#actions:not([hidden])) .credit{display:none}
   .minimap{width:120px;height:120px;top:calc(env(safe-area-inset-top,0px) + 10px);right:calc(env(safe-area-inset-right,0px) + 10px)}
-  /* folded by default: just a round map button where the map's corner would be (js/minimap.js) */
+  /* folded by default: just a round map button where the map's corner would be (js/minimap.ts) */
   .mm-tog{display:flex;align-items:center;justify-content:center;position:absolute;top:4px;right:4px;z-index:1;width:30px;height:30px;padding:0;border-radius:50%;background:var(--panel);color:var(--ink);border:1px solid var(--line);box-shadow:0 1px 4px rgba(0,0,0,.15)}
   .mm-tog svg{width:16px;height:16px}
   .minimap.folded{width:44px;height:44px;border-radius:50%;background:none;border:0;box-shadow:none}
@@ -575,7 +575,7 @@ body:has(#ridebar:not([hidden])) .credit{display:none}   /* riding: the line dia
   button.more{min-height:44px;min-width:56px;padding:0 8px;margin:-12px 0 2px -8px;text-align:left}
 }
 
-/* Cinematic mode (js/cinema.js): letterbox bars, a fade through black between shots, a title per
+/* Cinematic mode (js/cinema.ts): letterbox bars, a fade through black between shots, a title per
    shot; the panel, the map, the labels and the rest of the chrome step aside meanwhile */
 .cine{position:fixed;inset:0;pointer-events:none;z-index:8;--bar:clamp(0px,calc((100vh - 100vw / 2.35) / 2),13vh);--bar:clamp(0px,calc((100dvh - 100vw / 2.35) / 2),13dvh)}
 .cine[hidden]{display:none}
@@ -595,3 +595,30 @@ body:has(#ridebar:not([hidden])) .credit{display:none}   /* riding: the line dia
 body.cinematic .hud,body.cinematic .minimap,body.cinematic #modehint,body.cinematic .dock,body.cinematic #tags,body.cinematic .walkpad,body.cinematic .eatcard,body.cinematic #xhair{visibility:hidden}
 body.cinematic #c{cursor:none}
 @media (prefers-reduced-motion:reduce){.cine-bar,.cine-cap{transition:none}}
+
+/* ==== Kingda Ka (js/scene/ka/hud.ts): the rider's readout while aboard the train ====
+   Speed, height and g-force as big numbers in a card, and what the ride is doing in a pill under it. At the top of the
+   view, in the middle of what the panel (--hud-w, js/ui.ts) and the minimap leave: the bottom of the view is the
+   rider's own lap and the car, which is half the ride. A small screen has no room up there: the dock (this is its
+   first child) stacks it over the action buttons, pill first. Nothing in it takes a click. */
+.ka-hud{position:fixed;left:calc(50% + var(--hud-w,0px) / 2 - 107px);top:calc(env(safe-area-inset-top,0px) + 14px);transform:translateX(-50%);display:flex;flex-direction:column-reverse;align-items:center;gap:6px;pointer-events:none;color:var(--ink);max-width:calc(100vw - 20px)}
+.ka-hud[hidden]{display:none}
+.ka-phase{margin:0;padding:5px 14px;border-radius:999px;background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:var(--ink);font-size:13px;line-height:1.3;font-weight:600;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box}
+.ka-phase:empty{display:none}
+.ka-phase.hot{background:var(--accent);border-color:var(--accent);color:#fff;font-size:15px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.ka-nums{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 4px 7px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.ka-nums div{min-width:84px;padding:0 12px;text-align:center;box-sizing:border-box}
+.ka-nums div+div{border-left:1px solid var(--line)}
+.ka-nums b{display:block;font-size:30px;line-height:1;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.ka-nums span{display:block;margin-top:3px;font-size:11px;line-height:1.2;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.ka-g.heavy,.ka-g.float{color:var(--accent)}
+.ka-grey{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 50%,rgba(40,44,50,0) 38%,rgba(40,44,50,.55) 72%,rgba(22,24,28,.92) 100%)}   /* sight greying at the edges in the pull-up (hud.ts sets its opacity) */
+.ka-grey[hidden]{display:none}
+body.cinematic .ka-hud,body.cinematic .ka-grey{visibility:hidden}
+@media (max-width:640px),(max-height:500px){
+  .dock>.ka-hud{position:static;transform:none;flex-direction:column;align-self:center;max-width:100%;pointer-events:none}
+  .ka-nums{padding:6px 2px 5px}
+  .ka-nums div{min-width:74px;padding:0 9px}
+  .ka-nums b{font-size:24px}
+}
+@media (max-height:500px){.ka-phase:not(.hot){display:none}}   /* a phone on its side: the numbers only, and the launch */
