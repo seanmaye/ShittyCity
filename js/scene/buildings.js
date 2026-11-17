@@ -79,11 +79,12 @@ function displayShell(ring, y0, y1) {
   const mesh = new THREE.Mesh(b.geometry(), m); mesh.visible = false; mesh.renderOrder = 2; return mesh;
 }
 
-export function buildBuildings(scene, data) {
+export function buildBuildings(scene, data, skip = null) {
   const styles = data.styles;
   // sort footprints into tiles first so each tile's buffers can be built and released in turn
   const tiles = new Map(), top = new Builder({ color: true }), lights = [], shells = [];
   for (let i = 0; i < data.b.length; i++) {
+    if (skip && skip.has(i)) continue;   // the French Quarter is rebuilt with its own facades
     const [hdm, style, outerFlat] = data.b[i];
     const h = hdm / 10, outer = pairs(outerFlat);
     let kind, color;

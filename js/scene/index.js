@@ -30,6 +30,8 @@ import { buildBoroughMarks } from './nyc/boroughmarks.js';
 import { buildShowdown } from './nyc/showdown.js';
 import { buildPromenade } from './phl/promenade.js';
 import { buildPedestrians } from './phl/pedestrians.js';
+import { buildFrenchQuarter, brassBand } from './nola/frenchquarter.js';
+import { fqBuildings, buildFqFacades } from './nola/facades.js';
 import { buildBoats } from './phl/boats.js';
 import { buildAnglers } from './phl/anglers.js';
 import { buildChinatown } from './phl/chinatown.js';
@@ -116,7 +118,12 @@ export async function buildScene(canvas, data, status = () => {}) {
   // Jersey Shore's footprints are typed (houses, storefronts, churches...) and built to their kind
   // (Crossroads Church is modelled on its own, inside and out: jsh/church.js)
   const crossroads = data.buildings.j && data.places ? churchSite(data.buildings, data.places) : null;
-  const blds = data.buildings.j ? buildTown(scene, data.buildings, crossroads && crossroads.skip) : buildBuildings(scene, data.buildings);
+  // New Orleans: the French Quarter's buildings get their own pastel facades (nola/facades.js),
+  // so the generic pass skips them and the Quarter is rebuilt with balconies and cornices
+  const fq = CITY.id === 'nola' ? fqBuildings(data.buildings) : null;
+  const blds = data.buildings.j ? buildTown(scene, data.buildings, crossroads && crossroads.skip)
+    : buildBuildings(scene, data.buildings, fq ? fq.indices : null);
+  if (fq) { status('Painting the French Quarter…', 62); await nextFrame(); buildFqFacades(scene, data, fq); }
   // the rest of the city out to the city limits (outside the original extent, its own data)
   status(CITY.building, 67); await nextFrame();
   // playing fields that the park trees must keep off (the Edgley frisbee and cricket ground)
@@ -172,10 +179,14 @@ export async function buildScene(canvas, data, status = () => {}) {
   const isPhl = CITY.id === 'phl';
   const walnut = isPhl ? buildPromenade(scene, { buildings: data.buildings, cityB: city.boxes, roads: [data.ground.lines, data.city.lines], trees: data.trees })
     : { view: null, getSeat: () => null, stand: () => null, sit: () => null, pickSeat: () => null, seatFrame() {}, lookSeat() {} };
+  const isNola = CITY.id === 'nola';
   const peds = isPhl ? buildPedestrians(scene, walnut.nav)   // people strolling, shopping and sitting on Walnut
+    // New Orleans: the French Quarter, alive on Bourbon (street dancers, a brass band, loud music)
+    : isNola ? buildFrenchQuarter(scene)
     // Jersey Shore: the detasseling crew in the seed-corn block (same calls; the clock is read once the sky exists)
     : data.farms && data.farms.seed ? buildDetassel(scene, data.farms.seed, { hour: () => sky.getTime() })
     : { update() {}, pickPerson: () => null, inhabit: () => null, leave: () => null, getInhabited: () => null, lookAt() {}, inhabitFrame() {}, portrait: () => null, setVisible() {}, people: [] };
+  if (!isNola) { brassBand.stop(); brassBand.setVolume(0); }   // leaving the Quarter: the music stops
   // Chinatown: the Friendship Gate, signs, lanterns, a dragon dance and the night market's arcade stall
   const chinatown = isPhl ? buildChinatown(scene, { buildings: data.buildings })
     : { update() {}, pickStall: () => false, stallView: null, labels: [], views: [] };
